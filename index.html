@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SALES ENGINE — 営業支援ツール</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Noto+Sans+JP:wght@300;400;500;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: #FFFFFF;
+  color: #1A1A1A;
+  font-family: 'Noto Sans JP', sans-serif;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+}
+
+.logo {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 48px;
+  letter-spacing: 0.12em;
+  color: #FF4602;
+  margin-bottom: 8px;
+  text-align: center;
+}
+.logo-sub {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.25em;
+  color: #AAAAAA;
+  text-transform: uppercase;
+  text-align: center;
+  margin-bottom: 60px;
+}
+
+.cards {
+  display: flex;
+  gap: 24px;
+  flex-wrap: wrap;
+  justify-content: center;
+  max-width: 800px;
+  width: 100%;
+}
+
+.card {
+  background: #FFFFFF;
+  border: 2px solid #E0E0E0;
+  border-radius: 16px;
+  padding: 36px 32px;
+  flex: 1;
+  min-width: 300px;
+  max-width: 360px;
+  text-decoration: none;
+  color: inherit;
+  transition: all 0.2s;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+}
+.card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 4px;
+}
+.card-fw::before { background: #FF4602; }
+.card-dw::before { background: #FACF4C; }
+
+.card:hover {
+  border-color: #FF4602;
+  transform: translateY(-4px);
+  box-shadow: 0 12px 32px rgba(255,70,2,0.12);
+}
+
+.card-icon {
+  width: 52px;
+  height: 52px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 20px;
+}
+.card-fw .card-icon { background: rgba(255,70,2,0.08); }
+.card-dw .card-icon { background: rgba(250,207,76,0.15); }
+
+.card-title {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 28px;
+  letter-spacing: 0.1em;
+  margin-bottom: 8px;
+}
+.card-fw .card-title { color: #FF4602; }
+.card-dw .card-title { color: #D4A500; }
+
+.card-sub {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  color: #AAAAAA;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  margin-bottom: 16px;
+}
+
+.card-desc {
+  font-size: 13px;
+  color: #666666;
+  line-height: 1.8;
+  margin-bottom: 24px;
+}
+
+.card-features {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 28px;
+}
+.card-feature {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: #444444;
+}
+.card-feature svg {
+  flex-shrink: 0;
+  color: #FF4602;
+}
+.card-dw .card-feature svg { color: #D4A500; }
+
+.card-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  transition: all 0.15s;
+  width: 100%;
+  justify-content: center;
+}
+.card-fw .card-btn {
+  background: #FF4602;
+  color: white;
+}
+.card-fw .card-btn:hover { background: #e03d00; }
+.card-dw .card-btn {
+  background: #FACF4C;
+  color: #1A1A1A;
+}
+.card-dw .card-btn:hover { background: #f0c030; }
+
+.footer {
+  margin-top: 60px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  color: #CCCCCC;
+  letter-spacing: 0.15em;
+  text-align: center;
+}
+
+.flow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0 auto 48px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: #AAAAAA;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.flow-step {
+  padding: 4px 12px;
+  border-radius: 20px;
+  background: #F5F5F5;
+  color: #666;
+  white-space: nowrap;
+}
+.flow-arrow { color: #E0E0E0; font-size: 16px; }
+.flow-step.active { background: rgba(255,70,2,0.08); color: #FF4602; border: 1px solid rgba(255,70,2,0.2); }
+.flow-step.next { background: rgba(250,207,76,0.12); color: #D4A500; border: 1px solid rgba(250,207,76,0.3); }
+</style>
+</head>
+<body>
+
+<div class="logo">SALES ENGINE</div>
+<div class="logo-sub">Ad Agency Sales Management System</div>
+
+<div class="flow">
+  <div class="flow-step">情報収集</div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-step active">アプローチ</div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-step active">アポ獲得</div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-step next">商談</div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-step next">提案</div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-step next">受注</div>
+</div>
+
+<div class="cards">
+
+  <!-- FIELDWORK -->
+  <a class="card card-fw" href="fieldwork.html">
+    <div class="card-icon">
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" color="#FF4602">
+        <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
+      </svg>
+    </div>
+    <div class="card-title">FIELDWORK</div>
+    <div class="card-sub">Attack → Approach → Apo</div>
+    <div class="card-desc">企業の情報収集からアポ獲得まで。アタックリスト管理・AIスコアリング・アプローチ記録を一元管理。</div>
+    <div class="card-features">
+      <div class="card-feature">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+        AIスコアリング（S/A/B/Cランク）
+      </div>
+      <div class="card-feature">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+        アプローチ自動フェーズ管理
+      </div>
+      <div class="card-feature">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+        直筆手紙AI作成・送付依頼
+      </div>
+      <div class="card-feature">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+        次のアクション自動スケジュール
+      </div>
+    </div>
+    <div class="card-btn">
+      開く
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+    </div>
+  </a>
+
+  <!-- DEALWORK -->
+  <a class="card card-dw" href="dealwork.html">
+    <div class="card-icon">
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#D4A500" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/>
+      </svg>
+    </div>
+    <div class="card-title">DEALWORK</div>
+    <div class="card-sub">Negotiation → Proposal → Won</div>
+    <div class="card-desc">商談管理から受注まで。ヒアリングシート・提案書作成・パイプライン管理を一元化。</div>
+    <div class="card-features">
+      <div class="card-feature">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+        ボタン式ヒアリングシート
+      </div>
+      <div class="card-feature">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+        沖縄県相場内蔵の提案書作成
+      </div>
+      <div class="card-feature">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+        商談パイプライン管理
+      </div>
+      <div class="card-feature">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+        受注・失注ダッシュボード
+      </div>
+    </div>
+    <div class="card-btn">
+      開く
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+    </div>
+  </a>
+
+</div>
+
+<div class="footer">© 2026 1116maehira-ai / fieldwork · Powered by GitHub Pages</div>
+
+</body>
+</html>
