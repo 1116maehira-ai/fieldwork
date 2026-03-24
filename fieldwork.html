@@ -936,6 +936,100 @@ tr:hover td { background: rgba(255,70,2,0.03); cursor: pointer; }
 
 
 <script>
+
+// ══ SUPABASE 設定 ══
+const SUPABASE_URL = 'https://osipzwbsfbgbegjowydm.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_yO0lVlOP_r-qhnwjxqq0UQ_qjxSrlnC';
+
+const sb = {
+  async get(table, key) {
+    try {
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}?user_id=eq.${key}&select=data`, {
+        headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
+      });
+      const rows = await res.json();
+      if (rows && rows.length > 0 && rows[0].data) return rows[0].data;
+      return null;
+    } catch(e) { return null; }
+  },
+  async set(table, key, data) {
+    try {
+      await fetch(`${SUPABASE_URL}/rest/v1/${table}`, {
+        method: 'POST',
+        headers: {
+          'apikey': SUPABASE_KEY,
+          'Authorization': `Bearer ${SUPABASE_KEY}`,
+          'Content-Type': 'application/json',
+          'Prefer': 'resolution=merge-duplicates',
+        },
+        body: JSON.stringify({ user_id: key, data: data, updated_at: new Date().toISOString() })
+      });
+    } catch(e) {}
+  }
+};
+
+// ══ GOOGLE MAPS / PLACES API 設定 ══
+const MAPS_API_KEY = 'AIzaSyDA03qagvN4G6uJ91HXOqpgpS93iy2psSc';
+
+const INDUSTRY_TO_TYPE = {
+  '不動産・建設':           'real_estate_agency',
+  '医療・クリニック・介護': 'hospital',
+  '飲食・食品':             'restaurant',
+  '美容・エステ':           'beauty_salon',
+  '宿泊施設・ホテル・旅館': 'lodging',
+  '観光施設・レジャー':     'tourist_attraction',
+  '行政・公共施設':         'local_government_office',
+  '学習塾・教育・スクール': 'school',
+  'その他':                 'establishment',
+};
+
+async function searchPlacesAPI(industry, area, limit) {
+  const query = `${industry} ${area}`;
+  try {
+    const res = await fetch('https://places.googleapis.com/v1/places:searchText', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Goog-Api-Key': MAPS_API_KEY,
+        'X-Goog-FieldMask': 'places.displayName,places.formattedAddress,places.nationalPhoneNumber,places.rating,places.userRatingCount,places.websiteUri',
+      },
+      body: JSON.stringify({
+        textQuery: query,
+        maxResultCount: Math.min(limit, 20),
+        languageCode: 'ja',
+        locationBias: {
+          circle: {
+            center: { latitude: 26.2124, longitude: 127.6809 },
+            radius: 50000.0
+          }
+        }
+      })
+    });
+    const data = await res.json();
+    if (!data.places) return [];
+    return data.places.map((p, i) => {
+      const name = p.displayName?.text || '不明';
+      const addr = p.formattedAddress || '';
+      const phone = p.nationalPhoneNumber || '';
+      const rating = p.rating || 0;
+      const reviewCount = p.userRatingCount || 0;
+      const hasWebsite = !!p.websiteUri;
+      const signals = [];
+      if (!hasWebsite) signals.push('noad');
+      if (reviewCount >= 50) signals.push('rev');
+      return {
+        id: Date.now() + i,
+        company: name, person: '', phone: phone,
+        industry: industry, area: area, addr: addr,
+        revenue: '不明', source: 'gmap', signals: signals,
+        memo: `評価${rating}点・レビュー${reviewCount}件`,
+        phase: 'visit', nextDate: '', logs: [],
+        referral: '', score: null, createdAt: todayJST(),
+      };
+    });
+  } catch(e) { console.error('Places API error:', e); return []; }
+}
+
 // ── UTILS (defined first so always available) ──
 
 // ── DEALWORK 連携 ──
@@ -2533,9 +2627,7 @@ document.getElementById('today-label').textContent = (() => {
   renderApo();
   renderDash();
   renderNotice();
-  renderDeals();
   updateNoticeBadge();
-  updateDealBadge();
 })();
 </script>
 </body>
