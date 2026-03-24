@@ -1156,10 +1156,8 @@ function _loadDemoItems() {
 
 
 function save() {
-  // storage write is best-effort (async, don't await)
-  try {
-    if (window.storage) window.storage.set('fw_items', JSON.stringify(items)).catch(()=>{});
-  } catch(e) {}
+  // Supabaseに保存（非同期・fire-and-forget）
+  sb.set('items', 'fw_items', items).catch(()=>{});
   updateBadges();
   renderList();
   renderApproach();
@@ -2391,7 +2389,7 @@ function submitNotice() {
   };
 
   notices.push(notice);
-  try { if(window.storage) window.storage.set('fw_notices', JSON.stringify(notices)).catch(()=>{}); } catch(e) {}
+  sb.set('items', 'fw_notices', notices).catch(()=>{});
 
   // 企業の手紙ログに記録
   it.letterNoticeId = notice.id;
@@ -2453,7 +2451,7 @@ function markNoticeSent(id) {
   const n = notices.find(x => x.id === id);
   if (!n) return;
   n.status = 'sent';
-  try { if(window.storage) window.storage.set('fw_notices', JSON.stringify(notices)).catch(()=>{}); } catch(e) {}
+  sb.set('items', 'fw_notices', notices).catch(()=>{});
   renderNotice();
   toast('✅ 送付済みとして記録しました');
 }
@@ -2495,20 +2493,12 @@ document.getElementById('today-label').textContent = (() => {
 // Storage-safe init: try storage first, fall back to demo data
 (async () => {
   try {
-    if (window.storage) {
-      try {
-        const si = await window.storage.get('fw_items');
-        if (si?.value) { items = JSON.parse(si.value); }
-      } catch(e) {}
-      try {
-        const sn = await window.storage.get('fw_notices');
-        if (sn?.value) { notices = JSON.parse(sn.value); }
-      } catch(e) {}
-      try {
-        const sd = await window.storage.get('fw_deals');
-        if (sd?.value) { deals = JSON.parse(sd.value); }
-      } catch(e) {}
+    const savedItems = await sb.get('items', 'fw_items');
+    if (savedItems && Array.isArray(savedItems) && savedItems.length > 0) {
+      items = savedItems;
     }
+    const savedNotices = await sb.get('items', 'fw_notices');
+    if (savedNotices) notices = savedNotices;
   } catch(e) {}
   // Always run demo init if no items
   if (!items.length) _loadDemoItems();
