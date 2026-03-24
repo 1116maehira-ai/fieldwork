@@ -626,7 +626,7 @@ tr:hover td { background: rgba(255,70,2,0.03); cursor: pointer; }
         <div class="prog-label" id="col-prog-label">0 / 100 件...</div>
       </div>
       <div style="display:flex;align-items:center;gap:14px;margin-top:4px">
-        <button class="btn btn-green" onclick="startCollect()" id="col-btn">⚡ 収集開始（デモデータ）</button>
+        <button class="btn btn-green" onclick="startCollect()" id="col-btn">⚡ 収集開始</button>
         <span style="font-family:var(--font-mono);font-size:10px;color:var(--text-dim)">※実運用ではAPIと連携します</span>
       </div>
     </div>
@@ -1818,32 +1818,56 @@ function saveApproach() {
 }
 
 // ── COLLECT ──
-function startCollect() {
+async function startCollect() {
   const ind = document.getElementById('col-ind').value;
-  const area = document.getElementById('col-area').value||'全国';
-  const limit = parseInt(document.getElementById('col-limit').value)||100;
+  const area = document.getElementById('col-area').value || '沖縄';
+  const limitVal = document.getElementById('col-limit').value;
+  const limit = parseInt(limitVal) || 100;
   const btn = document.getElementById('col-btn');
-  btn.disabled=true; btn.textContent='収集中...';
+  
+  btn.disabled = true;
+  btn.textContent = '収集中...';
   document.getElementById('col-think').classList.add('show');
-  document.getElementById('col-think-txt').textContent=`${area} × ${ind} を収集中...`;
-  document.getElementById('col-prog').style.display='block';
-  const newItems = genDemoItems(ind,area,limit);
-  let cnt=0; const step=Math.max(1,Math.floor(limit/20));
-  const iv=setInterval(()=>{
-    cnt=Math.min(cnt+step,limit);
-    document.getElementById('col-prog-fill').style.width=(cnt/limit*100)+'%';
-    document.getElementById('col-prog-label').textContent=`${cnt} / ${limit} 件処理中...`;
-    if(cnt>=limit){
-      clearInterval(iv);
-      newItems.forEach(x=>{ x.score=calcScore(x); });
-      items.push(...newItems);
-      save();
-      document.getElementById('col-think').classList.remove('show');
-      document.getElementById('col-prog').style.display='none';
-      btn.disabled=false; btn.textContent='⚡ 収集開始（デモデータ）';
-      toast(`✅ ${newItems.length}件を収集・AIスコアリング完了`);
+  document.getElementById('col-think-txt').textContent = `${area} × ${ind} をGoogle Mapsで収集中...`;
+  document.getElementById('col-prog').style.display = 'block';
+  document.getElementById('col-prog-fill').style.width = '30%';
+  document.getElementById('col-prog-label').textContent = 'Google Places APIに問い合わせ中...';
+  
+  try {
+    // Google Places APIで実データ取得
+    let newItems = await searchPlacesAPI(ind, area, limit);
+    
+    document.getElementById('col-prog-fill').style.width = '70%';
+    document.getElementById('col-prog-label').textContent = `${newItems.length}件取得・AIスコアリング中...`;
+    
+    if (newItems.length === 0) {
+      // フォールバック：デモデータ
+      newItems = genDemoItems(ind, area, limit);
+      toast('⚠ Places APIの結果が0件のためデモデータを使用');
     }
-  },80);
+    
+    newItems.forEach(x => { x.score = calcScore(x); });
+    items.push(...newItems);
+    save();
+    
+    document.getElementById('col-think').classList.remove('show');
+    document.getElementById('col-prog').style.display = 'none';
+    btn.disabled = false;
+    btn.textContent = '⚡ 収集開始';
+    toast(`✅ ${newItems.length}件を収集・AIスコアリング完了`);
+    
+  } catch(e) {
+    // エラー時はデモデータ
+    const newItems = genDemoItems(ind, area, limit);
+    newItems.forEach(x => { x.score = calcScore(x); });
+    items.push(...newItems);
+    save();
+    document.getElementById('col-think').classList.remove('show');
+    document.getElementById('col-prog').style.display = 'none';
+    btn.disabled = false;
+    btn.textContent = '⚡ 収集開始';
+    toast(`⚠ API接続エラー。デモデータ${newItems.length}件を使用`);
+  }
 }
 
 function genDemoItems(ind,area,limit) {
