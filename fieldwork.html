@@ -185,6 +185,9 @@ tr:hover td { background: rgba(255,70,2,0.03); cursor: pointer; }
 
 /* ── APPROACH COUNTER ── */
 .ap-count { font-family: var(--font-mono); font-size: 10px; color: var(--text-mid); }
+.empty { text-align: center; padding: 32px 20px; color: var(--text-dim); font-size: 12px; }
+.empty-ico { display: flex; align-items: center; justify-content: center; margin-bottom: 10px; opacity: 0.4; }
+.empty-ico svg { width: 32px; height: 32px; }
 
 /* ── AUTO ALERT ── */
 .auto-alert { display: inline-flex; align-items: center; gap: 4px; padding: 2px 7px; border-radius: 4px; font-size: 10px; background: var(--gold-dim); color: var(--gold); border: 1px solid rgba(255,193,69,0.3); }
@@ -474,6 +477,118 @@ tr:hover td { background: rgba(255,70,2,0.03); cursor: pointer; }
 
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+
+/* ══ MOBILE RESPONSIVE ══ */
+@media (max-width: 768px) {
+  /* サイドバー非表示 → ボトムナビへ */
+  .sidebar { 
+    width: 100%; height: 56px; 
+    top: auto; bottom: 0; left: 0; right: 0;
+    flex-direction: row; border-right: none;
+    border-top: 1px solid var(--border);
+    z-index: 200;
+  }
+  .logo { display: none; }
+  .nav { 
+    padding: 0; flex-direction: row; 
+    display: flex; align-items: stretch;
+    overflow-x: auto; overflow-y: visible;
+  }
+  .nav-group { display: none; }
+  .nav-item {
+    flex-direction: column; gap: 2px;
+    padding: 6px 4px; border-radius: 0;
+    font-size: 9px; min-width: 54px;
+    justify-content: center; align-items: center;
+    border: none; margin: 0;
+    flex: 1;
+  }
+  .nav-item.active { 
+    background: var(--accent-dim); 
+    border-bottom: 2px solid var(--accent);
+    border-left: none;
+  }
+  .nav-item.active::before { display: none; }
+  .nav-badge { 
+    position: absolute; top: 4px; right: 6px;
+    font-size: 9px; padding: 0 4px; min-width: 14px;
+    height: 14px; display: flex; align-items: center; justify-content: center;
+  }
+  .nav-item span:first-child { font-size: 16px; }
+
+  /* メインコンテンツ */
+  .main { margin-left: 0; padding-bottom: 56px; }
+  .topbar { padding: 12px 16px; }
+  .content { padding: 16px; }
+  .page-title { font-size: 18px; }
+
+  /* テーブル → カード表示 */
+  .table-wrap table, 
+  .table-wrap thead, 
+  .table-wrap tbody, 
+  .table-wrap th, 
+  .table-wrap td, 
+  .table-wrap tr { display: block; }
+  .table-wrap thead { display: none; }
+  .table-wrap tr { 
+    border: 1px solid var(--border); 
+    border-radius: 10px; 
+    margin-bottom: 10px; 
+    padding: 12px 14px;
+    background: var(--surface);
+  }
+  .table-wrap tr:hover td { background: transparent; }
+  .table-wrap td { 
+    border: none; padding: 3px 0;
+    display: flex; align-items: center; gap: 8px;
+    font-size: 12px;
+  }
+  .table-wrap td:empty { display: none; }
+  .table-wrap td:last-child { 
+    justify-content: flex-end; 
+    margin-top: 6px;
+    padding-top: 8px;
+    border-top: 1px solid var(--border);
+  }
+
+  /* スタットカード */
+  .stat-row-5 { grid-template-columns: repeat(2, 1fr); }
+  .stat-row-4 { grid-template-columns: repeat(2, 1fr); }
+  .stat-value { font-size: 24px; }
+
+  /* フィルターバー */
+  .filter-bar { gap: 6px; }
+  .fi-wide { width: 100%; }
+  .filter-bar .fi { flex: 1; min-width: 80px; }
+
+  /* サマリー */
+  .aq-summary { grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .aq-sum-num { font-size: 26px; }
+
+  /* モーダル */
+  .modal { width: 100% !important; max-width: 100% !important; margin: 0; border-radius: 14px 14px 0 0; position: fixed; bottom: 56px; left: 0; right: 0; max-height: 85vh; }
+  .modal-backdrop { align-items: flex-end; }
+  .lc-modal { width: 100% !important; }
+
+  /* 情報収集ページ */
+  .content[style*="max-width:720px"] { max-width: 100% !important; }
+  .fg3 { grid-template-columns: 1fr 1fr; }
+
+  /* アプローチカード */
+  .aq-card { flex-wrap: wrap; }
+  .aq-info { min-width: 0; flex: 1; }
+
+  /* topbarアクション */
+  .topbar-actions { gap: 6px; }
+  .topbar-actions .btn-sm { padding: 4px 8px; font-size: 10px; }
+}
+
+@media (max-width: 480px) {
+  .stat-row-5 { grid-template-columns: repeat(2, 1fr); }
+  .signal-chips { gap: 4px; }
+  .schip { font-size: 10px; padding: 3px 9px; }
+}
+
 </style>
 </head>
 <body>
@@ -551,9 +666,9 @@ tr:hover td { background: rgba(255,70,2,0.03); cursor: pointer; }
       <div class="topbar-sub">収集済み企業の一覧・スコア・シグナル確認</div>
     </div>
     <div class="topbar-actions">
-      <button class="btn btn-ghost btn-sm" onclick="exportCSV()">⬇ CSV</button>
-      <button class="btn btn-ghost btn-sm" onclick="openAddModal()">＋ 手動追加</button>
-      <button class="btn btn-green" onclick="goPage('collect',document.querySelectorAll('.nav-item')[1])">⚡ 情報収集</button>
+      <button class="btn btn-ghost btn-sm" onclick="exportCSV()"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> CSV</button>
+      <button class="btn btn-ghost btn-sm" onclick="openAddModal()"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> 手動追加</button>
+      <button class="btn btn-green" onclick="goPage('collect',document.querySelectorAll('.nav-item')[1])"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg> 情報収集</button>
     </div>
   </div>
   <div class="content">
@@ -575,7 +690,7 @@ tr:hover td { background: rgba(255,70,2,0.03); cursor: pointer; }
     </div>
 
     <div class="filter-bar">
-      <input class="fi fi-wide" type="text" id="ls-search" placeholder="🔍 会社名で検索..." oninput="renderList()">
+      <input class="fi fi-wide" type="text" id="ls-search" placeholder="会社名で検索..." oninput="renderList()">
       <select class="fi" id="ls-industry" onchange="renderList()">
         <option value="">全業種</option>
         <option>不動産・建設</option><option>医療・クリニック・介護</option>
@@ -611,7 +726,7 @@ tr:hover td { background: rgba(255,70,2,0.03); cursor: pointer; }
         <tbody id="list-tbody"></tbody>
       </table>
       <div class="empty" id="list-empty" style="display:none">
-        <div class="empty-ico">📡</div>
+        <div class="empty-ico"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="2" y1="20" x2="2" y2="14"/><line x1="7" y1="20" x2="7" y2="8"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="17" y1="20" x2="17" y2="10"/><line x1="22" y1="20" x2="22" y2="16"/></svg></div>
         <div>まだリストがありません。「情報収集」か「手動追加」から始めてください</div>
       </div>
     </div>
@@ -626,28 +741,13 @@ tr:hover td { background: rgba(255,70,2,0.03); cursor: pointer; }
   </div>
   <div class="content" style="max-width:720px">
     <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:22px;margin-bottom:18px">
-      <div class="fsec" style="margin-top:0">// 情報源を選択</div>
-      <div class="source-grid">
-        <div class="src-card sel" onclick="this.classList.toggle('sel')">
-          <div class="src-card-name">🗺 Google マップ / MEO</div>
-          <div class="src-card-desc">業種×エリアで周辺企業を収集。レビュー数・HP有無も取得</div>
-          <span class="src-card-tag src src-gmap">無料API</span>
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:18px;padding:12px 16px;background:var(--accent-dim);border:1px solid rgba(255,70,2,0.15);border-radius:10px">
+        <div style="width:36px;height:36px;border-radius:9px;background:var(--accent);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:white"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></svg></div>
+        <div>
+          <div style="font-weight:600;font-size:13px">Google マップ / Places API</div>
+          <div style="font-size:11px;color:var(--text-mid);margin-top:2px">業種×エリアで周辺企業を自動収集。レビュー数・電話番号・HP URLを取得</div>
         </div>
-        <div class="src-card" onclick="this.classList.toggle('sel')">
-          <div class="src-card-name">🏢 帝国データバンク</div>
-          <div class="src-card-desc">売上・従業員・代表者名・決算情報まで取得可能</div>
-          <span class="src-card-tag src src-tdb">有料DB</span>
-        </div>
-        <div class="src-card sel" onclick="this.classList.toggle('sel')">
-          <div class="src-card-name">💼 Indeed / アグレ / ジョブアンテナ</div>
-          <div class="src-card-desc">求人掲載企業＝採用投資中。沖縄地域媒体も連携対応</div>
-          <span class="src-card-tag src src-ind">求人媒体</span>
-        </div>
-        <div class="src-card" onclick="this.classList.toggle('sel')">
-          <div class="src-card-name">📱 Facebook広告ライブラリ</div>
-          <div class="src-card-desc">広告出稿状況を確認。未出稿企業を潜在層として抽出</div>
-          <span class="src-card-tag src src-sns">無料API</span>
-        </div>
+        <span style="margin-left:auto;font-family:var(--font-mono);font-size:10px;padding:3px 8px;border-radius:4px;background:rgba(255,70,2,0.12);color:var(--accent);border:1px solid rgba(255,70,2,0.2);white-space:nowrap">無料 API</span>
       </div>
       <div class="fg fg3" style="margin-bottom:16px">
         <div class="fl"><label class="flabel">業種</label>
@@ -680,7 +780,7 @@ tr:hover td { background: rgba(255,70,2,0.03); cursor: pointer; }
         <div class="prog-label" id="col-prog-label">0 / 100 件...</div>
       </div>
       <div style="display:flex;align-items:center;gap:14px;margin-top:4px">
-        <button class="btn btn-green" onclick="startCollect()" id="col-btn">⚡ 収集開始（自動でURL調査まで実行）</button>
+        <button class="btn btn-green" onclick="startCollect()" id="col-btn"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg> 収集開始（自動でURL調査まで実行）</button>
         <span style="font-family:var(--font-mono);font-size:10px;color:var(--text-dim)">企業収集 → SNS/求人URL調査 → スコアリングまで自動実行</span>
       </div>
     </div>
@@ -701,10 +801,10 @@ tr:hover td { background: rgba(255,70,2,0.03); cursor: pointer; }
         </div>
         <div style="margin-left:auto;display:flex;gap:8px">
           <button class="btn btn-blue btn-sm" onclick="startSNSSearch(false)" id="sns-btn">
-            🔍 SNS・求人URL調査を開始
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg> SNS・求人URL調査を開始
           </button>
           <button class="btn btn-ghost btn-sm" onclick="startSNSSearch(true)" id="sns-btn-all">
-            🔄 全件再調査
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg> 全件再調査
           </button>
         </div>
       </div>
@@ -723,7 +823,7 @@ tr:hover td { background: rgba(255,70,2,0.03); cursor: pointer; }
 
       <!-- 完了サマリー -->
       <div id="sns-done-summary" style="display:none;margin-top:12px;padding:12px 14px;background:var(--green-dim);border:1px solid rgba(22,163,74,0.2);border-radius:8px">
-        <div style="font-size:12px;font-weight:600;color:var(--green);margin-bottom:6px">✅ 調査完了</div>
+        <div style="font-size:12px;font-weight:600;color:var(--green);margin-bottom:6px"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> 調査完了</div>
         <div id="sns-done-text" style="font-size:11px;color:var(--text-mid)"></div>
       </div>
     </div>
@@ -767,7 +867,7 @@ tr:hover td { background: rgba(255,70,2,0.03); cursor: pointer; }
       <div class="stat-card"><div class="stat-label" style="color:var(--gold)">合計</div><div class="stat-value" id="ap-total" style="color:var(--gold)">0</div></div>
     </div>
     <div class="filter-bar">
-      <input class="fi fi-wide" type="text" id="ap-search" placeholder="🔍 会社名で検索..." oninput="renderApproach()">
+      <input class="fi fi-wide" type="text" id="ap-search" placeholder="会社名で検索..." oninput="renderApproach()">
       <select class="fi" id="ap-phase" onchange="renderApproach()">
         <option value="">全フェーズ</option>
         <option value="visit">直接訪問</option><option value="tel">テルアポ</option><option value="letter">直筆手紙</option>
@@ -781,7 +881,7 @@ tr:hover td { background: rgba(255,70,2,0.03); cursor: pointer; }
         <tbody id="ap-tbody"></tbody>
       </table>
       <div class="empty" id="ap-empty" style="display:none">
-        <div class="empty-ico">🚀</div>
+        <div class="empty-ico"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"/><path d="m3.5 11.5 3 3"/><path d="M12 6l5 5"/><path d="m6 13 3-3"/><path d="m13 6-2 2-3.5 3.5"/><path d="m21 3-5.23 5.23"/><path d="m15 9 3-3 3-3-3 3"/></svg></div>
         <div>アプローチ中の企業がありません<br>アタックリストから「アプローチ開始」してください</div>
       </div>
     </div>
@@ -797,7 +897,7 @@ tr:hover td { background: rgba(255,70,2,0.03); cursor: pointer; }
       <div class="topbar-sub">手紙担当者への送付依頼一覧</div>
     </div>
     <div class="topbar-actions">
-      <button class="btn btn-ghost btn-sm" onclick="renderNotice()">🔄 更新</button>
+      <button class="btn btn-ghost btn-sm" onclick="renderNotice()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg> 更新</button>
     </div>
   </div>
   <div class="content" id="notice-content"></div>
@@ -806,7 +906,7 @@ tr:hover td { background: rgba(255,70,2,0.03); cursor: pointer; }
 <!-- ═══ PAGE: アポ獲得 ═══ -->
 <div class="page" id="page-apo">
   <div class="topbar">
-    <div class="page-title">APO ACQUIRED 🎯</div>
+    <div class="page-title">APO ACQUIRED</div>
     <div class="topbar-sub">アポ獲得済み企業 → DEALWORKへ送って商談管理へ</div>
   </div>
   <div class="content" id="apo-content"></div>
@@ -841,7 +941,7 @@ tr:hover td { background: rgba(255,70,2,0.03); cursor: pointer; }
   <div class="modal lc-modal">
     <div class="mhead">
       <div>
-        <div class="mtitle">✉️ 直筆手紙 作成</div>
+        <div class="mtitle"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg> 直筆手紙 作成</div>
         <div style="font-size:11px;color:var(--text-mid);margin-top:2px" id="lc-company-name"></div>
       </div>
       <button class="mclose" onclick="cm('m-letter')">✕</button>
@@ -859,7 +959,7 @@ tr:hover td { background: rgba(255,70,2,0.03); cursor: pointer; }
           <div style="font-family:var(--font-mono);font-size:10px;color:var(--accent);letter-spacing:0.15em">// 検出されたトピックス（使うものを選択）</div>
           <div style="display:flex;gap:8px">
             <input class="finput" id="lc-url-input" placeholder="HP / SNS の URL を追加..." style="width:260px;font-size:11px;padding:6px 10px">
-            <button class="btn btn-ghost btn-sm" onclick="scanUrl()">🔍 追加スキャン</button>
+            <button class="btn btn-ghost btn-sm" onclick="scanUrl()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg> 追加スキャン</button>
           </div>
         </div>
         <div id="lc-topics-list"></div>
@@ -876,12 +976,12 @@ tr:hover td { background: rgba(255,70,2,0.03); cursor: pointer; }
         <div style="font-family:var(--font-mono);font-size:10px;color:var(--accent);letter-spacing:0.15em;margin-bottom:8px">// 手紙原稿（自由に編集してください）</div>
         <textarea class="lc-letter-area" id="lc-letter-text" placeholder="生成中..."></textarea>
         <div style="margin-top:10px;font-size:11px;color:var(--text-mid)">
-          💡 黄色い【 】部分は必ず書き換えてください。それ以外はそのまま使えます。
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg> 黄色い【 】部分は必ず書き換えてください。それ以外はそのまま使えます。
         </div>
         <div style="display:flex;gap:8px;margin-top:14px;justify-content:space-between">
           <button class="btn btn-ghost btn-sm" onclick="lcStep2()">← トピックス選択に戻る</button>
           <div style="display:flex;gap:8px">
-            <button class="btn btn-ghost btn-sm" onclick="regenLetter()">🔄 再生成</button>
+            <button class="btn btn-ghost btn-sm" onclick="regenLetter()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg> 再生成</button>
             <button class="btn btn-green" onclick="lcStep4()">この内容で送付依頼する →</button>
           </div>
         </div>
@@ -889,7 +989,7 @@ tr:hover td { background: rgba(255,70,2,0.03); cursor: pointer; }
 
       <div id="lc-step4" style="display:none">
         <div style="background:rgba(255,70,2,0.05);border:1px solid rgba(255,70,2,0.15);border-radius:10px;padding:16px 18px;margin-bottom:16px">
-          <div style="font-size:13px;font-weight:600;color:var(--accent);margin-bottom:8px">📬 送付依頼の内容確認</div>
+          <div style="font-size:13px;font-weight:600;color:var(--accent);margin-bottom:8px"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/><path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></svg> 送付依頼の内容確認</div>
           <div style="font-size:12px;color:var(--text-mid);line-height:1.8">
             <div>宛先：<strong id="lc-confirm-company" style="color:var(--text)"></strong></div>
             <div>担当者：<strong id="lc-confirm-person" style="color:var(--text)"></strong></div>
@@ -900,7 +1000,7 @@ tr:hover td { background: rgba(255,70,2,0.03); cursor: pointer; }
         <div id="lc-confirm-preview" style="background:#FFF8F5;border-radius:8px;padding:14px 16px;font-size:12px;color:#a0c860;line-height:1.9;max-height:200px;overflow-y:auto"></div>
         <div style="margin-top:16px;display:flex;gap:8px;justify-content:space-between">
           <button class="btn btn-ghost btn-sm" onclick="lcStep3()">← 編集に戻る</button>
-          <button class="btn btn-green" onclick="submitNotice()">📬 送付依頼を確定する</button>
+          <button class="btn btn-green" onclick="submitNotice()"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg> 送付依頼を確定する</button>
         </div>
       </div>
     </div>
@@ -953,9 +1053,9 @@ tr:hover td { background: rgba(255,70,2,0.03); cursor: pointer; }
     </div>
     <div class="mbody">
       <div class="ap-tabs" id="ap-type-tabs">
-        <div class="apt on tv" onclick="switchApt('visit',this)">🚶 直接訪問</div>
-        <div class="apt tt" onclick="switchApt('tel',this)">📞 テルアポ</div>
-        <div class="apt tl" onclick="switchApt('letter',this)">✉️ 直筆手紙</div>
+        <div class="apt on tv" onclick="switchApt('visit',this)"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="5" r="1"/><path d="m9 20 1-7-2-3 5-3 2 3h3"/><path d="m6 20 2-4"/></svg> 直接訪問</div>
+        <div class="apt tt" onclick="switchApt('tel',this)"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.61 3.38 2 2 0 0 1 3.6 1h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L7.91 8.6a16 16 0 0 0 6 6l.92-.92a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg> テルアポ</div>
+        <div class="apt tl" onclick="switchApt('letter',this)"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg> 直筆手紙</div>
       </div>
       <div id="special-phase-ui" style="display:none;margin-bottom:14px"></div>
       <div class="fg" style="margin-bottom:14px">
@@ -965,30 +1065,30 @@ tr:hover td { background: rgba(255,70,2,0.03); cursor: pointer; }
       <div id="res-visit">
         <div class="flabel" style="margin-bottom:7px">訪問の結果</div>
         <div class="result-chips">
-          <div class="rchip" onclick="pickResult(this,'会えた')">✅ 会えた</div>
-          <div class="rchip" onclick="pickResult(this,'不在')">🏠 不在</div>
-          <div class="rchip" onclick="pickResult(this,'後日折返し')">📅 後日</div>
-          <div class="rchip" onclick="pickResult(this,'お断り')">❌ お断り</div>
-          <div class="rchip" onclick="pickResult(this,'アポ獲得')">🎯 アポ獲得！</div>
+          <div class="rchip" onclick="pickResult(this,'会えた')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> 会えた</div>
+          <div class="rchip" onclick="pickResult(this,'不在')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg> 不在</div>
+          <div class="rchip" onclick="pickResult(this,'後日折返し')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg> 後日</div>
+          <div class="rchip" onclick="pickResult(this,'お断り')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg> お断り</div>
+          <div class="rchip" onclick="pickResult(this,'アポ獲得')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg> アポ獲得！</div>
         </div>
       </div>
       <div id="res-tel" style="display:none">
         <div class="flabel" style="margin-bottom:7px">電話の結果</div>
         <div class="result-chips">
-          <div class="rchip" onclick="pickResult(this,'出た')">📞 出た</div>
-          <div class="rchip" onclick="pickResult(this,'不在')">📵 不在</div>
-          <div class="rchip" onclick="pickResult(this,'折返し待ち')">⏳ 折返し待ち</div>
-          <div class="rchip" onclick="pickResult(this,'拒否')">🚫 拒否</div>
-          <div class="rchip" onclick="pickResult(this,'アポ獲得')">🎯 アポ獲得！</div>
+          <div class="rchip" onclick="pickResult(this,'出た')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.61 3.38 2 2 0 0 1 3.6 1h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L7.91 8.6a16 16 0 0 0 6 6l.92-.92a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg> 出た</div>
+          <div class="rchip" onclick="pickResult(this,'不在')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg> 不在</div>
+          <div class="rchip" onclick="pickResult(this,'折返し待ち')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> 折返し待ち</div>
+          <div class="rchip" onclick="pickResult(this,'拒否')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg> 拒否</div>
+          <div class="rchip" onclick="pickResult(this,'アポ獲得')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg> アポ獲得！</div>
         </div>
       </div>
       <div id="res-letter" style="display:none">
         <div class="flabel" style="margin-bottom:7px">手紙の状況</div>
         <div class="result-chips">
-          <div class="rchip" onclick="pickResult(this,'送付済み')">✉️ 送付済み</div>
-          <div class="rchip" onclick="pickResult(this,'反応あり')">📬 反応あり</div>
-          <div class="rchip" onclick="pickResult(this,'反応なし')">📭 反応なし</div>
-          <div class="rchip" onclick="pickResult(this,'アポ獲得')">🎯 アポ獲得！</div>
+          <div class="rchip" onclick="pickResult(this,'送付済み')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg> 送付済み</div>
+          <div class="rchip" onclick="pickResult(this,'反応あり')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/><path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></svg> 反応あり</div>
+          <div class="rchip" onclick="pickResult(this,'反応なし')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg> 反応なし</div>
+          <div class="rchip" onclick="pickResult(this,'アポ獲得')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg> アポ獲得！</div>
         </div>
       </div>
       <div class="fg" style="margin-top:14px">
@@ -996,7 +1096,7 @@ tr:hover td { background: rgba(255,70,2,0.03); cursor: pointer; }
       </div>
       <div id="ap-next-preview" style="display:none;margin-top:12px;padding:10px 14px;background:var(--accent-dim);border:1px solid rgba(79,255,176,0.2);border-radius:8px;font-size:12px;color:var(--accent)"></div>
       <div class="phase-auto" id="ap-auto-notice" style="display:none">
-        <div class="pa-icon">🔄</div>
+        <div class="pa-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 2l4 4-4 4"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><path d="M7 22l-4-4 4-4"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg></div>
         <div><div class="pa-title" id="ap-auto-title"></div><div class="pa-desc" id="ap-auto-desc"></div></div>
       </div>
     </div>
@@ -1017,10 +1117,10 @@ tr:hover td { background: rgba(255,70,2,0.03); cursor: pointer; }
     <div id="dt-letter" style="padding:20px 26px;display:none"></div>
     <div id="dt-info" style="padding:20px 26px;display:none"></div>
     <div style="padding:14px 26px 20px;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center">
-      <button class="btn btn-ghost btn-sm" onclick="delCompany()" style="color:var(--red);border-color:var(--red)">🗑 削除</button>
+      <button class="btn btn-ghost btn-sm" onclick="delCompany()" style="color:var(--red);border-color:var(--red)"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg> 削除</button>
       <div style="display:flex;gap:8px">
         <button class="btn btn-ghost btn-sm" onclick="cm('m-detail')">閉じる</button>
-        <button class="btn btn-orange btn-sm" onclick="openApFromDetail()">＋ アプローチ記録</button>
+        <button class="btn btn-orange btn-sm" onclick="openApFromDetail()"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> アプローチ記録</button>
       </div>
     </div>
   </div>
@@ -1238,7 +1338,7 @@ async function startSNSSearch(forceAll = false) {
     <br>アタックリストに反映済みです。`;
 
   snsSearchRunning = false;
-  if (btnEl) { btnEl.disabled = false; btnEl.textContent = '🔍 SNS・求人URL調査を開始'; }
+  if (btnEl) { btnEl.disabled = false; btnEl.textContent = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg> SNS・求人URL調査を開始'; }
   if (btnAllEl) { btnAllEl.disabled = false; }
   document.getElementById('sns-panel').classList.remove('running');
 
@@ -1246,7 +1346,7 @@ async function startSNSSearch(forceAll = false) {
   updateBadges();
   renderList();
   renderApproach();
-  toast(`✅ SNS・求人URL調査完了！${jobFound + instaFound + fbFound}件のURLを取得しました`);
+  toast(`SNS・求人URL調査完了！${jobFound + instaFound + fbFound}件のURLを取得しました`);
 }
 
 const INDUSTRY_TO_TYPE = {
@@ -1298,7 +1398,7 @@ async function searchPlacesAPI(industry, area, limit) {
 function sendToDealwork(itemId) {
   const it = items.find(x => x.id === itemId);
   if (!it) return;
-  toast(`💼 ${it.company} をDEALWORKに送りました！DEALWORKを開いて商談を開始してください`);
+  toast(`${it.company} をDEALWORKに送りました！DEALWORKを開いて商談を開始してください`);
 }
 
 function cm(id) { document.getElementById(id).classList.remove('open'); }
@@ -1425,12 +1525,12 @@ let sortKey = 'score'; let sortDir = -1;
 const MARGIN = { '不動産・建設':28,'医療・クリニック・介護':35,'飲食・食品':18,'美容・エステ':42,'宿泊施設・ホテル・旅館':30,'観光施設・レジャー':25,'行政・公共施設':15,'学習塾・教育・スクール':38,'その他':20 };
 
 const PHASE = {
-  visit:        { label:'直接訪問',     icon:'🚶', pbcls:'pb-visit'  },
-  tel:          { label:'テルアポ',     icon:'📞', pbcls:'pb-tel'    },
-  letter:       { label:'直筆手紙',     icon:'✉️', pbcls:'pb-letter' },
-  letter_tel:   { label:'手紙→電話フォロー', icon:'📬', pbcls:'pb-letter' },
-  cooldown:     { label:'冷却期間中',   icon:'⏳', pbcls:'pb-none'   },
-  apo:          { label:'アポ獲得',     icon:'🎯', pbcls:'pb-apo'    },
+  visit:        { label:'直接訪問',     icon:`<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="5" r="1"/><path d="m9 20 1-7-2-3 5-3 2 3h3"/><path d="m6 20 2-4"/></svg>`, pbcls:'pb-visit'  },
+  tel:          { label:'テルアポ',     icon:`<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.61 3.38 2 2 0 0 1 3.6 1h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L7.91 8.6a16 16 0 0 0 6 6l.92-.92a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>`, pbcls:'pb-tel'    },
+  letter:       { label:'直筆手紙',     icon:`<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>`, pbcls:'pb-letter' },
+  letter_tel:   { label:'手紙→電話フォロー', icon:`<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/><path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></svg>`, pbcls:'pb-letter' },
+  cooldown:     { label:'冷却期間中',   icon:`<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>`, pbcls:'pb-none'   },
+  apo:          { label:'アポ獲得',     icon:`<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>`, pbcls:'pb-apo'    },
 };
 
 const SRCMAP = { gmap:'src-gmap', tdb:'src-tdb', ind:'src-ind', sns:'src-sns', man:'src-man' };
@@ -1589,10 +1689,10 @@ function renderList() {
   // URL バッジHTML生成
   const makeUrlBadges = (it) => {
     const badges = [];
-    if (it.website)  badges.push(`<a href="${it.website}" target="_blank" class="url-badge url-badge-hp" onclick="event.stopPropagation()">🔗 HP</a>`);
-    if (it.jobUrl)   badges.push(`<a href="${it.jobUrl}" target="_blank" class="url-badge url-badge-job" onclick="event.stopPropagation()">💼 求人</a>`);
-    if (it.instaUrl) badges.push(`<a href="${it.instaUrl}" target="_blank" class="url-badge url-badge-insta" onclick="event.stopPropagation()">📸 Insta</a>`);
-    if (it.fbUrl)    badges.push(`<a href="${it.fbUrl}" target="_blank" class="url-badge url-badge-fb" onclick="event.stopPropagation()">👍 FB</a>`);
+    if (it.website)  badges.push(`<a href="${it.website}" target="_blank" class="url-badge url-badge-hp" onclick="event.stopPropagation()"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg> HP</a>`);
+    if (it.jobUrl)   badges.push(`<a href="${it.jobUrl}" target="_blank" class="url-badge url-badge-job" onclick="event.stopPropagation()"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg> 求人</a>`);
+    if (it.instaUrl) badges.push(`<a href="${it.instaUrl}" target="_blank" class="url-badge url-badge-insta" onclick="event.stopPropagation()"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg> Insta</a>`);
+    if (it.fbUrl)    badges.push(`<a href="${it.fbUrl}" target="_blank" class="url-badge url-badge-fb" onclick="event.stopPropagation()"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg> FB</a>`);
     return badges.length ? `<div class="url-badges">${badges.join('')}</div>` : '';
   };
 
@@ -1628,9 +1728,9 @@ function renderList() {
           ${urlBadges}
           ${it.snsSearchedAt ? `<div style="font-size:9px;color:var(--text-dim);margin-top:2px;font-family:var(--font-mono)">調査済 ${it.snsSearchedAt}</div>` : ''}
           ${it.issueInfo?.scannedAt ? `<div style="margin-top:3px;display:flex;gap:4px;flex-wrap:wrap">
-            ${it.issueInfo.employees && it.issueInfo.employees !== '不明' ? `<span style="font-size:9px;padding:1px 6px;border-radius:3px;background:rgba(37,99,235,0.08);color:var(--blue);border:1px solid rgba(37,99,235,0.2)">👥 ${it.issueInfo.employees}</span>` : ''}
-            ${(it.issueInfo.hiringSignals||[]).some(h=>h.isRecent) ? `<span style="font-size:9px;padding:1px 6px;border-radius:3px;background:var(--green-dim);color:var(--green);border:1px solid rgba(22,163,74,0.2)">💼 求人中</span>` : ''}
-            ${it.issueInfo.growthSignal && it.issueInfo.growthSignal !== '不明' ? `<span style="font-size:9px;padding:1px 6px;border-radius:3px;background:var(--gold-dim);color:var(--gold);border:1px solid rgba(250,207,76,0.3)">📈 成長</span>` : ''}
+            ${it.issueInfo.employees && it.issueInfo.employees !== '不明' ? `<span style="font-size:9px;padding:1px 6px;border-radius:3px;background:rgba(37,99,235,0.08);color:var(--blue);border:1px solid rgba(37,99,235,0.2)">${it.issueInfo.employees}</span>` : ''}
+            ${(it.issueInfo.hiringSignals||[]).some(h=>h.isRecent) ? `<span style="font-size:9px;padding:1px 6px;border-radius:3px;background:var(--green-dim);color:var(--green);border:1px solid rgba(22,163,74,0.2)">求人中</span>` : ''}
+            ${it.issueInfo.growthSignal && it.issueInfo.growthSignal !== '不明' ? `<span style="font-size:9px;padding:1px 6px;border-radius:3px;background:var(--gold-dim);color:var(--gold);border:1px solid rgba(250,207,76,0.3)">成長</span>` : ''}
           </div>` : ''}
         </td>
         <td><div style="font-size:12px">${it.industry}</div><div style="font-size:10px;color:var(--text-mid);margin-top:1px">${it.area}</div></td>
@@ -1639,7 +1739,7 @@ function renderList() {
         <td><span class="src ${SRCMAP[it.source]||'src-man'}">${SRCLBL[it.source]||'—'}</span></td>
         <td>
           <span class="pb ${ph?.pbcls||'pb-none'}">${ph?.icon||''} ${ph?.label||'—'}</span>
-          ${an?`<div style="margin-top:4px"><span class="auto-alert">⚠ ${PHASE[an]?.label}へ移行推奨</span></div>`:''}
+          ${an?`<div style="margin-top:4px"><span class="auto-alert">! ${PHASE[an]?.label}へ移行推奨</span></div>`:''}
         </td>
         <td>
           ${trailDots?`<div class="ap-trail">${trailDots}</div>`:''}
@@ -1693,11 +1793,11 @@ function renderApproach() {
         <td><div class="co-name">${it.company}</div><div class="co-sub">${it.person||'—'} · ${it.area}</div></td>
         <td>
           <span class="pb ${ph?.pbcls||''}">${ph?.icon} ${ph?.label}</span>
-          ${an?`<div style="margin-top:3px"><span class="auto-alert">⚠ ${PHASE[an]?.label}へ移行推奨</span></div>`:''}
+          ${an?`<div style="margin-top:3px"><span class="auto-alert">! ${PHASE[an]?.label}へ移行推奨</span></div>`:''}
         </td>
         <td><div style="font-size:12px">${it.industry}</div><div style="font-size:10px;color:var(--text-mid)">${it.area}</div></td>
         <td><div class="ap-trail">${trailDots}</div><div class="ap-count">${(it.logs||[]).length}回</div></td>
-        <td style="font-size:12px;color:${overdue?'var(--red)':'var(--text-mid)'}">${it.nextDate||(overdue?'⚠ 期日超過':'未設定')}</td>
+        <td style="font-size:12px;color:${overdue?'var(--red)':'var(--text-mid)'}">${it.nextDate||(overdue?'期日超過':'未設定')}</td>
         <td><button class="btn btn-orange btn-xs" onclick="event.stopPropagation();openAp(${it.id})">+記録</button></td>
       </tr>`;
   }).join('');
@@ -1740,7 +1840,7 @@ function renderToday() {
   if (!total) {
     content.innerHTML = summaryHTML + `
       <div style="text-align:center;padding:40px 20px">
-        <div style="font-size:32px;margin-bottom:12px">✅</div>
+        <div style="font-size:32px;margin-bottom:12px"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div>
         <div style="font-size:14px;margin-bottom:4px">対応予定のアクションはありません</div>
         <div style="font-size:12px;color:var(--text-dim)">アタックリストから新しいアプローチを始めましょう</div>
       </div>`;
@@ -1754,7 +1854,7 @@ function renderToday() {
     const actionLabel = ph.label || '—';
     return `
       <div class="aq-card ${type}" onclick="openDetail(${it.id})">
-        <div class="aq-phase-ico ${phaseKey}">${ph.icon || '📌'}</div>
+        <div class="aq-phase-ico ${phaseKey}">${ph.icon || ''}</div>
         <div class="aq-info">
           <div class="aq-company">${it.company}</div>
           <div class="aq-detail">${it.person || '—'} · ${it.area || '—'} · ${(it.logs||[]).length}回アプローチ済</div>
@@ -1776,9 +1876,9 @@ function renderToday() {
     </div>`;
   content.innerHTML =
     summaryHTML +
-    sectionHTML(overdue,  '⚠ 期日超過 — 今すぐ対応', 'var(--red)',    'var(--red)',    'overdue') +
-    sectionHTML(dueToday, '⚡ 今日のアクション',       'var(--accent)', 'var(--accent)', 'today')   +
-    sectionHTML(soon,     '📅 3日以内に来る予定',      'var(--gold)',   'var(--gold)',   'soon');
+    sectionHTML(overdue,  '期日超過 — 今すぐ対応', 'var(--red)',    'var(--red)',    'overdue') +
+    sectionHTML(dueToday, '今日のアクション',       'var(--accent)', 'var(--accent)', 'today')   +
+    sectionHTML(soon,     '3日以内に来る予定',      'var(--gold)',   'var(--gold)',   'soon');
 }
 
 // ── APO ──
@@ -1786,15 +1886,15 @@ function renderApo() {
   const list = items.filter(x=>x.phase==='apo');
   const c = document.getElementById('apo-content');
   if (!list.length) {
-    c.innerHTML='<div style="text-align:center;padding:40px 20px"><div style="font-size:32px;margin-bottom:12px">🎯</div><div>アポ獲得済みの企業がありません</div></div>';
+    c.innerHTML='<div style="text-align:center;padding:40px 20px"><div style="font-size:32px;margin-bottom:12px"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg></div><div>アポ獲得済みの企業がありません</div></div>';
     return;
   }
   c.innerHTML = list.map(it => `
     <div onclick="openDetail(${it.id})" style="background:var(--surface);border:1px solid rgba(255,193,69,0.2);border-radius:10px;padding:16px 20px;margin-bottom:10px;display:flex;align-items:center;gap:16px;cursor:pointer" onmouseover="this.style.borderColor='var(--gold)'" onmouseout="this.style.borderColor='rgba(255,193,69,0.2)'">
-      <div style="font-size:24px">🎯</div>
+      <div style="font-size:22px"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg></div>
       <div style="flex:1"><div style="font-weight:600;font-size:14px">${it.company}</div><div style="font-size:11px;color:var(--text-mid);margin-top:2px">${it.industry} · ${it.area} · アプローチ${(it.logs||[]).length}回</div></div>
       ${it.nextDate?`<span style="font-size:12px;color:var(--gold)">商談: ${it.nextDate}</span>`:''}
-      <button class="btn btn-sm" style="background:var(--purple);color:white;font-weight:700" onclick="event.stopPropagation();sendToDealwork(${it.id})">💼 DEALWORKへ</button>
+      <button class="btn btn-sm" style="background:var(--purple);color:white;font-weight:700" onclick="event.stopPropagation();sendToDealwork(${it.id})"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg> DEALWORKへ</button>
     </div>
   `).join('');
 }
@@ -1856,7 +1956,7 @@ function saveAdd() {
   it.score = calcScore(it);
   items.unshift(it);
   save(); cm('m-add');
-  toast(`✅ ${co} を追加しました`);
+  toast(`${co} を追加しました`);
 }
 
 // ── 自動日程設定 ──
@@ -1937,23 +2037,23 @@ function calcNextDate(aptType, result) {
   if (result === 'アポ獲得' || result === '見込みなし') return null;
   if (aptType === 'visit' && ['不在','お断り'].includes(result)) {
     const date = addBusinessDays(AUTO_DAYS.visit_ng_to_tel);
-    return { date, label: `📞 テルアポ（${date}・平日）` };
+    return { date, label: `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.61 3.38 2 2 0 0 1 3.6 1h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L7.91 8.6a16 16 0 0 0 6 6l.92-.92a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg> テルアポ（${date}・平日）` };
   }
   if (aptType === 'tel' && ['不在','拒否'].includes(result)) {
     const date = addBusinessDays(AUTO_DAYS.tel_ng_to_visit);
-    return { date, label: `🚶 再訪問（${date}・平日）` };
+    return { date, label: `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="5" r="1"/><path d="m9 20 1-7-2-3 5-3 2 3h3"/><path d="m6 20 2-4"/></svg> 再訪問（${date}・平日）` };
   }
   if (aptType === 'letter' && result === '送付済み') {
     const date = addBusinessDays(AUTO_DAYS.letter_to_tel);
-    return { date, label: `📞 フォロー電話（${date}・平日）` };
+    return { date, label: `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.61 3.38 2 2 0 0 1 3.6 1h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L7.91 8.6a16 16 0 0 0 6 6l.92-.92a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg> フォロー電話（${date}・平日）` };
   }
   if (aptType === 'letter_tel' && ['不在','拒否','反応なし'].includes(result)) {
     const date = addBusinessDays(AUTO_DAYS.letter_tel_ng_to_cooldown);
-    return { date, label: `⏳ 再スタート予定（${date}・平日）` };
+    return { date, label: `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> 再スタート予定（${date}・平日）` };
   }
   if (aptType === 'cooldown' && result === '再スタート') {
     const date = addBusinessDays(AUTO_DAYS.cooldown_to_restart);
-    return { date, label: `🔄 再スタート（${date}・平日）` };
+    return { date, label: `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 2l4 4-4 4"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><path d="M7 22l-4-4 4-4"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg> 再スタート（${date}・平日）` };
   }
   return null;
 }
@@ -2006,29 +2106,29 @@ function showSpecialPhaseUI(it) {
     curAptType = 'letter_tel';
     ui.innerHTML = `
       <div style="background:rgba(255,124,53,0.08);border:1px solid rgba(255,124,53,0.2);border-radius:8px;padding:12px 14px;margin-bottom:14px">
-        <div style="font-size:12px;font-weight:600;color:var(--orange);margin-bottom:4px">📬 手紙フォロー電話</div>
+        <div style="font-size:12px;font-weight:600;color:var(--orange);margin-bottom:4px"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.61 3.38 2 2 0 0 1 3.6 1h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L7.91 8.6a16 16 0 0 0 6 6l.92-.92a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg> 手紙フォロー電話</div>
         <div style="font-size:11px;color:var(--text-mid)">手紙送付後3日のフォロー電話です。NGの場合は冷却期間（2週間）→ランクダウン→再スタートになります。</div>
       </div>
       <div class="flabel" style="margin-bottom:7px">電話の結果</div>
       <div class="result-chips">
-        <div class="rchip" onclick="pickResult(this,'アポ獲得')">🎯 アポ獲得！</div>
-        <div class="rchip" onclick="pickResult(this,'出た・商談へ')">📞 出た・前向き</div>
-        <div class="rchip" onclick="pickResult(this,'不在')">📵 不在</div>
-        <div class="rchip" onclick="pickResult(this,'拒否')">🚫 拒否</div>
-        <div class="rchip" onclick="pickResult(this,'反応なし')">📭 反応なし</div>
+        <div class="rchip" onclick="pickResult(this,'アポ獲得')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg> アポ獲得！</div>
+        <div class="rchip" onclick="pickResult(this,'出た・商談へ')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.61 3.38 2 2 0 0 1 3.6 1h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L7.91 8.6a16 16 0 0 0 6 6l.92-.92a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg> 出た・前向き</div>
+        <div class="rchip" onclick="pickResult(this,'不在')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg> 不在</div>
+        <div class="rchip" onclick="pickResult(this,'拒否')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg> 拒否</div>
+        <div class="rchip" onclick="pickResult(this,'反応なし')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg> 反応なし</div>
       </div>`;
   } else if (it.phase === 'cooldown') {
     curAptType = 'cooldown';
     const resume = it.nextDate || '2週間後';
     ui.innerHTML = `
       <div style="background:rgba(61,72,112,0.3);border:1px solid var(--border2);border-radius:8px;padding:12px 14px;margin-bottom:14px">
-        <div style="font-size:12px;font-weight:600;color:var(--text-mid);margin-bottom:4px">⏳ 冷却期間中</div>
+        <div style="font-size:12px;font-weight:600;color:var(--text-mid);margin-bottom:4px"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> 冷却期間中</div>
         <div style="font-size:11px;color:var(--text-dim)">再スタート予定: <strong style="color:var(--gold)">${resume}</strong></div>
       </div>
       <div class="flabel" style="margin-bottom:7px">どうしますか？</div>
       <div class="result-chips">
-        <div class="rchip" onclick="pickResult(this,'再スタート')">🔄 再スタート（訪問から）</div>
-        <div class="rchip" onclick="pickResult(this,'見込みなし')">❌ 見込みなし・除外</div>
+        <div class="rchip" onclick="pickResult(this,'再スタート')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 2l4 4-4 4"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><path d="M7 22l-4-4 4-4"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg> 再スタート（訪問から）</div>
+        <div class="rchip" onclick="pickResult(this,'見込みなし')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg> 見込みなし・除外</div>
       </div>`;
   }
 }
@@ -2055,7 +2155,7 @@ function pickResult(btn, val) {
   const next = calcNextDate(curAptType, val);
   if (next) {
     preview.style.display = 'block';
-    preview.innerHTML = `📅 次回アクション自動セット：<strong>${next.label}</strong>（${next.date}）`;
+    preview.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg> 次回アクション自動セット：<strong>${next.label}</strong>（${next.date}）`;
   } else {
     preview.style.display = 'none';
   }
@@ -2083,32 +2183,32 @@ function saveApproach() {
     it.phase = 'apo';
     entry.autoPhase = 'apo';
     it.nextDate = '';
-    toast('🎯 アポ獲得！おめでとうございます！');
+    toast('<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg> アポ獲得！おめでとうございます！');
   } else if (curSelectedResult === '見込みなし') {
     it.phase = 'excluded';
     entry.autoPhase = 'excluded';
     it.nextDate = '';
-    toast('❌ 見込みなしとして除外しました');
+    toast('見込みなしとして除外しました');
   } else if (curAptType === 'cooldown' && curSelectedResult === '再スタート') {
     entry.autoPhase = 'cooldown_end';
     it.phase = 'visit';
     rankDown(it);
-    toast(`🔄 再スタート！ランクを落として訪問から再開 → 次回: ${nextInfo?.date}`);
+    toast(`再スタート！ランクを落として訪問から再開 → 次回: ${nextInfo?.date}`);
   } else if (curAptType === 'letter_tel' && ['不在','拒否','反応なし'].includes(curSelectedResult)) {
     it.phase = 'cooldown';
     entry.autoPhase = 'cooldown';
     rankDown(it);
-    toast(`⏳ 冷却期間へ。ランクダウン。${nextInfo?.date} に再スタート予定`);
+    toast(`冷却期間へ。ランクダウン。${nextInfo?.date} に再スタート予定`);
   } else if (curAptType === 'letter' && curSelectedResult === '送付済み') {
     it.phase = 'letter_tel';
     entry.autoPhase = 'letter_tel';
-    toast(`✉️ 送付済み記録。${nextInfo?.date}（3日後）にフォロー電話をかけてください`);
+    toast(`<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg> 送付済み記録。${nextInfo?.date}（3日後）にフォロー電話をかけてください`);
   } else {
     const phaseNext = getNextPhaseInfo(it);
     if (phaseNext && phaseNext.phase !== it.phase) {
       it.phase = phaseNext.phase;
       entry.autoPhase = phaseNext.phase;
-      toast(`🔄 ${phaseNext.msg}　→ 次回: ${nextInfo?.date || '未定'}`);
+      toast(`${phaseNext.msg}　→ 次回: ${nextInfo?.date || '未定'}`);
       if (phaseNext.phase === 'letter') {
         save(); cm('m-ap');
         document.getElementById('ap-next-preview').style.display = 'none';
@@ -2117,7 +2217,7 @@ function saveApproach() {
         return;
       }
     } else {
-      toast(`📝 記録しました。次回: ${nextInfo?.date || '—'}`);
+      toast(`記録しました。次回: ${nextInfo?.date || '—'}`);
     }
   }
   save(); cm('m-ap');
@@ -2131,12 +2231,12 @@ async function startCollect() {
   const pref = document.getElementById('col-pref').value;
   // エリアを自動選択（法人密集ランキング上位から未収集を選ぶ）
   const area = getNextArea(pref);
-  if (!area) { toast('⚠ 全エリアの収集が完了しています！おめでとうございます🎉'); return; }
+  if (!area) { toast('全エリアの収集が完了しています！おめでとうございます！'); return; }
   const limitVal = document.getElementById('col-limit').value;
   const limit = parseInt(limitVal) || 100;
   const btn = document.getElementById('col-btn');
   btn.disabled = true;
-  btn.textContent = '⏳ PHASE 1: 企業収集中...';
+  btn.textContent = 'PHASE 1: 企業収集中...';
 
   // ── PHASE 1: Google Maps 収集 ──
   document.getElementById('col-think').classList.add('show');
@@ -2152,11 +2252,11 @@ async function startCollect() {
     document.getElementById('col-prog-label').textContent = `PHASE 1/2 — ${newItems.length}件取得・AIスコアリング中...`;
     if (newItems.length === 0) {
       newItems = genDemoItems(ind, area, limit);
-      toast('⚠ Places APIの結果が0件のためデモデータを使用');
+      toast('Places APIの結果が0件のためデモデータを使用');
     }
   } catch(e) {
     newItems = genDemoItems(ind, area, limit);
-    toast('⚠ Places API接続エラー。デモデータを使用');
+    toast('Places API接続エラー。デモデータを使用');
   }
 
   newItems.forEach(x => { x.score = calcScore(x); });
@@ -2168,8 +2268,8 @@ async function startCollect() {
 
   document.getElementById('col-prog-fill').style.width = '50%';
   document.getElementById('col-prog-label').textContent = `PHASE 1/2 完了 — ${newItems.length}件収集。PHASE 2: SNS・求人URL調査を開始します...`;
-  document.getElementById('col-think-txt').textContent = `🔍 PHASE 2 — SNS・求人URLを自動調査中...`;
-  btn.textContent = '⏳ PHASE 2: SNS・求人URL調査中...';
+  document.getElementById('col-think-txt').textContent = `PHASE 2 — SNS・求人URLを自動調査中...`;
+  btn.textContent = 'PHASE 2: SNS・求人URL調査中...';
 
   updateSNSCounts();
 
@@ -2185,7 +2285,7 @@ async function startCollect() {
   document.getElementById('col-prog-fill').style.width = '67%';
   document.getElementById('col-prog-label').textContent = 'PHASE 2/3 完了。PHASE 3: 課題情報スキャン開始...';
   document.getElementById('col-think-txt').textContent = '🧠 PHASE 3 — URL自動スキャン・課題情報抽出中...';
-  btn.textContent = '⏳ PHASE 3: 課題情報スキャン中...';
+  btn.textContent = 'PHASE 3: 課題情報スキャン中...';
 
   // URLがある企業のみ対象
   const phase3Targets = items.filter(it => newIds.has(it.id) && (it.jobUrl || it.instaUrl || it.fbUrl || it.website));
@@ -2204,11 +2304,11 @@ async function startCollect() {
   // ── 完了 ──
   document.getElementById('col-think').classList.remove('show');
   document.getElementById('col-prog-fill').style.width = '100%';
-  document.getElementById('col-prog-label').textContent = '✅ 全3工程完了！アタックリストに反映されました';
+  document.getElementById('col-prog-label').textContent = '全3工程完了！アタックリストに反映されました';
   setTimeout(() => { document.getElementById('col-prog').style.display = 'none'; }, 2500);
 
   btn.disabled = false;
-  btn.textContent = '⚡ 収集開始（自動でURL調査まで実行）';
+  btn.textContent = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg> 収集開始（自動でURL調査まで実行）';
   updateSNSCounts();
   save();
 
@@ -2216,7 +2316,7 @@ async function startCollect() {
   const instaFound = items.filter(it => newIds.has(it.id) && it.instaUrl).length;
   const fbFound = items.filter(it => newIds.has(it.id) && it.fbUrl).length;
   const issueFound = items.filter(it => newIds.has(it.id) && it.issueInfo?.scannedAt).length;
-  toast(`✅ 完了！${newItems.length}件収集 → 求人${jobFound}/Insta${instaFound}/FB${fbFound}件URL → ${issueFound}件の課題情報を抽出`);
+  toast(`完了！${newItems.length}件収集 → 求人${jobFound}/Insta${instaFound}/FB${fbFound}件URL → ${issueFound}件の課題情報を抽出`);
 }
 
 // ══ PHASE 3: URLスキャン → 課題情報抽出 ══
@@ -2349,16 +2449,16 @@ function openDetail(id) {
         <div style="display:flex;gap:10px;margin-top:8px;flex-wrap:wrap;align-items:center">
           <span class="pb ${ph?.pbcls||''}">${ph?.icon} ${ph?.label}</span>
           ${sc?`<span style="font-family:var(--font-mono);font-size:12px;color:${sc.total>=75?'var(--accent)':sc.total>=55?'var(--blue)':sc.total>=35?'var(--gold)':'var(--text-mid)'}">Score ${sc.total} · ${sc.rank}ランク</span>`:''}
-          ${it.referral?`<span style="font-size:12px;color:var(--purple)">👥 ${it.referral}</span>`:''}
-          ${it.phone?`<span style="font-size:12px;color:var(--text-mid)">📞 ${it.phone}</span>`:''}
+          ${it.referral?`<span style="font-size:12px;color:var(--purple)">${it.referral}</span>`:''}
+          ${it.phone?`<span style="font-size:12px;color:var(--text-mid)><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.61 3.38 2 2 0 0 1 3.6 1h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L7.91 8.6a16 16 0 0 0 6 6l.92-.92a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg> ${it.phone}</span>`:''}
         </div>
         <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px">
-          ${it.website?`<a href="${it.website}" target="_blank" class="url-badge url-badge-hp">🔗 公式HP</a>`:''}
-          ${it.jobUrl?`<a href="${it.jobUrl}" target="_blank" class="url-badge url-badge-job">💼 求人</a>`:''}
-          ${it.instaUrl?`<a href="${it.instaUrl}" target="_blank" class="url-badge url-badge-insta">📸 Instagram</a>`:''}
-          ${it.fbUrl?`<a href="${it.fbUrl}" target="_blank" class="url-badge url-badge-fb">👍 Facebook</a>`:''}
+          ${it.website?`<a href="${it.website}" target="_blank" class="url-badge url-badge-hp"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg> 公式HP</a>`:''}
+          ${it.jobUrl?`<a href="${it.jobUrl}" target="_blank" class="url-badge url-badge-job"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg> 求人</a>`:''}
+          ${it.instaUrl?`<a href="${it.instaUrl}" target="_blank" class="url-badge url-badge-insta"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg> Instagram</a>`:''}
+          ${it.fbUrl?`<a href="${it.fbUrl}" target="_blank" class="url-badge url-badge-fb"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg> Facebook</a>`:''}
         </div>
-        ${an?`<div class="phase-auto" style="margin-top:10px"><div class="pa-icon">🔄</div><div><div class="pa-title">移行推奨: → ${PHASE[an.phase].label}</div><div class="pa-desc">${an.msg}</div></div></div>`:''}
+        ${an?`<div class="phase-auto" style="margin-top:10px"><div class="pa-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 2l4 4-4 4"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><path d="M7 22l-4-4 4-4"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg></div><div><div class="pa-title">移行推奨: → ${PHASE[an.phase].label}</div><div class="pa-desc">${an.msg}</div></div></div>`:''}
       </div>
       <button class="mclose" onclick="cm('m-detail')">✕</button>
     </div>`;
@@ -2370,12 +2470,12 @@ function openDetail(id) {
     const ri=r=>r==='アポ獲得'?'color:var(--accent)':['会えた','出た','後日折返し','送付済み','反応あり'].includes(r)?'color:var(--gold)':['不在','拒否','お断り','反応なし'].includes(r)?'color:var(--red)':'';
     tl.innerHTML=[...it.logs].reverse().map(l=>`
       <div class="tl-row">
-        <div class="tl-ico ${l.autoPhase?'ti-a':tc[l.type]||''}">${PHASE[l.type]?.icon||'📌'}</div>
+        <div class="tl-ico ${l.autoPhase?'ti-a':tc[l.type]||''}">${PHASE[l.type]?.icon||''}</div>
         <div class="tl-body">
           <div class="tl-date">${l.date} ${l.time||''} — ${PHASE[l.type]?.label||l.type}</div>
           <div class="tl-res" style="${ri(l.result)}">${l.result}</div>
           ${l.memo?`<div class="tl-memo">${l.memo}</div>`:''}
-          ${l.autoPhase?`<div class="tl-auto-tag">🔄 自動移行 → ${PHASE[l.autoPhase]?.label||l.autoPhase}</div>`:''}
+          ${l.autoPhase?`<div class="tl-auto-tag"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 2l4 4-4 4"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><path d="M7 22l-4-4 4-4"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg> 自動移行 → ${PHASE[l.autoPhase]?.label||l.autoPhase}</div>`:''}
           ${l.nextDate?`<div class="tl-next">次: ${l.nextDate} / ${l.nextAction||''}</div>`:''}
         </div>
       </div>`).join('');
@@ -2390,10 +2490,10 @@ function openDetail(id) {
     <div style="margin-bottom:14px">
       <div style="font-family:var(--font-mono);font-size:9px;color:var(--blue);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:8px">// URL情報</div>
       <div style="display:flex;gap:8px;flex-wrap:wrap">
-        ${it.website?`<a href="${it.website}" target="_blank" class="url-badge url-badge-hp">🔗 公式HP</a>`:'<span style="font-size:11px;color:var(--text-dim)">HP未登録</span>'}
-        ${it.jobUrl?`<a href="${it.jobUrl}" target="_blank" class="url-badge url-badge-job">💼 求人URL</a>`:''}
-        ${it.instaUrl?`<a href="${it.instaUrl}" target="_blank" class="url-badge url-badge-insta">📸 Instagram</a>`:''}
-        ${it.fbUrl?`<a href="${it.fbUrl}" target="_blank" class="url-badge url-badge-fb">👍 Facebook</a>`:''}
+        ${it.website?`<a href="${it.website}" target="_blank" class="url-badge url-badge-hp"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg> 公式HP</a>`:'<span style="font-size:11px;color:var(--text-dim)">HP未登録</span>'}
+        ${it.jobUrl?`<a href="${it.jobUrl}" target="_blank" class="url-badge url-badge-job"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg> 求人URL</a>`:''}
+        ${it.instaUrl?`<a href="${it.instaUrl}" target="_blank" class="url-badge url-badge-insta"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg> Instagram</a>`:''}
+        ${it.fbUrl?`<a href="${it.fbUrl}" target="_blank" class="url-badge url-badge-fb"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg> Facebook</a>`:''}
       </div>
       ${it.snsSearchedAt?`<div style="font-size:10px;color:var(--text-dim);margin-top:6px;font-family:var(--font-mono)">SNS調査日: ${it.snsSearchedAt}</div>`:'<div style="font-size:10px;color:var(--text-dim);margin-top:6px">SNS・求人URL未調査 — 情報収集ページから調査できます</div>'}
     </div>
@@ -2422,7 +2522,7 @@ function openDetail(id) {
       ` : ''}
     </div>` : `
     <div style="padding:8px 12px;background:var(--surface2);border-radius:6px;font-size:11px;color:var(--text-dim);margin-bottom:14px">
-      📊 課題調査未実施 — 次回の収集ボタン実行時に自動スキャンされます
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg> 課題調査未実施 — 次回の収集ボタン実行時に自動スキャンされます
     </div>`}
     ${sc?`<div style="background:var(--surface2);border:1px solid rgba(79,255,176,0.15);border-radius:8px;padding:14px">
       <div style="font-family:var(--font-mono);font-size:9px;color:var(--accent);letter-spacing:0.15em;margin-bottom:10px">// AI SCORE DETAIL</div>
@@ -2446,16 +2546,16 @@ function letterTemplate(it) {
         AIがHP・SNSをスキャンしてトピックスを抽出し、<strong style="color:var(--text)">その企業専用の手紙文</strong>を自動生成します。
       </div>
       <button class="btn btn-green" onclick="cm('m-detail');openLetterComposer(${it.id})">
-        ✉️ 手紙を作成する
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg> 手紙を作成する
       </button>
     </div>
     ${hasNotice ? `
       <div style="background:rgba(255,70,2,0.05);border:1px solid rgba(255,70,2,0.15);border-radius:8px;padding:12px 14px;margin-bottom:14px">
-        <div style="font-size:12px;color:var(--accent);font-weight:600;margin-bottom:4px">📬 送付依頼済み</div>
-        <div style="font-size:11px;color:var(--text-mid)">依頼日: ${hasNotice.requestedAt} / 状態: ${hasNotice.status === 'sent' ? '✅ 送付済み' : '⏳ 送付待ち'}</div>
+        <div style="font-size:12px;color:var(--accent);font-weight:600;margin-bottom:4px"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> 送付依頼済み</div>
+        <div style="font-size:11px;color:var(--text-mid)">依頼日: ${hasNotice.requestedAt} / 状態: ${hasNotice.status === 'sent' ? '送付済み' : '送付待ち'}</div>
       </div>` : ''}
     <div style="font-size:11px;color:var(--text-dim);background:var(--surface2);padding:10px 14px;border-radius:8px">
-      💡 手紙フェーズに移行すると自動でコンポーザーが起動します。詳細画面のこのタブからも手動で起動できます。
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg> 手紙フェーズに移行すると自動でコンポーザーが起動します。詳細画面のこのタブからも手動で起動できます。
     </div>
   `;
 }
@@ -2469,7 +2569,7 @@ function delCompany() {
   const it=items.find(x=>x.id===selId);
   if (!confirm(`「${it?.company}」を削除しますか？`)) return;
   items=items.filter(x=>x.id!==selId);
-  save(); cm('m-detail'); toast('🗑 削除しました');
+  save(); cm('m-detail'); toast('<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg> 削除しました');
 }
 
 // ── EXPORT ──
@@ -2485,7 +2585,7 @@ function exportCSV() {
   const url=URL.createObjectURL(blob);
   const a=document.createElement('a'); a.href=url;
   a.download='fieldwork_'+todayJST()+'.csv'; a.click();
-  toast('⬇ CSVエクスポートしました');
+  toast('<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> CSVエクスポートしました');
 }
 
 // ══════════════════════════════
@@ -2638,7 +2738,7 @@ function renderTopics() {
         </div>
         <div class="tc-text">${t.text}</div>
         <a class="tc-url" href="${t.url}" target="_blank" onclick="event.stopPropagation()">
-          🔗 ${t.url}
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg> ${t.url}
         </a>
       </div>
     </div>
@@ -2689,7 +2789,7 @@ URL: ${url}
       lcTopics.unshift(newTopic);
       document.getElementById(loadId)?.remove();
       renderTopics();
-      toast('✅ URLをスキャンしてトピックスを追加しました');
+      toast('URLをスキャンしてトピックスを追加しました');
       return;
     }
   } catch(e) {}
@@ -2800,7 +2900,7 @@ ${topicSentence}
 
 【あなたの会社名】
 【あなたの名前】
-📞 【電話番号】`;
+Tel: 【電話番号】`;
 }
 
 async function regenLetter() { await generateLetter(); }
@@ -2841,7 +2941,7 @@ function submitNotice() {
   save();
   cm('m-letter');
   renderNotice();
-  toast('📬 送付依頼を記録しました！送付依頼ページで確認できます');
+  toast('送付依頼を記録しました！送付依頼ページで確認できます');
   updateNoticeBadge();
 }
 
@@ -2852,7 +2952,7 @@ function renderNotice() {
   const sent = notices.filter(n => n.status === 'sent');
   updateNoticeBadge();
   if (!notices.length) {
-    content.innerHTML = `<div style="text-align:center;padding:40px 20px"><div style="font-size:32px;margin-bottom:12px">📬</div><div>送付依頼はまだありません</div></div>`;
+    content.innerHTML = `<div style="text-align:center;padding:40px 20px"><div style="font-size:28px;margin-bottom:12px;opacity:0.4"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/><path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></svg></div><div>送付依頼はまだありません</div></div>`;
     return;
   }
   const renderGroup = (list, label) => !list.length ? '' : `
@@ -2866,7 +2966,7 @@ function renderNotice() {
           </div>
           <div style="display:flex;gap:8px;align-items:center">
             ${n.status==='pending'
-              ? `<button class="btn btn-green btn-sm" onclick="markNoticeSent(${n.id})">✅ 送付済みにする</button>`
+              ? `<button class="btn btn-green btn-sm" onclick="markNoticeSent(${n.id})"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> 送付済みにする</button>`
               : `<span style="font-family:var(--font-mono);font-size:11px;color:var(--accent)">✓ 送付済み</span>`
             }
           </div>
@@ -2877,7 +2977,7 @@ function renderNotice() {
           </div>` : ''}
         <div class="notice-letter-preview">${n.letterText}</div>
         <div style="margin-top:8px;text-align:right">
-          <button class="btn btn-ghost btn-xs" onclick="previewNotice(${n.id})">📄 全文を見る</button>
+          <button class="btn btn-ghost btn-xs" onclick="previewNotice(${n.id})"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg> 全文を見る</button>
         </div>
       </div>
     `).join('')}`;
@@ -2892,7 +2992,7 @@ function markNoticeSent(id) {
   n.status = 'sent';
   sb.set('items', 'fw_notices', notices).catch(()=>{});
   renderNotice();
-  toast('✅ 送付済みとして記録しました');
+  toast('送付済みとして記録しました');
 }
 
 function previewNotice(id) {
