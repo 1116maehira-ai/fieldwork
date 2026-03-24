@@ -25,6 +25,8 @@
   --purple: #7C3AED;
   --purple-dim: rgba(124,58,237,0.08);
   --red: #EF4444;
+  --green: #16A34A;
+  --green-dim: rgba(22,163,74,0.08);
   --text: #1A1A1A;
   --text-mid: #666666;
   --text-dim: #AAAAAA;
@@ -86,6 +88,8 @@ body { background: var(--bg); color: var(--text); font-family: var(--font-body);
 .btn-orange:hover { background: #ff9055; transform: translateY(-1px); }
 .btn-ghost { background: transparent; color: var(--text-mid); border: 1px solid var(--border2); }
 .btn-ghost:hover { background: var(--surface2); color: var(--text); }
+.btn-blue { background: var(--blue); color: white; font-weight: 700; }
+.btn-blue:hover { background: #1d4ed8; transform: translateY(-1px); }
 .btn-sm { padding: 5px 10px; font-size: 11px; }
 .btn-xs { padding: 3px 8px; font-size: 10px; }
 
@@ -124,6 +128,20 @@ tr:last-child td { border-bottom: none; }
 tr:hover td { background: rgba(255,70,2,0.03); cursor: pointer; }
 .co-name { font-weight: 500; font-size: 13px; }
 .co-sub { font-size: 11px; color: var(--text-mid); margin-top: 2px; font-family: var(--font-mono); }
+
+/* ── URL BADGES ── */
+.url-badges { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 4px; }
+.url-badge {
+  display: inline-flex; align-items: center; gap: 3px;
+  padding: 2px 7px; border-radius: 4px; font-size: 10px;
+  font-family: var(--font-mono); border: 1px solid; text-decoration: none;
+  transition: all 0.15s; white-space: nowrap;
+}
+.url-badge:hover { transform: translateY(-1px); }
+.url-badge-hp   { border-color: rgba(37,99,235,0.3); color: var(--blue); background: var(--blue-dim); }
+.url-badge-job  { border-color: rgba(22,163,74,0.3); color: var(--green); background: var(--green-dim); }
+.url-badge-insta { border-color: rgba(168,85,247,0.3); color: var(--purple); background: var(--purple-dim); }
+.url-badge-fb   { border-color: rgba(37,99,235,0.25); color: #1877F2; background: rgba(24,119,242,0.07); }
 
 /* ── SCORE RING ── */
 .score-ring { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-family: var(--font-mono); font-size: 11px; font-weight: 500; border: 2px solid; flex-shrink: 0; }
@@ -262,6 +280,34 @@ tr:hover td { background: rgba(255,70,2,0.03); cursor: pointer; }
 .src-card-name { font-weight: 600; font-size: 13px; margin-bottom: 4px; }
 .src-card-desc { font-size: 11px; color: var(--text-mid); }
 .src-card-tag { position: absolute; top: 10px; right: 10px; font-size: 10px; }
+
+/* ── SNS SEARCH PANEL ── */
+.sns-search-panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 22px;
+  margin-bottom: 18px;
+}
+.sns-search-panel.running {
+  border-color: rgba(37,99,235,0.3);
+  background: rgba(37,99,235,0.02);
+}
+.sns-progress-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 8px 0; border-bottom: 1px solid var(--border);
+  font-size: 12px;
+}
+.sns-progress-item:last-child { border-bottom: none; }
+.sns-progress-status {
+  font-family: var(--font-mono); font-size: 10px;
+  padding: 2px 8px; border-radius: 4px;
+  white-space: nowrap;
+}
+.sps-done  { background: var(--green-dim); color: var(--green); border: 1px solid rgba(22,163,74,0.2); }
+.sps-run   { background: var(--blue-dim); color: var(--blue); border: 1px solid rgba(37,99,235,0.2); }
+.sps-wait  { background: var(--surface3); color: var(--text-dim); border: 1px solid var(--border2); }
+.sps-error { background: rgba(239,68,68,0.08); color: var(--red); border: 1px solid rgba(239,68,68,0.2); }
 
 /* ── FUNNEL (dashboard) ── */
 .funnel-row { display: flex; align-items: center; gap: 10px; margin-bottom: 9px; }
@@ -470,9 +516,6 @@ tr:hover td { background: rgba(255,70,2,0.03); cursor: pointer; }
     </div>
 
     </div>
-    <div class="nav-item" onclick="goPage('deal-new',this)" id="nav-deal-new" style="display:none">
-      <span>📝</span>ヒアリング中
-    </div>
 
     <div class="nav-group" style="margin-top:10px">// 分析</div>
     <div class="nav-item" onclick="goPage('dash',this)">
@@ -556,7 +599,7 @@ tr:hover td { background: rgba(255,70,2,0.03); cursor: pointer; }
       <table>
         <thead><tr>
           <th onclick="sortTable('score')">AIスコア ↕</th>
-          <th onclick="sortTable('company')">会社名</th>
+          <th onclick="sortTable('company')">会社名 / URL情報</th>
           <th>業種・エリア</th>
           <th>推定月商</th>
           <th>シグナル</th>
@@ -626,8 +669,51 @@ tr:hover td { background: rgba(255,70,2,0.03); cursor: pointer; }
         <div class="prog-label" id="col-prog-label">0 / 100 件...</div>
       </div>
       <div style="display:flex;align-items:center;gap:14px;margin-top:4px">
-        <button class="btn btn-green" onclick="startCollect()" id="col-btn">⚡ 収集開始</button>
-        <span style="font-family:var(--font-mono);font-size:10px;color:var(--text-dim)">※実運用ではAPIと連携します</span>
+        <button class="btn btn-green" onclick="startCollect()" id="col-btn">⚡ 収集開始（自動でURL調査まで実行）</button>
+        <span style="font-family:var(--font-mono);font-size:10px;color:var(--text-dim)">企業収集 → SNS/求人URL調査 → スコアリングまで自動実行</span>
+      </div>
+    </div>
+
+    <!-- ★ STEP1: SNS・求人URL自動調査パネル -->
+    <div class="sns-search-panel" id="sns-panel">
+      <div class="fsec" style="margin-top:0">// SNS・求人URL 自動調査（STEP1）</div>
+      <div style="font-size:12px;color:var(--text-mid);margin-bottom:16px;line-height:1.8">
+        収集済み企業を全件スキャンし、<strong style="color:var(--text)">求人URL・Instagram・Facebook</strong> を自動で検索・保存します。<br>
+        Custom Search APIを使用。1企業あたり3回の検索を行います。
+      </div>
+
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;padding:10px 14px;background:var(--surface2);border-radius:8px">
+        <div style="font-size:12px;color:var(--text-mid)">
+          対象企業：<strong id="sns-target-count" style="color:var(--text)">0</strong> 件
+          ／ 調査済み：<strong id="sns-done-count" style="color:var(--green)">0</strong> 件
+          ／ 未調査：<strong id="sns-pending-count" style="color:var(--orange)">0</strong> 件
+        </div>
+        <div style="margin-left:auto;display:flex;gap:8px">
+          <button class="btn btn-blue btn-sm" onclick="startSNSSearch(false)" id="sns-btn">
+            🔍 SNS・求人URL調査を開始
+          </button>
+          <button class="btn btn-ghost btn-sm" onclick="startSNSSearch(true)" id="sns-btn-all">
+            🔄 全件再調査
+          </button>
+        </div>
+      </div>
+
+      <!-- 進捗表示エリア -->
+      <div id="sns-progress-area" style="display:none">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+          <div style="font-family:var(--font-mono);font-size:10px;color:var(--blue);letter-spacing:0.1em">// 調査進捗</div>
+          <div style="font-family:var(--font-mono);font-size:10px;color:var(--text-dim)" id="sns-prog-text">0 / 0</div>
+        </div>
+        <div class="prog-wrap" style="margin-bottom:12px">
+          <div class="prog-fill" id="sns-prog-fill" style="width:0%;background:linear-gradient(90deg,var(--blue),var(--purple))"></div>
+        </div>
+        <div id="sns-progress-list" style="max-height:300px;overflow-y:auto;border:1px solid var(--border);border-radius:8px;padding:4px 0"></div>
+      </div>
+
+      <!-- 完了サマリー -->
+      <div id="sns-done-summary" style="display:none;margin-top:12px;padding:12px 14px;background:var(--green-dim);border:1px solid rgba(22,163,74,0.2);border-radius:8px">
+        <div style="font-size:12px;font-weight:600;color:var(--green);margin-bottom:6px">✅ 調査完了</div>
+        <div id="sns-done-text" style="font-size:11px;color:var(--text-mid)"></div>
       </div>
     </div>
 
@@ -640,8 +726,8 @@ tr:hover td { background: rgba(255,70,2,0.03); cursor: pointer; }
           <div><div style="font-weight:600;font-size:13px;margin-bottom:2px">Google Maps API でエリア×業種スキャン</div><div style="font-size:12px;color:var(--text-mid)">業種・住所・電話・評価・レビュー数を自動取得</div></div>
         </div>
         <div style="display:flex;gap:12px">
-          <div style="width:26px;height:26px;border-radius:50%;border:1px solid rgba(58,142,255,0.3);display:flex;align-items:center;justify-content:center;font-family:var(--font-mono);font-size:11px;color:var(--blue);flex-shrink:0">2</div>
-          <div><div style="font-weight:600;font-size:13px;margin-bottom:2px">Indeed / アグレ / ジョブアンテナで求人チェック</div><div style="font-size:12px;color:var(--text-mid)">アグレはIndeedと連携しているため実質カバー可。ジョブアンテナは別途連携</div></div>
+          <div style="width:26px;height:26px;border-radius:50%;border:1px solid rgba(37,99,235,0.3);display:flex;align-items:center;justify-content:center;font-family:var(--font-mono);font-size:11px;color:var(--blue);flex-shrink:0">2</div>
+          <div><div style="font-weight:600;font-size:13px;margin-bottom:2px">Custom Search API で求人・SNS URL自動収集 ← NEW</div><div style="font-size:12px;color:var(--text-mid)">全企業を自動ループ。求人・Instagram・FacebookのURLを取得してリストに追加</div></div>
         </div>
         <div style="display:flex;gap:12px">
           <div style="width:26px;height:26px;border-radius:50%;border:1px solid rgba(255,124,53,0.3);display:flex;align-items:center;justify-content:center;font-family:var(--font-mono);font-size:11px;color:var(--orange);flex-shrink:0">3</div>
@@ -739,6 +825,7 @@ tr:hover td { background: rgba(255,70,2,0.03); cursor: pointer; }
   </div>
 </div>
 
+<!-- ══ MODAL: 手紙コンポーザー ══ -->
 <div class="modal-backdrop" id="m-letter">
   <div class="modal lc-modal">
     <div class="mhead">
@@ -749,8 +836,6 @@ tr:hover td { background: rgba(255,70,2,0.03); cursor: pointer; }
       <button class="mclose" onclick="cm('m-letter')">✕</button>
     </div>
     <div class="mbody">
-
-      <!-- ステップ表示 -->
       <div class="lc-steps">
         <div class="lc-step done" id="lcstep-1">① HP・SNS スキャン</div>
         <div class="lc-step active" id="lcstep-2">② トピックス選択</div>
@@ -758,7 +843,6 @@ tr:hover td { background: rgba(255,70,2,0.03); cursor: pointer; }
         <div class="lc-step" id="lcstep-4">④ 送付依頼</div>
       </div>
 
-      <!-- STEP 2: トピックス -->
       <div id="lc-step2">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
           <div style="font-family:var(--font-mono);font-size:10px;color:var(--accent);letter-spacing:0.15em">// 検出されたトピックス（使うものを選択）</div>
@@ -773,7 +857,6 @@ tr:hover td { background: rgba(255,70,2,0.03); cursor: pointer; }
         </div>
       </div>
 
-      <!-- STEP 3: 文章生成・編集 -->
       <div id="lc-step3" style="display:none">
         <div id="lc-generating" class="thinking" style="margin-bottom:12px">
           <div class="td"></div><div class="td"></div><div class="td"></div>
@@ -793,7 +876,6 @@ tr:hover td { background: rgba(255,70,2,0.03); cursor: pointer; }
         </div>
       </div>
 
-      <!-- STEP 4: 送付依頼確認 -->
       <div id="lc-step4" style="display:none">
         <div style="background:rgba(255,70,2,0.05);border:1px solid rgba(255,70,2,0.15);border-radius:10px;padding:16px 18px;margin-bottom:16px">
           <div style="font-size:13px;font-weight:600;color:var(--accent);margin-bottom:8px">📬 送付依頼の内容確認</div>
@@ -810,10 +892,11 @@ tr:hover td { background: rgba(255,70,2,0.03); cursor: pointer; }
           <button class="btn btn-green" onclick="submitNotice()">📬 送付依頼を確定する</button>
         </div>
       </div>
-
     </div>
   </div>
 </div>
+
+<!-- ══ MODAL: 手動追加 ══ -->
 <div class="modal-backdrop" id="m-add">
   <div class="modal modal-w-md">
     <div class="mhead"><div class="mtitle">企業を追加</div><button class="mclose" onclick="cm('m-add')">✕</button></div>
@@ -970,6 +1053,191 @@ const sb = {
 const MAPS_API_KEY = 'AIzaSyDA03qagvN4G6uJ91HXOqpgpS93iy2psSc';
 const GAS_URL = 'https://script.google.com/macros/s/AKfycbxPsOVwgT7K-UgBQrd73KSC6hcJTB0Gt-48-MgkOfpBJ94TWUC2UscXacbvBUTvI3y2/exec';
 
+// ══ CUSTOM SEARCH API 設定（STEP1） ══
+const CUSTOM_SEARCH_API_KEY = 'AIzaSyDA03qagvN4G6uJ91HXOqpgpS93iy2psSc'; // Google CloudのAPIキー（Custom Search API有効化済み）
+const CUSTOM_SEARCH_ENGINE_ID = '56317fe5a67844e95'; // 引き継ぎ資料記載のID
+
+// Custom Search APIで1件検索（URL取得）
+async function customSearch(query) {
+  try {
+    const url = `https://www.googleapis.com/customsearch/v1?key=${CUSTOM_SEARCH_API_KEY}&cx=${CUSTOM_SEARCH_ENGINE_ID}&q=${encodeURIComponent(query)}&num=1`;
+    const res = await fetch(url);
+    const data = await res.json();
+    if (data.items && data.items.length > 0) {
+      return data.items[0].link || null;
+    }
+    return null;
+  } catch(e) {
+    console.error('Custom Search error:', e);
+    return null;
+  }
+}
+
+// ══ SNS・求人URL 自動調査（STEP1メイン） ══
+let snsSearchRunning = false;
+
+function updateSNSCounts() {
+  const total = items.length;
+  const done = items.filter(it => it.snsSearchedAt).length;
+  const pending = total - done;
+  const tcEl = document.getElementById('sns-target-count');
+  const dcEl = document.getElementById('sns-done-count');
+  const pcEl = document.getElementById('sns-pending-count');
+  if (tcEl) tcEl.textContent = total;
+  if (dcEl) dcEl.textContent = done;
+  if (pcEl) pcEl.textContent = pending;
+}
+
+// 収集後に自動呼び出し（IDセット指定・進捗コールバック付き）
+async function startSNSSearchForIds(idSet, onProgress) {
+  const targets = items.filter(it => idSet.has(it.id));
+  if (!targets.length) return;
+
+  snsSearchRunning = true;
+  let doneCount = 0;
+
+  for (let i = 0; i < targets.length; i++) {
+    const it = targets[i];
+    try {
+      const coName = it.company;
+      const area = it.area || '';
+      const [jobUrl, instaUrl, fbUrl] = await Promise.all([
+        customSearch(`${coName} ${area} 求人`),
+        customSearch(`${coName} ${area} Instagram`),
+        customSearch(`${coName} ${area} Facebook`),
+      ]);
+      const item = items.find(x => x.id === it.id);
+      if (item) {
+        if (jobUrl)   item.jobUrl = jobUrl;
+        if (instaUrl) item.instaUrl = instaUrl;
+        if (fbUrl)    item.fbUrl = fbUrl;
+        item.snsSearchedAt = todayJST();
+        if (jobUrl && !(item.signals || []).includes('hire')) {
+          item.signals = [...(item.signals || []), 'hire'];
+          item.score = calcScore(item);
+        }
+      }
+    } catch(e) {}
+
+    doneCount++;
+    if (onProgress) onProgress(doneCount, targets.length);
+    if (doneCount % 5 === 0) await sb.set('items', 'fw_items', items);
+    await new Promise(r => setTimeout(r, 100));
+  }
+
+  await sb.set('items', 'fw_items', items);
+  snsSearchRunning = false;
+  updateBadges();
+  renderList();
+}
+
+// 情報収集パネルの「調査開始」ボタン用（未調査 or 全件）
+async function startSNSSearch(forceAll = false) {
+  if (snsSearchRunning) { toast('調査実行中です...'); return; }
+
+  const targets = forceAll
+    ? [...items]
+    : items.filter(it => !it.snsSearchedAt);
+
+  if (targets.length === 0) {
+    toast('調査対象の企業がありません。まず企業を収集してください。');
+    return;
+  }
+
+  snsSearchRunning = true;
+  const btnEl = document.getElementById('sns-btn');
+  const btnAllEl = document.getElementById('sns-btn-all');
+  if (btnEl) { btnEl.disabled = true; btnEl.textContent = '調査中...'; }
+  if (btnAllEl) { btnAllEl.disabled = true; }
+
+  document.getElementById('sns-progress-area').style.display = 'block';
+  document.getElementById('sns-done-summary').style.display = 'none';
+  document.getElementById('sns-panel').classList.add('running');
+
+  const progList = document.getElementById('sns-progress-list');
+  progList.innerHTML = '';
+
+  let doneCount = 0;
+  let jobFound = 0, instaFound = 0, fbFound = 0;
+
+  for (let i = 0; i < targets.length; i++) {
+    const it = targets[i];
+    const pct = Math.round((i / targets.length) * 100);
+    document.getElementById('sns-prog-fill').style.width = pct + '%';
+    document.getElementById('sns-prog-text').textContent = `${i} / ${targets.length} 件`;
+
+    const rowId = `sns-row-${it.id}`;
+    progList.insertAdjacentHTML('afterbegin', `
+      <div class="sns-progress-item" id="${rowId}">
+        <span class="sns-progress-status sps-run">処理中</span>
+        <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${it.company}</span>
+        <span style="font-size:10px;color:var(--text-dim);font-family:var(--font-mono)">${it.area || ''}</span>
+      </div>`);
+    progList.scrollTop = 0;
+
+    try {
+      const [jobUrl, instaUrl, fbUrl] = await Promise.all([
+        customSearch(`${it.company} ${it.area || ''} 求人`),
+        customSearch(`${it.company} ${it.area || ''} Instagram`),
+        customSearch(`${it.company} ${it.area || ''} Facebook`),
+      ]);
+      const item = items.find(x => x.id === it.id);
+      if (item) {
+        if (jobUrl)   { item.jobUrl = jobUrl;     jobFound++; }
+        if (instaUrl) { item.instaUrl = instaUrl; instaFound++; }
+        if (fbUrl)    { item.fbUrl = fbUrl;       fbFound++; }
+        item.snsSearchedAt = todayJST();
+        if (jobUrl && !(item.signals || []).includes('hire')) {
+          item.signals = [...(item.signals || []), 'hire'];
+          item.score = calcScore(item);
+        }
+      }
+      const resultParts = [];
+      if (jobUrl)   resultParts.push('<span style="color:var(--green)">求人✓</span>');
+      if (instaUrl) resultParts.push('<span style="color:var(--purple)">Insta✓</span>');
+      if (fbUrl)    resultParts.push('<span style="color:#1877F2">FB✓</span>');
+      if (!jobUrl && !instaUrl && !fbUrl) resultParts.push('<span style="color:var(--text-dim)">未検出</span>');
+      const rowEl = document.getElementById(rowId);
+      if (rowEl) rowEl.innerHTML = `
+        <span class="sns-progress-status sps-done">完了</span>
+        <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${it.company}</span>
+        <span style="font-size:10px;display:flex;gap:6px">${resultParts.join('')}</span>`;
+    } catch(e) {
+      const rowEl = document.getElementById(rowId);
+      if (rowEl) rowEl.innerHTML = `
+        <span class="sns-progress-status sps-error">エラー</span>
+        <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${it.company}</span>
+        <span style="font-size:10px;color:var(--red)">取得失敗</span>`;
+    }
+
+    doneCount++;
+    if (doneCount % 5 === 0) await sb.set('items', 'fw_items', items);
+    await new Promise(r => setTimeout(r, 100));
+  }
+
+  await sb.set('items', 'fw_items', items);
+  document.getElementById('sns-prog-fill').style.width = '100%';
+  document.getElementById('sns-prog-text').textContent = `${targets.length} / ${targets.length} 件（完了）`;
+  document.getElementById('sns-done-summary').style.display = 'block';
+  document.getElementById('sns-done-text').innerHTML = `
+    調査完了 ${doneCount}件 ／ 
+    求人URL取得 <strong style="color:var(--green)">${jobFound}件</strong> ／ 
+    Instagram取得 <strong style="color:var(--purple)">${instaFound}件</strong> ／ 
+    Facebook取得 <strong style="color:#1877F2">${fbFound}件</strong>
+    <br>アタックリストに反映済みです。`;
+
+  snsSearchRunning = false;
+  if (btnEl) { btnEl.disabled = false; btnEl.textContent = '🔍 SNS・求人URL調査を開始'; }
+  if (btnAllEl) { btnAllEl.disabled = false; }
+  document.getElementById('sns-panel').classList.remove('running');
+
+  updateSNSCounts();
+  updateBadges();
+  renderList();
+  renderApproach();
+  toast(`✅ SNS・求人URL調査完了！${jobFound + instaFound + fbFound}件のURLを取得しました`);
+}
+
 const INDUSTRY_TO_TYPE = {
   '不動産・建設':           'real_estate_agency',
   '医療・クリニック・介護': 'hospital',
@@ -1004,8 +1272,9 @@ async function searchPlacesAPI(industry, area, limit) {
         company: name, person: '', phone: phone,
         industry: industry, area: area, addr: addr,
         revenue: '不明', source: 'gmap', signals: signals,
-        // ★修正①: WebサイトURLを保存
         website: p.websiteUri || '',
+        jobUrl: '', instaUrl: '', fbUrl: '',
+        snsSearchedAt: '',
         memo: `評価${rating}点・レビュー${reviewCount}件`,
         phase: 'visit', nextDate: '', logs: [],
         referral: '', score: null, createdAt: todayJST(),
@@ -1018,49 +1287,6 @@ async function searchPlacesAPI(industry, area, limit) {
 function sendToDealwork(itemId) {
   const it = items.find(x => x.id === itemId);
   if (!it) return;
-  const deal = {
-    id: Date.now(),
-    itemId: it.id,
-    company: it.company,
-    person: it.person || '—',
-    industry: it.industry,
-    area: it.area,
-    stage: 'hearing',
-    entryType: 'push',
-    issue: '',
-    issueIds: [],
-    activities: {},
-    goal: '',
-    budget: '',
-    auth: '社長・代表が決める',
-    timeline: '近いうち（1〜3ヶ月）',
-    competitor: '他社と比較していない',
-    heat: { urgency:0, budget:0, speed:0, relation:0 },
-    nextDate: '',
-    solutions: [],
-    proposalAmount: 0,
-    attendee: it.person || '',
-    place: '先方オフィス',
-    sessions: [],
-    createdAt: todayJST(),
-    updatedAt: todayJST(),
-  };
-  const storeDeal = async () => {
-    try {
-      let existing = [];
-      if (window.storage) {
-        try {
-          const s = await window.storage.get('fw_deals');
-          if (s?.value) existing = JSON.parse(s.value);
-        } catch(e) {}
-        if (!existing.find(d => d.itemId === deal.itemId)) {
-          existing.unshift(deal);
-          await window.storage.set('fw_deals', JSON.stringify(existing));
-        }
-      }
-    } catch(e) {}
-  };
-  storeDeal();
   toast(`💼 ${it.company} をDEALWORKに送りました！DEALWORKを開いて商談を開始してください`);
 }
 
@@ -1132,12 +1358,6 @@ function getNextPhaseInfo(it) {
   return null;
 }
 
-function getNextHint(it) {
-  const info = getNextPhaseInfo(it);
-  if (!info) return null;
-  return info;
-}
-
 function calcScore(it) {
   const m = MARGIN[it.industry] || 20;
   const rv = {'〜1000万':10,'1000万〜3000万':18,'3000万〜1億':28,'1億以上':38};
@@ -1145,11 +1365,12 @@ function calcScore(it) {
   const sm = {noad:12,hire:10,wsns:8,rev:7,comp:6};
   const urgency = (it.signals||[]).reduce((s,k)=>s+(sm[k]||0),0);
   const approach = (it.signals||[]).includes('comp') ? 10 : (it.signals||[]).includes('noad') ? 28 : 20;
-  // ★修正②: レビュー数・評価からボーナス点
   const memoMatch = (it.memo||'').match(/評価([\d.]+)点・レビュー(\d+)件/);
   const reviewBonus = memoMatch ? Math.min(parseInt(memoMatch[2])/10, 8) : 0;
   const ratingPenalty = memoMatch && parseFloat(memoMatch[1]) < 3.5 ? -5 : 0;
-  const total = Math.min(Math.round(budget+urgency+approach+reviewBonus+ratingPenalty),99);
+  // ★求人URLが見つかっている場合はボーナス加点
+  const jobBonus = it.jobUrl ? 5 : 0;
+  const total = Math.min(Math.round(budget+urgency+approach+reviewBonus+ratingPenalty+jobBonus),99);
   return { total, budget:Math.min(Math.round(budget),30), urgency:Math.min(urgency,40), approach:Math.min(approach,30), rank:total>=75?'S':total>=55?'A':total>=35?'B':'C' };
 }
 
@@ -1167,21 +1388,6 @@ function checkAutoPhase(it) {
   return getNextPhaseInfo(it);
 }
 
-// ── Demo Data（サンプルデータ定義は残すが起動時には使用しない）──
-function _loadDemoItems() {
-  const today = todayJST();
-  const raw = [
-    { company:'山田不動産株式会社', person:'山田 浩二', phone:'098-123-4567', industry:'不動産・建設', area:'那覇市久茂地', addr:'那覇市久茂地2-1-1', revenue:'3000万〜1億', source:'gmap', signals:['noad','hire','wsns'], memo:'Gマップ評価4.2 レビュー48件', phase:'tel', nextDate:today, logs:[
-      {id:1,date:'2025-01-10',time:'10:00',type:'visit',result:'不在',memo:'受付に名刺預けた',nextDate:'',nextAction:'テルアポ'},
-      {id:2,date:'2025-01-12',time:'14:00',type:'visit',result:'不在',memo:'再訪。代表は外出多い模様',nextDate:'',nextAction:'テルアポ'},
-      {id:3,date:'2025-01-16',time:'11:00',type:'visit',result:'お断り',memo:'受付に断られた',nextDate:today,nextAction:'テルアポ',autoPhase:'tel'},
-    ]},
-    { company:'医療法人 さくらクリニック', person:'佐藤 健一', phone:'098-456-7890', industry:'医療・クリニック・介護', area:'沖縄市', addr:'沖縄市上地3-2-1', revenue:'3000万〜1億', source:'gmap', signals:['noad','rev','wsns'], memo:'Gレビュー120件 HP古い', phase:'visit', nextDate:today, logs:[], referral:'鈴木様のご紹介'},
-  ];
-  items = raw.map((r,i) => ({ id:Date.now()+i, ...r, score:null, approached:false, createdAt:'2025-01-05' }));
-  items.forEach(it => { it.score = calcScore(it); });
-}
-
 function save() {
   sb.set('items', 'fw_items', items).catch(()=>{});
   updateBadges();
@@ -1190,6 +1396,7 @@ function save() {
   renderToday();
   renderApo();
   renderDash();
+  updateSNSCounts();
 }
 
 // ── NAV ──
@@ -1198,6 +1405,7 @@ function goPage(p, el) {
   document.querySelectorAll('.nav-item').forEach(x=>x.classList.remove('active'));
   document.getElementById('page-'+p).classList.add('active');
   if (el) el.classList.add('active');
+  if (p === 'collect') updateSNSCounts();
 }
 
 function updateBadges() {
@@ -1260,13 +1468,22 @@ function renderList() {
   const barW = sc => sc ? sc+'%' : '0%';
   const barC = sc => sc>=75?'var(--accent)':sc>=55?'var(--blue)':sc>=35?'var(--gold)':'var(--text-dim)';
 
-  const autoNext = it => checkAutoPhase(it);
   const today = todayJST();
+
+  // URL バッジHTML生成
+  const makeUrlBadges = (it) => {
+    const badges = [];
+    if (it.website)  badges.push(`<a href="${it.website}" target="_blank" class="url-badge url-badge-hp" onclick="event.stopPropagation()">🔗 HP</a>`);
+    if (it.jobUrl)   badges.push(`<a href="${it.jobUrl}" target="_blank" class="url-badge url-badge-job" onclick="event.stopPropagation()">💼 求人</a>`);
+    if (it.instaUrl) badges.push(`<a href="${it.instaUrl}" target="_blank" class="url-badge url-badge-insta" onclick="event.stopPropagation()">📸 Insta</a>`);
+    if (it.fbUrl)    badges.push(`<a href="${it.fbUrl}" target="_blank" class="url-badge url-badge-fb" onclick="event.stopPropagation()">👍 FB</a>`);
+    return badges.length ? `<div class="url-badges">${badges.join('')}</div>` : '';
+  };
 
   tbody.innerHTML = list.map(it => {
     const sc = it.score;
     const ph = PHASE[it.phase];
-    const an = autoNext(it);
+    const an = checkAutoPhase(it);
     const sigDots = (it.signals||[]).map(s=>`<div class="sdot ${SIGCLS[s]||''}" title="${SIGLBL[s]||s}"></div>`).join('');
     const trailDots = (it.logs||[]).slice(-6).map(l=>{
       let c='apd-ng';
@@ -1276,6 +1493,7 @@ function renderList() {
       return `<div class="ap-dot ${c}" title="${l.date} ${l.result}"></div>`;
     }).join('');
     const overdue = it.nextDate && it.nextDate<today;
+    const urlBadges = makeUrlBadges(it);
     return `
       <tr onclick="openDetail(${it.id})">
         <td>
@@ -1291,7 +1509,13 @@ function renderList() {
         <td>
           <div class="co-name">${it.company}</div>
           <div class="co-sub">${it.person||'—'} ${it.referral?'· 紹介:'+it.referral:''}</div>
-          ${it.website?`<div style="font-size:10px;margin-top:2px"><a href="${it.website}" target="_blank" style="color:var(--blue);text-decoration:none" onclick="event.stopPropagation()">🔗 HP</a></div>`:''}
+          ${urlBadges}
+          ${it.snsSearchedAt ? `<div style="font-size:9px;color:var(--text-dim);margin-top:2px;font-family:var(--font-mono)">調査済 ${it.snsSearchedAt}</div>` : ''}
+          ${it.issueInfo?.scannedAt ? `<div style="margin-top:3px;display:flex;gap:4px;flex-wrap:wrap">
+            ${it.issueInfo.employees && it.issueInfo.employees !== '不明' ? `<span style="font-size:9px;padding:1px 6px;border-radius:3px;background:rgba(37,99,235,0.08);color:var(--blue);border:1px solid rgba(37,99,235,0.2)">👥 ${it.issueInfo.employees}</span>` : ''}
+            ${(it.issueInfo.hiringSignals||[]).some(h=>h.isRecent) ? `<span style="font-size:9px;padding:1px 6px;border-radius:3px;background:var(--green-dim);color:var(--green);border:1px solid rgba(22,163,74,0.2)">💼 求人中</span>` : ''}
+            ${it.issueInfo.growthSignal && it.issueInfo.growthSignal !== '不明' ? `<span style="font-size:9px;padding:1px 6px;border-radius:3px;background:var(--gold-dim);color:var(--gold);border:1px solid rgba(250,207,76,0.3)">📈 成長</span>` : ''}
+          </div>` : ''}
         </td>
         <td><div style="font-size:12px">${it.industry}</div><div style="font-size:10px;color:var(--text-mid);margin-top:1px">${it.area}</div></td>
         <td><div style="font-size:12px">${it.revenue||'—'}</div><div style="font-size:10px;color:var(--text-dim);font-family:var(--font-mono)">粗利${MARGIN[it.industry]||20}%</div></td>
@@ -1399,8 +1623,8 @@ function renderToday() {
     </div>`;
   if (!total) {
     content.innerHTML = summaryHTML + `
-      <div class="empty" style="padding:40px 20px">
-        <div class="empty-ico">✅</div>
+      <div style="text-align:center;padding:40px 20px">
+        <div style="font-size:32px;margin-bottom:12px">✅</div>
         <div style="font-size:14px;margin-bottom:4px">対応予定のアクションはありません</div>
         <div style="font-size:12px;color:var(--text-dim)">アタックリストから新しいアプローチを始めましょう</div>
       </div>`;
@@ -1446,7 +1670,7 @@ function renderApo() {
   const list = items.filter(x=>x.phase==='apo');
   const c = document.getElementById('apo-content');
   if (!list.length) {
-    c.innerHTML='<div class="empty"><div class="empty-ico">🎯</div><div>アポ獲得済みの企業がありません</div></div>';
+    c.innerHTML='<div style="text-align:center;padding:40px 20px"><div style="font-size:32px;margin-bottom:12px">🎯</div><div>アポ獲得済みの企業がありません</div></div>';
     return;
   }
   c.innerHTML = list.map(it => `
@@ -1510,7 +1734,7 @@ function saveAdd() {
     memo:document.getElementById('a-memo').value, source:'man', signals:sigs,
     phase:document.getElementById('a-phase').value,
     nextDate:document.getElementById('a-next').value, logs:[], score:null,
-    website: '',
+    website: '', jobUrl: '', instaUrl: '', fbUrl: '', snsSearchedAt: '',
     createdAt:todayJST()
   };
   it.score = calcScore(it);
@@ -1618,14 +1842,11 @@ function calcNextDate(aptType, result) {
   return null;
 }
 
+let curApId = null;
 let curAptType = 'visit';
 let curSelectedResult = '';
 
-function startApproach(id) {
-  const it = items.find(x=>x.id===id);
-  if (!it) return;
-  openAp(id);
-}
+function startApproach(id) { openAp(id); }
 
 function openAp(id) {
   curApId = id;
@@ -1746,7 +1967,7 @@ function saveApproach() {
     it.phase = 'apo';
     entry.autoPhase = 'apo';
     it.nextDate = '';
-    toast('🎯 アポ獲得！おめでとうございます！DEALWORKへ送って商談を開始しましょう');
+    toast('🎯 アポ獲得！おめでとうございます！');
   } else if (curSelectedResult === '見込みなし') {
     it.phase = 'excluded';
     entry.autoPhase = 'excluded';
@@ -1769,7 +1990,6 @@ function saveApproach() {
   } else {
     const phaseNext = getNextPhaseInfo(it);
     if (phaseNext && phaseNext.phase !== it.phase) {
-      const prevPhase = it.phase;
       it.phase = phaseNext.phase;
       entry.autoPhase = phaseNext.phase;
       toast(`🔄 ${phaseNext.msg}　→ 次回: ${nextInfo?.date || '未定'}`);
@@ -1797,42 +2017,173 @@ async function startCollect() {
   const limit = parseInt(limitVal) || 100;
   const btn = document.getElementById('col-btn');
   btn.disabled = true;
-  btn.textContent = '収集中...';
+  btn.textContent = '⏳ PHASE 1: 企業収集中...';
+
+  // ── PHASE 1: Google Maps 収集 ──
   document.getElementById('col-think').classList.add('show');
-  document.getElementById('col-think-txt').textContent = `${area} × ${ind} をGoogle Mapsで収集中...`;
+  document.getElementById('col-think-txt').textContent = `📍 PHASE 1 — ${area} × ${ind} をGoogle Mapsで収集中...`;
   document.getElementById('col-prog').style.display = 'block';
-  document.getElementById('col-prog-fill').style.width = '30%';
-  document.getElementById('col-prog-label').textContent = 'Google Places APIに問い合わせ中...';
+  document.getElementById('col-prog-fill').style.width = '10%';
+  document.getElementById('col-prog-label').textContent = 'PHASE 1/2 — Google Places APIに問い合わせ中...';
+
+  let newItems = [];
   try {
-    let newItems = await searchPlacesAPI(ind, area, limit);
-    document.getElementById('col-prog-fill').style.width = '70%';
-    document.getElementById('col-prog-label').textContent = `${newItems.length}件取得・AIスコアリング中...`;
+    newItems = await searchPlacesAPI(ind, area, limit);
+    document.getElementById('col-prog-fill').style.width = '40%';
+    document.getElementById('col-prog-label').textContent = `PHASE 1/2 — ${newItems.length}件取得・AIスコアリング中...`;
     if (newItems.length === 0) {
       newItems = genDemoItems(ind, area, limit);
       toast('⚠ Places APIの結果が0件のためデモデータを使用');
     }
-    newItems.forEach(x => { x.score = calcScore(x); });
-    items.push(...newItems);
-    save();
-    document.getElementById('col-think').classList.remove('show');
-    document.getElementById('col-prog').style.display = 'none';
-    btn.disabled = false;
-    btn.textContent = '⚡ 収集開始';
-    toast(`✅ ${newItems.length}件を収集・AIスコアリング完了`);
   } catch(e) {
-    const newItems = genDemoItems(ind, area, limit);
-    newItems.forEach(x => { x.score = calcScore(x); });
-    items.push(...newItems);
-    save();
-    document.getElementById('col-think').classList.remove('show');
-    document.getElementById('col-prog').style.display = 'none';
-    btn.disabled = false;
-    btn.textContent = '⚡ 収集開始';
-    toast(`⚠ API接続エラー。デモデータ${newItems.length}件を使用`);
+    newItems = genDemoItems(ind, area, limit);
+    toast('⚠ Places API接続エラー。デモデータを使用');
+  }
+
+  newItems.forEach(x => { x.score = calcScore(x); });
+  items.push(...newItems);
+  save();
+
+  document.getElementById('col-prog-fill').style.width = '50%';
+  document.getElementById('col-prog-label').textContent = `PHASE 1/2 完了 — ${newItems.length}件収集。PHASE 2: SNS・求人URL調査を開始します...`;
+  document.getElementById('col-think-txt').textContent = `🔍 PHASE 2 — SNS・求人URLを自動調査中...`;
+  btn.textContent = '⏳ PHASE 2: SNS・求人URL調査中...';
+
+  updateSNSCounts();
+
+  // ── PHASE 2: SNS・求人URL 自動調査（収集した企業のみ対象） ──
+  const newIds = new Set(newItems.map(x => x.id));
+  await startSNSSearchForIds(newIds, (done, total) => {
+    const pct = 34 + Math.round((done / Math.max(total, 1)) * 33);
+    document.getElementById('col-prog-fill').style.width = pct + '%';
+    document.getElementById('col-prog-label').textContent = `PHASE 2/3 — SNS・求人URL調査中 ${done} / ${total} 件...`;
+  });
+
+  // ── PHASE 3: URLスキャン → 課題情報抽出 → 基本情報保存 ──
+  document.getElementById('col-prog-fill').style.width = '67%';
+  document.getElementById('col-prog-label').textContent = 'PHASE 2/3 完了。PHASE 3: 課題情報スキャン開始...';
+  document.getElementById('col-think-txt').textContent = '🧠 PHASE 3 — URL自動スキャン・課題情報抽出中...';
+  btn.textContent = '⏳ PHASE 3: 課題情報スキャン中...';
+
+  // URLがある企業のみ対象
+  const phase3Targets = items.filter(it => newIds.has(it.id) && (it.jobUrl || it.instaUrl || it.fbUrl || it.website));
+  let phase3Done = 0;
+  for (const it of phase3Targets) {
+    await scanIssueInfo(it);
+    phase3Done++;
+    const pct = 67 + Math.round((phase3Done / Math.max(phase3Targets.length, 1)) * 30);
+    document.getElementById('col-prog-fill').style.width = pct + '%';
+    document.getElementById('col-prog-label').textContent = `PHASE 3/3 — 課題情報スキャン ${phase3Done} / ${phase3Targets.length} 件...`;
+    if (phase3Done % 3 === 0) await sb.set('items', 'fw_items', items);
+    await new Promise(r => setTimeout(r, 200));
+  }
+  await sb.set('items', 'fw_items', items);
+
+  // ── 完了 ──
+  document.getElementById('col-think').classList.remove('show');
+  document.getElementById('col-prog-fill').style.width = '100%';
+  document.getElementById('col-prog-label').textContent = '✅ 全3工程完了！アタックリストに反映されました';
+  setTimeout(() => { document.getElementById('col-prog').style.display = 'none'; }, 2500);
+
+  btn.disabled = false;
+  btn.textContent = '⚡ 収集開始（自動でURL調査まで実行）';
+  updateSNSCounts();
+  save();
+
+  const jobFound = items.filter(it => newIds.has(it.id) && it.jobUrl).length;
+  const instaFound = items.filter(it => newIds.has(it.id) && it.instaUrl).length;
+  const fbFound = items.filter(it => newIds.has(it.id) && it.fbUrl).length;
+  const issueFound = items.filter(it => newIds.has(it.id) && it.issueInfo?.scannedAt).length;
+  toast(`✅ 完了！${newItems.length}件収集 → 求人${jobFound}/Insta${instaFound}/FB${fbFound}件URL → ${issueFound}件の課題情報を抽出`);
+}
+
+// ══ PHASE 3: URLスキャン → 課題情報抽出 ══
+// 1企業分のURL群をClaudeでスキャンし issueInfo に保存
+async function scanIssueInfo(it) {
+  // スキャン対象URLを収集（優先順：求人 > 公式HP > Insta > FB）
+  const urls = [it.jobUrl, it.website, it.instaUrl, it.fbUrl].filter(Boolean);
+  if (!urls.length) return;
+
+  const prompt = `あなたは営業支援AIです。以下の企業のURLを調査し、営業判断に必要な情報を抽出してください。
+
+企業名: ${it.company}
+業種: ${it.industry}
+エリア: ${it.area}
+調査URL:
+${urls.map(u => '- ' + u).join('\n')}
+
+以下の情報を抽出し、必ずJSON形式のみで返してください（余分なテキスト不要）:
+
+{
+  "employees": "従業員数（例: 約50名、10〜30名、不明）",
+  "revenue": "売上規模（例: 年商3億円規模、不明）",
+  "hiringSignals": [
+    {
+      "title": "求人・採用情報のタイトル",
+      "detail": "詳細（職種・条件など）",
+      "isRecent": true,
+      "url": "求人ページURL"
+    }
+  ],
+  "growthSignal": "成長・拡大シグナル（例: 新店舗オープン、新事業展開、不明）",
+  "summary": "営業判断用の一言サマリー（50字以内）"
+}
+
+※ hiringSignalsは1年以内の求人を優先。情報がない場合は空配列。
+※ 推測が強い場合は「不明」と記載。`;
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 800,
+        tools: [{ type: 'web_search_20250305', name: 'web_search' }],
+        messages: [{ role: 'user', content: prompt }]
+      })
+    });
+    const data = await res.json();
+    const text = (data.content || []).filter(b => b.type === 'text').map(b => b.text).join('');
+    const jsonMatch = text.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) return;
+    const parsed = JSON.parse(jsonMatch[0]);
+
+    const item = items.find(x => x.id === it.id);
+    if (!item) return;
+
+    // issueInfo に保存
+    item.issueInfo = {
+      ...parsed,
+      scannedAt: todayJST(),
+      scannedUrls: urls,
+    };
+
+    // 従業員数・売上を基本情報にも反映
+    if (parsed.employees && parsed.employees !== '不明') {
+      item.employees = parsed.employees;
+    }
+    if (parsed.revenue && parsed.revenue !== '不明') {
+      // 既存のrevenueより詳細な情報があれば上書き
+      item.revenueDetail = parsed.revenue;
+    }
+
+    // シグナル更新: 最近の求人があれば「求人中」を付与
+    const recentHiring = (parsed.hiringSignals || []).some(s => s.isRecent);
+    if (recentHiring && !(item.signals || []).includes('hire')) {
+      item.signals = [...(item.signals || []), 'hire'];
+    }
+
+    // スコア再計算（求人ボーナス追加）
+    item.score = calcScore(item);
+
+  } catch(e) {
+    // スキャン失敗は静かにスキップ
+    console.warn('scanIssueInfo failed:', it.company, e);
   }
 }
 
-function genDemoItems(ind,area,limit) {
+function genDemoItems(ind, area, limit) {
   const names={
     '不動産・建設':['アース建設','サクラホーム','ミライ不動産','グッドハウス','富士建工','大和住建'],
     '医療・クリニック・介護':['さくらクリニック','みどり訪問介護','ひかり薬局','ウェルネス介護'],
@@ -1856,7 +2207,8 @@ function genDemoItems(ind,area,limit) {
     phone:`0${Math.floor(Math.random()*9+1)}-${1000+Math.floor(Math.random()*8999)}-${1000+Math.floor(Math.random()*8999)}`,
     industry:ind, area:areas[i%areas.length], addr:'', revenue:revs[i%revs.length],
     source:srcs[i%srcs.length], signals:allSigs.filter(()=>Math.random()>.55)||['noad'],
-    phase:'visit', nextDate:'', logs:[], memo:'', score:null, website:'',
+    phase:'visit', nextDate:'', logs:[], memo:'', score:null,
+    website:'', jobUrl:'', instaUrl:'', fbUrl:'', snsSearchedAt:'',
     createdAt:todayJST()
   }));
 }
@@ -1877,9 +2229,14 @@ function openDetail(id) {
           ${sc?`<span style="font-family:var(--font-mono);font-size:12px;color:${sc.total>=75?'var(--accent)':sc.total>=55?'var(--blue)':sc.total>=35?'var(--gold)':'var(--text-mid)'}">Score ${sc.total} · ${sc.rank}ランク</span>`:''}
           ${it.referral?`<span style="font-size:12px;color:var(--purple)">👥 ${it.referral}</span>`:''}
           ${it.phone?`<span style="font-size:12px;color:var(--text-mid)">📞 ${it.phone}</span>`:''}
-          ${it.website?`<a href="${it.website}" target="_blank" style="font-size:12px;color:var(--blue);text-decoration:none">🔗 公式HP</a>`:''}
         </div>
-        ${an?`<div class="phase-auto" style="margin-top:10px"><div class="pa-icon">🔄</div><div><div class="pa-title">移行推奨: → ${PHASE[an].label}</div><div class="pa-desc">次のフェーズへの移行をお勧めします</div></div></div>`:''}
+        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px">
+          ${it.website?`<a href="${it.website}" target="_blank" class="url-badge url-badge-hp">🔗 公式HP</a>`:''}
+          ${it.jobUrl?`<a href="${it.jobUrl}" target="_blank" class="url-badge url-badge-job">💼 求人</a>`:''}
+          ${it.instaUrl?`<a href="${it.instaUrl}" target="_blank" class="url-badge url-badge-insta">📸 Instagram</a>`:''}
+          ${it.fbUrl?`<a href="${it.fbUrl}" target="_blank" class="url-badge url-badge-fb">👍 Facebook</a>`:''}
+        </div>
+        ${an?`<div class="phase-auto" style="margin-top:10px"><div class="pa-icon">🔄</div><div><div class="pa-title">移行推奨: → ${PHASE[an.phase].label}</div><div class="pa-desc">${an.msg}</div></div></div>`:''}
       </div>
       <button class="mclose" onclick="cm('m-detail')">✕</button>
     </div>`;
@@ -1896,7 +2253,7 @@ function openDetail(id) {
           <div class="tl-date">${l.date} ${l.time||''} — ${PHASE[l.type]?.label||l.type}</div>
           <div class="tl-res" style="${ri(l.result)}">${l.result}</div>
           ${l.memo?`<div class="tl-memo">${l.memo}</div>`:''}
-          ${l.autoPhase?`<div class="tl-auto-tag">🔄 自動移行 → ${PHASE[l.autoPhase]?.label}</div>`:''}
+          ${l.autoPhase?`<div class="tl-auto-tag">🔄 自動移行 → ${PHASE[l.autoPhase]?.label||l.autoPhase}</div>`:''}
           ${l.nextDate?`<div class="tl-next">次: ${l.nextDate} / ${l.nextAction||''}</div>`:''}
         </div>
       </div>`).join('');
@@ -1907,8 +2264,44 @@ function openDetail(id) {
       ${[['担当者',it.person],['電話',it.phone],['業種',it.industry],['エリア',it.area],['推定月商',it.revenue],['住所',it.addr||'—'],['情報源',SRCLBL[it.source]||'—'],['登録日',it.createdAt]].map(([k,v])=>`
         <div><div style="font-family:var(--font-mono);font-size:9px;color:var(--text-mid);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:3px">${k}</div><div style="font-size:13px">${v||'—'}</div></div>
       `).join('')}
-      ${it.website?`<div class="full"><div style="font-family:var(--font-mono);font-size:9px;color:var(--text-mid);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:3px">公式HP</div><a href="${it.website}" target="_blank" style="font-size:12px;color:var(--blue)">${it.website}</a></div>`:''}
     </div>
+    <div style="margin-bottom:14px">
+      <div style="font-family:var(--font-mono);font-size:9px;color:var(--blue);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:8px">// URL情報</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        ${it.website?`<a href="${it.website}" target="_blank" class="url-badge url-badge-hp">🔗 公式HP</a>`:'<span style="font-size:11px;color:var(--text-dim)">HP未登録</span>'}
+        ${it.jobUrl?`<a href="${it.jobUrl}" target="_blank" class="url-badge url-badge-job">💼 求人URL</a>`:''}
+        ${it.instaUrl?`<a href="${it.instaUrl}" target="_blank" class="url-badge url-badge-insta">📸 Instagram</a>`:''}
+        ${it.fbUrl?`<a href="${it.fbUrl}" target="_blank" class="url-badge url-badge-fb">👍 Facebook</a>`:''}
+      </div>
+      ${it.snsSearchedAt?`<div style="font-size:10px;color:var(--text-dim);margin-top:6px;font-family:var(--font-mono)">SNS調査日: ${it.snsSearchedAt}</div>`:'<div style="font-size:10px;color:var(--text-dim);margin-top:6px">SNS・求人URL未調査 — 情報収集ページから調査できます</div>'}
+    </div>
+    ${it.issueInfo?.scannedAt ? `
+    <div style="background:rgba(37,99,235,0.04);border:1px solid rgba(37,99,235,0.15);border-radius:8px;padding:14px;margin-bottom:14px">
+      <div style="font-family:var(--font-mono);font-size:9px;color:var(--blue);letter-spacing:0.15em;margin-bottom:10px;display:flex;justify-content:space-between">
+        <span>// 課題調査レポート（PHASE 3自動抽出）</span>
+        <span style="color:var(--text-dim)">${it.issueInfo.scannedAt}</span>
+      </div>
+      ${it.issueInfo.summary ? `<div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:10px;padding:8px 12px;background:var(--surface);border-radius:6px;border-left:3px solid var(--blue)">${it.issueInfo.summary}</div>` : ''}
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
+        ${it.issueInfo.employees && it.issueInfo.employees !== '不明' ? `
+          <div style="font-size:11px"><span style="color:var(--text-dim)">従業員数：</span><strong>${it.issueInfo.employees}</strong></div>` : ''}
+        ${it.issueInfo.revenue && it.issueInfo.revenue !== '不明' ? `
+          <div style="font-size:11px"><span style="color:var(--text-dim)">売上規模：</span><strong>${it.issueInfo.revenue}</strong></div>` : ''}
+        ${it.issueInfo.growthSignal && it.issueInfo.growthSignal !== '不明' ? `
+          <div style="font-size:11px;grid-column:1/-1"><span style="color:var(--text-dim)">成長シグナル：</span><strong style="color:var(--green)">${it.issueInfo.growthSignal}</strong></div>` : ''}
+      </div>
+      ${(it.issueInfo.hiringSignals||[]).length ? `
+        <div style="font-family:var(--font-mono);font-size:9px;color:var(--text-dim);letter-spacing:0.1em;margin-bottom:6px">求人・採用情報</div>
+        ${it.issueInfo.hiringSignals.map(h => `
+          <div style="padding:7px 10px;background:var(--surface);border-radius:6px;margin-bottom:5px;border-left:2px solid ${h.isRecent ? 'var(--green)' : 'var(--border2)'}">
+            <div style="font-size:11px;font-weight:600">${h.title} ${h.isRecent ? '<span style=\"color:var(--green);font-size:10px\">● 直近</span>' : ''}</div>
+            ${h.detail ? `<div style="font-size:10px;color:var(--text-mid);margin-top:2px">${h.detail}</div>` : ''}
+          </div>`).join('')}
+      ` : ''}
+    </div>` : `
+    <div style="padding:8px 12px;background:var(--surface2);border-radius:6px;font-size:11px;color:var(--text-dim);margin-bottom:14px">
+      📊 課題調査未実施 — 次回の収集ボタン実行時に自動スキャンされます
+    </div>`}
     ${sc?`<div style="background:var(--surface2);border:1px solid rgba(79,255,176,0.15);border-radius:8px;padding:14px">
       <div style="font-family:var(--font-mono);font-size:9px;color:var(--accent);letter-spacing:0.15em;margin-bottom:10px">// AI SCORE DETAIL</div>
       ${[['予算ポテンシャル',sc.budget,30,'var(--accent)'],['緊急度シグナル',sc.urgency,40,'var(--blue)'],['アプローチ適性',sc.approach,30,'var(--gold)']].map(([l,v,m,c])=>`
@@ -1959,11 +2352,12 @@ function delCompany() {
 
 // ── EXPORT ──
 function exportCSV() {
-  const h=['会社名','担当者','電話','業種','エリア','推定月商','AIスコア','ランク','フェーズ','シグナル','アプローチ回数','次回日','紹介元','WebサイトURL'];
+  const h=['会社名','担当者','電話','業種','エリア','推定月商','AIスコア','ランク','フェーズ','シグナル','アプローチ回数','次回日','紹介元','公式HPURL','求人URL','InstagramURL','FacebookURL','SNS調査日'];
   const rows=items.map(it=>[
     it.company,it.person,it.phone,it.industry,it.area,it.revenue,
     it.score?.total||'',it.score?.rank||'',PHASE[it.phase]?.label||'',
-    (it.signals||[]).join('|'),(it.logs||[]).length,it.nextDate||'',it.referral||'',it.website||''
+    (it.signals||[]).join('|'),(it.logs||[]).length,it.nextDate||'',it.referral||'',
+    it.website||'',it.jobUrl||'',it.instaUrl||'',it.fbUrl||'',it.snsSearchedAt||''
   ].map(v=>`"${String(v||'').replace(/"/g,'""')}"`).join(','));
   const blob=new Blob(['\uFEFF'+[h.join(','),...rows].join('\n')],{type:'text/csv;charset=utf-8;'});
   const url=URL.createObjectURL(blob);
@@ -1977,12 +2371,9 @@ function exportCSV() {
 // ══════════════════════════════
 let lcItemId = null;
 let lcTopics = [];
-let lcSelectedTopics = [];
 let notices = [];
 
-function autoOpenLetterComposer(id) {
-  openLetterComposer(id);
-}
+function autoOpenLetterComposer(id) { openLetterComposer(id); }
 
 function openLetterComposer(id) {
   lcItemId = id;
@@ -1991,7 +2382,7 @@ function openLetterComposer(id) {
   document.getElementById('lc-company-name').textContent =
     `${it.company}（${it.person || '担当者未設定'}・${it.area}）`;
   lcStep2();
-  document.getElementById('lc-url-input').value = '';
+  document.getElementById('lc-url-input').value = it.website || '';
   autoScanTopics(it);
   document.getElementById('m-letter').classList.add('open');
 }
@@ -2004,15 +2395,12 @@ async function autoScanTopics(it) {
       <span>AIが ${it.company} のHP・SNSをスキャン中...</span>
     </div>`;
 
-  // ★修正③: WebサイトURLが保存されていれば自動セット
-  if (it.website) {
-    document.getElementById('lc-url-input').value = it.website;
-  }
-
   try {
     const prompt = `あなたは営業支援AIです。
 以下の企業情報をもとに、HP・SNS・求人サイトを調査し、最新のトピックスを抽出してください。
 ${it.website ? `企業HP: ${it.website}` : ''}
+${it.instaUrl ? `Instagram: ${it.instaUrl}` : ''}
+${it.fbUrl ? `Facebook: ${it.fbUrl}` : ''}
 企業名: ${it.company}
 業種: ${it.industry}
 エリア: ${it.area}
@@ -2033,14 +2421,14 @@ ${it.website ? `企業HP: ${it.website}` : ''}
       "type": "sns",
       "typeLabel": "SNS最新投稿",
       "text": "トピックスの内容",
-      "url": "https://（想定されるURL）",
+      "url": "${it.instaUrl || 'https://（想定されるURL）'}",
       "useInLetter": true
     },
     {
       "type": "hiring",
       "typeLabel": "求人・採用情報",
       "text": "トピックスの内容",
-      "url": "https://（想定されるURL）",
+      "url": "${it.jobUrl || 'https://（想定されるURL）'}",
       "useInLetter": false
     },
     {
@@ -2078,41 +2466,39 @@ ${it.website ? `企業HP: ${it.website}` : ''}
       throw new Error('parse failed');
     }
   } catch(e) {
-    const it2 = items.find(x => x.id === lcItemId);
-    lcTopics = generateDemoTopics(it2);
+    lcTopics = generateDemoTopics(it);
   }
 
   renderTopics();
 }
 
 function generateDemoTopics(it) {
-  const topics = [
+  return [
     {
       type: 'news', typeLabel: 'HP最新ニュース',
       text: `${it.company}は${nowJST().getFullYear()}年より新サービスを展開中。${it.industry}分野での事業拡大を進めています。`,
-      url: it.website || `https://www.${it.company.replace(/[株式会社|有限会社|\s]/g,'').toLowerCase()}.co.jp/news/`,
+      url: it.website || `https://www.example.co.jp/news/`,
       useInLetter: true
     },
     {
       type: 'sns', typeLabel: 'SNS最新投稿',
       text: `Instagramにて${it.area}での地域活動・スタッフ紹介などを積極的に発信。フォロワーとの交流を重視した運用をされています。`,
-      url: `https://www.instagram.com/${it.company.replace(/[株式会社|有限会社|\s]/g,'').toLowerCase()}/`,
+      url: it.instaUrl || `https://www.instagram.com/`,
       useInLetter: true
     },
     {
       type: 'hiring', typeLabel: '求人・採用情報',
       text: `現在${it.industry}経験者・未経験者を積極採用中。組織拡大フェーズにあり、成長意欲の高い人材を募集。`,
-      url: `https://www.indeed.com/cmp/${it.company}/`,
+      url: it.jobUrl || `https://www.indeed.com/`,
       useInLetter: false
     },
     {
       type: 'award', typeLabel: '実績・受賞情報',
-      text: `地域${it.industry}業界での実績が評価され、顧客満足度調査において高評価を継続中。口コミサイトでの評判も良好。`,
-      url: `https://maps.google.com/?q=${encodeURIComponent(it.company)}`,
+      text: `地域${it.industry}業界での実績が評価され、顧客満足度調査において高評価を継続中。`,
+      url: it.website || `https://maps.google.com/`,
       useInLetter: false
     }
   ];
-  return topics;
 }
 
 function renderTopics() {
@@ -2121,7 +2507,6 @@ function renderTopics() {
     news: 'var(--accent)', sns: 'var(--blue)',
     hiring: 'var(--purple)', award: 'var(--gold)'
   };
-  lcSelectedTopics = lcTopics.filter(t => t.useInLetter).map((_, i) => i);
   list.innerHTML = lcTopics.map((t, i) => `
     <div class="lc-topic-card ${t.useInLetter ? 'selected' : ''}" onclick="toggleTopic(${i},this)" id="tc-${i}">
       <div class="tc-check">${t.useInLetter ? '✓' : ''}</div>
@@ -2143,7 +2528,6 @@ function toggleTopic(i, el) {
   el.classList.toggle('selected');
   const check = el.querySelector('.tc-check');
   check.textContent = lcTopics[i].useInLetter ? '✓' : '';
-  lcSelectedTopics = lcTopics.map((t,idx) => t.useInLetter ? idx : -1).filter(x => x >= 0);
 }
 
 async function scanUrl() {
@@ -2254,7 +2638,6 @@ ${topicsText}
 - 自己紹介→トピックスへの共感・言及→広告支援の提案→面談依頼の流れ
 - 要件は簡潔に、長すぎず（全体300〜400字程度）
 - 【あなたの名前】【電話番号】など要変更箇所は【 】で囲む
-- トピックスの引用は自然な形で（「先日、貴社のSNSで〜を拝見し」など）
 - 結びは「敬具」
 - 日付は${dateStr}
 
@@ -2298,9 +2681,7 @@ ${topicSentence}
 📞 【電話番号】`;
 }
 
-async function regenLetter() {
-  await generateLetter();
-}
+async function regenLetter() { await generateLetter(); }
 
 function lcStep4() {
   const it = items.find(x => x.id === lcItemId);
@@ -2349,7 +2730,7 @@ function renderNotice() {
   const sent = notices.filter(n => n.status === 'sent');
   updateNoticeBadge();
   if (!notices.length) {
-    content.innerHTML = `<div class="empty"><div class="empty-ico">📬</div><div>送付依頼はまだありません</div></div>`;
+    content.innerHTML = `<div style="text-align:center;padding:40px 20px"><div style="font-size:32px;margin-bottom:12px">📬</div><div>送付依頼はまだありません</div></div>`;
     return;
   }
   const renderGroup = (list, label) => !list.length ? '' : `
@@ -2405,10 +2786,6 @@ function updateNoticeBadge() {
   badge.style.display = pending > 0 ? '' : 'none';
 }
 
-function loadNotices() {
-  updateNoticeBadge();
-}
-
 // ── INIT ──
 document.getElementById('today-label').textContent = (() => {
   const d = nowJST();
@@ -2419,13 +2796,15 @@ document.getElementById('today-label').textContent = (() => {
   try {
     const savedItems = await sb.get('items', 'fw_items');
     if (savedItems && Array.isArray(savedItems) && savedItems.length > 0) {
-      items = savedItems;
+      // 既存データにSNSフィールドがなければ初期化
+      items = savedItems.map(it => ({
+        jobUrl: '', instaUrl: '', fbUrl: '', snsSearchedAt: '',
+        ...it
+      }));
     }
     const savedNotices = await sb.get('items', 'fw_notices');
     if (savedNotices) notices = savedNotices;
   } catch(e) {}
-  // ★修正④: サンプルデータは使用しない
-  // if (!items.length) _loadDemoItems();
   updateBadges();
   renderList();
   renderApproach();
@@ -2434,6 +2813,7 @@ document.getElementById('today-label').textContent = (() => {
   renderDash();
   renderNotice();
   updateNoticeBadge();
+  updateSNSCounts();
 })();
 </script>
 <div class="toast" id="toast"></div>
