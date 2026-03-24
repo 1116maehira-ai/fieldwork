@@ -970,6 +970,7 @@ const sb = {
 
 // ══ GOOGLE MAPS / PLACES API 設定 ══
 const MAPS_API_KEY = 'AIzaSyDA03qagvN4G6uJ91HXOqpgpS93iy2psSc';
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbxPsOVwgT7K-UgBQrd73KSC6hcJTB0Gt-48-MgkOfpBJ94TWUC2UscXacbvBUTvI3y2/exec';
 
 const INDUSTRY_TO_TYPE = {
   '不動産・建設':           'real_estate_agency',
@@ -984,27 +985,10 @@ const INDUSTRY_TO_TYPE = {
 };
 
 async function searchPlacesAPI(industry, area, limit) {
-  const query = `${industry} ${area}`;
   try {
-    const res = await fetch('https://places.googleapis.com/v1/places:searchText', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-Goog-Api-Key': MAPS_API_KEY,
-        'X-Goog-FieldMask': 'places.displayName,places.formattedAddress,places.nationalPhoneNumber,places.rating,places.userRatingCount,places.websiteUri',
-      },
-      body: JSON.stringify({
-        textQuery: query,
-        maxResultCount: Math.min(limit, 20),
-        languageCode: 'ja',
-        locationBias: {
-          circle: {
-            center: { latitude: 26.2124, longitude: 127.6809 },
-            radius: 50000.0
-          }
-        }
-      })
-    });
+    // GAS経由でPlaces APIを呼び出す（CORS回避）
+    const url = `${GAS_URL}?industry=${encodeURIComponent(industry)}&area=${encodeURIComponent(area)}&limit=${limit}`;
+    const res = await fetch(url);
     const data = await res.json();
     if (!data.places) return [];
     return data.places.map((p, i) => {
@@ -1017,6 +1001,7 @@ async function searchPlacesAPI(industry, area, limit) {
       const signals = [];
       if (!hasWebsite) signals.push('noad');
       if (reviewCount >= 50) signals.push('rev');
+      if (rating < 3.5 && reviewCount > 10) signals.push('wsns');
       return {
         id: Date.now() + i,
         company: name, person: '', phone: phone,
@@ -1027,7 +1012,7 @@ async function searchPlacesAPI(industry, area, limit) {
         referral: '', score: null, createdAt: todayJST(),
       };
     });
-  } catch(e) { console.error('Places API error:', e); return []; }
+  } catch(e) { console.error('GAS/Places API error:', e); return []; }
 }
 
 // ── UTILS (defined first so always available) ──
