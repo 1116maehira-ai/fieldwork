@@ -136,7 +136,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--fbody);font-size:1
 .badge-lost{background:var(--surface);color:var(--text-dim);border:1px solid var(--border)}
 
 /* ── MODAL ── */
-.overlay{display:none;position:fixed;top:0;left:var(--sidebar);right:0;bottom:0;background:rgba(0,0,0,.32);z-index:500;align-items:center;justify-content:center;padding:12px;backdrop-filter:blur(2px)}
+.overlay{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.32);z-index:500;align-items:center;justify-content:center;padding:12px 12px 12px calc(var(--sidebar) + 12px);backdrop-filter:blur(2px)}
 .overlay.open{display:flex}
 .modal{background:#fff;border:1px solid var(--border);border-radius:16px;width:100%;max-width:780px;max-height:96vh;display:flex;flex-direction:column;box-shadow:var(--sh3)}
 .modal-wide{max-width:680px}
@@ -688,13 +688,22 @@ body{background:var(--bg);color:var(--text);font-family:var(--fbody);font-size:1
 
       <!-- ステップ1: ソリューション選択 -->
       <div id="proposal-step1">
-        <div style="font-family:var(--fmono);font-size:9px;color:var(--accent);font-weight:600;letter-spacing:.15em;margin-bottom:6px">// STEP 1 — 提案するソリューションを選択（複数可）</div>
-        <div style="font-size:11px;color:var(--text-dim);margin-bottom:12px">ヒアリング内容をもとに、AIが最適なソリューションをすでに選択しています。自由に変更できます。</div>
-        <div class="sol-grid" id="sol-grid"></div>
+        <div style="font-family:var(--fmono);font-size:9px;color:var(--accent);font-weight:600;letter-spacing:.15em;margin-bottom:6px">// STEP 1 — 提案ソリューション＆概算見積もり設計</div>
+        <div style="font-size:11px;color:var(--text-dim);margin-bottom:14px">ソリューションを選んで金額を設定してください。同じ商材を複数追加できます。</div>
 
-        <div style="margin-top:18px;font-family:var(--fmono);font-size:9px;color:var(--accent);font-weight:600;letter-spacing:.15em;margin-bottom:10px">// STEP 2 — 概算見積もり設計</div>
-        <div style="font-size:11px;color:var(--text-dim);margin-bottom:10px">各項目の金額を調整してください。相場は沖縄県内の実績値です。</div>
-        <div class="proposal-box" id="proposal-preview"></div>
+        <!-- ソリューション行リスト -->
+        <div id="sol-rows" style="display:flex;flex-direction:column;gap:8px;margin-bottom:12px"></div>
+
+        <!-- 追加ボタン -->
+        <button onclick="addSolRow()" style="width:100%;padding:9px;border:1.5px dashed var(--border2);border-radius:8px;background:transparent;cursor:pointer;color:var(--text-mid);font-size:12px;transition:all 0.15s" onmouseover="this.style.borderColor='var(--accent)';this.style.color='var(--accent)'" onmouseout="this.style.borderColor='var(--border2)';this.style.color='var(--text-mid)'">
+          ＋ ソリューションを追加
+        </button>
+
+        <!-- 合計 -->
+        <div style="margin-top:14px;padding:12px 16px;background:var(--surface2);border-radius:8px;display:flex;justify-content:space-between;align-items:center">
+          <span style="font-size:12px;color:var(--text-mid)">月額合計（目安）</span>
+          <span id="sol-total" style="font-family:var(--font-head);font-size:24px;color:var(--accent)">¥0</span>
+        </div>
 
         <div style="margin-top:16px;font-family:var(--fmono);font-size:9px;color:var(--accent);font-weight:600;letter-spacing:.15em;margin-bottom:8px">// STEP 3 — 企画書に追加する一言コメント（任意）</div>
         <textarea class="ftextarea" id="proposal-extra-note" placeholder="例：御社の新規出店に合わせた集中的なブランド認知施策として提案いたします。" style="min-height:60px"></textarea>
@@ -1787,15 +1796,15 @@ function saveDeal() {
     d.sessions.push(session);
     toast(`💾 ${d.company} の商談を更新しました`);
   } else {
-    // 直クライアントの場合は企業情報欄、それ以外はdeal-attendeeを確認
+    // バリデーション：会社名 or 担当者名が必要
     const hasClientInfo = dealClientType === 'direct'
       ? (directInfo.company || directInfo.person)
-      : document.getElementById('deal-attendee').value;
+      : true; // 代理店の場合は代理店名で代替
     if (!hasClientInfo) { toast('会社名または担当者名を入力してください'); return; }
     const deal = {
       id: Date.now(),
-      company: (dealClientType === 'direct' && directInfo.company) ? directInfo.company : '手動入力企業',
-      person:  (dealClientType === 'direct' && directInfo.person)  ? directInfo.person  : document.getElementById('deal-attendee').value,
+      company: (dealClientType === 'direct' && directInfo.company) ? directInfo.company : '新規商談',
+      person:  (dealClientType === 'direct' && directInfo.person)  ? directInfo.person  : '',
       industry:(dealClientType === 'direct' && directInfo.industry)? directInfo.industry: '—',
       area:    (dealClientType === 'direct' && directInfo.area)    ? directInfo.area    : '—',
       stage,
@@ -1819,7 +1828,7 @@ function saveDeal() {
       heat: { ...dealHeat },
       nextDate: document.getElementById('deal-next-date').value,
       solutions: [], proposalAmount: 0,
-      attendee: document.getElementById('deal-attendee').value,
+      attendee: getAttendees(),
       place: document.getElementById('deal-place').value,
       sessions: [session],
       createdAt: todayJST(), updatedAt: todayJST(),
@@ -1893,69 +1902,128 @@ function renderDeals() {
 function openProposalModal() {
   const d = currentDealId ? deals.find(x => x.id === currentDealId) : null;
   document.getElementById('proposal-sub').textContent = d ? d.company : '';
-  selectedSolutions = {};
-  if (d?.solutions) d.solutions.forEach(s => { selectedSolutions[s] = d.solutionAmounts?.[s] ?? null; });
-  renderSolGrid(); renderProposalPreview();
+  solRows = [];
+  if (d?.solRowsDetail && d.solRowsDetail.length > 0) {
+    solRows = d.solRowsDetail.map(r => ({ ...r, uid: Date.now() + Math.random() }));
+  } else if (d?.solutions && d.solutions.length > 0) {
+    d.solutions.forEach(s => addSolRow(s, d.solutionAmounts?.[s] ?? null));
+  } else {
+    addSolRow(SOLUTIONS[0].id);
+  }
+  renderSolRows();
   document.getElementById('m-proposal').classList.add('open');
 }
-function renderSolGrid() {
-  document.getElementById('sol-grid').innerHTML = SOLUTIONS.map(s => `<div class="sol-card ${selectedSolutions[s.id]!==undefined?'sel':''}" onclick="toggleSol('${s.id}')" id="sol-${s.id}"><span class="sol-check">${selectedSolutions[s.id]!==undefined?'✓':''}</span><div class="sol-name">${s.icon} ${s.name}</div><div class="sol-range">${s.range}</div></div>`).join('');
+// ══ ソリューション行管理（プルダウン＋金額＋追加方式）══
+// selectedSolutions: [ { uid, solId, name, amount, note } ]
+let solRows = []; // 行リスト
+
+function addSolRow(solId, amount, note) {
+  const uid = Date.now() + Math.random();
+  const sol = SOLUTIONS.find(s => s.id === solId) || SOLUTIONS[0];
+  const defaultAmt = amount ?? Math.round((sol.min + sol.max) / 2);
+  solRows.push({ uid, solId: sol.id, amount: defaultAmt, note: note || '' });
+  renderSolRows();
 }
-function toggleSol(id) {
-  if (selectedSolutions[id] !== undefined) delete selectedSolutions[id];
-  else selectedSolutions[id] = null;
-  renderSolGrid(); renderProposalPreview();
+
+function removeSolRow(uid) {
+  solRows = solRows.filter(r => r.uid !== uid);
+  renderSolRows();
 }
-function renderProposalPreview() {
-  const selSols = Object.keys(selectedSolutions);
-  if (!selSols.length) { document.getElementById('proposal-preview').innerHTML = '<div style="text-align:center;color:var(--text-dim);padding:20px">ソリューションを選択してください</div>'; return; }
-  const d = currentDealId ? deals.find(x => x.id === currentDealId) : null;
-  let total = 0;
-  const rows = selSols.map(id => {
-    const sol = SOLUTIONS.find(s => s.id === id);
-    if (!sol) return '';
-    const mid = Math.round((sol.min+sol.max)/2);
-    const amount = selectedSolutions[id] !== null ? selectedSolutions[id] : mid;
-    total += amount;
-    return `<div class="proposal-row"><div class="proposal-sol-name">${sol.icon} ${sol.name}</div><div class="proposal-range">${sol.range}</div><div style="display:flex;align-items:center;gap:4px">¥<input class="proposal-custom-input" type="number" value="${amount}" min="0" step="10000" onchange="updateSolAmount('${id}',this.value)" onclick="event.stopPropagation()"></div></div>`;
+
+function updateSolRow(uid, field, val) {
+  const row = solRows.find(r => r.uid === uid);
+  if (!row) return;
+  if (field === 'solId') {
+    const sol = SOLUTIONS.find(s => s.id === val);
+    row.solId = val;
+    row.amount = sol ? Math.round((sol.min + sol.max) / 2) : 0;
+  } else if (field === 'amount') {
+    row.amount = parseInt(val) || 0;
+  } else if (field === 'note') {
+    row.note = val;
+  }
+  updateSolTotal();
+}
+
+function updateSolTotal() {
+  const total = solRows.reduce((s, r) => s + (r.amount || 0), 0);
+  const el = document.getElementById('sol-total');
+  if (el) el.textContent = '¥' + total.toLocaleString();
+  // selectedSolutions互換形式にも反映（AI生成・saveProposalで使用）
+  selectedSolutions = {};
+  solRows.forEach(r => {
+    // 同一solIdが複数ある場合は合計
+    selectedSolutions[r.uid] = r.amount;
+  });
+}
+
+function renderSolRows() {
+  const container = document.getElementById('sol-rows');
+  if (!container) return;
+  container.innerHTML = solRows.map(row => {
+    const sol = SOLUTIONS.find(s => s.id === row.solId) || SOLUTIONS[0];
+    return `
+      <div style="background:var(--surface);border:1.5px solid var(--border);border-radius:10px;padding:12px 14px" data-uid="${row.uid}">
+        <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px">
+          <select style="flex:1;padding:7px 10px;border-radius:7px;border:1px solid var(--border2);background:var(--surface2);font-size:12px;color:var(--text);outline:none"
+            onchange="updateSolRow(${row.uid},'solId',this.value)">
+            ${SOLUTIONS.map(s => `<option value="${s.id}" ${s.id===row.solId?'selected':''}>${s.icon} ${s.name}</option>`).join('')}
+          </select>
+          <button onclick="removeSolRow(${row.uid})" style="background:none;border:none;cursor:pointer;color:var(--text-dim);font-size:16px;padding:0;flex-shrink:0">✕</button>
+        </div>
+        <div style="font-size:10px;color:var(--text-dim);margin-bottom:8px">${sol.range}</div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <div style="font-size:12px;color:var(--text-mid);flex-shrink:0">金額</div>
+          <div style="display:flex;align-items:center;gap:4px;flex:1">
+            <span style="font-size:13px;color:var(--text-mid)">¥</span>
+            <input type="number" value="${row.amount}" min="0" step="10000"
+              onchange="updateSolRow(${row.uid},'amount',this.value)"
+              style="flex:1;padding:6px 8px;border-radius:6px;border:1px solid var(--border2);background:var(--surface2);font-size:13px;font-weight:600;color:var(--accent);text-align:right;outline:none">
+            <span style="font-size:11px;color:var(--text-dim)">円/月</span>
+          </div>
+        </div>
+        <div style="margin-top:6px">
+          <input type="text" value="${row.note}" placeholder="備考（例：初月のみ制作費別途）"
+            onchange="updateSolRow(${row.uid},'note',this.value)"
+            style="width:100%;padding:5px 8px;border-radius:6px;border:1px solid var(--border2);background:var(--surface2);font-size:11px;color:var(--text-mid);outline:none">
+        </div>
+      </div>`;
   }).join('');
-  const today = nowJST();
-  document.getElementById('proposal-preview').innerHTML = `<div class="proposal-header"><div><div class="proposal-title">広告提案書</div><div style="font-size:12px;color:var(--text-mid);margin-top:3px">${d?.company||'—'} 様　${today.getFullYear()}年${today.getMonth()+1}月${today.getDate()}日</div></div><div style="text-align:right"><div class="proposal-total">¥${total.toLocaleString()}</div><div style="font-size:11px;color:var(--text-dim)">月額合計（目安）</div></div></div>${rows}<div style="margin-top:12px;padding-top:10px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:8px"><div style="font-size:13px;color:var(--text-mid)">月額合計</div><div style="font-family:var(--font-head);font-size:18px;color:var(--accent)">¥${total.toLocaleString()}</div></div>`;
+  updateSolTotal();
 }
-function updateSolAmount(id, val) {
-  selectedSolutions[id] = parseInt(val)||0;
-  const total = Object.keys(selectedSolutions).reduce((sum,sid) => {
-    const sol = SOLUTIONS.find(s=>s.id===sid);
-    const mid = sol ? Math.round((sol.min+sol.max)/2) : 0;
-    return sum + (selectedSolutions[sid]!==null ? selectedSolutions[sid] : mid);
-  }, 0);
-  const el = document.querySelector('.proposal-total');
-  if (el) el.textContent = `¥${total.toLocaleString()}`;
-}
+
+// 旧renderSolGrid互換（呼ばれても何もしない）
+function renderSolGrid() { renderSolRows(); }
+function toggleSol(id) { addSolRow(id); }
+function renderProposalPreview() { renderSolRows(); }
+function updateSolAmount(uid, val) { updateSolRow(uid, 'amount', val); }
 async function generateProposalDoc() {
-  const d = currentDealId ? deals.find(x => x.id === currentDealId) : null;
-  if (!d) { toast('商談データが見つかりません'); return; }
+  // 商談が未保存の場合は先に保存してから企画書生成
+  let d = currentDealId ? deals.find(x => x.id === currentDealId) : null;
+  if (!d) {
+    // 自動で保存してから続行
+    saveDeal();
+    d = deals[0]; // 直前に追加されたもの
+    if (!d) { toast('先に商談情報を保存してください'); return; }
+  }
 
   document.getElementById('proposal-step1').style.display = 'none';
   document.getElementById('proposal-step2').style.display = 'block';
   document.getElementById('ai-proposal-loading').style.display = 'block';
   document.getElementById('ai-proposal-result').innerHTML = '';
 
-  const selSols = Object.keys(selectedSolutions);
-  if (!selSols.length) {
+  if (!solRows.length) {
     document.getElementById('ai-proposal-loading').style.display = 'none';
-    document.getElementById('ai-proposal-result').innerHTML = '<div style="color:var(--red);padding:20px;text-align:center">ソリューションを選択してから企画書を生成してください</div>';
+    document.getElementById('ai-proposal-result').innerHTML = '<div style="color:var(--red);padding:20px;text-align:center">ソリューションを1つ以上追加してから生成してください</div>';
     return;
   }
 
   let totalAmount = 0;
-  const solDetails = selSols.map(id => {
-    const sol = SOLUTIONS.find(s => s.id === id);
-    if (!sol) return null;
-    const amount = selectedSolutions[id] !== null ? selectedSolutions[id] : Math.round((sol.min+sol.max)/2);
-    totalAmount += amount;
-    return { id, name: sol.name, icon: sol.icon, amount, range: sol.range };
-  }).filter(Boolean);
+  const solDetails = solRows.map(r => {
+    const sol = SOLUTIONS.find(s => s.id === r.solId) || { name: r.solId, icon: '', range: '' };
+    totalAmount += r.amount || 0;
+    return { id: r.solId, name: sol.name, icon: sol.icon, amount: r.amount || 0, range: sol.range, note: r.note || '' };
+  });
 
   const issueLabels = (d.issueIds||[]).map(id => {
     const f = ISSUES_LIST.find(i=>i.id===id);
@@ -2016,8 +2084,20 @@ async function generateProposalDoc() {
 function openProposalModal() {
   const d = currentDealId ? deals.find(x => x.id === currentDealId) : null;
   document.getElementById('proposal-sub').textContent = d ? d.company + ' — AI企画書作成' : '';
-  selectedSolutions = {};
-  if (d?.solutions) d.solutions.forEach(s => { selectedSolutions[s] = d.solutionAmounts?.[s] ?? null; });
+
+  // solRowsを初期化
+  solRows = [];
+  if (d?.solutions && d.solutions.length > 0) {
+    // 保存済みのソリューションを復元
+    d.solutions.forEach(s => {
+      const amt = d.solutionAmounts?.[s] ?? null;
+      const sol = SOLUTIONS.find(x => x.id === s);
+      if (sol) addSolRow(s, amt);
+    });
+  } else {
+    // 新規の場合はデフォルトで1行追加
+    addSolRow(SOLUTIONS[0].id);
+  }
 
   // ステップをリセット
   document.getElementById('proposal-step1').style.display = 'block';
@@ -2025,7 +2105,7 @@ function openProposalModal() {
   document.getElementById('ai-proposal-result').innerHTML = '';
   document.getElementById('proposal-extra-note').value = '';
 
-  renderSolGrid(); renderProposalPreview();
+  renderSolRows();
   document.getElementById('m-proposal').classList.add('open');
 }
 
@@ -2033,19 +2113,20 @@ function saveProposal() {
   if (!currentDealId) { toast('商談を先に保存してください'); return; }
   const d = deals.find(x => x.id === currentDealId);
   if (!d) return;
-  d.solutions = Object.keys(selectedSolutions);
-  d.solutionAmounts = { ...selectedSolutions };
-  const total = Object.keys(selectedSolutions).reduce((sum,sid) => {
-    const sol = SOLUTIONS.find(s=>s.id===sid);
-    const mid = sol ? Math.round((sol.min+sol.max)/2) : 0;
-    return sum + (selectedSolutions[sid]!==null ? selectedSolutions[sid] : mid);
-  }, 0);
+  if (!solRows.length) { toast('ソリューションを1つ以上追加してください'); return; }
+  // solRowsから保存形式に変換（solId単位で集計）
+  d.solutions = [...new Set(solRows.map(r => r.solId))];
+  d.solutionAmounts = {};
+  solRows.forEach(r => {
+    d.solutionAmounts[r.uid] = r.amount;
+  });
+  d.solRowsDetail = solRows.map(r => ({ ...r })); // 詳細も保存
+  const total = solRows.reduce((sum, r) => sum + (r.amount || 0), 0);
   d.proposalAmount = total;
   d.stage = 'proposal';
-  if (d.aiProposalHtml) { /* 既にdealに保存済み */ }
   saveDeals(); cm('m-proposal');
   renderDeals();
-  toast(`🚀 企画書を保存しました（月額¥${total.toLocaleString()}）`);
+  toast('🚀 企画書を保存しました（月額¥' + total.toLocaleString() + '）');
 }
 
 function exportProposalPDF() {
