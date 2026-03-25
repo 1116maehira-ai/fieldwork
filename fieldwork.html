@@ -863,6 +863,64 @@ tr:hover td { background: rgba(255,70,2,0.03); cursor: pointer; }
   </div>
 </div>
 
+
+<!-- MODAL: DEALWORKへ送る確認 -->
+<div class="modal-backdrop" id="m-dealwork">
+  <div class="modal modal-w-md">
+    <div class="mhead">
+      <div>
+        <div class="mtitle">💼 DEALWORKへ送る</div>
+        <div style="font-size:11px;color:var(--text-mid);margin-top:2px" id="dw-company">会社名</div>
+      </div>
+      <button class="mclose" onclick="cm('m-dealwork')">✕</button>
+    </div>
+    <div class="mbody">
+      <input type="hidden" id="dw-item-id">
+      <div id="dw-approach-summary" style="margin-bottom:14px;padding:10px 14px;background:var(--gold-dim);border:1px solid rgba(250,207,76,0.3);border-radius:8px;font-size:11px;color:var(--text-mid)"></div>
+      <div style="font-family:var(--font-mono);font-size:9px;color:var(--accent);letter-spacing:0.15em;margin-bottom:12px;text-transform:uppercase">// 送信前に確認・補足してください</div>
+      <div class="fg">
+        <div class="fl">
+          <label class="flabel">担当者名</label>
+          <input class="finput" id="dw-person" placeholder="山田 太郎">
+        </div>
+        <div class="fl">
+          <label class="flabel">連絡先（電話番号）</label>
+          <input class="finput" id="dw-phone" placeholder="098-000-0000">
+        </div>
+        <div class="fl">
+          <label class="flabel">業種</label>
+          <input class="finput" id="dw-industry" placeholder="飲食・食品">
+        </div>
+        <div class="fl">
+          <label class="flabel">エリア</label>
+          <input class="finput" id="dw-area" placeholder="那覇市">
+        </div>
+        <div class="fl">
+          <label class="flabel">担当者の役職</label>
+          <input class="finput" id="dw-position" placeholder="営業部長・社長など">
+        </div>
+        <div class="fl">
+          <label class="flabel">商談予定日</label>
+          <input class="finput" type="date" id="dw-date">
+        </div>
+        <div class="fl full">
+          <label class="flabel">メモ（訪問時の気づき・状況など）</label>
+          <textarea class="ftextarea" id="dw-memo" placeholder="例: 社長と直接話せた。広告に興味あり。予算は月30万円程度との話。"></textarea>
+        </div>
+      </div>
+      <div style="margin-top:14px;padding:10px 14px;background:var(--purple-dim);border:1px solid rgba(124,58,237,0.2);border-radius:8px;font-size:11px;color:var(--purple)">
+        💡 入力した情報はFIELDWORKに保存され、DEALWORKの商談記録にも反映されます
+      </div>
+    </div>
+    <div class="mfoot">
+      <button class="btn btn-ghost" onclick="cm('m-dealwork')">キャンセル</button>
+      <button class="btn btn-sm" style="background:var(--purple);color:white;font-weight:700" onclick="confirmSendToDealwork()">
+        💼 この内容でDEALWORKへ送る
+      </button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
@@ -1078,12 +1136,29 @@ function sendToDealwork(itemId) {
     dealworkWindow.focus();
   }
 
+  // アプローチ履歴サマリー
+  const logs = it.logs || [];
+  const visits  = logs.filter(l => l.type === 'visit').length;
+  const tels    = logs.filter(l => l.type === 'tel').length;
+  const letters = logs.filter(l => l.type === 'letter' || l.type === 'letter_tel').length;
+  const approachSummary = [
+    visits  > 0 ? `直接訪問${visits}回` : '',
+    tels    > 0 ? `電話${tels}回` : '',
+    letters > 0 ? `手紙${letters}回` : '',
+  ].filter(Boolean).join('・');
+
   const deal = {
     id: it.id, company: it.company || '', person: it.person || '',
     industry: it.industry || '—', area: it.area || '沖縄県',
     phone: it.phone || '', website: it.website || '',
     jobUrl: it.jobUrl || '', instaUrl: it.instaUrl || '', fbUrl: it.fbUrl || '',
     revenue: it.revenue || '', signals: it.signals || [], score: it.score || null,
+    position: it.apoPosition || '',
+    apoDate: it.apoDate || it.nextDate || '',
+    memo: it.apoMemo || '',
+    approachSummary: approachSummary,
+    approachTotal: logs.length,
+    approachLogs: logs,
     stage: 'hearing', entryType: 'push',
     heat: { urgency:0, budget:0, speed:0, relation:0 },
     sessions: [{ date: todayJST(), round: '1回目', entryType: 'push' }],
@@ -1264,7 +1339,12 @@ function rankDown(it) {
 function checkAutoPhase(it) { return getNextPhaseInfo(it); }
 
 function save() {
-  sb.set('items', 'fw_items', items).catch(()=>{});
+  // Supabaseに保存（エラーハンドリング強化）
+  sb.set('items', 'fw_items', items).catch(e => {
+    console.warn('Supabase保存エラー:', e);
+    // ローカルストレージにもバックアップ保存
+    try { localStorage.setItem('fw_items_backup', JSON.stringify(items)); } catch(e2) {}
+  });
   updateBadges(); renderList(); renderApproach(); renderToday(); renderApo(); renderDash(); updateSNSCounts();
 }
 
@@ -1443,18 +1523,72 @@ function renderApo() {
     return;
   }
   c.innerHTML = list.map(it => `
-    <div onclick="openDetail(${it.id})" style="background:var(--surface);border:1px solid rgba(255,193,69,0.2);border-radius:10px;padding:16px 20px;margin-bottom:10px;display:flex;align-items:center;gap:16px;cursor:pointer" onmouseover="this.style.borderColor='var(--gold)'" onmouseout="this.style.borderColor='rgba(255,193,69,0.2)'">
-      <div style="font-size:22px">🎯</div>
-      <div style="flex:1">
-        <div style="font-weight:600;font-size:14px">${it.company}</div>
-        <div style="font-size:11px;color:var(--text-mid);margin-top:2px">${it.industry} · ${it.area} · アプローチ${(it.logs||[]).length}回</div>
+    <div style="background:var(--surface);border:1px solid rgba(255,193,69,0.2);border-radius:10px;padding:16px 20px;margin-bottom:10px;">
+      <div style="display:flex;align-items:center;gap:16px;cursor:pointer" onclick="openDetail(${it.id})">
+        <div style="font-size:22px">🎯</div>
+        <div style="flex:1">
+          <div style="font-weight:600;font-size:14px">${it.company}</div>
+          <div style="font-size:11px;color:var(--text-mid);margin-top:2px">${it.industry} · ${it.area} · アプローチ${(it.logs||[]).length}回</div>
+          ${it.apoMemo ? `<div style="font-size:11px;color:var(--text-mid);margin-top:4px;padding:5px 9px;background:var(--surface2);border-radius:5px;border-left:2px solid var(--gold)">📝 ${it.apoMemo}</div>` : ''}
+        </div>
+        ${it.apoDate?`<span style="font-size:12px;color:var(--gold)">📅 商談: ${it.apoDate}</span>`:(it.nextDate?`<span style="font-size:12px;color:var(--gold)">📅 ${it.nextDate}</span>`:'')}
       </div>
-      ${it.nextDate?`<span style="font-size:12px;color:var(--gold)">商談: ${it.nextDate}</span>`:''}
-      <button class="btn btn-sm" style="background:var(--purple);color:white;font-weight:700" onclick="event.stopPropagation();sendToDealwork(${it.id})">
-        💼 DEALWORKへ
-      </button>
+      <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border);display:flex;justify-content:flex-end">
+        <button class="btn btn-sm" style="background:var(--purple);color:white;font-weight:700" onclick="openDealworkModal(${it.id})">
+          💼 DEALWORKへ送る
+        </button>
+      </div>
     </div>
   `).join('');
+}
+
+// DEALWORKへ送る前に情報を確認・補足するモーダル
+function openDealworkModal(itemId) {
+  const it = items.find(x => x.id === itemId);
+  if (!it) return;
+  document.getElementById('dw-item-id').value = itemId;
+  document.getElementById('dw-company').textContent = it.company;
+  document.getElementById('dw-person').value = it.person || '';
+  document.getElementById('dw-phone').value = it.phone || '';
+  document.getElementById('dw-industry').value = it.industry || '';
+  document.getElementById('dw-area').value = it.area || '';
+  document.getElementById('dw-position').value = it.apoPosition || '';
+  document.getElementById('dw-date').value = it.apoDate || it.nextDate || '';
+  document.getElementById('dw-memo').value = it.apoMemo || '';
+
+  // アプローチ履歴サマリーを表示
+  const logs = it.logs || [];
+  const visits  = logs.filter(l => l.type === 'visit').length;
+  const tels    = logs.filter(l => l.type === 'tel').length;
+  const letters = logs.filter(l => l.type === 'letter' || l.type === 'letter_tel').length;
+  const total   = logs.length;
+  const summaryEl = document.getElementById('dw-approach-summary');
+  if (summaryEl) {
+    const parts = [];
+    if (visits > 0)  parts.push(`🚶 直接訪問 ${visits}回`);
+    if (tels > 0)    parts.push(`📞 電話 ${tels}回`);
+    if (letters > 0) parts.push(`✉ 手紙 ${letters}回`);
+    summaryEl.innerHTML = `<strong style="color:var(--gold)">📊 アプローチ実績：</strong> ${parts.join(' ／ ')} ／ 合計 <strong>${total}回</strong> でアポ獲得！`;
+  }
+
+  document.getElementById('m-dealwork').classList.add('open');
+}
+
+function confirmSendToDealwork() {
+  const itemId = parseInt(document.getElementById('dw-item-id').value);
+  const it = items.find(x => x.id === itemId);
+  if (!it) return;
+
+  // FIELDWORKのデータを更新して保存
+  it.person    = document.getElementById('dw-person').value || it.person;
+  it.phone     = document.getElementById('dw-phone').value  || it.phone;
+  it.apoPosition = document.getElementById('dw-position').value;
+  it.apoDate   = document.getElementById('dw-date').value;
+  it.apoMemo   = document.getElementById('dw-memo').value;
+  save();
+
+  cm('m-dealwork');
+  sendToDealwork(itemId);
 }
 
 function renderDash() {
@@ -2084,11 +2218,31 @@ document.getElementById('today-label').textContent = (() => {
     const savedItems = await sb.get('items', 'fw_items');
     if (savedItems && Array.isArray(savedItems) && savedItems.length > 0) {
       items = savedItems.map(it => ({ jobUrl:'', instaUrl:'', fbUrl:'', snsSearchedAt:'', ...it }));
+    } else {
+      // Supabaseから取れない場合はローカルバックアップを使用
+      try {
+        const backup = localStorage.getItem('fw_items_backup');
+        if (backup) {
+          const parsed = JSON.parse(backup);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            items = parsed.map(it => ({ jobUrl:'', instaUrl:'', fbUrl:'', snsSearchedAt:'', ...it }));
+            console.log('ローカルバックアップから復元:', items.length, '件');
+          }
+        }
+      } catch(e2) {}
     }
     const savedNotices = await sb.get('items', 'fw_notices');
     if (savedNotices) notices = savedNotices;
     await loadCollectedAreas();
-  } catch(e) {}
+  } catch(e) {
+    // Supabase接続失敗時はバックアップから復元
+    try {
+      const backup = localStorage.getItem('fw_items_backup');
+      if (backup) {
+        items = JSON.parse(backup).map(it => ({ jobUrl:'', instaUrl:'', fbUrl:'', snsSearchedAt:'', ...it }));
+      }
+    } catch(e2) {}
+  }
   updateBadges(); renderList(); renderApproach(); renderToday(); renderApo(); renderDash(); renderNotice(); updateNoticeBadge(); updateSNSCounts(); updateNextAreaPreview();
 })();
 </script>
