@@ -1531,15 +1531,7 @@ function openNewDealModal() {
   document.getElementById('deal-auth').value = '社長・代表が決める';
   document.getElementById('deal-timeline').value = '近いうち（1〜3ヶ月）';
   document.getElementById('deal-competitor').value = '他社と比較していない';
-  // FIELDWORKから来た場合は引き継ぎメモを自動セット
-  if (d._fromFieldwork && (d.issue || d.approachSummary)) {
-    const parts = [];
-    if (d.approachSummary) parts.push(`【アプローチ実績】${d.approachSummary}（合計${d.approachTotal||0}回）`);
-    if (d.issue) parts.push(`【引き継ぎメモ】${d.issue}`);
-    document.getElementById('deal-memo').value = parts.join('\n');
-  } else {
-    document.getElementById('deal-memo').value = '';
-  }
+  document.getElementById('deal-memo').value = '';
   document.getElementById('deal-next-date').value = '';
   document.getElementById('deal-stage-update').value = 'hearing';
   ['urgency','budget','speed','relation'].forEach(k => {
@@ -1549,7 +1541,7 @@ function openNewDealModal() {
   setClientType('direct');
   setDealStatus('confirmed');
   // 直クライアント情報リセット
-  ['direct-company','direct-person','direct-contact'].forEach(id => {
+  ['direct-company','direct-person','direct-phone','direct-email'].forEach(id => {
     const el = document.getElementById(id); if(el) el.value = '';
   });
   const di = document.getElementById('direct-industry'); if(di) di.value = '';
