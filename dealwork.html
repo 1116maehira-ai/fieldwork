@@ -1944,19 +1944,18 @@ async function generateProposalDoc() {
   const d = currentDealId ? deals.find(x => x.id === currentDealId) : null;
   if (!d) { toast('商談データが見つかりません'); return; }
 
-  // ステップ1を隠してステップ2を表示
   document.getElementById('proposal-step1').style.display = 'none';
   document.getElementById('proposal-step2').style.display = 'block';
   document.getElementById('ai-proposal-loading').style.display = 'block';
   document.getElementById('ai-proposal-result').innerHTML = '';
 
-  // 選択されたソリューションと金額をまとめる
   const selSols = Object.keys(selectedSolutions);
   if (!selSols.length) {
     document.getElementById('ai-proposal-loading').style.display = 'none';
     document.getElementById('ai-proposal-result').innerHTML = '<div style="color:var(--red);padding:20px;text-align:center">ソリューションを選択してから企画書を生成してください</div>';
     return;
   }
+
   let totalAmount = 0;
   const solDetails = selSols.map(id => {
     const sol = SOLUTIONS.find(s => s.id === id);
@@ -1968,56 +1967,32 @@ async function generateProposalDoc() {
 
   const issueLabels = (d.issueIds||[]).map(id => {
     const f = ISSUES_LIST.find(i=>i.id===id);
-    return f ? `${f.icon}${f.label}` : null;
+    return f ? f.icon + f.label : null;
   }).filter(Boolean);
 
   const extraNote = document.getElementById('proposal-extra-note')?.value || '';
   const today = nowJST();
-  const dateStr = `${today.getFullYear()}年${today.getMonth()+1}月${today.getDate()}日`;
 
-  const prompt = `あなたは沖縄の広告代理店の営業担当者です。以下のヒアリング情報をもとに、クライアントへの企画提案書をHTML形式で作成してください。
+  const solList = solDetails.map(s => '・' + s.icon + s.name + '：月額¥' + s.amount.toLocaleString() + '円（' + s.range + '）').join('\n');
 
-【クライアント情報】
-会社名: ${d.company}
-業種: ${d.industry || '未回答'}
-エリア: ${d.area || '沖縄'}
-担当者: ${d.person || '未回答'}
-商談回数: ${(d.sessions||[]).length}回目
-
-【確認された課題】
-${issueLabels.join('、') || '未回答'}
-${d.issueMemo ? `課題詳細: ${d.issueMemo}` : ''}
-
-【目標・KPI】
-${d.goal || '未回答'}
-
-【予算感】
-${d.budget || '未確認'}
-
-【提案するソリューションと金額】
-${solDetails.map(s => `・${s.icon}${s.name}：月額¥${s.amount.toLocaleString()}円（${s.range}）`).join('
-')}
-月額合計：¥${totalAmount.toLocaleString()}円
-
-${extraNote ? `【追加コメント】
-${extraNote}` : ''}
-
-以下の構成でHTML形式の企画書を作成してください。必ず日本語で、広告代理店らしいプロフェッショナルな文体で書いてください。
-
-<div style="font-family:'Hiragino Kaku Gothic ProN','Meiryo',sans-serif;max-width:900px;margin:0 auto;color:#1a1a1a">
-
-<!-- 1. ヘッダー（会社名・日付・タイトル） -->
-<!-- 2. 課題の整理（ヒアリングで確認した課題を整理・共感） -->
-<!-- 3. 提案コンセプト（なぜこの施策が効くか、1〜2段落） -->
-<!-- 4. 施策詳細（各ソリューションの説明・期待効果） -->
-<!-- 5. 概算見積もりテーブル（各施策の金額・月額合計） -->
-<!-- 6. スケジュール感（フェーズ1〜3等） -->
-<!-- 7. まとめ・次のステップ -->
-
-</div>
-
-スタイルはインラインCSSで美しく仕上げてください。オレンジ（#FF4602）をアクセントカラーにしてください。
-金額のテーブルは編集しやすいようにdata-sol-id属性を各行に付けてください。`;
+  const prompt = 'あなたは沖縄の広告代理店の営業担当者です。以下のヒアリング情報をもとに、クライアントへの企画提案書をHTML形式で作成してください。\n\n'
+    + '【クライアント情報】\n'
+    + '会社名: ' + d.company + '\n'
+    + '業種: ' + (d.industry || '未回答') + '\n'
+    + 'エリア: ' + (d.area || '沖縄') + '\n'
+    + '担当者: ' + (d.person || '未回答') + '\n'
+    + '商談回数: ' + (d.sessions||[]).length + '回目\n\n'
+    + '【確認された課題】\n'
+    + (issueLabels.join('、') || '未回答') + '\n'
+    + (d.issueMemo ? '課題詳細: ' + d.issueMemo + '\n' : '')
+    + '\n【目標・KPI】\n' + (d.goal || '未回答') + '\n'
+    + '\n【予算感】\n' + (d.budget || '未確認') + '\n'
+    + '\n【提案するソリューションと金額】\n' + solList + '\n'
+    + '月額合計：¥' + totalAmount.toLocaleString() + '円\n'
+    + (extraNote ? '\n【追加コメント】\n' + extraNote + '\n' : '')
+    + '\n以下の構成でHTML形式の企画書を作成してください。必ず日本語で、広告代理店らしいプロフェッショナルな文体で書いてください。\n'
+    + 'スタイルはインラインCSSで美しく仕上げてください。オレンジ（#FF4602）をアクセントカラーにしてください。\n'
+    + '構成：①ヘッダー（会社名・日付）②課題の整理③提案コンセプト④施策詳細⑤概算見積もりテーブル⑥スケジュール⑦まとめ・次のステップ';
 
   try {
     const res = await fetch('https://api.anthropic.com/v1/messages', {
@@ -2031,27 +2006,18 @@ ${extraNote}` : ''}
     });
     const data = await res.json();
     const text = (data.content||[]).filter(b=>b.type==='text').map(b=>b.text).join('').trim();
-
-    // HTMLブロックを抽出
     const htmlMatch = text.match(/<div[\s\S]*<\/div>/);
-    const proposalHtml = htmlMatch ? htmlMatch[0] : `<div style="padding:20px"><pre style="white-space:pre-wrap;font-family:inherit">${text}</pre></div>`;
+    const proposalHtml = htmlMatch ? htmlMatch[0] : '<div style="padding:20px"><pre style="white-space:pre-wrap;font-family:inherit">' + text + '</pre></div>';
 
     document.getElementById('ai-proposal-loading').style.display = 'none';
-    document.getElementById('ai-proposal-result').innerHTML = `
-      <div style="border:1px solid var(--border);border-radius:10px;padding:28px;background:#fff;max-height:60vh;overflow-y:auto">
-        ${proposalHtml}
-      </div>`;
-    // 生成した企画書をdealに保存
+    document.getElementById('ai-proposal-result').innerHTML =
+      '<div style="border:1px solid var(--border);border-radius:10px;padding:28px;background:#fff;max-height:60vh;overflow-y:auto">' + proposalHtml + '</div>';
     if (d) d.aiProposalHtml = proposalHtml;
 
   } catch(e) {
     document.getElementById('ai-proposal-loading').style.display = 'none';
-    document.getElementById('ai-proposal-result').innerHTML = `
-      <div style="color:var(--red);padding:20px;text-align:center">
-        <div style="font-size:20px;margin-bottom:8px">⚠</div>
-        <div>企画書の生成に失敗しました。しばらく待ってから再試行してください。</div>
-        <div style="font-size:11px;color:var(--text-dim);margin-top:6px">${e.message}</div>
-      </div>`;
+    document.getElementById('ai-proposal-result').innerHTML =
+      '<div style="color:var(--red);padding:20px;text-align:center"><div style="font-size:20px;margin-bottom:8px">⚠</div><div>企画書の生成に失敗しました。</div></div>';
   }
 }
 
