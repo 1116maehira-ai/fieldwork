@@ -779,6 +779,36 @@ body{background:var(--bg);color:var(--text);font-family:var(--fbody);font-size:1
 
 <script>
 
+// ══ Supabase 永続保存 ══
+const SUPABASE_URL = 'https://osipzwbsfbgbegjowydm.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_yO0lVlOP_r-qhnwjxqq0UQ_qjxSrlnC';
+const sb = {
+  async get(key) {
+    try {
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/items?user_id=eq.${key}&select=data`, {
+        headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
+      });
+      const rows = await res.json();
+      if (rows && rows.length > 0 && rows[0].data) return rows[0].data;
+      return null;
+    } catch(e) { return null; }
+  },
+  async set(key, data) {
+    try {
+      await fetch(`${SUPABASE_URL}/rest/v1/items`, {
+        method: 'POST',
+        headers: {
+          'apikey': SUPABASE_KEY,
+          'Authorization': `Bearer ${SUPABASE_KEY}`,
+          'Content-Type': 'application/json',
+          'Prefer': 'resolution=merge-duplicates',
+        },
+        body: JSON.stringify({ user_id: key, data, updated_at: new Date().toISOString() })
+      });
+    } catch(e) {}
+  }
+};
+
 function nowJST() {
   const now = new Date();
   const utc = now.getTime() + now.getTimezoneOffset() * 60000;
@@ -1016,16 +1046,17 @@ let selectedPushServices = new Set();
 
 async function loadMyServices() {
   try {
-    if (window.storage) {
-      const s = await window.storage.get('my_services');
-      if (s?.value) myServices = JSON.parse(s.value);
+    {
+      const s = await sb.get('dw_services');
+      if (s) myServices = Array.isArray(s) ? s : JSON.parse(s);
     }
   } catch(e) {}
 }
 
 function saveMyServices() {
   try {
-    if (window.storage) window.storage.set('my_services', JSON.stringify(myServices)).catch(()=>{});
+    sb.set('dw_services', myServices).catch(()=>{});
+    try { localStorage.setItem('dw_services_backup', JSON.stringify(myServices)); } catch(e) {}
   } catch(e) {}
 }
 
@@ -1402,7 +1433,13 @@ const DEAL_STAGES = {
 };
 
 function saveDeals() {
-  try { if(window.storage) window.storage.set('fw_deals', JSON.stringify(deals)).catch(()=>{}); } catch(e) {}
+  // Supabaseに保存（永続化）
+  sb.set('dw_deals', deals).catch(e => {
+    // フォールバック：ローカルストレージにバックアップ
+    try { localStorage.setItem('dw_deals_backup', JSON.stringify(deals)); } catch(e2) {}
+  });
+  // ローカルにもバックアップ
+  try { localStorage.setItem('dw_deals_backup', JSON.stringify(deals)); } catch(e) {}
   renderDeals();
   updateDealBadge();
 }
@@ -2212,10 +2249,52 @@ window.addEventListener('message', (e) => {
 
 (async () => {
   try {
-    if (window.storage) {
-      try { const s = await window.storage.get('fw_deals'); if(s?.value) deals = JSON.parse(s.value); } catch(e) {}
+    // Supabaseから読み込み
+    const saved = await sb.get('dw_deals');
+    // ★ 旧データ移行：window.storageに古いデータがある場合は移行
+    if (!saved || (Array.isArray(saved) && saved.length === 0)) {
+      try {
+        if (window.storage) {
+          const old = await window.storage.get('fw_deals');
+          if (old?.value) {
+            const oldDeals = JSON.parse(old.value);
+            if (Array.isArray(oldDeals) && oldDeals.length > 0) {
+              deals = oldDeals;
+              await sb.set('dw_deals', deals);
+              console.log(`旧データ(window.storage)から${deals.length}件を移行しました`);
+              updateDealBadge(); renderDeals(); renderDash(); fwUpdateStats();
+              await loadMyServices();
+              return;
+            }
+          }
+        }
+      } catch(e) {}
     }
-  } catch(e) {}
+    if (saved && Array.isArray(saved) && saved.length > 0) {
+      deals = saved;
+      console.log(`Supabaseから${deals.length}件の商談データを読み込みました`);
+    } else {
+      // Supabaseにデータがない場合はローカルバックアップから復元
+      try {
+        const backup = localStorage.getItem('dw_deals_backup');
+        if (backup) {
+          const parsed = JSON.parse(backup);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            deals = parsed;
+            // ローカルから復元できたらSupabaseにも書き戻す
+            await sb.set('dw_deals', deals);
+            console.log(`ローカルバックアップから${deals.length}件を復元し、Supabaseに保存しました`);
+          }
+        }
+      } catch(e2) {}
+    }
+  } catch(e) {
+    // Supabase接続失敗時はローカルバックアップから
+    try {
+      const backup = localStorage.getItem('dw_deals_backup');
+      if (backup) deals = JSON.parse(backup);
+    } catch(e2) {}
+  }
   updateDealBadge(); renderDeals(); renderDash(); fwUpdateStats();
   await loadMyServices();
 })();
