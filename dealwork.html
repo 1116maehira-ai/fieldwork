@@ -137,6 +137,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--fbody);font-size:1
 
 /* ── MODAL ── */
 .overlay{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.32);z-index:500;align-items:center;justify-content:center;padding:12px 12px 12px calc(var(--sidebar) + 12px);backdrop-filter:blur(2px)}
+@media(max-width:768px){.overlay{padding:0;align-items:flex-end}}
 .overlay.open{display:flex}
 .modal{background:#fff;border:1px solid var(--border);border-radius:16px;width:100%;max-width:780px;max-height:96vh;display:flex;flex-direction:column;box-shadow:var(--sh3)}
 .modal-wide{max-width:680px}
@@ -191,6 +192,168 @@ body{background:var(--bg);color:var(--text);font-family:var(--fbody);font-size:1
 ::-webkit-scrollbar-track{background:transparent}
 ::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
 ::-webkit-scrollbar-thumb:hover{background:var(--text-dim)}
+
+/* ══ MOBILE RESPONSIVE ══ */
+@media (max-width: 768px) {
+
+  /* サイドバーを下部タブバーに変換 */
+  .sidebar {
+    width: 100%;
+    height: 60px;
+    top: auto;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    flex-direction: row;
+    border-right: none;
+    border-top: 1px solid var(--border);
+    overflow: hidden;
+    z-index: 300;
+  }
+  .logo { display: none; }
+  .nav {
+    display: flex;
+    flex-direction: row;
+    align-items: stretch;
+    padding: 0;
+    flex: 1;
+    overflow-x: auto;
+    overflow-y: visible;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .nav::-webkit-scrollbar { display: none; }
+  .nav-group { display: none; }
+  .nav-item {
+    flex-direction: column;
+    gap: 2px;
+    padding: 6px 4px;
+    border-radius: 0;
+    font-size: 9px;
+    min-width: 56px;
+    flex: 1;
+    justify-content: center;
+    align-items: center;
+    border-left: none;
+    border-top: 2px solid transparent;
+    margin: 0;
+  }
+  .nav-item.active {
+    background: var(--accent-dim, rgba(255,70,2,0.08));
+    border-top-color: var(--accent);
+    border-left: none;
+    box-shadow: none;
+  }
+  .nav-item svg, .nav-icon { width: 18px; height: 18px; }
+  .nav-badge {
+    position: absolute;
+    top: 4px;
+    right: 8px;
+    font-size: 9px;
+    padding: 0 4px;
+    min-width: 16px;
+    height: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .nav-item { position: relative; }
+
+  /* メインコンテンツ */
+  .main {
+    margin-left: 0;
+    padding-bottom: 60px;
+  }
+
+  /* トップバー */
+  .topbar {
+    padding: 12px 16px;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .page-title { font-size: 18px; }
+  .topbar-actions {
+    width: 100%;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .topbar-actions .btn { font-size: 11px; padding: 6px 10px; }
+
+  /* コンテンツ */
+  .content { padding: 14px 16px; }
+
+  /* 商談カード */
+  .deal-card { padding: 14px; }
+  .dc-top { flex-wrap: wrap; gap: 8px; }
+  .dc-company { font-size: 14px; }
+  .dc-tags { flex-wrap: wrap; gap: 5px; }
+
+  /* モーダル */
+  .overlay {
+    padding: 0;
+    align-items: flex-end;
+  }
+  .modal {
+    max-width: 100% !important;
+    width: 100% !important;
+    max-height: 92vh;
+    border-radius: 16px 16px 0 0;
+  }
+  .modal-wide { max-width: 100% !important; }
+  .mbody { padding: 16px; }
+  .mhead { padding: 16px 16px 12px; }
+  .mfoot { padding: 12px 16px; flex-wrap: wrap; gap: 8px; }
+  .mfoot > div { flex: 1; display: flex; gap: 8px; justify-content: flex-end; }
+
+  /* ヒアリングフォーム */
+  .hs { padding: 14px; margin-bottom: 10px; }
+  .fg { grid-template-columns: 1fr !important; }
+  .fg.col2 { grid-template-columns: 1fr 1fr !important; }
+  .hs-title { font-size: 11px; }
+
+  /* グリッドを1列に */
+  .heat-grid { grid-template-columns: 1fr 1fr !important; }
+
+  /* ダッシュボード */
+  .kpi-grid { grid-template-columns: 1fr 1fr !important; }
+  .kpi-card { padding: 14px; }
+  .kpi-num { font-size: 28px; }
+
+  /* ステージバー */
+  .stage-bar { flex-wrap: wrap; gap: 6px; overflow-x: auto; padding-bottom: 4px; }
+  .stage-btn { flex-shrink: 0; padding: 7px 10px; font-size: 10px; }
+
+  /* テーブル → カード型 */
+  .deals-list-table thead { display: none; }
+  .deals-list-table tr {
+    display: block;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    margin-bottom: 10px;
+    padding: 12px;
+  }
+  .deals-list-table td {
+    display: block;
+    border: none;
+    padding: 3px 0;
+  }
+
+  /* スコアカード */
+  .sol-card { padding: 9px 10px; }
+
+  /* トースト */
+  .toast { right: 12px; bottom: 70px; left: 12px; max-width: none; text-align: center; }
+
+  /* FWステータス */
+  .fw-sc-grid { grid-template-columns: 1fr 1fr !important; }
+}
+
+@media (max-width: 480px) {
+  .topbar-actions .btn span { display: none; }
+  .kpi-grid { grid-template-columns: 1fr 1fr !important; }
+  .stage-bar { gap: 4px; }
+  .stage-btn { padding: 6px 8px; font-size: 9px; }
+}
 </style>
 </head>
 <body>
@@ -630,7 +793,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--fbody);font-size:1
       <!-- ⑨ 温度感スコア -->
       <div class="hs">
         <div class="hs-title">⑨ 商談温度感スコア</div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div class="heat-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
           <div style="display:flex;align-items:center;gap:10px"><div style="font-size:12px;color:var(--text-mid);width:100px;flex-shrink:0">🔥 課題の深刻度</div><div class="heat-meter" id="heat-urgency"><div class="heat-dot" onclick="setHeat('urgency',1,this)">1</div><div class="heat-dot" onclick="setHeat('urgency',2,this)">2</div><div class="heat-dot" onclick="setHeat('urgency',3,this)">3</div><div class="heat-dot" onclick="setHeat('urgency',4,this)">4</div><div class="heat-dot" onclick="setHeat('urgency',5,this)">5</div></div></div>
           <div style="display:flex;align-items:center;gap:10px"><div style="font-size:12px;color:var(--text-mid);width:100px;flex-shrink:0">💰 予算感</div><div class="heat-meter" id="heat-budget"><div class="heat-dot" onclick="setHeat('budget',1,this)">1</div><div class="heat-dot" onclick="setHeat('budget',2,this)">2</div><div class="heat-dot" onclick="setHeat('budget',3,this)">3</div><div class="heat-dot" onclick="setHeat('budget',4,this)">4</div><div class="heat-dot" onclick="setHeat('budget',5,this)">5</div></div></div>
           <div style="display:flex;align-items:center;gap:10px"><div style="font-size:12px;color:var(--text-mid);width:100px;flex-shrink:0">⚡ 検討スピード</div><div class="heat-meter" id="heat-speed"><div class="heat-dot" onclick="setHeat('speed',1,this)">1</div><div class="heat-dot" onclick="setHeat('speed',2,this)">2</div><div class="heat-dot" onclick="setHeat('speed',3,this)">3</div><div class="heat-dot" onclick="setHeat('speed',4,this)">4</div><div class="heat-dot" onclick="setHeat('speed',5,this)">5</div></div></div>
