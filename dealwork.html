@@ -670,65 +670,57 @@ body{background:var(--bg);color:var(--text);font-family:var(--fbody);font-size:1
       </div>
 
     </div><!-- /mbody -->
-    <div class="mfoot">
-      <button class="btn btn-ghost" onclick="cm('m-deal')">キャンセル</button>
-      <button class="btn btn-primary" onclick="saveDeal()">💾 保存する</button>
+    <div class="mfoot" style="justify-content:space-between">
+      <button class="btn btn-ghost btn-sm" id="btn-delete-deal" onclick="deleteDeal()" style="color:var(--red);border-color:var(--red);display:none">🗑 この商談を削除</button>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-ghost" onclick="cm('m-deal')">キャンセル</button>
+        <button class="btn btn-primary" onclick="saveDeal()">💾 保存する</button>
+      </div>
     </div>
   </div>
 </div>
 
-<!-- ══ MODAL: AI企画書生成 ══ -->
+<!-- ══ MODAL: 社内共有レポート ══ -->
 <div class="overlay" id="m-proposal">
   <div class="modal modal-wide">
     <div class="mhead">
-      <div><div class="mtitle">🚀 AI企画書を作る</div><div style="font-size:11px;color:var(--text-mid);margin-top:2px" id="proposal-sub"></div></div>
+      <div><div class="mtitle">📋 社内共有レポート</div><div style="font-size:11px;color:var(--text-mid);margin-top:2px" id="proposal-sub"></div></div>
       <button class="mclose" onclick="cm('m-proposal')">✕</button>
     </div>
     <div class="mbody">
 
-      <!-- ステップ1: ソリューション選択 -->
+      <!-- 提案金額設計 -->
       <div id="proposal-step1">
-        <div style="font-family:var(--fmono);font-size:9px;color:var(--accent);font-weight:600;letter-spacing:.15em;margin-bottom:6px">// STEP 1 — 提案ソリューション＆概算見積もり設計</div>
+        <div style="font-family:var(--fmono);font-size:9px;color:var(--accent);font-weight:600;letter-spacing:.15em;margin-bottom:6px">// 提案ソリューション＆概算見積もり設計</div>
         <div style="font-size:11px;color:var(--text-dim);margin-bottom:14px">ソリューションを選んで金額を設定してください。同じ商材を複数追加できます。</div>
 
-        <!-- ソリューション行リスト -->
         <div id="sol-rows" style="display:flex;flex-direction:column;gap:8px;margin-bottom:12px"></div>
 
-        <!-- 追加ボタン -->
         <button onclick="addSolRow()" style="width:100%;padding:9px;border:1.5px dashed var(--border2);border-radius:8px;background:transparent;cursor:pointer;color:var(--text-mid);font-size:12px;transition:all 0.15s" onmouseover="this.style.borderColor='var(--accent)';this.style.color='var(--accent)'" onmouseout="this.style.borderColor='var(--border2)';this.style.color='var(--text-mid)'">
           ＋ ソリューションを追加
         </button>
 
-        <!-- 合計 -->
         <div style="margin-top:14px;padding:12px 16px;background:var(--surface2);border-radius:8px;display:flex;justify-content:space-between;align-items:center">
           <span style="font-size:12px;color:var(--text-mid)">月額合計（目安）</span>
           <span id="sol-total" style="font-family:var(--font-head);font-size:24px;color:var(--accent)">¥0</span>
         </div>
 
-        <div style="margin-top:16px;font-family:var(--fmono);font-size:9px;color:var(--accent);font-weight:600;letter-spacing:.15em;margin-bottom:8px">// STEP 3 — 企画書に追加する一言コメント（任意）</div>
-        <textarea class="ftextarea" id="proposal-extra-note" placeholder="例：御社の新規出店に合わせた集中的なブランド認知施策として提案いたします。" style="min-height:60px"></textarea>
+        <div style="margin-top:14px">
+          <label style="font-family:var(--fmono);font-size:9px;color:var(--text-mid);letter-spacing:.12em;text-transform:uppercase">備考・特記事項（任意）</label>
+          <textarea class="ftextarea" id="proposal-extra-note" placeholder="例：次回商談で見積書を提出予定。社長判断待ち。" style="min-height:56px;margin-top:4px"></textarea>
+        </div>
 
-        <div style="margin-top:14px;text-align:center">
-          <button class="btn btn-primary" onclick="generateProposalDoc()" style="padding:12px 28px;font-size:14px">
-            🤖 AIで企画書を自動生成する
-          </button>
+        <div style="margin-top:16px;display:flex;gap:8px;justify-content:flex-end">
+          <button class="btn btn-ghost btn-sm" onclick="saveProposal()">💾 金額を保存</button>
+          <button class="btn btn-ghost btn-sm" onclick="exportProposalPDF()" style="border-color:var(--gold);color:#8a6000;background:var(--gold-dim)">🖨 この商談をPDF出力</button>
+          <button class="btn btn-primary" onclick="exportAllReportPDF()">📋 全商談レポートをPDF出力</button>
         </div>
       </div>
 
-      <!-- ステップ2: AI生成された企画書 -->
+      <!-- PDF出力中の表示 -->
       <div id="proposal-step2" style="display:none">
-        <div id="ai-proposal-loading" style="text-align:center;padding:40px;display:none">
-          <div style="font-size:28px;margin-bottom:12px">🤖</div>
-          <div style="font-family:var(--fmono);font-size:12px;color:var(--accent);margin-bottom:8px">// AIが企画書を作成中...</div>
-          <div style="font-size:11px;color:var(--text-dim)">ヒアリング内容を分析して企画書を作成しています。少々お待ちください。</div>
-        </div>
+        <div id="ai-proposal-loading" style="display:none"></div>
         <div id="ai-proposal-result"></div>
-        <div style="margin-top:14px;display:flex;gap:8px;justify-content:flex-end">
-          <button class="btn btn-ghost btn-sm" onclick="document.getElementById('proposal-step1').style.display='block';document.getElementById('proposal-step2').style.display='none'">← 設計に戻る</button>
-          <button class="btn btn-ghost btn-sm" onclick="generateProposalDoc()" style="border-color:var(--purple);color:var(--purple)">🔄 再生成</button>
-          <button class="btn btn-ghost btn-sm" onclick="exportProposalPDF()" style="border-color:var(--gold);color:#8a6000;background:var(--gold-dim)">🖨 PDF出力</button>
-          <button class="btn btn-primary" onclick="saveProposal()">💾 この企画書で保存</button>
-        </div>
       </div>
 
     </div>
@@ -1441,6 +1433,18 @@ const DEAL_STAGES = {
   lost:     { label:'失注',         cls:'sb-lost',     color:'var(--text-dim)'},
 };
 
+function deleteDeal() {
+  if (!currentDealId) return;
+  const d = deals.find(x => x.id === currentDealId);
+  if (!d) return;
+  if (!confirm('「' + d.company + '」の商談を削除しますか？この操作は取り消せません。')) return;
+  deals = deals.filter(x => x.id !== currentDealId);
+  currentDealId = null;
+  saveDeals();
+  cm('m-deal');
+  toast('🗑 削除しました');
+}
+
 function saveDeals() {
   // Supabaseに保存（永続化）
   sb.set('dw_deals', deals).catch(e => {
@@ -1561,6 +1565,9 @@ function openNewDealModal() {
   document.getElementById('compe-deadline') && (document.getElementById('compe-deadline').value='');
   document.getElementById('compe-result-date') && (document.getElementById('compe-result-date').value='');
   document.getElementById('compe-memo') && (document.getElementById('compe-memo').value='');
+  // 新規商談は削除ボタンを非表示
+  const delBtn = document.getElementById('btn-delete-deal');
+  if (delBtn) delBtn.style.display = 'none';
   document.getElementById('m-deal').dataset.itemId = '';
   renderActivityMap({});
   renderIssueChips([]);
@@ -1672,6 +1679,9 @@ function openExistingDeal(id) {
     if (el) el.style.display = dealDeliverables.has(cat.id) ? 'block' : 'none';
   });
   renderAllDetailChips();
+  // 既存商談は削除ボタンを表示
+  const delBtn = document.getElementById('btn-delete-deal');
+  if (delBtn) delBtn.style.display = 'inline-flex';
   document.getElementById('m-deal').classList.add('open');
 }
 
@@ -2129,33 +2139,238 @@ function saveProposal() {
   toast('🚀 企画書を保存しました（月額¥' + total.toLocaleString() + '）');
 }
 
+// ── 共通：1商談レポートHTML生成 ──
+function buildDealReportHTML(d, solRowsData, extraNote) {
+  const today = nowJST();
+  const dateStr = today.getFullYear() + '年' + (today.getMonth()+1) + '月' + today.getDate() + '日';
+  const issueLabels = (d.issueIds||[]).map(id => { const f=ISSUES_LIST.find(i=>i.id===id); return f ? f.icon+' '+f.label : null; }).filter(Boolean);
+  const total = (solRowsData||[]).reduce((s,r)=>s+(r.amount||0),0);
+  const heatPct = Math.round(Object.values(d.heat||{}).reduce((s,v)=>s+v,0)/20*100);
+  const stageLabel = {hearing:'📋 ヒアリング中',proposal:'📝 提案中',closing:'🤝 クロージング',won:'🎉 受注',lost:'❌ 失注'}[d.stage]||d.stage;
+  const sessions = d.sessions||[];
+
+  const css = `@page{size:A4;margin:15mm 14mm}*{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:'Hiragino Kaku Gothic ProN','Meiryo',sans-serif;font-size:10.5pt;color:#1a1a1a;line-height:1.6}
+    .page-break{page-break-before:always}
+    h1{font-size:18pt;font-weight:900;color:#FF4602;letter-spacing:.05em;margin-bottom:4px}
+    h2{font-size:10pt;font-weight:700;color:#fff;background:#1a1a1a;padding:4px 10px;border-radius:3px;margin:14px 0 8px;letter-spacing:.1em}
+    .meta{display:flex;gap:20px;font-size:9pt;color:#666;margin-bottom:12px;padding-bottom:10px;border-bottom:2px solid #FF4602}
+    .meta strong{color:#1a1a1a}
+    .grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}
+    .box{background:#f8f8f8;border:1px solid #e8e8e8;border-radius:6px;padding:10px 12px}
+    .box-label{font-size:8pt;color:#888;letter-spacing:.1em;text-transform:uppercase;margin-bottom:3px}
+    .box-val{font-size:11pt;font-weight:600;color:#1a1a1a}
+    .chip{display:inline-block;padding:3px 10px;border-radius:20px;font-size:9pt;margin:2px;background:#fff0f0;border:1px solid #ffb0b0;color:#c0325a}
+    table{width:100%;border-collapse:collapse;margin:8px 0}
+    th{background:#1a1a1a;color:#FF4602;font-size:9pt;padding:6px 10px;text-align:left}
+    td{padding:7px 10px;font-size:10pt;border-bottom:1px solid #eee}
+    .total-row td{font-weight:900;font-size:12pt;color:#FF4602;background:#fff8f5;border-top:2px solid #FF4602}
+    .session-row{background:#f8f8f8;border-radius:6px;padding:10px 12px;margin-bottom:8px;border-left:3px solid #FF4602}
+    .heat-bar{height:8px;background:#eee;border-radius:4px;overflow:hidden;margin-top:4px}
+    .heat-fill{height:100%;background:linear-gradient(90deg,#FF4602,#facf4c);border-radius:4px}
+    .footer{margin-top:20px;padding-top:10px;border-top:1px solid #eee;display:flex;justify-content:space-between;font-size:8.5pt;color:#aaa}
+    .memo{background:#fffbf0;border:1px solid #ffe0a0;border-radius:6px;padding:10px 12px;font-size:10pt;line-height:1.8;white-space:pre-wrap}`;
+
+  let html = '<!DOCTYPE html><html lang="ja"><head><meta charset="UTF-8"><title>' + d.company + ' 商談レポート</title><style>' + css + '</style></head><body>';
+  
+  // ヘッダー
+  html += '<h1>' + d.company + ' 商談レポート</h1>';
+  html += '<div class="meta">'
+    + '<div>担当者: <strong>' + (d.person||'—') + '</strong></div>'
+    + '<div>業種: <strong>' + (d.industry||'—') + '</strong></div>'
+    + '<div>エリア: <strong>' + (d.area||'—') + '</strong></div>'
+    + '<div>作成日: <strong>' + dateStr + '</strong></div>'
+    + '<div>ステージ: <strong>' + stageLabel + '</strong></div>'
+    + '</div>';
+
+  // 基本情報
+  html += '<h2>// 基本情報</h2><div class="grid2">';
+  const di = d.directInfo||{};
+  html += '<div class="box"><div class="box-label">電話番号</div><div class="box-val">' + (di.phone||d.phone||'—') + '</div></div>';
+  html += '<div class="box"><div class="box-label">メールアドレス</div><div class="box-val">' + (di.email||'—') + '</div></div>';
+  html += '<div class="box"><div class="box-label">役職</div><div class="box-val">' + (di.role||d.position||'—') + '</div></div>';
+  html += '<div class="box"><div class="box-label">次回商談予定日</div><div class="box-val">' + (d.nextDate||'—') + '</div></div>';
+  html += '</div>';
+
+  // 課題
+  if (issueLabels.length) {
+    html += '<h2>// 課題・困っていること</h2>';
+    html += '<div>' + issueLabels.map(l=>'<span class="chip">'+l+'</span>').join('') + '</div>';
+    if (d.issueMemo) html += '<div class="memo" style="margin-top:8px">' + d.issueMemo + '</div>';
+  }
+
+  // 温度感
+  html += '<h2>// 商談温度感</h2><div class="grid2">';
+  const heatKeys = [{k:'urgency',l:'課題の深刻度'},{k:'budget',l:'予算感'},{k:'speed',l:'検討スピード'},{k:'relation',l:'関係性・相性'}];
+  heatKeys.forEach(({k,l}) => {
+    const v = (d.heat||{})[k]||0;
+    html += '<div class="box"><div class="box-label">' + l + '</div>'
+      + '<div style="font-size:11pt;font-weight:700;color:#FF4602">' + v + ' / 5</div>'
+      + '<div class="heat-bar"><div class="heat-fill" style="width:' + (v/5*100) + '%"></div></div></div>';
+  });
+  html += '<div class="box" style="grid-column:1/-1"><div class="box-label">総合温度感</div>'
+    + '<div style="font-size:14pt;font-weight:900;color:#FF4602">' + heatPct + '%</div>'
+    + '<div class="heat-bar"><div class="heat-fill" style="width:' + heatPct + '%"></div></div></div>';
+  html += '</div>';
+
+  // 予算・体制
+  html += '<h2>// 予算・体制</h2><div class="grid2">';
+  html += '<div class="box"><div class="box-label">総予算感</div><div class="box-val">' + (d.budget||'未確認') + '</div></div>';
+  html += '<div class="box"><div class="box-label">決裁権限</div><div class="box-val">' + (d.auth||'—') + '</div></div>';
+  html += '<div class="box"><div class="box-label">検討タイムライン</div><div class="box-val">' + (d.timeline||'—') + '</div></div>';
+  html += '<div class="box"><div class="box-label">競合状況</div><div class="box-val">' + (d.competitor||'—') + '</div></div>';
+  html += '</div>';
+
+  // 目標・KPI
+  if (d.goal) {
+    html += '<h2>// 目標・KPI</h2><div class="memo">' + d.goal + '</div>';
+  }
+
+  // 提案ソリューション
+  if (solRowsData && solRowsData.length) {
+    html += '<h2>// 提案ソリューション＆概算見積もり</h2>';
+    html += '<table><thead><tr><th>ソリューション</th><th>相場レンジ</th><th style="text-align:right">提案金額（月額目安）</th></tr></thead><tbody>';
+    solRowsData.forEach(r => {
+      const sol = SOLUTIONS.find(s=>s.id===r.solId)||{name:r.solId,icon:'',range:''};
+      html += '<tr><td><strong>' + sol.icon + ' ' + sol.name + '</strong>' + (r.note?'<br><span style="font-size:9pt;color:#888">'+r.note+'</span>':'') + '</td><td style="font-size:9pt;color:#888">' + sol.range + '</td><td style="text-align:right;font-weight:700">¥' + (r.amount||0).toLocaleString() + '</td></tr>';
+    });
+    html += '<tr class="total-row"><td colspan="2">月額合計（目安）</td><td style="text-align:right">¥' + total.toLocaleString() + '</td></tr>';
+    html += '</tbody></table>';
+  }
+
+  // 備考
+  if (extraNote) {
+    html += '<h2>// 備考・特記事項</h2><div class="memo">' + extraNote + '</div>';
+  }
+
+  // 商談履歴
+  if (sessions.length) {
+    html += '<h2>// 商談履歴（' + sessions.length + '回）</h2>';
+    [...sessions].reverse().forEach((s,i) => {
+      html += '<div class="session-row">'
+        + '<div style="display:flex;gap:16px;align-items:center;margin-bottom:4px">'
+        + '<strong style="color:#FF4602">' + (s.round||('第'+(sessions.length-i)+'回')) + '</strong>'
+        + '<span style="font-size:9.5pt;color:#666">' + (s.date||'') + '</span>'
+        + (s.attendee ? '<span style="font-size:9.5pt;color:#666">👤 ' + s.attendee + '</span>' : '')
+        + (s.place ? '<span style="font-size:9.5pt;color:#666">📍 ' + s.place + '</span>' : '')
+        + '</div>'
+        + (s.memo ? '<div style="font-size:9.5pt;color:#444;margin-top:4px;padding-left:8px;border-left:2px solid #eee">📝 ' + s.memo + '</div>' : '')
+        + '</div>';
+    });
+  }
+
+  html += '<div class="footer"><div>DEALWORK 商談支援システム</div><div>' + d.company + ' — ' + dateStr + '</div></div>';
+  html += '</body></html>';
+  return html;
+}
+
+// ── 1商談PDFレポート ──
 function exportProposalPDF() {
   const d = currentDealId ? deals.find(x => x.id === currentDealId) : null;
-  const selSols = Object.keys(selectedSolutions);
-  if (!selSols.length) { toast('ソリューションを選択してください'); return; }
-  const today = nowJST();
-  const dateStr = `${today.getFullYear()}年${today.getMonth()+1}月${today.getDate()}日`;
-  let total = 0;
-  const rowsData = selSols.map(id => {
-    const sol = SOLUTIONS.find(s=>s.id===id); if (!sol) return null;
-    const amount = selectedSolutions[id]!==null ? selectedSolutions[id] : Math.round((sol.min+sol.max)/2);
-    total += amount;
-    return { sol, amount };
-  }).filter(Boolean);
-  const eLabel = {push:'新規開拓提案',issue:'課題解決提案',solution:'ソリューション提案'}[d?.entryType]||'広告提案';
-  const issueList = (d?.issueIds||[]).map(id=>{ const f=ISSUES_LIST.find(i=>i.id===id); return f?`${f.icon} ${f.label}`:null; }).filter(Boolean);
-  const html = `<!DOCTYPE html><html lang="ja"><head><meta charset="UTF-8"><title>${d?.company||''}提案書</title><style>@page{size:A4;margin:18mm 16mm}*{box-sizing:border-box;margin:0;padding:0}body{font-family:'Hiragino Kaku Gothic ProN','Meiryo',sans-serif;font-size:11pt;color:#1a1a2e}.cover{padding:36px 0 28px;border-bottom:3px solid #4fffb0;margin-bottom:24px}.badge{display:inline-block;background:#1a1a2e;color:#4fffb0;font-size:9pt;padding:4px 14px;border-radius:20px;letter-spacing:.15em;margin-bottom:14px}.cover-title{font-size:24pt;font-weight:900;line-height:1.2;margin-bottom:8px}.cover-meta{margin-top:14px;display:flex;gap:24px;font-size:10pt;color:#555}.cover-meta span{font-weight:700;color:#1a1a2e}.sec-title{font-size:10pt;letter-spacing:.18em;text-transform:uppercase;color:#4fffb0;background:#1a1a2e;padding:5px 12px;border-radius:4px;margin-bottom:10px;display:inline-block}.section{margin-bottom:20px}.issue-chips{display:flex;flex-wrap:wrap;gap:6px}.ic{background:#fff0f3;border:1px solid #ff9ab0;color:#c0325a;font-size:9.5pt;padding:3px 11px;border-radius:20px}table{width:100%;border-collapse:collapse;margin-bottom:6px}th{background:#1a1a2e;color:#4fffb0;font-size:9.5pt;padding:7px 11px;text-align:left;font-weight:700}td{padding:8px 11px;font-size:10.5pt;border-bottom:1px solid #e8eaf0}.td-name{font-weight:600}.td-range{font-size:9pt;color:#888}.td-amt{font-weight:700;text-align:right;white-space:nowrap}.total-row{background:#1a1a2e!important}.total-row td{color:#4fffb0;font-weight:900;font-size:13pt;border:none}.note{background:#f0fdf8;border:1px solid #b2eed8;border-radius:6px;padding:11px 13px;font-size:9.5pt;color:#2d6e52;margin-top:7px;line-height:1.7}.footer{margin-top:28px;padding-top:12px;border-top:2px solid #e8eaf0;display:flex;justify-content:space-between;font-size:9pt;color:#aaa}</style></head><body>
-<div class="cover"><div class="badge">OKINAWA AD PROPOSAL</div><div class="cover-title">広告・デジタルマーケティング<br>${eLabel}</div><div style="font-size:12pt;color:#555">${d?.company||''} 御中</div><div class="cover-meta"><div>作成日: <span>${dateStr}</span></div><div>担当: <span>${d?.person||'—'}</span></div><div>エリア: <span>${d?.area||'沖縄県'}</span></div>${d?.industry?`<div>業種: <span>${d.industry}</span></div>`:''}</div></div>
-${issueList.length?`<div class="section"><div class="sec-title">// 確認された課題</div><div class="issue-chips">${issueList.map(i=>`<div class="ic">${i}</div>`).join('')}</div></div>`:''}
-<div class="section"><div class="sec-title">// 提案内容・沖縄相場金額</div><table><thead><tr><th>ソリューション</th><th>沖縄相場レンジ</th><th style="text-align:right">提案金額（月額目安）</th></tr></thead><tbody>${rowsData.map(({sol,amount})=>`<tr><td class="td-name">${sol.icon} ${sol.name}</td><td class="td-range">${sol.range}</td><td class="td-amt">¥${amount.toLocaleString()}</td></tr>`).join('')}<tr class="total-row"><td colspan="2">月額合計（目安）</td><td class="td-amt">¥${total.toLocaleString()}</td></tr></tbody></table><div class="note">💡 上記金額は沖縄県内の市場調査に基づく目安です。詳細は業種・規模・目標により変動します。</div></div>
-${(d?.budget||d?.timeline)?`<div class="section"><div class="sec-title">// ヒアリング内容サマリー</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px 22px">${d?.budget?`<div style="border-left:3px solid #4fffb0;padding-left:9px"><div style="font-size:8.5pt;color:#888;margin-bottom:2px">月間広告予算</div><div style="font-size:11pt;font-weight:600">${d.budget}</div></div>`:''} ${d?.timeline?`<div style="border-left:3px solid #4fffb0;padding-left:9px"><div style="font-size:8.5pt;color:#888;margin-bottom:2px">検討タイムライン</div><div style="font-size:11pt;font-weight:600">${d.timeline}</div></div>`:''}</div></div>`:''}
-<div class="footer"><div>DEALWORK — 商談支援システム / FIELDWORK連携</div><div>${d?.company||''} 様 — ${dateStr}</div></div>
-</body></html>`;
-  const w = window.open('','_blank','width=860,height=680');
+  if (!d) { toast('商談データがありません'); return; }
+  const extraNote = document.getElementById('proposal-extra-note')?.value || '';
+  const html = buildDealReportHTML(d, solRows, extraNote);
+  const w = window.open('', '_blank', 'width=900,height=700');
   if (!w) { toast('ポップアップを許可してください'); return; }
   w.document.write(html); w.document.close();
   setTimeout(() => { w.focus(); w.print(); }, 600);
-  toast('🖨 提案書PDFウィンドウを開きました');
+  toast('🖨 ' + d.company + ' の商談レポートを出力しました');
+}
+
+// ── 全商談まとめレポートPDF ──
+function exportAllReportPDF() {
+  const today = nowJST();
+  const dateStr = today.getFullYear() + '年' + (today.getMonth()+1) + '月' + today.getDate() + '日';
+  const activeDeals = deals.filter(d => d.stage !== 'lost');
+  if (!activeDeals.length) { toast('商談データがありません'); return; }
+
+  const stageLabel = {hearing:'📋 ヒアリング中',proposal:'📝 提案中',closing:'🤝 クロージング',won:'🎉 受注',lost:'❌ 失注'};
+  const totalProposal = activeDeals.reduce((s,d)=>s+(d.proposalAmount||0),0);
+  const wonDeals = deals.filter(d=>d.stage==='won');
+  const wonTotal = wonDeals.reduce((s,d)=>s+(d.proposalAmount||0),0);
+
+  const css = `@page{size:A4;margin:15mm 14mm}*{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:'Hiragino Kaku Gothic ProN','Meiryo',sans-serif;font-size:10pt;color:#1a1a1a;line-height:1.6}
+    .page-break{page-break-before:always}
+    h1{font-size:20pt;font-weight:900;color:#FF4602;margin-bottom:4px}
+    h2{font-size:10pt;font-weight:700;color:#fff;background:#1a1a1a;padding:4px 10px;border-radius:3px;margin:16px 0 8px;letter-spacing:.1em}
+    .summary-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:12px 0 18px}
+    .sum-box{background:#f8f8f8;border:1px solid #e8e8e8;border-radius:6px;padding:10px 12px;text-align:center}
+    .sum-num{font-size:22pt;font-weight:900;color:#FF4602;line-height:1}
+    .sum-label{font-size:8pt;color:#888;margin-top:3px;letter-spacing:.08em}
+    table{width:100%;border-collapse:collapse;margin:8px 0;font-size:9.5pt}
+    th{background:#1a1a1a;color:#FF4602;padding:6px 8px;text-align:left;font-size:8.5pt}
+    td{padding:6px 8px;border-bottom:1px solid #eee;vertical-align:top}
+    tr:nth-child(even) td{background:#fafafa}
+    .stage-chip{display:inline-block;padding:2px 8px;border-radius:10px;font-size:8pt;white-space:nowrap}
+    .heat-bar{height:6px;background:#eee;border-radius:3px;overflow:hidden;margin-top:3px}
+    .heat-fill{height:100%;background:linear-gradient(90deg,#FF4602,#facf4c);border-radius:3px}
+    .deal-card{background:#fff;border:1px solid #e8e8e8;border-radius:6px;padding:12px 14px;margin-bottom:10px;border-left:3px solid #FF4602}
+    .footer{margin-top:20px;padding-top:10px;border-top:1px solid #eee;display:flex;justify-content:space-between;font-size:8.5pt;color:#aaa}`;
+
+  let html = '<!DOCTYPE html><html lang="ja"><head><meta charset="UTF-8"><title>商談進捗レポート ' + dateStr + '</title><style>' + css + '</style></head><body>';
+
+  // 表紙サマリー
+  html += '<h1>商談進捗レポート</h1>';
+  html += '<div style="font-size:10pt;color:#666;margin-bottom:14px;padding-bottom:10px;border-bottom:2px solid #FF4602">出力日: ' + dateStr + '　／　総商談数: ' + deals.length + '件</div>';
+
+  html += '<div class="summary-grid">';
+  html += '<div class="sum-box"><div class="sum-num">' + deals.filter(d=>d.stage==='hearing').length + '</div><div class="sum-label">📋 ヒアリング中</div></div>';
+  html += '<div class="sum-box"><div class="sum-num">' + deals.filter(d=>d.stage==='proposal').length + '</div><div class="sum-label">📝 提案中</div></div>';
+  html += '<div class="sum-box"><div class="sum-num">' + deals.filter(d=>d.stage==='closing').length + '</div><div class="sum-label">🤝 クロージング</div></div>';
+  html += '<div class="sum-box"><div class="sum-num" style="color:#16a34a">' + wonDeals.length + '</div><div class="sum-label">🎉 受注</div></div>';
+  html += '</div>';
+
+  html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:18px">';
+  html += '<div class="sum-box"><div class="sum-label" style="margin-bottom:4px">提案中合計金額（月額）</div><div style="font-size:16pt;font-weight:900;color:#FF4602">¥' + totalProposal.toLocaleString() + '</div></div>';
+  html += '<div class="sum-box"><div class="sum-label" style="margin-bottom:4px">受注合計金額（月額）</div><div style="font-size:16pt;font-weight:900;color:#16a34a">¥' + wonTotal.toLocaleString() + '</div></div>';
+  html += '</div>';
+
+  // 商談一覧テーブル
+  html += '<h2>// 商談一覧</h2>';
+  html += '<table><thead><tr><th>会社名</th><th>担当者</th><th>業種</th><th>ステージ</th><th>温度感</th><th>提案金額</th><th>次回予定</th></tr></thead><tbody>';
+  activeDeals.forEach(d => {
+    const heat = Math.round(Object.values(d.heat||{}).reduce((s,v)=>s+v,0)/20*100);
+    const stageColors = {hearing:'#e8f0fe',proposal:'#fef9e8',closing:'#e8f8e8',won:'#e8f8e8',lost:'#fee8e8'};
+    html += '<tr>'
+      + '<td><strong>' + d.company + '</strong></td>'
+      + '<td>' + (d.person||'—') + '</td>'
+      + '<td style="font-size:8.5pt">' + (d.industry||'—') + '</td>'
+      + '<td><span class="stage-chip" style="background:' + (stageColors[d.stage]||'#f8f8f8') + '">' + (stageLabel[d.stage]||d.stage) + '</span></td>'
+      + '<td style="min-width:60px"><div style="font-size:9pt;font-weight:700;color:#FF4602">' + heat + '%</div><div class="heat-bar"><div class="heat-fill" style="width:' + heat + '%"></div></div></td>'
+      + '<td style="font-weight:700;text-align:right;white-space:nowrap">' + (d.proposalAmount>0 ? '¥'+d.proposalAmount.toLocaleString() : '—') + '</td>'
+      + '<td style="font-size:9pt;color:#666">' + (d.nextDate||'—') + '</td>'
+      + '</tr>';
+  });
+  html += '</tbody></table>';
+
+  // 各商談詳細（ページ区切り）
+  html += '<div class="page-break"></div>';
+  html += '<h2>// 商談詳細</h2>';
+  activeDeals.forEach((d, idx) => {
+    const issueLabels = (d.issueIds||[]).map(id=>{ const f=ISSUES_LIST.find(i=>i.id===id); return f?f.icon+' '+f.label:null; }).filter(Boolean);
+    const lastSession = (d.sessions||[]).slice(-1)[0];
+    html += '<div class="deal-card' + (idx>0 && idx%3===0 ? ' page-break' : '') + '">'
+      + '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">'
+      + '<div><strong style="font-size:12pt">' + d.company + '</strong>'
+      + '<span style="margin-left:10px;font-size:9pt;color:#888">' + (d.person||'') + ' ' + (d.industry||'') + ' ' + (d.area||'') + '</span></div>'
+      + '<div style="text-align:right"><span style="font-weight:700;color:#FF4602">' + (d.proposalAmount>0?'¥'+d.proposalAmount.toLocaleString():'見積未') + '</span>'
+      + (d.nextDate ? '<div style="font-size:9pt;color:#666">次回: ' + d.nextDate + '</div>' : '') + '</div>'
+      + '</div>'
+      + (issueLabels.length ? '<div style="margin-bottom:6px">' + issueLabels.map(l=>'<span style="display:inline-block;padding:2px 8px;border-radius:10px;font-size:8.5pt;margin:1px;background:#fff0f0;border:1px solid #ffb0b0;color:#c0325a">'+l+'</span>').join('') + '</div>' : '')
+      + (d.goal ? '<div style="font-size:9pt;color:#444;margin-bottom:4px">🎯 ' + d.goal + '</div>' : '')
+      + (lastSession?.memo ? '<div style="font-size:9pt;color:#555;padding:6px 8px;background:#f8f8f8;border-radius:4px;border-left:2px solid #ddd">📝 最新メモ: ' + lastSession.memo + '</div>' : '')
+      + '</div>';
+  });
+
+  html += '<div class="footer"><div>DEALWORK 商談支援システム</div><div>出力日: ' + dateStr + '</div></div>';
+  html += '</body></html>';
+
+  const w = window.open('', '_blank', 'width=950,height=750');
+  if (!w) { toast('ポップアップを許可してください'); return; }
+  w.document.write(html); w.document.close();
+  setTimeout(() => { w.focus(); w.print(); }, 600);
+  toast('📋 全商談レポートを出力しました（' + activeDeals.length + '件）');
 }
 
 function exportDealsCSV() {
