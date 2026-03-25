@@ -1,0 +1,1903 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DEALWORK</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=JetBrains+Mono:wght@400;600&family=Noto+Sans+JP:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* ── TOKENS ── */
+:root {
+  --bg:#fff; --surface:#f5f5f5; --surface2:#fafafa;
+  --border:#e5e5e5; --border2:#d4d4d4;
+  --text:#1a1a1a; --text-mid:#666; --text-dim:#aaa;
+  --accent:#ff4602; --accent-dim:rgba(255,70,2,.08); --accent-ring:rgba(255,70,2,.22);
+  --gold:#facf4c; --gold-dim:rgba(250,207,76,.15);
+  --blue:#2563eb; --blue-dim:rgba(37,99,235,.08);
+  --purple:#7c3aed; --purple-dim:rgba(124,58,237,.08);
+  --orange:#ea580c; --orange-dim:rgba(234,88,12,.08);
+  --green:#16a34a; --green-dim:rgba(22,163,74,.08);
+  --red:#dc2626;
+  --sh1:0 1px 3px rgba(0,0,0,.08),0 1px 2px rgba(0,0,0,.05);
+  --sh2:0 4px 12px rgba(0,0,0,.08),0 2px 4px rgba(0,0,0,.04);
+  --sh3:0 8px 24px rgba(0,0,0,.10),0 4px 8px rgba(0,0,0,.05);
+  --fhead:'Bebas Neue',monospace;
+  --fmono:'JetBrains Mono',monospace;
+  --fbody:'Noto Sans JP',sans-serif;
+  --sidebar:210px;
+}
+
+/* ── RESET ── */
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:var(--fbody);font-size:13px;display:flex;min-height:100vh}
+
+/* ── SIDEBAR ── */
+.sidebar{
+  width:var(--sidebar);background:var(--surface);
+  border-right:1px solid var(--border);
+  display:flex;flex-direction:column;flex-shrink:0;
+  position:fixed;top:0;left:0;height:100vh;overflow-y:auto;z-index:200;
+}
+.logo{padding:18px 16px 14px;border-bottom:1px solid var(--border)}
+.logo-title{font-family:var(--fhead);font-size:24px;letter-spacing:.12em;color:var(--accent);line-height:1}
+.logo-sub{font-family:var(--fmono);font-size:8px;letter-spacing:.22em;color:var(--text-dim);text-transform:uppercase;margin-top:3px}
+.fw-status{display:flex;align-items:center;gap:5px;margin-top:7px}
+.fw-dot{width:6px;height:6px;border-radius:50%;background:var(--text-dim);transition:background .3s;flex-shrink:0}
+.fw-label{font-family:var(--fmono);font-size:9px;color:var(--text-dim);letter-spacing:.1em}
+.nav{padding:8px 10px;flex:1}
+.nav-group{font-family:var(--fmono);font-size:8px;letter-spacing:.22em;color:var(--text-dim);text-transform:uppercase;padding:10px 8px 4px}
+.nav-item{display:flex;align-items:center;gap:9px;padding:9px 10px;border-radius:8px;cursor:pointer;font-size:12px;font-weight:500;color:var(--text-mid);transition:all .14s;border-left:3px solid transparent}
+.nav-item:hover{background:#ebebeb;color:var(--text)}
+.nav-item.active{background:#fff;color:var(--accent);border-left-color:var(--accent);box-shadow:var(--sh1);font-weight:600}
+.nav-icon{width:16px;height:16px;flex-shrink:0}
+.nav-badge{margin-left:auto;font-family:var(--fmono);font-size:10px;padding:1px 6px;border-radius:8px;background:var(--accent);color:#fff;font-weight:600;min-width:20px;text-align:center}
+.nb-gray{background:var(--text-dim)}
+.nb-green{background:var(--green)}
+.nb-blue{background:var(--blue)}
+
+/* ── MAIN ── */
+.main{margin-left:var(--sidebar);flex:1;display:flex;flex-direction:column;min-height:100vh}
+.page{display:none;flex-direction:column;flex:1}
+.page.active{display:flex}
+.topbar{padding:16px 24px 14px;border-bottom:1px solid var(--border);background:#fff;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-shrink:0}
+.page-title{font-family:var(--fhead);font-size:22px;letter-spacing:.1em;color:var(--text);line-height:1}
+.topbar-sub{font-family:var(--fmono);font-size:10px;color:var(--text-dim);letter-spacing:.1em;margin-top:4px}
+.topbar-actions{display:flex;gap:8px;align-items:center;flex-shrink:0}
+.content{padding:20px 24px;flex:1;overflow-y:auto}
+
+/* ── BUTTONS ── */
+.btn{padding:7px 14px;border-radius:8px;border:none;cursor:pointer;font-size:12px;font-weight:600;transition:all .14s;font-family:var(--fbody)}
+.btn-primary{background:var(--accent);color:#fff;box-shadow:0 2px 6px rgba(255,70,2,.28)}
+.btn-primary:hover{background:#e03d00}
+.btn-primary:disabled{opacity:.5;cursor:not-allowed}
+.btn-ghost{background:#fff;border:1.5px solid var(--border2);color:var(--text-mid)}
+.btn-ghost:hover{border-color:var(--accent);color:var(--accent);background:var(--accent-dim)}
+.btn-sm{padding:5px 12px;font-size:11px}
+.btn-xs{padding:3px 9px;font-size:10px}
+
+/* ── CARDS ── */
+.stat-row{display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap}
+.stat-card{background:#fff;border:1px solid var(--border);border-radius:12px;padding:14px 16px;flex:1;min-width:90px;box-shadow:var(--sh1)}
+.stat-label{font-family:var(--fmono);font-size:9px;color:var(--text-dim);letter-spacing:.15em;text-transform:uppercase;margin-bottom:6px}
+.stat-value{font-family:var(--fhead);font-size:28px;letter-spacing:.04em;line-height:1}
+.stat-sub{font-size:10px;color:var(--text-dim);margin-top:3px}
+
+/* ── FORMS ── */
+.flabel{font-family:var(--fmono);font-size:10px;color:var(--text-mid);letter-spacing:.1em;text-transform:uppercase;margin-bottom:5px;display:block}
+.finput,.fsel,.ftextarea{width:100%;background:var(--surface2);border:1.5px solid var(--border);border-radius:8px;padding:8px 11px;color:var(--text);font-size:12px;outline:none;font-family:var(--fbody);transition:border-color .14s,box-shadow .14s}
+.finput:focus,.fsel:focus,.ftextarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-ring);background:#fff}
+.fsel{cursor:pointer}
+.ftextarea{resize:vertical;min-height:70px}
+.fg{display:flex;flex-wrap:wrap;gap:10px}
+.fl{flex:1;min-width:160px}
+.fl.full{flex:0 0 100%}
+
+/* ── PIPELINE ── */
+.deal-pipeline{display:grid;grid-template-columns:repeat(5,1fr);background:#fff;border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:16px;box-shadow:var(--sh1)}
+.deal-stage{padding:12px 14px;border-right:1px solid var(--border);cursor:pointer;transition:background .14s}
+.deal-stage:last-child{border-right:none}
+.deal-stage:hover{background:var(--surface)}
+.ds-label{font-family:var(--fmono);font-size:8px;letter-spacing:.1em;text-transform:uppercase;margin-bottom:5px;color:var(--text-dim)}
+.ds-count{font-family:var(--fhead);font-size:26px;letter-spacing:.04em;line-height:1}
+.ds-amount{font-size:10px;color:var(--text-mid);margin-top:2px;font-family:var(--fmono)}
+
+/* ── FILTER ── */
+.filter-bar{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap}
+.fi{background:#fff;border:1.5px solid var(--border);border-radius:8px;padding:7px 12px;color:var(--text);font-size:12px;outline:none;font-family:var(--fbody)}
+.fi:focus{border-color:var(--accent)}
+.fi-wide{flex:1;min-width:180px}
+
+/* ── DEAL CARD ── */
+.deal-card{background:#fff;border:1px solid var(--border);border-radius:12px;padding:14px 16px;margin-bottom:8px;cursor:pointer;transition:all .14s;position:relative;overflow:hidden;box-shadow:var(--sh1)}
+.deal-card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:4px}
+.deal-card.stage-hearing::before{background:var(--blue)}
+.deal-card.stage-proposal::before{background:var(--purple)}
+.deal-card.stage-closing::before{background:var(--orange)}
+.deal-card.stage-won::before{background:var(--green)}
+.deal-card.stage-lost::before{background:var(--text-dim)}
+.deal-card:hover{border-color:var(--accent);box-shadow:var(--sh2);transform:translateY(-1px)}
+.dc-company{font-weight:700;font-size:14px}
+.dc-person{font-size:11px;color:var(--text-mid);margin-top:2px}
+.dc-amount{font-family:var(--fhead);font-size:18px;letter-spacing:.04em;color:var(--accent)}
+.dc-tags{display:flex;gap:5px;flex-wrap:wrap;margin-top:7px}
+.dc-tag{font-family:var(--fmono);font-size:10px;padding:2px 8px;border-radius:5px;border:1px solid var(--border);background:var(--surface);color:var(--text-mid)}
+.dc-prog-bar{flex:1;height:5px;background:var(--border);border-radius:3px}
+.dc-prog-fill{height:100%;border-radius:3px;background:var(--accent);transition:width .4s}
+.dc-prob{font-family:var(--fmono);font-size:11px;color:var(--accent);font-weight:600}
+
+/* ── STAGE BADGE ── */
+.badge{display:inline-flex;align-items:center;padding:2px 9px;border-radius:20px;font-size:10px;font-weight:600;font-family:var(--fmono)}
+.badge-hearing{background:var(--blue-dim);color:var(--blue);border:1px solid rgba(37,99,235,.2)}
+.badge-proposal{background:var(--purple-dim);color:var(--purple);border:1px solid rgba(124,58,237,.2)}
+.badge-closing{background:var(--orange-dim);color:var(--orange);border:1px solid rgba(234,88,12,.2)}
+.badge-won{background:var(--green-dim);color:var(--green);border:1px solid rgba(22,163,74,.2)}
+.badge-lost{background:var(--surface);color:var(--text-dim);border:1px solid var(--border)}
+
+/* ── MODAL ── */
+.overlay{display:none;position:fixed;top:0;left:var(--sidebar);right:0;bottom:0;background:rgba(0,0,0,.32);z-index:500;align-items:center;justify-content:center;padding:12px;backdrop-filter:blur(2px)}
+.overlay.open{display:flex}
+.modal{background:#fff;border:1px solid var(--border);border-radius:16px;width:100%;max-width:780px;max-height:96vh;display:flex;flex-direction:column;box-shadow:var(--sh3)}
+.modal-wide{max-width:680px}
+.mhead{padding:16px 20px 12px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:flex-start;flex-shrink:0}
+.mtitle{font-family:var(--fhead);font-size:18px;letter-spacing:.08em;color:var(--text)}
+.mclose{background:var(--surface);border:1px solid var(--border);color:var(--text-mid);cursor:pointer;font-size:14px;padding:4px 9px;border-radius:6px;transition:all .14s}
+.mclose:hover{background:var(--accent);color:#fff;border-color:var(--accent)}
+.mbody{padding:16px 20px;overflow-y:auto;flex:1}
+.mfoot{padding:12px 20px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:8px;flex-shrink:0;background:var(--surface);border-radius:0 0 16px 16px}
+
+/* ── HEARING SHEET ── */
+.hs{background:#fff;border:1px solid var(--border);border-radius:12px;padding:14px 16px;margin-bottom:12px;box-shadow:var(--sh1)}
+.hs-title{font-family:var(--fmono);font-size:10px;color:var(--accent);letter-spacing:.15em;text-transform:uppercase;margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--border);font-weight:600}
+
+/* ── SOL CARD ── */
+.sol-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:8px}
+.sol-card{background:var(--surface);border:1.5px solid var(--border);border-radius:10px;padding:10px 12px;cursor:pointer;transition:all .14s;user-select:none}
+.sol-card:hover{border-color:var(--accent);background:var(--accent-dim)}
+.sol-card.sel{border-color:var(--accent);background:var(--accent-dim);box-shadow:0 0 0 2px var(--accent-ring)}
+.sol-name{font-size:12px;font-weight:700;margin-bottom:3px;color:var(--text)}
+.sol-range{font-family:var(--fmono);font-size:9px;color:var(--text-mid);line-height:1.5}
+.sol-check{float:right;font-size:14px;color:var(--accent)}
+
+/* ── HEAT ── */
+.heat-meter{display:flex;gap:5px;align-items:center}
+.heat-dot{width:24px;height:24px;border-radius:7px;border:1.5px solid var(--border);background:var(--surface);cursor:pointer;display:flex;align-items:center;justify-content:center;font-family:var(--fmono);font-size:11px;color:var(--text-dim);transition:all .14s;font-weight:600}
+.heat-dot:hover{border-color:var(--accent);color:var(--accent)}
+.heat-dot.on{background:var(--accent);border-color:var(--accent);color:#fff}
+
+/* ── PROPOSAL ── */
+.proposal-box{background:#fff;border:1.5px solid var(--border);border-radius:12px;padding:18px 20px;box-shadow:var(--sh1)}
+.proposal-row{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid var(--border);font-size:13px}
+.proposal-row:last-child{border-bottom:none}
+.proposal-input{background:var(--surface2);border:1.5px solid var(--border);border-radius:7px;padding:5px 10px;color:var(--text);font-family:var(--fmono);font-size:12px;width:115px;outline:none;text-align:right}
+.proposal-input:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-ring)}
+
+/* ── CHIP ── */
+.chip{display:inline-flex;padding:5px 11px;border-radius:20px;cursor:pointer;font-size:11px;user-select:none;transition:all .14s;border:1.5px solid var(--border2);background:var(--surface);color:var(--text-mid)}
+.chip:hover{border-color:var(--accent);color:var(--accent)}
+.chip.on{font-weight:600}
+
+/* ── TOAST ── */
+.toast{position:fixed;bottom:20px;right:20px;background:var(--accent);border-radius:10px;padding:11px 16px;font-family:var(--fmono);font-size:12px;color:#fff;z-index:9999;transform:translateY(60px);opacity:0;transition:all .3s cubic-bezier(.34,1.56,.64,1);max-width:300px;box-shadow:0 4px 16px rgba(255,70,2,.4)}
+.toast.show{transform:translateY(0);opacity:1}
+
+/* ── EMPTY ── */
+.empty{text-align:center;padding:48px 20px;color:var(--text-dim)}
+.empty-ico{font-size:40px;opacity:.25;margin-bottom:12px}
+
+/* ── SCROLLBAR ── */
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
+::-webkit-scrollbar-thumb:hover{background:var(--text-dim)}
+</style>
+</head>
+<body>
+
+<!-- ══ SIDEBAR ══ -->
+<nav class="sidebar">
+  <div class="logo">
+    <div class="logo-title">DEALWORK</div>
+    <div class="logo-sub">SALES NEGOTIATION</div>
+    <div class="fw-status">
+      <div class="fw-dot" id="fw-dot"></div>
+      <div class="fw-label" id="fw-status-txt">FW 未受信</div>
+    </div>
+  </div>
+  <div class="nav">
+    <div class="nav-group">// 商談</div>
+    <div class="nav-item active" onclick="goPage('deals',this)">
+      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-4 0v2"/><line x1="12" y1="12" x2="12" y2="16"/><line x1="10" y1="14" x2="14" y2="14"/></svg>
+      商談管理 <span class="nav-badge" id="nb-deals">0</span>
+    </div>
+    <div class="nav-item" onclick="goPage('dash',this)">
+      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+      ダッシュボード
+    </div>
+    <div class="nav-group" style="margin-top:6px">// 受注</div>
+    <div class="nav-item" onclick="goPage('won',this)">
+      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+      受注済み <span class="nav-badge nb-green" id="nb-won">0</span>
+    </div>
+    <div class="nav-item" onclick="goPage('lost',this)">
+      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+      失注 <span class="nav-badge nb-gray" id="nb-lost">0</span>
+    </div>
+    <div class="nav-group" style="margin-top:6px">// 連携</div>
+    <div class="nav-item" onclick="goPage('fw-status',this)">
+      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+      FIELDWORK連携 <span class="nav-badge nb-blue" id="nb-fw">—</span>
+    </div>
+    <div class="nav-group" style="margin-top:6px">// 設定</div>
+    <div class="nav-item" onclick="goPage('services',this)">
+      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+      自社サービス管理
+    </div>
+  </div>
+</nav>
+
+<!-- ══ MAIN ══ -->
+<div class="main">
+
+<!-- 商談管理 -->
+<div class="page active" id="page-deals">
+  <div class="topbar">
+    <div>
+      <div class="page-title">DEAL MANAGEMENT</div>
+      <div class="topbar-sub">初回商談から受注まで全フェーズ管理</div>
+    </div>
+    <div class="topbar-actions">
+      <button class="btn btn-ghost btn-sm" onclick="exportDealsCSV()">⬇ CSV</button>
+      <button class="btn btn-ghost btn-sm" onclick="openNewDealModal()">＋ 手動追加</button>
+    </div>
+  </div>
+  <div class="content">
+    <div class="deal-pipeline">
+      <div class="deal-stage" onclick="filterDeals('hearing')">
+        <div class="ds-label" style="color:var(--blue)">ヒアリング</div>
+        <div class="ds-count" id="ds-hearing" style="color:var(--blue)">0</div>
+        <div class="ds-amount" id="da-hearing">—</div>
+      </div>
+      <div class="deal-stage" onclick="filterDeals('proposal')">
+        <div class="ds-label" style="color:var(--purple)">提案中</div>
+        <div class="ds-count" id="ds-proposal" style="color:var(--purple)">0</div>
+        <div class="ds-amount" id="da-proposal">—</div>
+      </div>
+      <div class="deal-stage" onclick="filterDeals('closing')">
+        <div class="ds-label" style="color:var(--orange)">クロージング</div>
+        <div class="ds-count" id="ds-closing" style="color:var(--orange)">0</div>
+        <div class="ds-amount" id="da-closing">—</div>
+      </div>
+      <div class="deal-stage" onclick="filterDeals('won')">
+        <div class="ds-label" style="color:var(--green)">受注</div>
+        <div class="ds-count" id="ds-won" style="color:var(--green)">0</div>
+        <div class="ds-amount" id="da-won">—</div>
+      </div>
+      <div class="deal-stage" onclick="filterDeals('lost')">
+        <div class="ds-label" style="color:var(--text-dim)">失注</div>
+        <div class="ds-count" id="ds-lost" style="color:var(--text-dim)">0</div>
+        <div class="ds-amount" id="da-lost">—</div>
+      </div>
+    </div>
+    <div class="filter-bar">
+      <input class="fi fi-wide" type="text" id="deal-search" placeholder="🔍 会社名で検索..." oninput="renderDeals()">
+      <select class="fi" id="deal-stage-filter" onchange="renderDeals()">
+        <option value="">全ステージ</option>
+        <option value="hearing">ヒアリング</option>
+        <option value="proposal">提案中</option>
+        <option value="closing">クロージング</option>
+        <option value="won">受注</option>
+        <option value="lost">失注</option>
+      </select>
+    </div>
+    <div id="deals-list"></div>
+    <div class="empty" id="deals-empty" style="display:none">
+      <div class="empty-ico">💼</div>
+      <div style="font-weight:600;margin-bottom:6px">商談データがありません</div>
+      <div style="font-size:11px;color:var(--text-dim);margin-bottom:14px">FW連携ページからテストデータを受信できます</div>
+      <button class="btn btn-ghost btn-sm" onclick="goPage('fw-status',document.querySelector('[onclick*=fw-status]'))">🔗 FIELDWORK連携へ</button>
+    </div>
+  </div>
+</div>
+
+<!-- ダッシュボード -->
+<div class="page" id="page-dash">
+  <div class="topbar"><div class="page-title">DASHBOARD</div></div>
+  <div class="content">
+    <div class="stat-row">
+      <div class="stat-card"><div class="stat-label" style="color:var(--purple)">商談中</div><div class="stat-value" id="dash-active">0</div></div>
+      <div class="stat-card"><div class="stat-label" style="color:var(--green)">受注</div><div class="stat-value" id="dash-won">0</div></div>
+      <div class="stat-card"><div class="stat-label" style="color:var(--gold)">提案中金額</div><div class="stat-value" id="dash-amount" style="font-size:18px">¥0</div></div>
+      <div class="stat-card"><div class="stat-label" style="color:var(--orange)">受注金額</div><div class="stat-value" id="dash-won-amount" style="font-size:18px">¥0</div></div>
+      <div class="stat-card"><div class="stat-label">受注率</div><div class="stat-value" id="dash-rate">0%</div></div>
+    </div>
+    <div id="dash-funnel"></div>
+  </div>
+</div>
+
+<!-- 受注済み -->
+<div class="page" id="page-won">
+  <div class="topbar"><div class="page-title">WON 🎉</div><div class="topbar-sub">受注済み案件</div></div>
+  <div class="content" id="won-content"></div>
+</div>
+
+<!-- 失注 -->
+<div class="page" id="page-lost">
+  <div class="topbar"><div class="page-title">LOST ❌</div><div class="topbar-sub">失注案件</div></div>
+  <div class="content" id="lost-content"></div>
+</div>
+
+<!-- FIELDWORK連携 -->
+<div class="page" id="page-fw-status">
+  <div class="topbar">
+    <div><div class="page-title">FIELDWORK LINK</div><div class="topbar-sub">受信ログ・テスト送信</div></div>
+    <div class="topbar-actions">
+      <button class="btn btn-primary btn-sm" onclick="fwSendTest()">🧪 FWアポリスト受信（テスト）</button>
+      <button class="btn btn-ghost btn-sm" onclick="fwClearLog()">🗑 ログ削除</button>
+    </div>
+  </div>
+  <div class="content">
+    <div class="stat-row">
+      <div class="stat-card">
+        <div class="stat-label">接続状態</div>
+        <div style="display:flex;align-items:center;gap:8px;margin-top:6px">
+          <div id="fw-sc-dot" style="width:10px;height:10px;border-radius:50%;background:var(--text-dim)"></div>
+          <div class="stat-value" id="fw-sc-status" style="font-size:16px">未受信</div>
+        </div>
+      </div>
+      <div class="stat-card"><div class="stat-label">受信件数</div><div class="stat-value" id="fw-sc-count" style="color:var(--blue)">0</div></div>
+      <div class="stat-card"><div class="stat-label">最終受信</div><div class="stat-value" id="fw-sc-last" style="font-size:15px;color:var(--accent)">—</div><div class="stat-sub" id="fw-sc-lastco"></div></div>
+      <div class="stat-card"><div class="stat-label">エラー</div><div class="stat-value" id="fw-sc-err" style="color:var(--red)">0</div></div>
+    </div>
+    <div style="background:#fff;border:1px solid var(--border);border-radius:12px;padding:14px 16px;margin-bottom:14px;box-shadow:var(--sh1)">
+      <div style="font-family:var(--fmono);font-size:9px;color:var(--accent);font-weight:600;letter-spacing:.1em;margin-bottom:8px">// テストについて</div>
+      <div style="font-size:12px;color:var(--text-mid);line-height:1.9">「FWアポリスト受信（テスト）」を押すと、FIELDWORKでアポが決まった4社がpostMessage経由で送信されます。</div>
+    </div>
+    <div style="font-family:var(--fmono);font-size:9px;color:var(--accent);font-weight:600;letter-spacing:.15em;margin-bottom:8px">// 受信ログ</div>
+    <div id="fw-log" style="background:#fff;border:1px solid var(--border);border-radius:12px;min-height:100px;padding:12px 14px;font-family:var(--fmono);font-size:11px;line-height:1.8;max-height:300px;overflow-y:auto;box-shadow:var(--sh1)"><div style="color:var(--text-dim)">ログなし</div></div>
+  </div>
+</div>
+
+<!-- 自社サービス管理 -->
+<div class="page" id="page-services">
+  <div class="topbar">
+    <div><div class="page-title">MY SERVICES</div><div class="topbar-sub">自社サービスを登録 — プッシュ型提案・AIマッチングに反映</div></div>
+    <div class="topbar-actions"><button class="btn btn-primary btn-sm" onclick="openServiceModal()">＋ サービスを追加</button></div>
+  </div>
+  <div class="content">
+    <div style="background:#fff;border:1px solid var(--border);border-radius:12px;padding:14px 16px;margin-bottom:16px;box-shadow:var(--sh1)">
+      <div style="font-family:var(--fmono);font-size:9px;color:var(--accent);font-weight:600;letter-spacing:.1em;margin-bottom:8px">// 使い方</div>
+      <div style="font-size:12px;color:var(--text-mid);line-height:1.9">登録すると <strong style="color:var(--text)">③商談の入り方→プッシュ型</strong> 選択時にサービス選択が表示されます。また、ヒアリング結果をもとに <strong style="color:var(--accent)">Claude AIがマッチングして提案</strong>します。</div>
+    </div>
+    <div id="services-list"></div>
+    <div class="empty" id="services-empty"><div class="empty-ico">📦</div><div style="font-weight:600;margin-bottom:6px">サービスがまだありません</div><div style="font-size:11px;color:var(--text-dim)">「＋ サービスを追加」から登録してください</div></div>
+  </div>
+</div>
+
+</div><!-- /main -->
+
+<!-- ══ MODAL: 商談ヒアリング ══ -->
+<div class="overlay" id="m-deal">
+  <div class="modal">
+    <div class="mhead">
+      <div>
+        <div class="mtitle" id="deal-modal-title">商談ヒアリング</div>
+        <div style="font-size:11px;color:var(--text-mid);margin-top:2px" id="deal-modal-sub"></div>
+      </div>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-ghost btn-sm" onclick="openProposalModal()">📄 提案書を作る</button>
+        <button class="mclose" onclick="cm('m-deal')">✕</button>
+      </div>
+    </div>
+    <div class="mbody">
+
+      <!-- ① クライアント属性 -->
+      <div class="hs">
+        <div class="hs-title">① クライアント属性</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
+          <div class="sol-card sel" id="client-direct" onclick="setClientType('direct')">
+            <div class="sol-name">🏢 直クライアント</div>
+            <div class="sol-range">エンド企業と直接商談</div>
+          </div>
+          <div class="sol-card" id="client-agency" onclick="setClientType('agency')">
+            <div class="sol-name">🤝 広告代理店経由</div>
+            <div class="sol-range">代理店がクライアント / エンドは別企業</div>
+          </div>
+        </div>
+        <!-- 直クライアント情報 -->
+        <div id="direct-detail" style="background:var(--accent-dim);border:1.5px solid rgba(255,70,2,.2);border-radius:10px;padding:12px 14px;margin-bottom:8px">
+          <div style="font-family:var(--fmono);font-size:9px;color:var(--accent);font-weight:600;letter-spacing:.15em;margin-bottom:10px">// クライアント企業情報</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">
+            <div><label class="flabel">会社名</label><input class="finput" id="direct-company" placeholder="株式会社○○"></div>
+            <div><label class="flabel">担当者名</label><input class="finput" id="direct-person" placeholder="山田 太郎"></div>
+            <div><label class="flabel">連絡先（任意）</label><input class="finput" id="direct-contact" placeholder="電話・メールなど"></div>
+            <div><label class="flabel">業種</label>
+              <select class="fsel" id="direct-industry">
+                <option value="">選択してください</option>
+                <option>飲食・飲食チェーン</option><option>ホテル・観光・旅行</option><option>小売・EC</option>
+                <option>不動産・建設</option><option>医療・クリニック・美容</option><option>教育・学習塾</option>
+                <option>金融・保険</option><option>自動車・バイク</option><option>エンタメ・イベント</option>
+                <option>採用・人材</option><option>BtoB・法人サービス</option><option>その他</option>
+              </select>
+            </div>
+            <div><label class="flabel">エリア</label>
+              <select class="fsel" id="direct-area">
+                <option value="">選択してください</option>
+                <option>那覇市</option><option>宜野湾市</option><option>沖縄市</option><option>浦添市</option>
+                <option>糸満市</option><option>豊見城市</option><option>南城市</option><option>うるま市</option>
+                <option>名護市</option><option>本部町・北部エリア</option><option>宮古島市</option>
+                <option>石垣市・八重山</option><option>県外・全国</option><option>その他</option>
+              </select>
+            </div>
+            <div><label class="flabel">担当者の役職</label>
+              <select class="fsel" id="direct-role">
+                <option>社長・代表</option><option>役員・部長クラス</option>
+                <option>マーケ担当者</option><option>営業担当者</option><option>その他担当</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        <!-- 代理店情報 -->
+        <div id="agency-detail" style="display:none;background:var(--accent-dim);border:1.5px solid var(--accent);border-radius:10px;padding:12px 14px">
+          <div style="font-family:var(--fmono);font-size:9px;color:var(--accent);font-weight:600;letter-spacing:.15em;margin-bottom:10px">// 代理店情報</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+            <div><label class="flabel">代理店名</label><input class="finput" id="agency-name" placeholder="○○広告株式会社"></div>
+            <div><label class="flabel">代理店担当者</label><input class="finput" id="agency-person" placeholder="担当者名・役職"></div>
+            <div style="grid-column:1/-1"><label class="flabel">エンドクライアント名</label><input class="finput" id="agency-end-client" placeholder="実際の広告主企業名"></div>
+            <div><label class="flabel">代理店との関係</label><select class="fsel" id="agency-relation"><option>初回接触</option><option>既存取引あり</option><option>競合から乗り換え検討</option></select></div>
+            <div><label class="flabel">エンドへのアクセス</label><select class="fsel" id="agency-direct-access"><option>代理店経由のみ</option><option>エンド同席あり</option><option>エンドへ直接連絡可</option></select></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ② 案件ステータス -->
+      <div class="hs" style="border-color:rgba(250,207,76,.4);background:rgba(250,207,76,.02)">
+        <div class="hs-title" style="color:#8a6000;border-color:rgba(250,207,76,.25)">② 案件ステータス</div>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:10px">
+          <div class="sol-card sel" id="status-confirmed" onclick="setDealStatus('confirmed')"><div class="sol-name">✅ 確定案件</div><div class="sol-range">受注確定・発注済み</div></div>
+          <div class="sol-card" id="status-proposing" onclick="setDealStatus('proposing')"><div class="sol-name">📝 提案中</div><div class="sol-range">提案資料作成中 / 提案済み検討中</div></div>
+          <div class="sol-card" id="status-compe" onclick="setDealStatus('compe')"><div class="sol-name">🏆 コンペ</div><div class="sol-range">複数社で競合提案</div></div>
+        </div>
+        <div id="compe-detail" style="display:none;background:#fffdf0;border:1.5px solid rgba(250,207,76,.5);border-radius:10px;padding:14px">
+          <div style="font-family:var(--fmono);font-size:9px;color:#8a6000;font-weight:600;letter-spacing:.15em;margin-bottom:12px">// コンペ詳細</div>
+          <div class="fg">
+            <div class="fl"><label class="flabel" style="color:#8a6000">参加費（制作費）見込み</label><div style="display:flex;flex-wrap:wrap;gap:5px;margin-top:4px" id="compe-fee-chips"></div></div>
+            <div class="fl"><label class="flabel" style="color:#8a6000">競合社数</label><div style="display:flex;flex-wrap:wrap;gap:5px;margin-top:4px" id="compe-count-chips"></div></div>
+            <div class="fl full"><label class="flabel" style="color:#8a6000">何までやって欲しいか（複数可）</label><div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:6px" id="compe-scope-chips"></div></div>
+            <div class="fl"><label class="flabel">提案締切</label><input class="finput" type="date" id="compe-deadline"></div>
+            <div class="fl"><label class="flabel">結果通知予定</label><input class="finput" type="date" id="compe-result-date"></div>
+            <div class="fl full"><label class="flabel">コンペ備考</label><textarea class="ftextarea" id="compe-memo" placeholder="審査基準・重視ポイント・懸念点など..." style="min-height:48px"></textarea></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ③ 商談の入り方 -->
+      <div class="hs">
+        <div class="hs-title">③ 商談の入り方</div>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px">
+          <div class="sol-card sel" id="entry-push" onclick="setEntry('push')"><div class="sol-name">🚀 プッシュ型</div><div class="sol-range">新規開拓 → まず自社紹介から</div></div>
+          <div class="sol-card" id="entry-issue" onclick="setEntry('issue')"><div class="sol-name">💡 課題型</div><div class="sol-range">課題はあるが解決策不明 → 深掘りから</div></div>
+          <div class="sol-card" id="entry-solution" onclick="setEntry('solution')"><div class="sol-name">🎯 ソリューション決定済</div><div class="sol-range">やること決定済み → 規模感・予算から</div></div>
+        </div>
+        <div id="entry-sol-detail" style="display:none;margin-top:10px">
+          <div class="flabel" style="margin-bottom:6px">どのソリューションで来ましたか？</div>
+          <div style="display:flex;gap:7px;flex-wrap:wrap" id="entry-sol-chips"></div>
+        </div>
+        <div id="entry-push-services" style="display:block;margin-top:10px;background:var(--accent-dim);border:1.5px solid rgba(255,70,2,.2);border-radius:10px;padding:12px 14px">
+          <div style="font-family:var(--fmono);font-size:9px;color:var(--accent);font-weight:600;letter-spacing:.15em;margin-bottom:8px">// 今回紹介する弊社サービスを選択（複数可）</div>
+          <div id="push-service-chips" style="display:flex;flex-wrap:wrap;gap:7px;min-height:24px">
+            <div style="font-size:11px;color:var(--text-dim);font-family:var(--fmono)">サービス未登録 — 「自社サービス管理」から追加してください</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ④ 商談基本情報 -->
+      <div class="hs">
+        <div class="hs-title">④ 商談基本情報</div>
+        <div class="fg">
+          <div class="fl"><label class="flabel">商談日</label><input class="finput" type="date" id="deal-date"></div>
+          <div class="fl"><label class="flabel">商談回数</label><input class="finput" id="deal-round" readonly style="color:var(--text-mid)"></div>
+          <div class="fl"><label class="flabel">同席担当者</label><input class="finput" id="deal-attendee" placeholder="社長・マーケ部長など"></div>
+          <div class="fl"><label class="flabel">場所</label>
+            <select class="fsel" id="deal-place">
+              <option>先方オフィス</option><option>自社オフィス</option><option>Zoom / オンライン</option><option>カフェ・外出先</option><option>その他</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- ⑤ マーケティング活動 -->
+      <div class="hs">
+        <div class="hs-title">⑤ 現在の広告・マーケティング活動</div>
+        <div style="font-size:11px;color:var(--text-mid);margin-bottom:10px">タップして状態を設定してください</div>
+        <div id="activity-map"></div>
+      </div>
+
+      <!-- ⑥ 課題 -->
+      <div class="hs">
+        <div class="hs-title">⑥ 課題・困っていること（複数選択）</div>
+        <div id="issue-chips" style="display:flex;flex-wrap:wrap;gap:7px"></div>
+        <div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:12px">
+          <div style="font-size:11px;color:var(--text-dim)">⑤活動・⑥課題・⑧予算を入力後、AIが自社サービスとのマッチングを提案します</div>
+          <button class="btn btn-primary btn-sm" onclick="openAiMatch()" style="flex-shrink:0">🤖 AIにマッチング提案</button>
+        </div>
+      </div>
+
+      <!-- ⑦ 納品物・スコープ -->
+      <div class="hs">
+        <div class="hs-title">⑦ 納品物・スコープ確認</div>
+        <div style="font-size:11px;color:var(--text-mid);margin-bottom:10px">該当する納品物を選択 → 詳細が展開されます（複数可）</div>
+        <div style="display:flex;flex-wrap:wrap;gap:7px;margin-bottom:12px" id="deliverable-chips"></div>
+        <div id="detail-video" style="display:none;background:var(--surface);border:1.5px solid rgba(124,58,237,.25);border-radius:10px;padding:12px 14px;margin-bottom:8px">
+          <div style="font-family:var(--fmono);font-size:9px;color:var(--purple);font-weight:600;letter-spacing:.15em;margin-bottom:10px">🎬 動画・CM 詳細</div>
+          <div class="fg">
+            <div class="fl full"><label class="flabel">映像種別（複数可）</label><div style="display:flex;flex-wrap:wrap;gap:5px;margin-top:4px" id="video-type-chips"></div></div>
+            <div class="fl"><label class="flabel">尺・本数（複数可）</label><div style="display:flex;flex-wrap:wrap;gap:5px;margin-top:4px" id="video-duration-chips"></div></div>
+            <div class="fl full"><label class="flabel">どこから入るか（複数可）</label><div style="display:flex;flex-wrap:wrap;gap:5px;margin-top:4px" id="video-scope-chips"></div></div>
+            <div class="fl"><label class="flabel">ナレーション</label><div style="display:flex;flex-wrap:wrap;gap:5px;margin-top:4px" id="video-narration-chips"></div></div>
+            <div class="fl"><label class="flabel">AI使用可否</label><div style="display:flex;flex-wrap:wrap;gap:5px;margin-top:4px" id="video-ai-chips"></div></div>
+            <div class="fl"><label class="flabel">出演者</label><div style="display:flex;flex-wrap:wrap;gap:5px;margin-top:4px" id="video-cast-chips"></div></div>
+            <div class="fl"><label class="flabel">納品形式（複数可）</label><div style="display:flex;flex-wrap:wrap;gap:5px;margin-top:4px" id="video-format-chips"></div></div>
+            <div class="fl full"><label class="flabel">備考</label><textarea class="ftextarea" id="video-note-area" oninput="saveNote('video-note',this.value)" placeholder="放送局・オンエア時期・特記事項など..." style="min-height:44px;margin-top:4px"></textarea></div>
+          </div>
+        </div>
+        <div id="detail-web" style="display:none;background:var(--surface);border:1.5px solid rgba(37,99,235,.25);border-radius:10px;padding:12px 14px;margin-bottom:8px">
+          <div style="font-family:var(--fmono);font-size:9px;color:var(--blue);font-weight:600;letter-spacing:.15em;margin-bottom:10px">🌐 WEB制作 詳細</div>
+          <div class="fg">
+            <div class="fl"><label class="flabel">制作種別（複数可）</label><div style="display:flex;flex-wrap:wrap;gap:5px;margin-top:4px" id="web-type-chips"></div></div>
+            <div class="fl"><label class="flabel">ページ規模</label><div style="display:flex;flex-wrap:wrap;gap:5px;margin-top:4px" id="web-scale-chips"></div></div>
+            <div class="fl"><label class="flabel">CMS・システム</label><div style="display:flex;flex-wrap:wrap;gap:5px;margin-top:4px" id="web-cms-chips"></div></div>
+            <div class="fl"><label class="flabel">既存資産（複数可）</label><div style="display:flex;flex-wrap:wrap;gap:5px;margin-top:4px" id="web-assets-chips"></div></div>
+            <div class="fl full"><label class="flabel">備考</label><textarea class="ftextarea" id="web-note-area" oninput="saveNote('web-note',this.value)" placeholder="デザイン方向性・参考サイトなど..." style="min-height:44px;margin-top:4px"></textarea></div>
+          </div>
+        </div>
+        <div id="detail-sns" style="display:none;background:var(--surface);border:1.5px solid rgba(255,70,2,.2);border-radius:10px;padding:12px 14px;margin-bottom:8px">
+          <div style="font-family:var(--fmono);font-size:9px;color:var(--accent);font-weight:600;letter-spacing:.15em;margin-bottom:10px">📱 SNS 詳細</div>
+          <div class="fg">
+            <div class="fl"><label class="flabel">SNS種別（複数可）</label><div style="display:flex;flex-wrap:wrap;gap:5px;margin-top:4px" id="sns-platform-chips"></div></div>
+            <div class="fl"><label class="flabel">業務内容（複数可）</label><div style="display:flex;flex-wrap:wrap;gap:5px;margin-top:4px" id="sns-scope-chips"></div></div>
+            <div class="fl"><label class="flabel">投稿頻度（目安）</label><div style="display:flex;flex-wrap:wrap;gap:5px;margin-top:4px" id="sns-freq-chips"></div></div>
+            <div class="fl"><label class="flabel">素材提供</label><div style="display:flex;flex-wrap:wrap;gap:5px;margin-top:4px" id="sns-material-chips"></div></div>
+            <div class="fl full"><label class="flabel">備考</label><textarea class="ftextarea" id="sns-note-area" oninput="saveNote('sns-note',this.value)" placeholder="トンマナ・NG事項など..." style="min-height:44px;margin-top:4px"></textarea></div>
+          </div>
+        </div>
+        <div id="detail-ad" style="display:none;background:var(--surface);border:1.5px solid rgba(234,88,12,.25);border-radius:10px;padding:12px 14px;margin-bottom:8px">
+          <div style="font-family:var(--fmono);font-size:9px;color:var(--orange);font-weight:600;letter-spacing:.15em;margin-bottom:10px">📊 広告運用 詳細</div>
+          <div class="fg">
+            <div class="fl"><label class="flabel">媒体（複数可）</label><div style="display:flex;flex-wrap:wrap;gap:5px;margin-top:4px" id="ad-platform-chips"></div></div>
+            <div class="fl"><label class="flabel">現在の運用状況</label><div style="display:flex;flex-wrap:wrap;gap:5px;margin-top:4px" id="ad-current-chips"></div></div>
+            <div class="fl"><label class="flabel">月間媒体費</label><div style="display:flex;flex-wrap:wrap;gap:5px;margin-top:4px" id="ad-budget-chips"></div></div>
+            <div class="fl"><label class="flabel">クリエイティブ</label><div style="display:flex;flex-wrap:wrap;gap:5px;margin-top:4px" id="ad-creative-chips"></div></div>
+            <div class="fl full"><label class="flabel">備考</label><textarea class="ftextarea" id="ad-note-area" oninput="saveNote('ad-note',this.value)" placeholder="KPI目標・現在の課題など..." style="min-height:44px;margin-top:4px"></textarea></div>
+          </div>
+        </div>
+        <div id="detail-print" style="display:none;background:var(--surface);border:1.5px solid rgba(22,163,74,.25);border-radius:10px;padding:12px 14px;margin-bottom:8px">
+          <div style="font-family:var(--fmono);font-size:9px;color:var(--green);font-weight:600;letter-spacing:.15em;margin-bottom:10px">📰 印刷・紙媒体 詳細</div>
+          <div class="fg">
+            <div class="fl"><label class="flabel">媒体種別（複数可）</label><div style="display:flex;flex-wrap:wrap;gap:5px;margin-top:4px" id="print-type-chips"></div></div>
+            <div class="fl"><label class="flabel">部数・サイズ</label><div style="display:flex;flex-wrap:wrap;gap:5px;margin-top:4px" id="print-scale-chips"></div></div>
+            <div class="fl"><label class="flabel">制作範囲</label><div style="display:flex;flex-wrap:wrap;gap:5px;margin-top:4px" id="print-scope-chips"></div></div>
+            <div class="fl full"><label class="flabel">備考</label><textarea class="ftextarea" id="print-note-area" oninput="saveNote('print-note',this.value)" placeholder="配布エリア・ターゲット層など..." style="min-height:44px;margin-top:4px"></textarea></div>
+          </div>
+        </div>
+        <div id="detail-radio" style="display:none;background:var(--surface);border:1.5px solid rgba(124,58,237,.2);border-radius:10px;padding:12px 14px;margin-bottom:8px">
+          <div style="font-family:var(--fmono);font-size:9px;color:#7c3aed;font-weight:600;letter-spacing:.15em;margin-bottom:10px">📻 ラジオCM 詳細</div>
+          <div class="fg">
+            <div class="fl"><label class="flabel">CMタイプ</label><div style="display:flex;flex-wrap:wrap;gap:5px;margin-top:4px" id="radio-type-chips"></div></div>
+            <div class="fl"><label class="flabel">尺</label><div style="display:flex;flex-wrap:wrap;gap:5px;margin-top:4px" id="radio-dur-chips"></div></div>
+            <div class="fl"><label class="flabel">放送局（複数可）</label><div style="display:flex;flex-wrap:wrap;gap:5px;margin-top:4px" id="radio-station-chips"></div></div>
+            <div class="fl full"><label class="flabel">制作範囲（複数可）</label><div style="display:flex;flex-wrap:wrap;gap:5px;margin-top:4px" id="radio-scope-chips"></div></div>
+            <div class="fl"><label class="flabel">AI音声使用可否</label><div style="display:flex;flex-wrap:wrap;gap:5px;margin-top:4px" id="radio-ai-chips"></div></div>
+            <div class="fl full"><label class="flabel">備考</label><textarea class="ftextarea" id="radio-note-area" oninput="saveNote('radio-note',this.value)" placeholder="オンエア時期・番組名など..." style="min-height:44px;margin-top:4px"></textarea></div>
+          </div>
+        </div>
+        <div id="detail-other" style="display:none;background:var(--surface);border:1px solid var(--border2);border-radius:10px;padding:12px 14px;margin-bottom:8px">
+          <div style="font-family:var(--fmono);font-size:9px;color:var(--text-mid);font-weight:600;letter-spacing:.15em;margin-bottom:10px">⚙ その他 詳細</div>
+          <div class="fl full"><label class="flabel">内容・備考</label><textarea class="ftextarea" id="other-note-area" oninput="saveNote('other-note',this.value)" placeholder="イベント企画・PR戦略・その他制作物など..." style="min-height:64px;margin-top:4px"></textarea></div>
+        </div>
+      </div>
+
+      <!-- ⑧ 予算・体制 -->
+      <div class="hs">
+        <div class="hs-title">⑧ 予算・体制</div>
+        <div class="fg">
+          <div class="fl"><label class="flabel">総予算感（制作費込み）</label>
+            <select class="fsel" id="deal-budget"><option value="">不明・未確認</option><option>〜10万円</option><option>10〜30万円</option><option>30〜100万円</option><option>100〜300万円</option><option>300万円以上</option></select>
+          </div>
+          <div class="fl"><label class="flabel">決裁権限</label>
+            <select class="fsel" id="deal-auth"><option>社長・代表が決める</option><option>担当者が稟議を通す</option><option>担当者に権限あり</option><option>不明</option></select>
+          </div>
+          <div class="fl"><label class="flabel">検討タイムライン</label>
+            <select class="fsel" id="deal-timeline"><option>今すぐ（1ヶ月以内）</option><option>近いうち（1〜3ヶ月）</option><option>半年以内</option><option>時期未定</option></select>
+          </div>
+          <div class="fl"><label class="flabel">競合状況</label>
+            <select class="fsel" id="deal-competitor"><option>他社と比較していない</option><option>他社も検討中</option><option>他社と既に契約中</option><option>不明</option></select>
+          </div>
+        </div>
+      </div>
+
+      <!-- ⑨ 温度感スコア -->
+      <div class="hs">
+        <div class="hs-title">⑨ 商談温度感スコア</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+          <div style="display:flex;align-items:center;gap:10px"><div style="font-size:12px;color:var(--text-mid);width:100px;flex-shrink:0">🔥 課題の深刻度</div><div class="heat-meter" id="heat-urgency"><div class="heat-dot" onclick="setHeat('urgency',1,this)">1</div><div class="heat-dot" onclick="setHeat('urgency',2,this)">2</div><div class="heat-dot" onclick="setHeat('urgency',3,this)">3</div><div class="heat-dot" onclick="setHeat('urgency',4,this)">4</div><div class="heat-dot" onclick="setHeat('urgency',5,this)">5</div></div></div>
+          <div style="display:flex;align-items:center;gap:10px"><div style="font-size:12px;color:var(--text-mid);width:100px;flex-shrink:0">💰 予算感</div><div class="heat-meter" id="heat-budget"><div class="heat-dot" onclick="setHeat('budget',1,this)">1</div><div class="heat-dot" onclick="setHeat('budget',2,this)">2</div><div class="heat-dot" onclick="setHeat('budget',3,this)">3</div><div class="heat-dot" onclick="setHeat('budget',4,this)">4</div><div class="heat-dot" onclick="setHeat('budget',5,this)">5</div></div></div>
+          <div style="display:flex;align-items:center;gap:10px"><div style="font-size:12px;color:var(--text-mid);width:100px;flex-shrink:0">⚡ 検討スピード</div><div class="heat-meter" id="heat-speed"><div class="heat-dot" onclick="setHeat('speed',1,this)">1</div><div class="heat-dot" onclick="setHeat('speed',2,this)">2</div><div class="heat-dot" onclick="setHeat('speed',3,this)">3</div><div class="heat-dot" onclick="setHeat('speed',4,this)">4</div><div class="heat-dot" onclick="setHeat('speed',5,this)">5</div></div></div>
+          <div style="display:flex;align-items:center;gap:10px"><div style="font-size:12px;color:var(--text-mid);width:100px;flex-shrink:0">🤝 関係性・相性</div><div class="heat-meter" id="heat-relation"><div class="heat-dot" onclick="setHeat('relation',1,this)">1</div><div class="heat-dot" onclick="setHeat('relation',2,this)">2</div><div class="heat-dot" onclick="setHeat('relation',3,this)">3</div><div class="heat-dot" onclick="setHeat('relation',4,this)">4</div><div class="heat-dot" onclick="setHeat('relation',5,this)">5</div></div></div>
+        </div>
+      </div>
+
+      <!-- ⑩ 次のアクション -->
+      <div class="hs">
+        <div class="hs-title">⑩ 目標・次のアクション</div>
+        <div class="fg">
+          <div class="fl full"><label class="flabel">達成したいこと・KPI</label><textarea class="ftextarea" id="deal-goal" placeholder="月の問い合わせを〇件に / 来客数〇%増など..." style="min-height:50px"></textarea></div>
+          <div class="fl"><label class="flabel">ステージ更新</label>
+            <select class="fsel" id="deal-stage-update"><option value="hearing">ヒアリング中</option><option value="proposal">提案書を作成・送付</option><option value="closing">クロージング</option><option value="won">受注🎉</option><option value="lost">失注</option></select>
+          </div>
+          <div class="fl"><label class="flabel">次回商談予定日</label><input class="finput" type="date" id="deal-next-date"></div>
+          <div class="fl full"><label class="flabel">イレギュラーメモ</label><textarea class="ftextarea" id="deal-memo" placeholder="特記事項だけ書けばOK..." style="min-height:50px"></textarea></div>
+        </div>
+      </div>
+
+    </div><!-- /mbody -->
+    <div class="mfoot">
+      <button class="btn btn-ghost" onclick="cm('m-deal')">キャンセル</button>
+      <button class="btn btn-primary" onclick="saveDeal()">💾 保存する</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ MODAL: 提案書 ══ -->
+<div class="overlay" id="m-proposal">
+  <div class="modal modal-wide">
+    <div class="mhead">
+      <div><div class="mtitle">📄 提案書サマリー</div><div style="font-size:11px;color:var(--text-mid);margin-top:2px" id="proposal-sub"></div></div>
+      <button class="mclose" onclick="cm('m-proposal')">✕</button>
+    </div>
+    <div class="mbody">
+      <div style="font-family:var(--fmono);font-size:9px;color:var(--accent);font-weight:600;letter-spacing:.15em;margin-bottom:10px">// 提案するソリューションを選択（複数可）</div>
+      <div class="sol-grid" id="sol-grid"></div>
+      <div style="margin-top:18px;font-family:var(--fmono);font-size:9px;color:var(--accent);font-weight:600;letter-spacing:.15em;margin-bottom:10px">// 提案書サマリー（金額は直接編集できます）</div>
+      <div class="proposal-box" id="proposal-preview"></div>
+      <div style="margin-top:10px;font-size:11px;color:var(--text-dim)">💡 金額は直接入力で変更可。相場は沖縄県内の調査値です。</div>
+    </div>
+    <div class="mfoot">
+      <button class="btn btn-ghost" onclick="cm('m-proposal')">閉じる</button>
+      <button class="btn btn-ghost" onclick="exportProposalPDF()" style="border-color:var(--gold);color:#8a6000;background:var(--gold-dim)">🖨 PDF出力</button>
+      <button class="btn btn-primary" onclick="saveProposal()">この提案内容で保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ MODAL: サービス登録 ══ -->
+<div class="overlay" id="m-service">
+  <div class="modal modal-wide">
+    <div class="mhead"><div class="mtitle" id="service-modal-title">サービスを追加</div><button class="mclose" onclick="cm('m-service')">✕</button></div>
+    <div class="mbody">
+      <div class="fg">
+        <div class="fl full"><label class="flabel">サービス名 <span style="color:var(--accent)">*</span></label><input class="finput" id="svc-name" placeholder="例：Instagram運用代行、テレビCM制作パッケージ"></div>
+        <div class="fl"><label class="flabel">カテゴリ</label>
+          <select class="fsel" id="svc-cat">
+            <option value="video">🎬 動画・CM</option><option value="web">🌐 WEB制作</option><option value="sns">📱 SNS</option>
+            <option value="ad">📊 広告運用</option><option value="print">📰 印刷・紙媒体</option><option value="radio">📻 ラジオCM</option><option value="other">⚙ その他</option>
+          </select>
+        </div>
+        <div class="fl"><label class="flabel">価格帯（目安）</label><input class="finput" id="svc-price" placeholder="例：月額5万〜、制作費30万〜"></div>
+        <div class="fl full"><label class="flabel">サービス説明（AIマッチングに使われます）</label><textarea class="ftextarea" id="svc-desc" placeholder="例：Instagram・Facebookの投稿制作から広告運用まで一括対応。月8投稿＋広告費別途。新規集客・認知拡大に最適。" style="min-height:72px"></textarea></div>
+        <div class="fl full"><label class="flabel">こんな課題・状況のクライアントに向いている</label><textarea class="ftextarea" id="svc-fit" placeholder="例：SNSを始めたいが人手がない、広告費10〜30万で効率よく集客したいなど" style="min-height:56px"></textarea></div>
+      </div>
+    </div>
+    <div class="mfoot">
+      <button class="btn btn-ghost" onclick="cm('m-service')">キャンセル</button>
+      <button class="btn btn-primary" onclick="saveService()">💾 保存する</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ MODAL: AIマッチング ══ -->
+<div class="overlay" id="m-ai-match">
+  <div class="modal modal-wide">
+    <div class="mhead">
+      <div><div class="mtitle">🤖 AI サービスマッチング</div><div style="font-size:11px;color:var(--text-mid);margin-top:2px">ヒアリング結果をもとに最適なプランを提案</div></div>
+      <button class="mclose" onclick="cm('m-ai-match')">✕</button>
+    </div>
+    <div class="mbody">
+      <div id="ai-match-loading" style="text-align:center;padding:40px;display:none">
+        <div style="font-family:var(--fmono);font-size:12px;color:var(--accent);margin-bottom:10px">// Claude が分析中...</div>
+        <div style="font-size:11px;color:var(--text-dim)">ヒアリング結果と自社サービスを照合しています</div>
+      </div>
+      <div id="ai-match-result"></div>
+    </div>
+    <div class="mfoot">
+      <button class="btn btn-ghost" onclick="cm('m-ai-match')">閉じる</button>
+      <button class="btn btn-primary" onclick="runAiMatch()" id="btn-ai-match-run">
+        <svg style="display:inline;width:12px;height:12px;margin-right:5px;vertical-align:-1px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/></svg>
+        AIに提案してもらう
+      </button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+
+function nowJST() {
+  const now = new Date();
+  const utc = now.getTime() + now.getTimezoneOffset() * 60000;
+  return new Date(utc + 9*60*60000);
+}
+function todayJST() {
+  const d = nowJST();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+
+function goPage(id, el) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page-'+id)?.classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  if (el) el.classList.add('active');
+  if (id==='deals') renderDeals();
+  if (id==='dash') renderDash();
+  if (id==='won') renderWonLost('won');
+  if (id==='lost') renderWonLost('lost');
+  if (id==='fw-status') { renderFwLog(); fwUpdateStats(); }
+  if (id==='services') renderServicesPage();
+}
+function cm(id) { document.getElementById(id).classList.remove('open'); }
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3500);
+}
+
+let deals = [];
+let currentDealId = null;
+let dealEntryType = 'push';
+let dealHeat = { urgency:0, budget:0, speed:0, relation:0 };
+let selectedSolutions = {};
+let dealActivities = {};
+let dealIssues = new Set();
+let dealClientType = 'direct'; // 'direct' | 'agency'
+let dealDeliverables = new Set(); // 選択済み納品物
+let dealDeliverableDetails = {}; // 各納品物の詳細選択
+let dealCompeType = 'no'; // 'no' | 'yes'
+
+// ── 納品物定義 ──
+const DELIVERABLE_CATS = [
+  { id:'video',  label:'🎬 動画・CM',     color:'var(--purple)' },
+  { id:'web',    label:'🌐 WEB制作',      color:'var(--blue)'   },
+  { id:'sns',    label:'📱 SNS',          color:'var(--accent)' },
+  { id:'ad',     label:'📊 広告運用',     color:'var(--orange)' },
+  { id:'print',  label:'📰 印刷・紙媒体', color:'var(--green)'  },
+  { id:'radio',  label:'📻 ラジオCM',     color:'#7C3AED'       },
+  { id:'other',  label:'⚙ その他',        color:'var(--text-dim)'},
+];
+
+const DELIVERABLE_DETAIL_DEFS = {
+  video: {
+    'video-type':     { label:'映像種別（複数選択可）',     multi:true, opts:['テレビCMスポット','WEB動画CM','企業VP','採用動画','イベント記録','インタビュー','商品プロモ','SNS縦型','YouTube動画','リール/ショート','アニメーション','ドキュメンタリー'] },
+    'video-duration': { label:'尺・本数（複数可）',         multi:true, opts:['15秒','30秒','60秒','2〜5分','5分以上','複数本（本数要確認）'] },
+    'video-scope':    { label:'どこから入るか（複数選択可）',multi:true, opts:['企画から','コンテから','絵コンテ（Vコンテ）から','監督から','撮影から','エディット（編集）のみ','MA・音響から','CG・アニメから','完パケ納品まで'] },
+    'video-narration':{ label:'ナレーション',               opts:['あり（声優手配含む）','あり（クライアント手配済み）','BGMのみ（ナレなし）','未定'] },
+    'video-ai':       { label:'AI使用可否',                 opts:['AI使用OK','AI使用NG','一部OK（要確認）','未確認'] },
+    'video-cast':     { label:'出演者',                     opts:['なし（モーション/アニメ）','社員・スタッフ出演','一般キャスト手配','タレント・著名人（クライアント手配）','未定'] },
+    'video-format':   { label:'納品形式（複数可）',          multi:true, opts:['MP4（H.264）','MOV','放送用素材（XDCAM等）','ProRes','SNS最適化（複数サイズ）'] },
+    'video-note':     { label:'備考', note:true },
+  },
+  web: {
+    'web-type':   { label:'制作種別（複数可）', multi:true, opts:['コーポレートサイト（全体）','LP（ランディングページ）','採用サイト','ECサイト','リニューアル（既存改修）','特設サイト','管理画面・システム'] },
+    'web-scale':  { label:'ページ規模',         opts:['1〜5P（小規模）','6〜20P（中規模）','21P以上（大規模）','未定'] },
+    'web-cms':    { label:'CMS・システム',       opts:['WordPress','Shopify','Wix/STUDIO等ノーコード','完全カスタム','CMS不要（静的）','未定'] },
+    'web-assets': { label:'既存資産（複数可）', multi:true, opts:['写真・動画あり（流用可）','ゼロから素材制作必要','テキスト原稿あり','デザインカンプあり（コーディングのみ）'] },
+    'web-note':   { label:'備考', note:true },
+  },
+  sns: {
+    'sns-platform': { label:'SNS種別（複数可）', multi:true, opts:['Instagram','Facebook','X（Twitter）','TikTok','YouTube','LINE公式','複数一括'] },
+    'sns-scope':    { label:'業務内容（複数可）', multi:true, opts:['アカウント運用代行','投稿制作のみ','広告配信（SNS広告）','分析レポート','コメント対応','コンサル・戦略のみ'] },
+    'sns-freq':     { label:'投稿頻度（目安）',  opts:['毎日','週3〜5回','週1〜2回','月2〜4回','月1回以下'] },
+    'sns-material': { label:'素材提供',           opts:['クライアントが写真・動画提供','全て自社で撮影・制作','ミックス（一部提供）','未定'] },
+    'sns-note':     { label:'備考', note:true },
+  },
+  ad: {
+    'ad-platform': { label:'媒体（複数可）', multi:true, opts:['Google広告','Meta広告','LINE広告','Yahoo!広告','TikTok広告','YouTube広告','複数一括'] },
+    'ad-current':  { label:'現在の運用状況', opts:['全く未出稿','自社運用中（改善したい）','他社委託中（乗り換え）','以前やったが停止中'] },
+    'ad-budget':   { label:'月間媒体費',     opts:['〜5万円','5〜20万円','20〜50万円','50〜100万円','100万円以上'] },
+    'ad-creative': { label:'クリエイティブ', opts:['制作込みで依頼','クリエイティブは自社用意','相談しながら決めたい'] },
+    'ad-note':     { label:'備考', note:true },
+  },
+  print: {
+    'print-type':  { label:'媒体種別（複数可）', multi:true, opts:['チラシ・フライヤー','折り込み広告','DM（ダイレクトメール）','ポスター','パンフレット・冊子','名刺・封筒等'] },
+    'print-scale': { label:'部数・サイズ',        opts:['〜1万部','1〜5万部','5〜10万部','10万部以上','サイズ要確認'] },
+    'print-scope': { label:'制作範囲',             opts:['デザインのみ（入稿データ）','デザイン＋印刷手配','デザイン＋印刷＋折込・配布手配'] },
+    'print-note':  { label:'備考', note:true },
+  },
+  radio: {
+    'radio-type':    { label:'CMタイプ',             opts:['通常スポットCM','番組スポンサー','パーソナリティー読み上げ','ジングル制作'] },
+    'radio-dur':     { label:'尺',                   opts:['15秒','20秒','30秒','60秒','複数本'] },
+    'radio-station': { label:'放送局（複数可）', multi:true, opts:['ROK（琉球放送）','RBC（ラジオ沖縄）','FM沖縄','複数局','未定'] },
+    'radio-scope':   { label:'制作範囲（複数可）', multi:true, opts:['企画・脚本から','ナレーション手配含む','BGM・効果音含む','録音のみ（素材あり）','放送手配含む'] },
+    'radio-ai':      { label:'AI音声使用可否',       opts:['AI音声OK','AI音声NG','人間ナレーター指定','未確認'] },
+    'radio-note':    { label:'備考', note:true },
+  },
+  other: {
+    'other-note': { label:'内容・備考', note:true },
+  },
+};
+
+// コンペスコープ定義
+const COMPE_SCOPE_OPTS = ['企画書・提案書','コンテ（絵コンテ）','Vコンテ（動画コンテ）','監督提案','編集サンプル','プレゼン（対面ピッチ）','サンプル動画制作'];
+const COMPE_FEE_OPTS   = ['参加費あり（見込める）','参加費なし（ボランティア）','参加費未確認'];
+const COMPE_COUNT_OPTS = ['2社競合','3〜5社競合','5社以上','不明'];
+
+// ── チップUI汎用 ──
+function renderChipGroup(containerId, opts, stateKey, multi=false, color='var(--accent)') {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+  if (!dealDeliverableDetails[stateKey]) dealDeliverableDetails[stateKey] = multi ? [] : null;
+  container.innerHTML = '';
+  opts.forEach(opt => {
+    const isActive = multi
+      ? (dealDeliverableDetails[stateKey]||[]).includes(opt)
+      : dealDeliverableDetails[stateKey] === opt;
+    const div = document.createElement('div');
+    div.textContent = opt;
+    div.style.cssText = [
+      'padding:5px 11px','border-radius:20px','cursor:pointer','font-size:11px',
+      'user-select:none','transition:all 0.14s',
+      'border:1.5px solid ' + (isActive ? color : 'var(--border2)'),
+      'background:' + (isActive ? 'rgba('+hexToRgbStr(color)+',0.1)' : 'var(--surface)'),
+      'color:' + (isActive ? color : 'var(--text-mid)'),
+      'font-weight:' + (isActive ? '600' : '400')
+    ].join(';');
+    div.addEventListener('click', () => {
+      if (multi) {
+        if (!dealDeliverableDetails[stateKey]) dealDeliverableDetails[stateKey] = [];
+        const arr = dealDeliverableDetails[stateKey];
+        const idx = arr.indexOf(opt);
+        if (idx >= 0) arr.splice(idx, 1); else arr.push(opt);
+      } else {
+        dealDeliverableDetails[stateKey] = dealDeliverableDetails[stateKey] === opt ? null : opt;
+      }
+      renderChipGroup(containerId, opts, stateKey, multi, color);
+    });
+    container.appendChild(div);
+  });
+}
+function hexToRgbStr(cssVar) {
+  // CSS変数はそのまま返せないので固定値で近似
+  const map = {
+    'var(--accent)':'255,70,2','var(--purple)':'124,58,237','var(--blue)':'37,99,235',
+    'var(--orange)':'234,88,12','var(--green)':'22,163,74','var(--red)':'220,38,38',
+    '#7C3AED':'124,58,237','var(--text-dim)':'170,170,170'
+  };
+  return map[cssVar] || '100,100,100';
+}
+// toggleChip: addEventListener方式に移行済み
+
+function renderAllDetailChips() {
+  Object.entries(DELIVERABLE_DETAIL_DEFS).forEach(([cat, fields]) => {
+    const catColor = DELIVERABLE_CATS.find(c=>c.id===cat)?.color||'var(--accent)';
+    Object.entries(fields).forEach(([fid, fdef]) => {
+      if (fdef.note) {
+        // テキストエリアフィールド
+        const el = document.getElementById(fid+'-area');
+        if (el) el.value = dealDeliverableDetails[fid]||'';
+        return;
+      }
+      const el = document.getElementById(fid+'-chips');
+      if (!el) return;
+      renderChipGroup(fid+'-chips', fdef.opts||[], fid, fdef.multi||false, catColor);
+    });
+  });
+  // コンペ
+  renderChipGroup('compe-fee-chips',   COMPE_FEE_OPTS,   'compe-fee',   false, '#8a6000');
+  renderChipGroup('compe-count-chips', COMPE_COUNT_OPTS, 'compe-count', false, '#8a6000');
+  renderChipGroup('compe-scope-chips', COMPE_SCOPE_OPTS, 'compe-scope', true,  '#8a6000');
+}
+
+function saveNote(key, val) {
+  dealDeliverableDetails[key] = val;
+}
+
+// ══ 自社サービス管理 ══
+let myServices = [];
+let editingServiceId = null;
+let selectedPushServices = new Set();
+
+async function loadMyServices() {
+  try {
+    if (window.storage) {
+      const s = await window.storage.get('my_services');
+      if (s?.value) myServices = JSON.parse(s.value);
+    }
+  } catch(e) {}
+}
+
+function saveMyServices() {
+  try {
+    if (window.storage) window.storage.set('my_services', JSON.stringify(myServices)).catch(()=>{});
+  } catch(e) {}
+}
+
+const SVC_CAT_LABELS = {
+  video:'🎬 動画・CM', web:'🌐 WEB制作', sns:'📱 SNS',
+  ad:'📊 広告運用', print:'📰 印刷・紙媒体', radio:'📻 ラジオCM', other:'⚙ その他'
+};
+const SVC_CAT_COLORS = {
+  video:'var(--purple)', web:'var(--blue)', sns:'var(--accent)',
+  ad:'var(--orange)', print:'var(--green)', radio:'#7C3AED', other:'var(--text-dim)'
+};
+
+function renderServicesPage() {
+  const list = document.getElementById('services-list');
+  const empty = document.getElementById('services-empty');
+  if (!myServices.length) { list.innerHTML=''; empty.style.display='block'; return; }
+  empty.style.display = 'none';
+  list.innerHTML = myServices.map(s => `
+    <div style="background:#fff;border:1px solid var(--border);border-radius:12px;padding:16px 18px;margin-bottom:10px;box-shadow:var(--shadow-sm);display:flex;gap:14px;align-items:flex-start">
+      <div style="flex:1">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+          <span style="font-family:var(--font-mono);font-size:10px;padding:2px 9px;border-radius:20px;background:rgba(${hexToRgbStr(SVC_CAT_COLORS[s.cat]||'var(--accent)')},0.1);color:${SVC_CAT_COLORS[s.cat]||'var(--accent)'};border:1px solid rgba(${hexToRgbStr(SVC_CAT_COLORS[s.cat]||'var(--accent)')},0.2);font-weight:600">${SVC_CAT_LABELS[s.cat]||s.cat}</span>
+          ${s.price ? `<span style="font-family:var(--font-mono);font-size:10px;color:var(--text-dim)">${s.price}</span>` : ''}
+        </div>
+        <div style="font-weight:700;font-size:14px;margin-bottom:4px">${s.name}</div>
+        ${s.desc ? `<div style="font-size:12px;color:var(--text-mid);line-height:1.7;margin-bottom:4px">${s.desc}</div>` : ''}
+        ${s.fit ? `<div style="font-size:11px;color:var(--text-dim);font-style:italic">向いているクライアント: ${s.fit}</div>` : ''}
+      </div>
+      <div style="display:flex;gap:6px;flex-shrink:0">
+        <button class="btn btn-ghost btn-xs" onclick="openServiceModal(${s.id})">編集</button>
+        <button class="btn btn-xs" style="background:var(--surface);border:1px solid var(--border);color:var(--red)" onclick="deleteService(${s.id})">削除</button>
+      </div>
+    </div>`).join('');
+}
+
+function openServiceModal(id) {
+  editingServiceId = id || null;
+  const s = id ? myServices.find(x => x.id === id) : null;
+  document.getElementById('service-modal-title').textContent = s ? 'サービスを編集' : 'サービスを追加';
+  document.getElementById('svc-name').value  = s?.name  || '';
+  document.getElementById('svc-cat').value   = s?.cat   || 'video';
+  document.getElementById('svc-price').value = s?.price || '';
+  document.getElementById('svc-desc').value  = s?.desc  || '';
+  document.getElementById('svc-fit').value   = s?.fit   || '';
+  document.getElementById('m-service').classList.add('open');
+}
+
+function saveService() {
+  const name = document.getElementById('svc-name').value.trim();
+  if (!name) { toast('サービス名を入力してください'); return; }
+  const svc = {
+    id:    editingServiceId || Date.now(),
+    name,
+    cat:   document.getElementById('svc-cat').value,
+    price: document.getElementById('svc-price').value.trim(),
+    desc:  document.getElementById('svc-desc').value.trim(),
+    fit:   document.getElementById('svc-fit').value.trim(),
+  };
+  if (editingServiceId) {
+    const idx = myServices.findIndex(x => x.id === editingServiceId);
+    if (idx >= 0) myServices[idx] = svc;
+  } else {
+    myServices.push(svc);
+  }
+  saveMyServices();
+  cm('m-service');
+  renderServicesPage();
+  toast(`📦 「${name}」を保存しました`);
+}
+
+function deleteService(id) {
+  myServices = myServices.filter(x => x.id !== id);
+  saveMyServices();
+  renderServicesPage();
+  toast('🗑 サービスを削除しました');
+}
+
+// プッシュ型時のサービスチップ
+function renderPushServiceChips() {
+  const el = document.getElementById('push-service-chips');
+  if (!el) return;
+  if (!myServices.length) {
+    el.innerHTML = '<div style="font-size:11px;color:var(--text-dim);font-family:var(--font-mono)">サービス未登録 — 「自社サービス管理」ページから追加してください</div>';
+    return;
+  }
+  el.innerHTML = myServices.map(s => {
+    const isOn = selectedPushServices.has(s.id);
+    const col  = SVC_CAT_COLORS[s.cat] || 'var(--accent)';
+    return `<div onclick="togglePushService(${s.id})"
+      style="padding:6px 13px;border-radius:20px;cursor:pointer;font-size:12px;font-weight:${isOn?'600':'400'};
+             user-select:none;transition:all 0.14s;
+             border:1.5px solid ${isOn ? col : 'var(--border2)'};
+             background:${isOn ? `rgba(${hexToRgbStr(col)},0.1)` : 'var(--surface)'};
+             color:${isOn ? col : 'var(--text-mid)'}">${s.name}</div>`;
+  }).join('');
+}
+
+function togglePushService(id) {
+  if (selectedPushServices.has(id)) selectedPushServices.delete(id);
+  else selectedPushServices.add(id);
+  renderPushServiceChips();
+}
+
+// ══ AIマッチング ══
+function openAiMatch() {
+  if (!myServices.length) {
+    toast('先に「自社サービス管理」からサービスを登録してください');
+    return;
+  }
+  document.getElementById('ai-match-result').innerHTML = '';
+  document.getElementById('ai-match-loading').style.display = 'none';
+  document.getElementById('m-ai-match').classList.add('open');
+}
+
+async function runAiMatch() {
+  const btn = document.getElementById('btn-ai-match-run');
+  const loading = document.getElementById('ai-match-loading');
+  const result  = document.getElementById('ai-match-result');
+
+  const activities = Object.entries(dealActivities)
+    .filter(([,v]) => v.status && v.status !== 'やったことはない')
+    .map(([k,v]) => `${k}:${v.status}`).join(', ') || 'なし';
+  const issues  = [...dealIssues].map(id => ISSUES_LIST.find(i=>i.id===id)?.label).filter(Boolean).join(', ') || 'なし';
+  const budget  = document.getElementById('deal-budget')?.value  || '不明';
+  const timeline= document.getElementById('deal-timeline')?.value || '不明';
+  const company = currentDealId ? (deals.find(x=>x.id===currentDealId)?.company||'') : '';
+
+  // 納品物カテゴリ（④で選択済み）→ 弊社対応可能なカテゴリとして扱う
+  const deliverableCapabilities = [...dealDeliverables].map(id => SVC_CAT_LABELS[id]||id);
+
+  const svcList = myServices.length
+    ? myServices.map(s => `・${s.name}（${SVC_CAT_LABELS[s.cat]}、${s.price||'価格未設定'}）: ${s.desc||''}`).join('\n')
+    : '（個別登録なし）';
+
+  const capabilityList = [
+    ...deliverableCapabilities,
+    ...myServices.map(s => SVC_CAT_LABELS[s.cat])
+  ];
+  const uniqueCapabilities = [...new Set(capabilityList)].join('、') || 'なし';
+
+  const prompt = `あなたはデジタルマーケティングの専門家であり、広告代理店の凄腕プランナーです。
+沖縄の広告代理店として、クライアントへの提案プランを構築してください。
+
+## クライアント情報
+企業名: ${company||'商談中のクライアント'}
+現在の広告活動: ${activities}
+抱えている課題: ${issues}
+月間予算: ${budget}
+検討タイムライン: ${timeline}
+
+## 弊社が対応できる領域
+${uniqueCapabilities}
+（以下は個別に登録されたサービス）
+${svcList}
+
+## 重要ルール
+- 上記「弊社が対応できる領域」に含まれるカテゴリの施策は、必ず「弊社で対応可能」として扱うこと
+- 個別登録サービスが一致する場合はそのサービス名を明記する
+- 弊社の対応領域外の施策のみ「外部リソース活用」と記載する
+
+## 指示
+まず、マーケターとしてこのクライアントに本当に必要な施策プランを3〜5項目で組み立ててください。
+各施策について「弊社対応可能か」を上記ルールで判定してください。
+
+以下のJSON形式のみで返してください（説明文・コードブロック不要）:
+{"planTitle":"提案タイトル（10〜20文字）","planSummary":"全体プランの方向性（2〜3文）","steps":[{"step":"施策タイトル（10文字以内）","description":"この施策が必要な理由と期待効果（1〜2文）","budget":"予算目安（例：月5〜15万）","ownService":"対応する自社登録サービス名 or null","ownServiceNote":"弊社で対応できる旨の具体的な一言 or null","canDo":true,"externalNote":"弊社対応不可の場合のみ外部リソース案 or null","priority":"high|medium|low"}],"pitch":"この提案を商談でひとことで伝えるトーク（自然な日本語で2〜3文）"}`;
+
+  btn.disabled = true;
+  btn.textContent = '分析中...';
+  loading.style.display = 'block';
+  result.innerHTML = '';
+
+  try {
+    const resp = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-6',
+        max_tokens: 1500,
+        messages: [{ role: 'user', content: prompt }]
+      })
+    });
+
+    if (!resp.ok) {
+      const errText = await resp.text();
+      throw new Error(`API Error ${resp.status}: ${errText}`);
+    }
+
+    const data = await resp.json();
+    const text = data.content?.map(c => c.text||'').join('') || '';
+    const clean = text.replace(/```json|```/g, '').trim();
+
+    let parsed;
+    try { parsed = JSON.parse(clean); }
+    catch(pe) { throw new Error(`JSONパースエラー: ${clean.slice(0,300)}`); }
+
+    loading.style.display = 'none';
+
+    const priorityLabel = { high:'🔥 最優先', medium:'👍 推奨', low:'💡 余裕があれば' };
+    const priorityBg    = { high:'rgba(255,70,2,0.07)', medium:'rgba(37,99,235,0.05)', low:'rgba(0,0,0,0.03)' };
+    const priorityBd    = { high:'rgba(255,70,2,0.25)', medium:'rgba(37,99,235,0.2)', low:'var(--border)' };
+    const priorityCol   = { high:'var(--accent)', medium:'var(--blue)', low:'var(--text-dim)' };
+
+    result.innerHTML = `
+      <div style="background:rgba(255,70,2,0.06);border:1.5px solid rgba(255,70,2,0.2);border-radius:12px;padding:14px 16px;margin-bottom:18px">
+        <div style="font-family:var(--font-mono);font-size:9px;color:var(--accent);font-weight:600;letter-spacing:0.15em;margin-bottom:6px">// MARKETER'S PLAN</div>
+        <div style="font-weight:700;font-size:15px;margin-bottom:6px">${parsed.planTitle||''}</div>
+        <div style="font-size:12px;color:var(--text-mid);line-height:1.8">${parsed.planSummary||''}</div>
+      </div>
+
+      <div style="font-family:var(--font-mono);font-size:9px;color:var(--text-dim);letter-spacing:0.15em;margin-bottom:10px">// 施策ステップ</div>
+
+      ${(parsed.steps||[]).map((s,i) => `
+        <div style="background:${priorityBg[s.priority]||'rgba(0,0,0,0.02)'};border:1.5px solid ${priorityBd[s.priority]||'var(--border)'};border-radius:12px;padding:14px 16px;margin-bottom:10px">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+            <div style="font-family:var(--font-head);font-size:18px;color:${priorityCol[s.priority]||'var(--text-dim)'};line-height:1;flex-shrink:0">${String(i+1).padStart(2,'0')}</div>
+            <div style="flex:1">
+              <div style="font-weight:700;font-size:13px">${s.step}</div>
+              <div style="font-family:var(--font-mono);font-size:9px;color:${priorityCol[s.priority]||'var(--text-dim)'};font-weight:600">${priorityLabel[s.priority]||''} ${s.budget ? `· ${s.budget}` : ''}</div>
+            </div>
+          </div>
+          <div style="font-size:12px;color:var(--text-mid);line-height:1.7;margin-bottom:8px">${s.description}</div>
+          ${(s.canDo !== false) ? `
+            <div style="display:flex;align-items:flex-start;gap:8px;background:#fff;border:1.5px solid rgba(255,70,2,0.3);border-radius:8px;padding:8px 12px">
+              <span style="font-size:16px;flex-shrink:0">✅</span>
+              <div>
+                <div style="font-family:var(--font-mono);font-size:9px;color:var(--accent);font-weight:600;letter-spacing:0.1em;margin-bottom:2px">弊社で対応できます</div>
+                ${s.ownService ? `<div style="font-weight:600;font-size:12px">${s.ownService}</div>` : ''}
+                ${s.ownServiceNote ? `<div style="font-size:11px;color:var(--text-mid);margin-top:2px">${s.ownServiceNote}</div>` : ''}
+              </div>
+            </div>` : s.externalNote ? `
+            <div style="display:flex;align-items:flex-start;gap:8px;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:8px 12px">
+              <span style="font-size:16px;flex-shrink:0">🔗</span>
+              <div>
+                <div style="font-family:var(--font-mono);font-size:9px;color:var(--text-dim);font-weight:600;letter-spacing:0.1em;margin-bottom:2px">外部リソース活用</div>
+                <div style="font-size:11px;color:var(--text-mid)">${s.externalNote}</div>
+              </div>
+            </div>` : ''}
+        </div>`).join('')}
+
+      <div style="background:#1A1A1A;border-radius:12px;padding:16px 18px;margin-top:4px">
+        <div style="font-family:var(--font-mono);font-size:9px;color:var(--accent);font-weight:600;letter-spacing:0.15em;margin-bottom:8px">// 商談でのひとこと</div>
+        <div style="font-size:13px;color:#fff;line-height:1.8">${parsed.pitch||''}</div>
+      </div>`;
+
+  } catch(e) {
+    loading.style.display = 'none';
+    result.innerHTML = `<div style="background:rgba(220,38,38,0.06);border:1.5px solid rgba(220,38,38,0.2);border-radius:10px;padding:16px;color:var(--red);font-size:12px;line-height:1.8">
+      <div style="font-weight:700;margin-bottom:6px">エラーが発生しました</div>
+      <div style="font-family:var(--font-mono);font-size:11px;color:var(--text-mid)">${e.message}</div>
+    </div>`;
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = `<svg style="display:inline;width:12px;height:12px;margin-right:5px;vertical-align:-1px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/></svg>再分析する`;
+  }
+}
+function renderDeliverableChips() {
+  const container = document.getElementById('deliverable-chips');
+  if (!container) return;
+  container.innerHTML = DELIVERABLE_CATS.map(cat => {
+    const isActive = dealDeliverables.has(cat.id);
+    return `<div onclick="toggleDeliverable('${cat.id}')"
+      style="padding:6px 13px;border-radius:20px;cursor:pointer;font-size:12px;font-weight:${isActive?'600':'400'};
+             user-select:none;transition:all 0.14s;
+             border:1.5px solid ${isActive ? cat.color : 'var(--border2)'};
+             background:${isActive ? 'rgba('+hexToRgbStr(cat.color)+',0.1)' : 'var(--surface)'};
+             color:${isActive ? cat.color : 'var(--text-mid)'}">${cat.label}</div>`;
+  }).join('');
+}
+
+function toggleDeliverable(id) {
+  if (dealDeliverables.has(id)) dealDeliverables.delete(id);
+  else dealDeliverables.add(id);
+  renderDeliverableChips();
+  DELIVERABLE_CATS.forEach(cat => {
+    const el = document.getElementById('detail-'+cat.id);
+    if (el) el.style.display = dealDeliverables.has(cat.id) ? 'block' : 'none';
+  });
+  renderAllDetailChips();
+}
+
+// クライアント属性
+function setClientType(type) {
+  dealClientType = type;
+  ['client-direct','client-agency'].forEach(id => {
+    const e = document.getElementById(id);
+    if (e) e.classList.toggle('sel', id === 'client-'+type);
+  });
+  const agencyDetail = document.getElementById('agency-detail');
+  if (agencyDetail) agencyDetail.style.display = type === 'agency' ? 'block' : 'none';
+  // 直クライアント欄は常に表示（directの時のみ背景強調）
+  const directDetail = document.getElementById('direct-detail');
+  if (directDetail) {
+    directDetail.style.display = 'block';
+    directDetail.style.borderColor = type === 'direct' ? 'var(--accent)' : 'var(--border)';
+    directDetail.style.background  = type === 'direct' ? 'rgba(255,70,2,0.03)' : 'var(--surface)';
+  }
+}
+
+// 案件ステータス（② セクション）
+let dealStatusType = 'confirmed'; // confirmed / proposing / compe
+
+function setDealStatus(type) {
+  dealStatusType = type;
+  ['status-confirmed','status-proposing','status-compe'].forEach(id => {
+    const e = document.getElementById(id);
+    if (e) e.classList.toggle('sel', id === 'status-'+type);
+  });
+  const detail = document.getElementById('compe-detail');
+  if (detail) detail.style.display = type === 'compe' ? 'block' : 'none';
+  if (type === 'compe') renderAllDetailChips();
+}
+
+// コンペ（後方互換のため残す）
+function setCompe(type, el) { setDealStatus(type === 'yes' ? 'compe' : 'confirmed', el); }
+
+const SOLUTIONS = [
+  { id:'sns',    name:'Instagram/Facebook広告', icon:'📱', range:'広告費10〜30万/月＋手数料20%', min:100000,  max:600000  },
+  { id:'google', name:'Googleリスティング・SEO', icon:'🔍', range:'広告費10〜50万/月＋手数料20%', min:120000,  max:600000  },
+  { id:'line',   name:'LINE広告・MEO対策',       icon:'💬', range:'月5千〜20万円',               min:50000,   max:200000  },
+  { id:'web',    name:'Webサイト・LP制作',        icon:'🌐', range:'30〜150万円（制作費）',        min:300000,  max:1500000 },
+  { id:'video',  name:'動画・YouTube広告',        icon:'🎬', range:'制作10〜50万＋配信費10万〜',   min:200000,  max:700000  },
+  { id:'print',  name:'チラシ・DM・紙媒体',       icon:'📰', range:'印刷＋折込5〜30万/回',         min:50000,   max:300000  },
+  { id:'tv',     name:'テレビCM',                icon:'📺', range:'放送費100万〜/月＋制作費別途',  min:1000000, max:5000000 },
+  { id:'radio',  name:'ラジオCM',                icon:'📻', range:'放送費10〜30万/月＋制作費別途', min:100000,  max:500000  },
+  { id:'mass',   name:'マス複合プラン',           icon:'🎯', range:'TV＋ラジオ＋デジタル複合',      min:1500000, max:8000000 },
+  { id:'system', name:'システム開発・営業ツール', icon:'⚙',  range:'要件定義後お見積もり',          min:300000,  max:5000000 },
+];
+
+const ACTIVITIES = [
+  { id:'ig_post', cat:'SNS投稿', name:'Instagram投稿', icon:'📸', freqs:['毎日','週3〜5回','週1〜2回','月2〜3回','月1回未満'] },
+  { id:'fb_post', cat:'SNS投稿', name:'Facebook投稿', icon:'👥', freqs:['毎日','週3〜5回','週1〜2回','月2〜3回','月1回未満'] },
+  { id:'yt_post', cat:'SNS投稿', name:'YouTube・動画投稿', icon:'🎬', freqs:['週1回以上','月2〜3回','月1回','不定期'] },
+  { id:'tiktok',  cat:'SNS投稿', name:'TikTok', icon:'🎵', freqs:['毎日','週3〜5回','週1〜2回','月数回'] },
+  { id:'line_oa', cat:'SNS投稿', name:'LINE公式', icon:'💬', freqs:['週1回以上','月2〜3回','月1回','不定期'] },
+  { id:'gbp',     cat:'Web・HP', name:'Googleビジネス', icon:'📍', freqs:['週1回以上','月1〜2回','数ヶ月に1回','ほぼ更新なし'] },
+  { id:'hp_update', cat:'Web・HP', name:'HP更新・ブログ', icon:'🌐', freqs:['週1回以上','月1〜2回','数ヶ月に1回','ほぼ更新なし'] },
+  { id:'ig_ad',   cat:'デジタル広告', name:'Instagram広告', icon:'📱', freqs:['常時出稿','キャンペーン時のみ'], extras:[{label:'月間予算',opts:['〜5万','5〜20万','20〜50万','50万以上']},{label:'運用体制',opts:['自社運用','代理店委託']}] },
+  { id:'google_ad', cat:'デジタル広告', name:'Google広告', icon:'🔍', freqs:['常時出稿','キャンペーン時のみ','SEOのみ'], extras:[{label:'月間予算',opts:['〜5万','5〜20万','20〜50万','50万以上']},{label:'運用体制',opts:['自社運用','代理店委託']}] },
+  { id:'tv_cm',   cat:'マス媒体', name:'テレビCM', icon:'📺', freqs:['通年出稿','シーズン出稿','年1〜2回'], extras:[{label:'放送局',opts:['RBC','OTV','QAB','複数局']}] },
+  { id:'radio_cm', cat:'マス媒体', name:'ラジオCM', icon:'📻', freqs:['通年出稿','シーズン出稿','年1〜2回'], extras:[{label:'放送局',opts:['ROK','RBC Radio','FM沖縄','複数局']}] },
+  { id:'flyer',   cat:'紙媒体', name:'折り込みチラシ', icon:'📰', freqs:['月1回以上','2〜3ヶ月に1回','年数回'] },
+  { id:'dm',      cat:'紙媒体', name:'DM・ポスティング', icon:'📬', freqs:['月1回以上','2〜3ヶ月に1回','年数回'] },
+];
+const ACT_STATUS = ['自社運用中','他社に委託中','経験あり・今は停止','やったことはない','興味あり・詳細不明'];
+const ACT_STATUS_COL = {
+  '自社運用中':         { bg:'rgba(79,255,176,0.1)',  bd:'rgba(79,255,176,0.35)',  tx:'var(--accent)'   },
+  '他社に委託中':       { bg:'rgba(168,85,247,0.1)',  bd:'rgba(168,85,247,0.35)',  tx:'var(--purple)'   },
+  '経験あり・今は停止': { bg:'rgba(255,193,69,0.1)',  bd:'rgba(255,193,69,0.35)',  tx:'var(--gold)'     },
+  'やったことはない':   { bg:'rgba(30,36,64,0.4)',    bd:'var(--border2)',          tx:'var(--text-dim)' },
+  '興味あり・詳細不明': { bg:'rgba(58,142,255,0.1)',  bd:'rgba(58,142,255,0.35)',  tx:'var(--blue)'     },
+};
+const ISSUES_LIST = [
+  { id:'no_new',    label:'新規集客ができない',               icon:'📉' },
+  { id:'no_roi',    label:'広告の費用対効果が見えない',        icon:'❓' },
+  { id:'no_skill',  label:'SNS・HPをよくわからない',          icon:'😵' },
+  { id:'no_hands',  label:'人手不足で継続投稿できない',         icon:'🙌' },
+  { id:'lose_comp', label:'競合に負けている気がする',           icon:'⚔️' },
+  { id:'no_brand',  label:'自社の強みを上手く伝えられない',     icon:'📢' },
+  { id:'no_result', label:'なんとなくやってるが成果が見えない', icon:'🌫' },
+  { id:'cost_high', label:'広告費が高くて続けられない',         icon:'💸' },
+  { id:'no_system', label:'営業・業務のシステム化ができていない',icon:'⚙' },
+  { id:'no_track',  label:'顧客管理・追客ができていない',       icon:'📋' },
+  { id:'no_recruit',label:'新卒・中途採用がうまくいかない',     icon:'🎓' },
+  { id:'no_repeat', label:'リピート・固定客が増えない',         icon:'🔁' },
+  { id:'no_review', label:'口コミ・評判のコントロールができていない', icon:'⭐' },
+];
+const DEAL_STAGES = {
+  hearing:  { label:'ヒアリング',   cls:'sb-hearing',  color:'var(--blue)'    },
+  proposal: { label:'提案中',       cls:'sb-proposal', color:'var(--purple)'  },
+  closing:  { label:'クロージング', cls:'sb-closing',  color:'var(--orange)'  },
+  won:      { label:'受注🎉',       cls:'sb-won',      color:'var(--accent)'  },
+  lost:     { label:'失注',         cls:'sb-lost',     color:'var(--text-dim)'},
+};
+
+function saveDeals() {
+  try { if(window.storage) window.storage.set('fw_deals', JSON.stringify(deals)).catch(()=>{}); } catch(e) {}
+  renderDeals();
+  updateDealBadge();
+}
+function updateDealBadge() {
+  const active = deals.filter(d => !['won','lost'].includes(d.stage)).length;
+  document.getElementById('nb-deals').textContent = active;
+  document.getElementById('nb-won').textContent = deals.filter(d=>d.stage==='won').length;
+  document.getElementById('nb-lost').textContent = deals.filter(d=>d.stage==='lost').length;
+}
+
+function renderActivityMap(saved) {
+  dealActivities = saved || {};
+  const cats = [...new Set(ACTIVITIES.map(a => a.cat))];
+  document.getElementById('activity-map').innerHTML = cats.map(cat => {
+    const acts = ACTIVITIES.filter(a => a.cat === cat);
+    return `<div style="margin-bottom:12px">
+      <div style="font-family:var(--font-mono);font-size:9px;color:var(--text-dim);letter-spacing:0.15em;text-transform:uppercase;margin-bottom:6px">${cat}</div>
+      <div style="display:flex;flex-wrap:wrap;gap:6px">${acts.map(a => actCardHTML(a)).join('')}</div>
+    </div>`;
+  }).join('');
+}
+function actCardHTML(a) {
+  const st = dealActivities[a.id] || {};
+  const status = st.status || '';
+  const col = ACT_STATUS_COL[status];
+  const bg = col ? col.bg : 'var(--surface2)';
+  const bd = col ? col.bd : 'var(--border2)';
+  const tx = col ? col.tx : 'var(--text-dim)';
+  const showDetail = status && status !== 'やったことはない';
+  const freqHTML = (showDetail && a.freqs) ? `<select class="fsel" style="font-size:10px;padding:3px 6px;margin-top:4px;width:100%" onchange="setActDetail('${a.id}','freq',this.value)" onclick="event.stopPropagation()"><option value="">頻度</option>${a.freqs.map(f=>`<option ${st.freq===f?'selected':''}>${f}</option>`).join('')}</select>` : '';
+  const extraHTML = (showDetail && a.extras) ? a.extras.map(ex => `<select class="fsel" style="font-size:10px;padding:3px 6px;margin-top:3px;width:100%" onchange="setActDetail('${a.id}','${ex.label}',this.value)" onclick="event.stopPropagation()"><option value="">${ex.label}</option>${ex.opts.map(o=>`<option ${(st.extras||{})[ex.label]===o?'selected':''}>${o}</option>`).join('')}</select>`).join('') : '';
+  return `<div id="actc-${a.id}" onclick="cycleAct('${a.id}')" style="background:${bg};border:1px solid ${bd};border-radius:8px;padding:7px 9px;cursor:pointer;transition:all 0.15s;flex:1;min-width:100px;max-width:145px;user-select:none">
+    <div style="display:flex;align-items:center;gap:4px;margin-bottom:2px"><span style="font-size:12px">${a.icon}</span><span style="font-size:11px;font-weight:600;color:${tx}">${a.name}</span></div>
+    ${status ? `<div style="font-size:9px;font-family:var(--font-mono);color:${tx}">${status}</div>` : `<div style="font-size:9px;color:var(--text-dim)">タップで設定</div>`}
+    ${freqHTML}${extraHTML}
+  </div>`;
+}
+function cycleAct(id) {
+  if (!dealActivities[id]) dealActivities[id] = {};
+  const cur = dealActivities[id].status || '';
+  const idx = cur ? ACT_STATUS.indexOf(cur) : -1;
+  dealActivities[id].status = ACT_STATUS[(idx+1) % ACT_STATUS.length];
+  const act = ACTIVITIES.find(a=>a.id===id);
+  const el = document.getElementById('actc-'+id);
+  if (el && act) el.outerHTML = actCardHTML(act);
+}
+function setActDetail(id, key, val) {
+  if (!dealActivities[id]) dealActivities[id] = {};
+  if (key === 'freq') dealActivities[id].freq = val;
+  else { if (!dealActivities[id].extras) dealActivities[id].extras={}; dealActivities[id].extras[key]=val; }
+}
+function renderIssueChips(saved) {
+  dealIssues = new Set(saved||[]);
+  document.getElementById('issue-chips').innerHTML = ISSUES_LIST.map(is => {
+    const on = dealIssues.has(is.id);
+    return `<div onclick="toggleIssue('${is.id}',this)" style="padding:6px 12px;border-radius:20px;cursor:pointer;font-size:12px;border:1px solid ${on?'rgba(255,77,109,0.4)':'var(--border2)'};background:${on?'rgba(255,77,109,0.12)':'var(--surface2)'};color:${on?'var(--red)':'var(--text-mid)'};transition:all 0.15s;user-select:none">${is.icon} ${is.label}</div>`;
+  }).join('');
+}
+function toggleIssue(id, el) {
+  if (dealIssues.has(id)) {
+    dealIssues.delete(id);
+    el.style.cssText += ';border-color:var(--border2);background:var(--surface2);color:var(--text-mid)';
+  } else {
+    dealIssues.add(id);
+    el.style.cssText += ';border-color:rgba(255,77,109,0.4);background:rgba(255,77,109,0.12);color:var(--red)';
+  }
+}
+function renderEntrySolChips() {
+  document.getElementById('entry-sol-chips').innerHTML = SOLUTIONS.map(s => `<div onclick="this.classList.toggle('on');this.style.borderColor=this.classList.contains('on')?'var(--accent)':'var(--border2)';this.style.background=this.classList.contains('on')?'var(--accent-dim)':'var(--surface2)';this.style.color=this.classList.contains('on')?'var(--accent)':'var(--text-mid)'" data-sol="${s.id}" style="padding:5px 11px;border-radius:6px;font-size:11px;cursor:pointer;border:1px solid var(--border2);background:var(--surface2);color:var(--text-mid);transition:all 0.15s">${s.icon} ${s.name}</div>`).join('');
+}
+
+function openNewDealModal() {
+  currentDealId = null;
+  dealHeat = { urgency:0, budget:0, speed:0, relation:0 };
+  dealEntryType = 'push';
+  dealClientType = 'direct';
+  dealDeliverables = new Set();
+  dealDeliverableDetails = {};
+  dealCompeType = 'no';
+  dealStatusType = 'confirmed';
+  selectedPushServices = new Set();
+  document.getElementById('deal-modal-title').textContent = '新規商談ヒアリング';
+  document.getElementById('deal-modal-sub').textContent = '手動入力';
+  document.getElementById('deal-date').value = todayJST();
+  document.getElementById('deal-round').value = '1回目';
+  document.getElementById('deal-attendee').value = '';
+  document.getElementById('deal-goal').value = '';
+  document.getElementById('deal-budget').value = '';
+  document.getElementById('deal-auth').value = '社長・代表が決める';
+  document.getElementById('deal-timeline').value = '近いうち（1〜3ヶ月）';
+  document.getElementById('deal-competitor').value = '他社と比較していない';
+  document.getElementById('deal-memo').value = '';
+  document.getElementById('deal-next-date').value = '';
+  document.getElementById('deal-stage-update').value = 'hearing';
+  ['urgency','budget','speed','relation'].forEach(k => {
+    document.querySelectorAll(`#heat-${k} .heat-dot`).forEach(d => d.classList.remove('on'));
+  });
+  setEntry('push');
+  setClientType('direct');
+  setDealStatus('confirmed');
+  // 直クライアント情報リセット
+  ['direct-company','direct-person','direct-contact'].forEach(id => {
+    const el = document.getElementById(id); if(el) el.value = '';
+  });
+  const di = document.getElementById('direct-industry'); if(di) di.value = '';
+  const da = document.getElementById('direct-area');     if(da) da.value = '';
+  const dr = document.getElementById('direct-role');     if(dr) dr.value = '社長・代表';
+  // 代理店フィールドリセット
+  ['agency-name','agency-person','agency-end-client'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
+  document.getElementById('compe-deadline') && (document.getElementById('compe-deadline').value='');
+  document.getElementById('compe-result-date') && (document.getElementById('compe-result-date').value='');
+  document.getElementById('compe-memo') && (document.getElementById('compe-memo').value='');
+  document.getElementById('m-deal').dataset.itemId = '';
+  renderActivityMap({});
+  renderIssueChips([]);
+  renderDeliverableChips();
+  // 全詳細セクション非表示
+  DELIVERABLE_CATS.forEach(cat => { const el=document.getElementById('detail-'+cat.id); if(el) el.style.display='none'; });
+  document.getElementById('m-deal').classList.add('open');
+}
+
+function openExistingDeal(id) {
+  const d = deals.find(x => x.id === id);
+  if (!d) return;
+  currentDealId = id;
+  dealHeat = { ...(d.heat || { urgency:0, budget:0, speed:0, relation:0 }) };
+  dealClientType = d.clientType || 'direct';
+  dealDeliverables = new Set(d.deliverables || []);
+  dealDeliverableDetails = { ...(d.deliverableDetails || {}) };
+  dealCompeType = d.compeType || 'no';
+  dealStatusType = d.dealStatusType || (d.compeType === 'yes' ? 'compe' : 'confirmed');
+  document.getElementById('deal-modal-title').textContent = d.company + ' — 商談記録';
+  document.getElementById('deal-modal-sub').textContent = `${DEAL_STAGES[d.stage]?.label||''} / ${d.sessions?.length||0}回商談済`;
+  document.getElementById('deal-date').value = todayJST();
+  document.getElementById('deal-round').value = d.sessions?.length ? `${d.sessions.length+1}回目` : '2回目';
+  document.getElementById('deal-attendee').value = d.attendee||'';
+  document.getElementById('deal-place').value = d.place||'先方オフィス';
+  document.getElementById('deal-goal').value = d.goal||'';
+  document.getElementById('deal-budget').value = d.budget||'';
+  document.getElementById('deal-auth').value = d.auth||'社長・代表が決める';
+  document.getElementById('deal-timeline').value = d.timeline||'近いうち（1〜3ヶ月）';
+  document.getElementById('deal-competitor').value = d.competitor||'他社と比較していない';
+  document.getElementById('deal-memo').value = '';
+  document.getElementById('deal-next-date').value = d.nextDate||'';
+  document.getElementById('deal-stage-update').value = d.stage||'hearing';
+  ['urgency','budget','speed','relation'].forEach(k => {
+    const val = dealHeat[k]||0;
+    document.querySelectorAll(`#heat-${k} .heat-dot`).forEach((dot,i) => dot.classList.toggle('on', i < val));
+  });
+  setEntry(d.entryType||'push');
+  setClientType(dealClientType);
+  // 直クライアント情報復元
+  if (d.directInfo) {
+    const di = d.directInfo;
+    if (document.getElementById('direct-company'))  document.getElementById('direct-company').value  = di.company  || '';
+    if (document.getElementById('direct-person'))   document.getElementById('direct-person').value   = di.person   || '';
+    if (document.getElementById('direct-contact'))  document.getElementById('direct-contact').value  = di.contact  || '';
+    if (document.getElementById('direct-industry')) document.getElementById('direct-industry').value = di.industry || '';
+    if (document.getElementById('direct-area'))     document.getElementById('direct-area').value     = di.area     || '';
+    if (document.getElementById('direct-role'))     document.getElementById('direct-role').value     = di.role     || '社長・代表';
+  }
+  // 代理店フィールド復元
+  if (d.agencyInfo) {
+    const ai = d.agencyInfo;
+    ['agency-name','agency-person','agency-end-client'].forEach(id => {
+      const el=document.getElementById(id); if(el) el.value=ai[id.replace('agency-','')]||'';
+    });
+    if (document.getElementById('agency-name')) document.getElementById('agency-name').value = ai.name||'';
+    if (document.getElementById('agency-person')) document.getElementById('agency-person').value = ai.person||'';
+    if (document.getElementById('agency-end-client')) document.getElementById('agency-end-client').value = ai.endClient||'';
+    if (document.getElementById('agency-relation')) document.getElementById('agency-relation').value = ai.relation||'初回接触';
+    if (document.getElementById('agency-direct-access')) document.getElementById('agency-direct-access').value = ai.directAccess||'代理店経由のみ（エンド非公開）';
+  }
+  setDealStatus(dealStatusType);
+  // dealStatusTypeで上書き
+  setDealStatus(dealStatusType);
+  if (d.compeInfo) {
+    if (document.getElementById('compe-deadline')) document.getElementById('compe-deadline').value = d.compeInfo.deadline||'';
+    if (document.getElementById('compe-result-date')) document.getElementById('compe-result-date').value = d.compeInfo.resultDate||'';
+    if (document.getElementById('compe-memo')) document.getElementById('compe-memo').value = d.compeInfo.memo||'';
+  }
+  document.getElementById('m-deal').dataset.itemId = '';
+  renderActivityMap(d.activities||{});
+  renderIssueChips(d.issueIds||[]);
+  renderDeliverableChips();
+  DELIVERABLE_CATS.forEach(cat => {
+    const el = document.getElementById('detail-'+cat.id);
+    if (el) el.style.display = dealDeliverables.has(cat.id) ? 'block' : 'none';
+  });
+  renderAllDetailChips();
+  document.getElementById('m-deal').classList.add('open');
+}
+
+function setEntry(type) {
+  dealEntryType = type;
+  ['entry-push','entry-issue','entry-solution'].forEach(id => {
+    const e = document.getElementById(id);
+    if (e) e.classList.toggle('sel', id === 'entry-'+type);
+  });
+  const detail = document.getElementById('entry-sol-detail');
+  if (detail) detail.style.display = type === 'solution' ? 'block' : 'none';
+  if (type === 'solution') renderEntrySolChips();
+  // プッシュ型 → 自社サービス選択を表示
+  const pushSvc = document.getElementById('entry-push-services');
+  if (pushSvc) pushSvc.style.display = type === 'push' ? 'block' : 'none';
+  if (type === 'push') renderPushServiceChips();
+}
+function setHeat(key, val, el) {
+  dealHeat[key] = val;
+  el.closest('.heat-meter').querySelectorAll('.heat-dot').forEach((d,i) => d.classList.toggle('on', i < val));
+}
+
+function saveDeal() {
+  const stage = document.getElementById('deal-stage-update').value;
+  const session = {
+    date: document.getElementById('deal-date').value,
+    round: document.getElementById('deal-round').value,
+    attendee: document.getElementById('deal-attendee').value,
+    place: document.getElementById('deal-place').value,
+    entryType: dealEntryType,
+    memo: document.getElementById('deal-memo').value,
+  };
+  // 直クライアント情報収集
+  const directInfo = {
+    company:  document.getElementById('direct-company')?.value.trim()  || '',
+    person:   document.getElementById('direct-person')?.value.trim()   || '',
+    contact:  document.getElementById('direct-contact')?.value.trim()  || '',
+    industry: document.getElementById('direct-industry')?.value        || '',
+    area:     document.getElementById('direct-area')?.value            || '',
+    role:     document.getElementById('direct-role')?.value            || '',
+  };
+  // 代理店情報収集
+  const agencyInfo = dealClientType === 'agency' ? {
+    name: document.getElementById('agency-name')?.value||'',
+    person: document.getElementById('agency-person')?.value||'',
+    endClient: document.getElementById('agency-end-client')?.value||'',
+    relation: document.getElementById('agency-relation')?.value||'',
+    directAccess: document.getElementById('agency-direct-access')?.value||'',
+  } : null;
+  // コンペ情報収集
+  const compeInfo = dealCompeType === 'yes' ? {
+    fee: dealDeliverableDetails['compe-fee']||null,
+    count: dealDeliverableDetails['compe-count']||null,
+    scope: dealDeliverableDetails['compe-scope']||[],
+    deadline: document.getElementById('compe-deadline')?.value||'',
+    resultDate: document.getElementById('compe-result-date')?.value||'',
+    memo: document.getElementById('compe-memo')?.value||'',
+  } : null;
+
+  if (currentDealId) {
+    const d = deals.find(x => x.id === currentDealId);
+    if (!d) return;
+    d.stage = stage;
+    d.clientType = dealClientType;
+    d.directInfo = directInfo;
+    d.agencyInfo = agencyInfo;
+    // 直クライアント情報で会社名・担当者・業種・エリアを更新
+    if (dealClientType === 'direct' && directInfo.company) {
+      d.company  = directInfo.company;
+      d.person   = directInfo.person   || d.person;
+      d.industry = directInfo.industry || d.industry;
+      d.area     = directInfo.area     || d.area;
+    }
+    d.deliverables = [...dealDeliverables];
+    d.deliverableDetails = { ...dealDeliverableDetails };
+    d.compeType = dealStatusType === 'compe' ? 'yes' : 'no';
+    d.dealStatusType = dealStatusType;
+    d.compeInfo = compeInfo;
+    d.issue = [...dealIssues].map(id => ISSUES_LIST.find(i=>i.id===id)?.label).filter(Boolean).join(' / ') || d.issue;
+    d.issueIds = [...dealIssues];
+    d.activities = { ...dealActivities };
+    d.goal = document.getElementById('deal-goal').value || d.goal;
+    d.budget = document.getElementById('deal-budget').value || d.budget;
+    d.auth = document.getElementById('deal-auth').value;
+    d.timeline = document.getElementById('deal-timeline').value;
+    d.competitor = document.getElementById('deal-competitor').value;
+    d.heat = { ...dealHeat };
+    d.nextDate = document.getElementById('deal-next-date').value;
+    d.updatedAt = todayJST();
+    d.sessions = d.sessions || [];
+    d.sessions.push(session);
+    toast(`💾 ${d.company} の商談を更新しました`);
+  } else {
+    // 直クライアントの場合は企業情報欄、それ以外はdeal-attendeeを確認
+    const hasClientInfo = dealClientType === 'direct'
+      ? (directInfo.company || directInfo.person)
+      : document.getElementById('deal-attendee').value;
+    if (!hasClientInfo) { toast('会社名または担当者名を入力してください'); return; }
+    const deal = {
+      id: Date.now(),
+      company: (dealClientType === 'direct' && directInfo.company) ? directInfo.company : '手動入力企業',
+      person:  (dealClientType === 'direct' && directInfo.person)  ? directInfo.person  : document.getElementById('deal-attendee').value,
+      industry:(dealClientType === 'direct' && directInfo.industry)? directInfo.industry: '—',
+      area:    (dealClientType === 'direct' && directInfo.area)    ? directInfo.area    : '—',
+      stage,
+      entryType: dealEntryType,
+      clientType: dealClientType,
+      directInfo,
+      agencyInfo,
+      deliverables: [...dealDeliverables],
+      deliverableDetails: { ...dealDeliverableDetails },
+      compeType: dealStatusType === 'compe' ? 'yes' : 'no',
+      dealStatusType: dealStatusType,
+      compeInfo,
+      issue: [...dealIssues].map(id => ISSUES_LIST.find(i=>i.id===id)?.label).filter(Boolean).join(' / '),
+      issueIds: [...dealIssues],
+      activities: { ...dealActivities },
+      goal: document.getElementById('deal-goal').value,
+      budget: document.getElementById('deal-budget').value,
+      auth: document.getElementById('deal-auth').value,
+      timeline: document.getElementById('deal-timeline').value,
+      competitor: document.getElementById('deal-competitor').value,
+      heat: { ...dealHeat },
+      nextDate: document.getElementById('deal-next-date').value,
+      solutions: [], proposalAmount: 0,
+      attendee: document.getElementById('deal-attendee').value,
+      place: document.getElementById('deal-place').value,
+      sessions: [session],
+      createdAt: todayJST(), updatedAt: todayJST(),
+    };
+    deals.unshift(deal);
+    toast(`💼 商談を追加しました`);
+  }
+  saveDeals(); cm('m-deal');
+}
+
+let dealStageFilter = '';
+function filterDeals(stage, el) {
+  dealStageFilter = dealStageFilter === stage ? '' : stage;
+  document.getElementById('deal-stage-filter').value = dealStageFilter;
+  renderDeals();
+}
+function renderDeals() {
+  const search = document.getElementById('deal-search')?.value.toLowerCase() || '';
+  const sf = document.getElementById('deal-stage-filter')?.value || dealStageFilter;
+  const list = deals.filter(d => {
+    if (search && !d.company.toLowerCase().includes(search)) return false;
+    if (sf && d.stage !== sf) return false;
+    return true;
+  });
+  Object.keys(DEAL_STAGES).forEach(s => {
+    const cnt = deals.filter(d => d.stage === s).length;
+    const amt = deals.filter(d => d.stage === s && d.proposalAmount > 0).reduce((sum,d) => sum+d.proposalAmount, 0);
+    document.getElementById('ds-'+s).textContent = cnt;
+    document.getElementById('da-'+s).textContent = amt > 0 ? `¥${(amt/10000).toFixed(0)}万` : '—';
+  });
+  const container = document.getElementById('deals-list');
+  const empty = document.getElementById('deals-empty');
+  if (!list.length) { container.innerHTML = ''; empty.style.display = 'block'; return; }
+  empty.style.display = 'none';
+  const heatPct = d => Math.round(Object.values(d.heat||{}).reduce((s,v)=>s+v,0) / 20 * 100);
+  const entryLabel = { push:'🚀 新規開拓', issue:'💡 課題型', solution:'🎯 ソリューション決定' };
+  container.innerHTML = list.map(d => {
+    const st = DEAL_STAGES[d.stage] || DEAL_STAGES.hearing;
+    const sols = (d.solutions||[]).map(s => SOLUTIONS.find(x=>x.id===s)?.name||s).join(' / ') || '未選定';
+    return `<div class="deal-card stage-${d.stage}" onclick="openExistingDeal(${d.id})">
+      <div class="dc-top">
+        <div><div class="dc-company">${d.company}</div><div class="dc-person">${d.person} · ${d.industry} · ${d.area}</div></div>
+        <div style="text-align:right">${d.proposalAmount > 0 ? `<div class="dc-amount">¥${(d.proposalAmount/10000).toFixed(0)}万</div><div class="dc-amount-label">/月 提案額</div>` : '<div style="font-size:12px;color:var(--text-dim)">提案未作成</div>'}</div>
+      </div>
+      <div style="display:flex;gap:7px;align-items:center;flex-wrap:wrap;margin-bottom:5px">
+        <span class="stage-badge ${st.cls}">${st.label}</span>
+        <span style="font-size:10px;color:var(--text-mid);font-family:var(--font-mono)">${entryLabel[d.entryType]||'🚀 新規開拓'}</span>
+        ${d.clientType==='agency' ? `<span style="font-family:var(--font-mono);font-size:10px;padding:2px 8px;border-radius:12px;background:var(--purple-dim);color:var(--purple);border:1px solid rgba(124,58,237,0.2);font-weight:600">代理店案件</span>` : ''}
+        ${d.dealStatusType==='compe' || d.compeType==='yes' ? `<span style="font-family:var(--font-mono);font-size:10px;padding:2px 8px;border-radius:12px;background:rgba(250,207,76,0.15);color:#8a6000;border:1px solid rgba(250,207,76,0.4);font-weight:600">🏆 コンペ</span>` : ''}
+        ${d.dealStatusType==='proposing' && d.dealStatusType!=='compe' ? `<span style="font-family:var(--font-mono);font-size:10px;padding:2px 8px;border-radius:12px;background:var(--purple-dim);color:var(--purple);border:1px solid rgba(124,58,237,0.2);font-weight:600">📝 提案中</span>` : ''}
+        ${d.nextDate ? `<span style="font-size:10px;font-family:var(--font-mono);color:var(--accent);font-weight:600">📅 ${d.nextDate}</span>` : ''}
+      </div>
+      <div class="dc-tags">
+        ${d.budget ? `<span class="dc-tag">予算: ${d.budget}</span>` : ''}
+        ${d.timeline ? `<span class="dc-tag">${d.timeline}</span>` : ''}
+        <span class="dc-tag">商談${d.sessions?.length||1}回</span>
+        <span class="dc-tag">${sols}</span>
+      </div>
+      <div class="dc-progress">
+        <div style="font-size:10px;color:var(--text-mid);width:55px;font-family:var(--font-mono)">温度感</div>
+        <div class="dc-prog-bar"><div class="dc-prog-fill" style="width:${heatPct(d)}%"></div></div>
+        <div class="dc-prob">${heatPct(d)}%</div>
+        <button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();currentDealId=${d.id};openProposalModal()">📄 提案書</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function openProposalModal() {
+  const d = currentDealId ? deals.find(x => x.id === currentDealId) : null;
+  document.getElementById('proposal-sub').textContent = d ? d.company : '';
+  selectedSolutions = {};
+  if (d?.solutions) d.solutions.forEach(s => { selectedSolutions[s] = d.solutionAmounts?.[s] ?? null; });
+  renderSolGrid(); renderProposalPreview();
+  document.getElementById('m-proposal').classList.add('open');
+}
+function renderSolGrid() {
+  document.getElementById('sol-grid').innerHTML = SOLUTIONS.map(s => `<div class="sol-card ${selectedSolutions[s.id]!==undefined?'sel':''}" onclick="toggleSol('${s.id}')" id="sol-${s.id}"><span class="sol-check">${selectedSolutions[s.id]!==undefined?'✓':''}</span><div class="sol-name">${s.icon} ${s.name}</div><div class="sol-range">${s.range}</div></div>`).join('');
+}
+function toggleSol(id) {
+  if (selectedSolutions[id] !== undefined) delete selectedSolutions[id];
+  else selectedSolutions[id] = null;
+  renderSolGrid(); renderProposalPreview();
+}
+function renderProposalPreview() {
+  const selSols = Object.keys(selectedSolutions);
+  if (!selSols.length) { document.getElementById('proposal-preview').innerHTML = '<div style="text-align:center;color:var(--text-dim);padding:20px">ソリューションを選択してください</div>'; return; }
+  const d = currentDealId ? deals.find(x => x.id === currentDealId) : null;
+  let total = 0;
+  const rows = selSols.map(id => {
+    const sol = SOLUTIONS.find(s => s.id === id);
+    if (!sol) return '';
+    const mid = Math.round((sol.min+sol.max)/2);
+    const amount = selectedSolutions[id] !== null ? selectedSolutions[id] : mid;
+    total += amount;
+    return `<div class="proposal-row"><div class="proposal-sol-name">${sol.icon} ${sol.name}</div><div class="proposal-range">${sol.range}</div><div style="display:flex;align-items:center;gap:4px">¥<input class="proposal-custom-input" type="number" value="${amount}" min="0" step="10000" onchange="updateSolAmount('${id}',this.value)" onclick="event.stopPropagation()"></div></div>`;
+  }).join('');
+  const today = nowJST();
+  document.getElementById('proposal-preview').innerHTML = `<div class="proposal-header"><div><div class="proposal-title">広告提案書</div><div style="font-size:12px;color:var(--text-mid);margin-top:3px">${d?.company||'—'} 様　${today.getFullYear()}年${today.getMonth()+1}月${today.getDate()}日</div></div><div style="text-align:right"><div class="proposal-total">¥${total.toLocaleString()}</div><div style="font-size:11px;color:var(--text-dim)">月額合計（目安）</div></div></div>${rows}<div style="margin-top:12px;padding-top:10px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:8px"><div style="font-size:13px;color:var(--text-mid)">月額合計</div><div style="font-family:var(--font-head);font-size:18px;color:var(--accent)">¥${total.toLocaleString()}</div></div>`;
+}
+function updateSolAmount(id, val) {
+  selectedSolutions[id] = parseInt(val)||0;
+  const total = Object.keys(selectedSolutions).reduce((sum,sid) => {
+    const sol = SOLUTIONS.find(s=>s.id===sid);
+    const mid = sol ? Math.round((sol.min+sol.max)/2) : 0;
+    return sum + (selectedSolutions[sid]!==null ? selectedSolutions[sid] : mid);
+  }, 0);
+  const el = document.querySelector('.proposal-total');
+  if (el) el.textContent = `¥${total.toLocaleString()}`;
+}
+function saveProposal() {
+  if (!currentDealId) { toast('商談を先に保存してください'); return; }
+  const d = deals.find(x => x.id === currentDealId);
+  if (!d) return;
+  d.solutions = Object.keys(selectedSolutions);
+  d.solutionAmounts = { ...selectedSolutions };
+  const total = Object.keys(selectedSolutions).reduce((sum,sid) => {
+    const sol = SOLUTIONS.find(s=>s.id===sid);
+    const mid = sol ? Math.round((sol.min+sol.max)/2) : 0;
+    return sum + (selectedSolutions[sid]!==null ? selectedSolutions[sid] : mid);
+  }, 0);
+  d.proposalAmount = total;
+  d.stage = 'proposal';
+  saveDeals(); cm('m-proposal');
+  toast(`📄 提案書を保存しました（月額¥${total.toLocaleString()}）`);
+}
+
+function exportProposalPDF() {
+  const d = currentDealId ? deals.find(x => x.id === currentDealId) : null;
+  const selSols = Object.keys(selectedSolutions);
+  if (!selSols.length) { toast('ソリューションを選択してください'); return; }
+  const today = nowJST();
+  const dateStr = `${today.getFullYear()}年${today.getMonth()+1}月${today.getDate()}日`;
+  let total = 0;
+  const rowsData = selSols.map(id => {
+    const sol = SOLUTIONS.find(s=>s.id===id); if (!sol) return null;
+    const amount = selectedSolutions[id]!==null ? selectedSolutions[id] : Math.round((sol.min+sol.max)/2);
+    total += amount;
+    return { sol, amount };
+  }).filter(Boolean);
+  const eLabel = {push:'新規開拓提案',issue:'課題解決提案',solution:'ソリューション提案'}[d?.entryType]||'広告提案';
+  const issueList = (d?.issueIds||[]).map(id=>{ const f=ISSUES_LIST.find(i=>i.id===id); return f?`${f.icon} ${f.label}`:null; }).filter(Boolean);
+  const html = `<!DOCTYPE html><html lang="ja"><head><meta charset="UTF-8"><title>${d?.company||''}提案書</title><style>@page{size:A4;margin:18mm 16mm}*{box-sizing:border-box;margin:0;padding:0}body{font-family:'Hiragino Kaku Gothic ProN','Meiryo',sans-serif;font-size:11pt;color:#1a1a2e}.cover{padding:36px 0 28px;border-bottom:3px solid #4fffb0;margin-bottom:24px}.badge{display:inline-block;background:#1a1a2e;color:#4fffb0;font-size:9pt;padding:4px 14px;border-radius:20px;letter-spacing:.15em;margin-bottom:14px}.cover-title{font-size:24pt;font-weight:900;line-height:1.2;margin-bottom:8px}.cover-meta{margin-top:14px;display:flex;gap:24px;font-size:10pt;color:#555}.cover-meta span{font-weight:700;color:#1a1a2e}.sec-title{font-size:10pt;letter-spacing:.18em;text-transform:uppercase;color:#4fffb0;background:#1a1a2e;padding:5px 12px;border-radius:4px;margin-bottom:10px;display:inline-block}.section{margin-bottom:20px}.issue-chips{display:flex;flex-wrap:wrap;gap:6px}.ic{background:#fff0f3;border:1px solid #ff9ab0;color:#c0325a;font-size:9.5pt;padding:3px 11px;border-radius:20px}table{width:100%;border-collapse:collapse;margin-bottom:6px}th{background:#1a1a2e;color:#4fffb0;font-size:9.5pt;padding:7px 11px;text-align:left;font-weight:700}td{padding:8px 11px;font-size:10.5pt;border-bottom:1px solid #e8eaf0}.td-name{font-weight:600}.td-range{font-size:9pt;color:#888}.td-amt{font-weight:700;text-align:right;white-space:nowrap}.total-row{background:#1a1a2e!important}.total-row td{color:#4fffb0;font-weight:900;font-size:13pt;border:none}.note{background:#f0fdf8;border:1px solid #b2eed8;border-radius:6px;padding:11px 13px;font-size:9.5pt;color:#2d6e52;margin-top:7px;line-height:1.7}.footer{margin-top:28px;padding-top:12px;border-top:2px solid #e8eaf0;display:flex;justify-content:space-between;font-size:9pt;color:#aaa}</style></head><body>
+<div class="cover"><div class="badge">OKINAWA AD PROPOSAL</div><div class="cover-title">広告・デジタルマーケティング<br>${eLabel}</div><div style="font-size:12pt;color:#555">${d?.company||''} 御中</div><div class="cover-meta"><div>作成日: <span>${dateStr}</span></div><div>担当: <span>${d?.person||'—'}</span></div><div>エリア: <span>${d?.area||'沖縄県'}</span></div>${d?.industry?`<div>業種: <span>${d.industry}</span></div>`:''}</div></div>
+${issueList.length?`<div class="section"><div class="sec-title">// 確認された課題</div><div class="issue-chips">${issueList.map(i=>`<div class="ic">${i}</div>`).join('')}</div></div>`:''}
+<div class="section"><div class="sec-title">// 提案内容・沖縄相場金額</div><table><thead><tr><th>ソリューション</th><th>沖縄相場レンジ</th><th style="text-align:right">提案金額（月額目安）</th></tr></thead><tbody>${rowsData.map(({sol,amount})=>`<tr><td class="td-name">${sol.icon} ${sol.name}</td><td class="td-range">${sol.range}</td><td class="td-amt">¥${amount.toLocaleString()}</td></tr>`).join('')}<tr class="total-row"><td colspan="2">月額合計（目安）</td><td class="td-amt">¥${total.toLocaleString()}</td></tr></tbody></table><div class="note">💡 上記金額は沖縄県内の市場調査に基づく目安です。詳細は業種・規模・目標により変動します。</div></div>
+${(d?.budget||d?.timeline)?`<div class="section"><div class="sec-title">// ヒアリング内容サマリー</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px 22px">${d?.budget?`<div style="border-left:3px solid #4fffb0;padding-left:9px"><div style="font-size:8.5pt;color:#888;margin-bottom:2px">月間広告予算</div><div style="font-size:11pt;font-weight:600">${d.budget}</div></div>`:''} ${d?.timeline?`<div style="border-left:3px solid #4fffb0;padding-left:9px"><div style="font-size:8.5pt;color:#888;margin-bottom:2px">検討タイムライン</div><div style="font-size:11pt;font-weight:600">${d.timeline}</div></div>`:''}</div></div>`:''}
+<div class="footer"><div>DEALWORK — 商談支援システム / FIELDWORK連携</div><div>${d?.company||''} 様 — ${dateStr}</div></div>
+</body></html>`;
+  const w = window.open('','_blank','width=860,height=680');
+  if (!w) { toast('ポップアップを許可してください'); return; }
+  w.document.write(html); w.document.close();
+  setTimeout(() => { w.focus(); w.print(); }, 600);
+  toast('🖨 提案書PDFウィンドウを開きました');
+}
+
+function exportDealsCSV() {
+  const h = ['会社名','担当者','業種','エリア','ステージ','提案額','課題','予算感','タイムライン','次回日','商談回数','入り方'];
+  const rows = deals.map(d => [d.company,d.person,d.industry,d.area,DEAL_STAGES[d.stage]?.label||'',d.proposalAmount||0,d.issue||'',d.budget||'',d.timeline||'',d.nextDate||'',d.sessions?.length||1,{push:'新規開拓',issue:'課題型',solution:'ソリューション決定'}[d.entryType]||'新規開拓'].map(v=>`"${String(v||'').replace(/"/g,'""')}"`).join(','));
+  const blob = new Blob(['\uFEFF'+[h.join(','),...rows].join('\n')],{type:'text/csv;charset=utf-8;'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href=url; a.download='deals_'+todayJST()+'.csv'; a.click();
+  toast('⬇ CSVをエクスポートしました');
+}
+
+function renderWonLost(type) {
+  const list = deals.filter(d => d.stage === type);
+  const el = document.getElementById(type+'-content');
+  if (!list.length) { el.innerHTML = `<div class="empty"><div class="empty-ico">${type==='won'?'🎉':'❌'}</div><div>まだありません</div></div>`; return; }
+  el.innerHTML = list.map(d => `<div onclick="openExistingDeal(${d.id})" style="background:#fff;border:1px solid var(--border);border-radius:12px;padding:14px 18px;margin-bottom:8px;display:flex;align-items:center;gap:12px;cursor:pointer;box-shadow:var(--shadow-sm);transition:all 0.14s" onmouseover="this.style.borderColor='var(--accent)';this.style.boxShadow='var(--shadow-md)'" onmouseout="this.style.borderColor='var(--border)';this.style.boxShadow='var(--shadow-sm)'"><div style="flex:1"><div style="font-weight:700;font-size:14px">${d.company}</div><div style="font-size:11px;color:var(--text-mid);margin-top:2px">${d.industry} · ${d.area}</div></div>${d.proposalAmount>0?`<div style="font-family:var(--font-head);font-size:20px;color:var(--accent)">¥${(d.proposalAmount/10000).toFixed(0)}万/月</div>`:''}<div style="font-family:var(--font-mono);font-size:11px;color:var(--text-dim)">${d.updatedAt||d.createdAt}</div></div>`).join('');
+}
+
+function renderDash() {
+  const active = deals.filter(d => !['won','lost'].includes(d.stage));
+  const won = deals.filter(d => d.stage === 'won');
+  const lost = deals.filter(d => d.stage === 'lost');
+  const totalAmt = deals.filter(d=>['proposal','closing'].includes(d.stage)).reduce((s,d)=>s+(d.proposalAmount||0),0);
+  const wonAmt = won.reduce((s,d)=>s+(d.proposalAmount||0),0);
+  const closed = won.length+lost.length;
+  document.getElementById('dash-active').textContent = active.length;
+  document.getElementById('dash-won').textContent = won.length;
+  document.getElementById('dash-amount').textContent = `¥${(totalAmt/10000).toFixed(0)}万`;
+  document.getElementById('dash-won-amount').textContent = `¥${(wonAmt/10000).toFixed(0)}万`;
+  document.getElementById('dash-rate').textContent = closed>0 ? Math.round(won.length/closed*100)+'%' : '0%';
+  const stages = ['hearing','proposal','closing','won','lost'];
+  const labels = {hearing:'ヒアリング',proposal:'提案中',closing:'クロージング',won:'受注',lost:'失注'};
+  const colors = {hearing:'var(--blue)',proposal:'var(--purple)',closing:'var(--orange)',won:'var(--green)',lost:'var(--text-dim)'};
+  const max = Math.max(...stages.map(s=>deals.filter(d=>d.stage===s).length),1);
+  document.getElementById('dash-funnel').innerHTML = stages.map(s => {
+    const cnt = deals.filter(d=>d.stage===s).length;
+    const pct = Math.round(cnt/max*100);
+    return `<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px"><div style="font-family:var(--font-mono);font-size:10px;color:var(--text-mid);width:90px;text-align:right;flex-shrink:0">${labels[s]}</div><div style="flex:1;height:28px;background:var(--surface);border-radius:6px;overflow:hidden;border:1px solid var(--border)"><div style="width:${pct}%;height:100%;background:${colors[s]};border-radius:6px;display:flex;align-items:center;justify-content:flex-end;padding-right:8px;transition:width 0.5s">${cnt>0?`<span style="font-family:var(--font-mono);font-size:11px;color:#fff;font-weight:600">${cnt}</span>`:''}</div></div></div>`;
+  }).join('');
+}
+
+// ── FIELDWORK連携 ──
+let fwLog = [], fwRxCount = 0, fwErrCount = 0;
+
+function fwSetStatus(connected) {
+  const col = connected ? 'var(--green)' : 'var(--text-dim)';
+  ['fw-dot','fw-sc-dot'].forEach(id => { const el=document.getElementById(id); if(el) el.style.background=col; });
+  const st = document.getElementById('fw-status-txt');
+  if (st) { st.textContent = connected ? 'FW 受信済み' : 'FW 未受信'; st.style.color=col; }
+  const sc = document.getElementById('fw-sc-status');
+  if (sc) { sc.textContent = connected ? '受信済み' : '未受信'; sc.style.color=col; }
+}
+function fwAddLog(type, msg) {
+  const now = nowJST();
+  const ts = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}:${String(now.getSeconds()).padStart(2,'0')}`;
+  fwLog.unshift({ ts, type, msg });
+  if (fwLog.length > 50) fwLog.pop();
+  renderFwLog();
+}
+function renderFwLog() {
+  const el = document.getElementById('fw-log');
+  if (!el) return;
+  if (!fwLog.length) { el.innerHTML = '<div style="color:var(--text-dim)">ログなし</div>'; return; }
+  const colMap = { rx:'var(--accent)', err:'var(--red)', test:'var(--blue)', update:'var(--purple)' };
+  el.innerHTML = fwLog.map(e => `<div><span style="color:var(--text-dim)">${e.ts}</span> <span style="color:${colMap[e.type]||'var(--text-mid)'}">[${e.type.toUpperCase()}]</span> <span style="color:var(--text)">${e.msg}</span></div>`).join('');
+}
+function fwUpdateStats() {
+  const el = document.getElementById('fw-sc-count'); if(el) el.textContent = fwRxCount;
+  const er = document.getElementById('fw-sc-err'); if(er) er.textContent = fwErrCount;
+  const nb = document.getElementById('nb-fw'); if(nb) { nb.textContent = fwRxCount > 0 ? fwRxCount : '—'; nb.style.background = fwRxCount > 0 ? 'var(--blue)' : 'var(--text-dim)'; }
+}
+function fwClearLog() { fwLog = []; renderFwLog(); toast('🗑 ログを削除しました'); }
+
+function fwSendTest() {
+  const APO_LIST = [
+    { id:9000001, company:'株式会社サンライズ沖縄', person:'比嘉 健太（代表）', industry:'飲食・居酒屋', area:'那覇市久茂地', stage:'hearing', entryType:'push', budget:'10〜30万円', timeline:'近いうち（1〜3ヶ月）', issue:'新規集客ができない', issueIds:['no_new'], heat:{urgency:3,budget:2,speed:2,relation:4}, sessions:[{date:todayJST(),round:'1回目',entryType:'push'}], createdAt:todayJST(), updatedAt:todayJST() },
+    { id:9000002, company:'リゾートホテル美ら海', person:'仲村 あゆみ（マーケ部長）', industry:'ホテル・観光', area:'本部町', stage:'hearing', entryType:'issue', budget:'30〜100万円', timeline:'今すぐ（1ヶ月以内）', issue:'広告の費用対効果が見えない', issueIds:['no_roi','lose_comp'], heat:{urgency:4,budget:4,speed:3,relation:3}, sessions:[{date:todayJST(),round:'1回目',entryType:'issue'}], createdAt:todayJST(), updatedAt:todayJST() },
+    { id:9000003, company:'南国不動産グループ', person:'山城 隆（社長）', industry:'不動産', area:'宜野湾市', stage:'hearing', entryType:'solution', budget:'30〜100万円', timeline:'近いうち（1〜3ヶ月）', issue:'自社の強みを上手く伝えられない', issueIds:['no_brand'], solutions:['google','web'], heat:{urgency:3,budget:3,speed:4,relation:2}, sessions:[{date:todayJST(),round:'1回目',entryType:'solution'}], createdAt:todayJST(), updatedAt:todayJST() },
+    { id:9000004, company:'オキナワビューティークリニック', person:'新垣 みさき（院長）', industry:'医療・美容', area:'那覇市おもろまち', stage:'hearing', entryType:'push', budget:'100〜300万円', timeline:'今すぐ（1ヶ月以内）', issue:'新規集客ができない', issueIds:['no_new','no_skill'], heat:{urgency:5,budget:4,speed:4,relation:3}, sessions:[{date:todayJST(),round:'1回目',entryType:'push'}], createdAt:todayJST(), updatedAt:todayJST() },
+  ];
+  APO_LIST.forEach((deal, i) => setTimeout(() => window.postMessage({ type:'newDeal', deal }, '*'), i * 300));
+  fwAddLog('test', `FIELDWORKアポリスト 4件 をシミュレーション送信`);
+  toast('🧪 FIELDWORKから4件のアポリスト受信シミュレーション中…');
+}
+
+window.addEventListener('message', (e) => {
+  if (!e.data || e.data.type !== 'newDeal') return;
+  const raw = e.data.deal;
+  if (!raw || !raw.id || !raw.company) { fwErrCount++; fwAddLog('err', `バリデーションエラー — スキップ`); fwUpdateStats(); return; }
+  const deal = {
+    id: raw.id, company: String(raw.company).trim(), person: String(raw.person||'担当者不明').trim(),
+    industry: String(raw.industry||'—').trim(), area: String(raw.area||'沖縄県').trim(),
+    stage: ['hearing','proposal','closing','won','lost'].includes(raw.stage) ? raw.stage : 'hearing',
+    entryType: ['push','issue','solution'].includes(raw.entryType) ? raw.entryType : 'push',
+    issue: String(raw.issue||'').trim(), issueIds: Array.isArray(raw.issueIds) ? raw.issueIds : [],
+    budget: String(raw.budget||'').trim(), timeline: String(raw.timeline||'').trim(),
+    heat: (raw.heat && typeof raw.heat==='object') ? raw.heat : {urgency:0,budget:0,speed:0,relation:0},
+    nextDate: raw.nextDate||'', solutions: Array.isArray(raw.solutions) ? raw.solutions : [],
+    solutionAmounts: raw.solutionAmounts||{}, proposalAmount: parseInt(raw.proposalAmount)||0,
+    activities: raw.activities||{},
+    sessions: Array.isArray(raw.sessions) ? raw.sessions : [{date:todayJST(),round:'1回目',entryType:raw.entryType||'push'}],
+    createdAt: raw.createdAt||todayJST(), updatedAt: todayJST(), _fwReceived: true,
+  };
+  const existing = deals.findIndex(x => x.id === deal.id);
+  if (existing >= 0) {
+    deals[existing] = { ...deals[existing], ...deal };
+    fwAddLog('update', `更新: ${deal.company}`);
+    toast(`🔄 ${deal.company} を更新しました`);
+  } else {
+    deals.unshift(deal);
+    fwRxCount++;
+    fwAddLog('rx', `受信: ${deal.company}（${deal.area} / ${deal.industry}）`);
+    toast(`💼 ${deal.company} の商談を受け取りました`);
+  }
+  fwSetStatus(true);
+  const now = nowJST();
+  const tStr = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+  const lastEl = document.getElementById('fw-sc-last'); if(lastEl) lastEl.textContent = tStr;
+  const lastCo = document.getElementById('fw-sc-lastco'); if(lastCo) lastCo.textContent = deal.company;
+  saveDeals(); fwUpdateStats();
+});
+
+(async () => {
+  try {
+    if (window.storage) {
+      try { const s = await window.storage.get('fw_deals'); if(s?.value) deals = JSON.parse(s.value); } catch(e) {}
+    }
+  } catch(e) {}
+  updateDealBadge(); renderDeals(); renderDash(); fwUpdateStats();
+  await loadMyServices();
+})();
+
+</script>
+</body>
+</html>
