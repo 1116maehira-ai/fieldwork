@@ -1734,8 +1734,8 @@ function checkAutoPhase(it) {
   return getNextPhaseInfo(it);
 }
 
-function save() {
-  sb.set('items', 'fw_items', items).catch(()=>{});
+async function save() {
+  try { await sb.set('items', 'fw_items', items); } catch(e) {}
   updateBadges();
   renderList();
   renderApproach();
