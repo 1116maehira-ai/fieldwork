@@ -736,146 +736,151 @@ tr:hover td { background: rgba(255,70,2,0.03); cursor: pointer; }
 <div class="page" id="page-collect">
   <div class="topbar">
     <div class="page-title">INTELLIGENCE</div>
-    <div class="topbar-sub">情報源から企業データを収集してリストに追加</div>
+    <div class="topbar-sub">企業データを収集してリストに追加</div>
   </div>
-  <div class="content" style="max-width:720px">
-    <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:22px;margin-bottom:18px">
-      <div style="display:flex;align-items:center;gap:12px;margin-bottom:18px;padding:12px 16px;background:var(--accent-dim);border:1px solid rgba(255,70,2,0.15);border-radius:10px">
-        <div style="width:36px;height:36px;border-radius:9px;background:var(--accent);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:white"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></svg></div>
-        <div>
-          <div style="font-weight:600;font-size:13px">Google マップ / Places API</div>
-          <div style="font-size:11px;color:var(--text-mid);margin-top:2px">業種×エリアで周辺企業を自動収集。レビュー数・電話番号・HP URLを取得</div>
+  <div class="content" style="max-width:640px">
+
+    <!-- 企業種別 -->
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:22px;margin-bottom:16px">
+      <div class="fsec" style="margin-top:0">// 収集条件</div>
+
+      <div class="fl" style="margin-bottom:14px">
+        <label class="flabel">企業種別</label>
+        <div style="display:flex;gap:8px">
+          <div id="type-general" onclick="selectType('general')" style="flex:1;padding:10px;border-radius:8px;border:2px solid var(--accent);background:var(--accent-dim);color:var(--accent);font-weight:600;font-size:13px;text-align:center;cursor:pointer">一般企業</div>
+          <div id="type-agency" onclick="selectType('agency')" style="flex:1;padding:10px;border-radius:8px;border:1px solid var(--border2);color:var(--text-mid);font-size:13px;text-align:center;cursor:pointer">広告代理店</div>
         </div>
-        <span style="margin-left:auto;font-family:var(--font-mono);font-size:10px;padding:3px 8px;border-radius:4px;background:rgba(255,70,2,0.12);color:var(--accent);border:1px solid rgba(255,70,2,0.2);white-space:nowrap">無料 API</span>
       </div>
-      <div class="fg fg3" style="margin-bottom:16px">
-        <div class="fl"><label class="flabel">業種</label>
-          <select class="fsel" id="col-ind"><option>不動産・建設</option><option>医療・クリニック・介護</option><option>飲食・食品</option><option>美容・エステ</option><option>宿泊施設・ホテル・旅館</option><option>観光施設・レジャー</option><option>行政・公共施設</option><option>学習塾・教育・スクール</option><option>広告代理店</option><option>WEB制作会社</option><option>コンサルティング会社</option><option>営業代行会社</option><option>その他</option></select>
-        </div>
-        <div class="fl"><label class="flabel">県</label>
-          <select class="fsel" id="col-pref" onchange="updateNextAreaPreview()">
+
+      <div class="fg fg3" style="margin-bottom:14px">
+        <div class="fl">
+          <label class="flabel">都道府県</label>
+          <select class="fsel" id="col-pref" onchange="onPrefChange()">
             <option value="okinawa">沖縄県</option>
+            <option value="tokyo">東京都</option>
+            <option value="osaka">大阪府</option>
+            <option value="kanagawa">神奈川県</option>
+            <option value="aichi">愛知県</option>
+            <option value="fukuoka">福岡県</option>
+            <option value="sapporo">北海道</option>
+            <option value="kyoto">京都府</option>
+            <option value="hyogo">兵庫県</option>
+            <option value="miyagi">宮城県</option>
+            <option value="hiroshima">広島県</option>
+            <option value="kumamoto">熊本県</option>
+            <option value="kagoshima">鹿児島県</option>
+            <option value="nagasaki">長崎県</option>
+            <option value="oita">大分県</option>
+            <option value="miyazaki">宮崎県</option>
+            <option value="saga">佐賀県</option>
+            <option value="ehime">愛媛県</option>
+            <option value="kochi">高知県</option>
+            <option value="tokushima">徳島県</option>
+            <option value="kagawa">香川県</option>
+            <option value="yamaguchi">山口県</option>
+            <option value="shimane">島根県</option>
+            <option value="tottori">鳥取県</option>
+            <option value="okayama">岡山県</option>
+            <option value="nara">奈良県</option>
+            <option value="wakayama">和歌山県</option>
+            <option value="mie">三重県</option>
+            <option value="shiga">滋賀県</option>
+            <option value="fukui">福井県</option>
+            <option value="ishikawa">石川県</option>
+            <option value="toyama">富山県</option>
+            <option value="niigata">新潟県</option>
+            <option value="nagano">長野県</option>
+            <option value="shizuoka">静岡県</option>
+            <option value="yamanashi">山梨県</option>
+            <option value="gunma">群馬県</option>
+            <option value="tochigi">栃木県</option>
+            <option value="ibaraki">茨城県</option>
+            <option value="chiba">千葉県</option>
+            <option value="saitama">埼玉県</option>
+            <option value="fukushima">福島県</option>
+            <option value="yamagata">山形県</option>
+            <option value="akita">秋田県</option>
+            <option value="iwate">岩手県</option>
+            <option value="aomori">青森県</option>
           </select>
         </div>
-        <div class="fl"><label class="flabel">件数上限</label>
-          <select class="fsel" id="col-limit"><option>20件</option><option>50件</option><option selected>100件</option><option>200件</option></select>
+        <div class="fl" id="col-industry-wrap">
+          <label class="flabel">業種</label>
+          <select class="fsel" id="col-ind">
+            <option>不動産・建設</option>
+            <option>医療・クリニック・介護</option>
+            <option>飲食・食品</option>
+            <option>美容・エステ</option>
+            <option>宿泊施設・ホテル・旅館</option>
+            <option>観光施設・レジャー</option>
+            <option>行政・公共施設</option>
+            <option>学習塾・教育・スクール</option>
+            <option>広告代理店</option>
+            <option>WEB制作会社</option>
+            <option>コンサルティング会社</option>
+            <option>営業代行会社</option>
+            <option>その他</option>
+          </select>
+        </div>
+        <div class="fl">
+          <label class="flabel">取得件数</label>
+          <select class="fsel" id="col-limit">
+            <option>20件</option>
+            <option selected>50件</option>
+          </select>
         </div>
       </div>
+
       <!-- 次回収集エリアプレビュー -->
-      <div id="next-area-preview" style="margin-bottom:14px;padding:10px 14px;background:var(--blue-dim);border:1px solid rgba(37,99,235,0.2);border-radius:8px;font-size:12px">
-        <span style="font-family:var(--font-mono);font-size:9px;color:var(--blue);letter-spacing:0.1em">次回収集エリア（自動）</span>
-        <div style="margin-top:4px;display:flex;align-items:center;gap:10px">
-          <strong id="next-area-name" style="font-size:13px;color:var(--text)">読み込み中...</strong>
+      <div id="next-area-preview" style="margin-bottom:14px;padding:12px 14px;background:var(--blue-dim);border:1px solid rgba(37,99,235,0.2);border-radius:8px">
+        <div style="font-family:var(--font-mono);font-size:9px;color:var(--blue);letter-spacing:0.1em;margin-bottom:4px">次回収集エリア（自動）</div>
+        <div style="display:flex;align-items:center;gap:10px">
+          <strong id="next-area-name" style="font-size:13px">読み込み中...</strong>
           <span id="next-area-rank" style="font-size:10px;color:var(--text-dim);font-family:var(--font-mono)"></span>
-          <span style="margin-left:auto;font-size:10px;color:var(--text-mid)" id="area-progress-text"></span>
+          <span id="area-progress-text" style="margin-left:auto;font-size:10px;color:var(--text-mid)"></span>
         </div>
       </div>
+
+      <!-- 収集ボタン -->
       <div class="thinking" id="col-think">
         <div class="td"></div><div class="td"></div><div class="td"></div>
         <span id="col-think-txt">収集中...</span>
       </div>
-      <div id="col-prog" style="display:none">
+      <div id="col-prog" style="display:none;margin-bottom:12px">
         <div class="prog-wrap"><div class="prog-fill" id="col-prog-fill" style="width:0%"></div></div>
-        <div class="prog-label" id="col-prog-label">0 / 100 件...</div>
+        <div class="prog-label" id="col-prog-label"></div>
       </div>
-      <div style="display:flex;align-items:center;gap:14px;margin-top:4px">
-        <button class="btn btn-green" onclick="startCollect()" id="col-btn"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg> 収集開始（自動でURL調査まで実行）</button>
-        <span style="font-family:var(--font-mono);font-size:10px;color:var(--text-dim)">企業収集 → SNS/求人URL調査 → スコアリングまで自動実行</span>
+      <button class="btn btn-green" onclick="startCollect()" id="col-btn" style="width:100%;justify-content:center;padding:12px">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+        収集開始
+      </button>
+    </div>
+
+    <!-- 収集結果サマリー -->
+    <div id="collect-result" style="display:none;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:18px;margin-bottom:16px">
+      <div class="fsec" style="margin-top:0">// 収集結果</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;text-align:center">
+        <div style="padding:12px;background:var(--green-dim);border-radius:8px;border:1px solid rgba(22,163,74,0.2)">
+          <div style="font-family:var(--font-head);font-size:28px;color:var(--green)" id="result-added">0</div>
+          <div style="font-size:10px;color:var(--text-mid);font-family:var(--font-mono)">新規追加</div>
+        </div>
+        <div style="padding:12px;background:var(--surface2);border-radius:8px;border:1px solid var(--border)">
+          <div style="font-family:var(--font-head);font-size:28px;color:var(--text-mid)" id="result-skipped">0</div>
+          <div style="font-size:10px;color:var(--text-mid);font-family:var(--font-mono)">重複スキップ</div>
+        </div>
+        <div style="padding:12px;background:var(--accent-dim);border-radius:8px;border:1px solid rgba(255,70,2,0.15)">
+          <div style="font-family:var(--font-head);font-size:28px;color:var(--accent)" id="result-total">0</div>
+          <div style="font-size:10px;color:var(--text-mid);font-family:var(--font-mono)">累計件数</div>
+        </div>
       </div>
     </div>
 
-    <!-- ★ STEP1: SNS・求人URL自動調査パネル -->
-    <div class="sns-search-panel" id="sns-panel">
-      <div class="fsec" style="margin-top:0">// SNS・求人URL 自動調査（STEP1）</div>
-      <div style="font-size:12px;color:var(--text-mid);margin-bottom:16px;line-height:1.8">
-        収集済み企業を全件スキャンし、<strong style="color:var(--text)">求人URL・Instagram・Facebook・TikTok</strong> を自動で検索・保存します。<br>
-        Custom Search APIを使用。1企業あたり4回の検索を行います。
-      </div>
-
-      <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;padding:10px 14px;background:var(--surface2);border-radius:8px">
-        <div style="font-size:12px;color:var(--text-mid)">
-          対象企業：<strong id="sns-target-count" style="color:var(--text)">0</strong> 件
-          ／ 調査済み：<strong id="sns-done-count" style="color:var(--green)">0</strong> 件
-          ／ 未調査：<strong id="sns-pending-count" style="color:var(--orange)">0</strong> 件
-        </div>
-        <div style="margin-left:auto;display:flex;gap:8px">
-          <button class="btn btn-blue btn-sm" onclick="startSNSSearch(false)" id="sns-btn">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg> SNS・求人URL調査を開始
-          </button>
-          <button class="btn btn-ghost btn-sm" onclick="startSNSSearch(true)" id="sns-btn-all">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg> 全件再調査
-          </button>
-        </div>
-      </div>
-
-      <!-- 進捗表示エリア -->
-      <div id="sns-progress-area" style="display:none">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
-          <div style="font-family:var(--font-mono);font-size:10px;color:var(--blue);letter-spacing:0.1em">// 調査進捗</div>
-          <div style="font-family:var(--font-mono);font-size:10px;color:var(--text-dim)" id="sns-prog-text">0 / 0</div>
-        </div>
-        <div class="prog-wrap" style="margin-bottom:12px">
-          <div class="prog-fill" id="sns-prog-fill" style="width:0%;background:linear-gradient(90deg,var(--blue),var(--purple))"></div>
-        </div>
-        <div id="sns-progress-list" style="max-height:300px;overflow-y:auto;border:1px solid var(--border);border-radius:8px;padding:4px 0"></div>
-      </div>
-
-      <!-- 完了サマリー -->
-      <div id="sns-done-summary" style="display:none;margin-top:12px;padding:12px 14px;background:var(--green-dim);border:1px solid rgba(22,163,74,0.2);border-radius:8px">
-        <div style="font-size:12px;font-weight:600;color:var(--green);margin-bottom:6px"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> 調査完了</div>
-        <div id="sns-done-text" style="font-size:11px;color:var(--text-mid)"></div>
-      </div>
+    <!-- 収集済みエリア進捗 -->
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:18px">
+      <div class="fsec" style="margin-top:0">// 収集進捗</div>
+      <div id="collect-progress-list" style="font-size:12px;color:var(--text-mid)">読み込み中...</div>
     </div>
 
-    <!-- Gemini リサーチパネル -->
-    <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:22px;margin-bottom:18px">
-      <div class="fsec" style="margin-top:0">// Gemini AIリサーチ（STEP2）</div>
-      <div style="font-size:12px;color:var(--text-mid);margin-bottom:16px;line-height:1.8">
-        収集済み企業を<strong style="color:var(--text)">Gemini AIがウェブ検索</strong>して、代表者名・SNS・求人・提案の切り口まで自動収集します。<br>
-        無料枠：1日1,500リクエスト（Custom Search APIより大幅に多い）
-      </div>
-      <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;padding:10px 14px;background:var(--surface2);border-radius:8px">
-        <div style="font-size:12px;color:var(--text-mid)">
-          対象：<strong id="gemini-target-count" style="color:var(--text)">0</strong> 件
-          ／ リサーチ済み：<strong id="gemini-done-count" style="color:var(--green)">0</strong> 件
-          ／ 未実施：<strong id="gemini-pending-count" style="color:var(--orange)">0</strong> 件
-        </div>
-        <div style="margin-left:auto">
-          <button class="btn btn-blue btn-sm" onclick="startGeminiResearch(null)" id="gemini-research-btn">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/><path d="M11 8v6M8 11h6"/></svg>
-            Geminiリサーチ開始
-          </button>
-        </div>
-      </div>
-      <div id="gemini-prog" style="display:none">
-        <div class="prog-wrap"><div class="prog-fill" id="gemini-prog-fill" style="width:0%;background:linear-gradient(90deg,#4285F4,#34A853)"></div></div>
-        <div class="prog-label" id="gemini-prog-label">準備中...</div>
-      </div>
-    </div>
-
-    <!-- How it works -->
-
-    <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:22px">
-      <div class="fsec" style="margin-top:0">// 実運用フロー</div>
-      <div style="display:flex;flex-direction:column;gap:14px">
-        <div style="display:flex;gap:12px">
-          <div style="width:26px;height:26px;border-radius:50%;border:1px solid rgba(79,255,176,0.3);display:flex;align-items:center;justify-content:center;font-family:var(--font-mono);font-size:11px;color:var(--accent);flex-shrink:0">1</div>
-          <div><div style="font-weight:600;font-size:13px;margin-bottom:2px">Google Maps API でエリア×業種スキャン</div><div style="font-size:12px;color:var(--text-mid)">業種・住所・電話・評価・レビュー数を自動取得</div></div>
-        </div>
-        <div style="display:flex;gap:12px">
-          <div style="width:26px;height:26px;border-radius:50%;border:1px solid rgba(37,99,235,0.3);display:flex;align-items:center;justify-content:center;font-family:var(--font-mono);font-size:11px;color:var(--blue);flex-shrink:0">2</div>
-          <div><div style="font-weight:600;font-size:13px;margin-bottom:2px">Custom Search API で求人・SNS URL自動収集 ← NEW</div><div style="font-size:12px;color:var(--text-mid)">全企業を自動ループ。求人・Instagram・FacebookのURLを取得してリストに追加</div></div>
-        </div>
-        <div style="display:flex;gap:12px">
-          <div style="width:26px;height:26px;border-radius:50%;border:1px solid rgba(255,124,53,0.3);display:flex;align-items:center;justify-content:center;font-family:var(--font-mono);font-size:11px;color:var(--orange);flex-shrink:0">3</div>
-          <div><div style="font-weight:600;font-size:13px;margin-bottom:2px">Facebook広告ライブラリで出稿状況チェック</div><div style="font-size:12px;color:var(--text-mid)">未出稿企業を自動フラグ。「まだやっていない」潜在層を可視化</div></div>
-        </div>
-        <div style="display:flex;gap:12px">
-          <div style="width:26px;height:26px;border-radius:50%;border:1px solid rgba(168,85,247,0.3);display:flex;align-items:center;justify-content:center;font-family:var(--font-mono);font-size:11px;color:var(--purple);flex-shrink:0">4</div>
-          <div><div style="font-weight:600;font-size:13px;margin-bottom:2px">AIが自動スコアリング → S/A/B/Cランク付け</div><div style="font-size:12px;color:var(--text-mid)">予算ポテンシャル・緊急度・アプローチ適性の3軸でスコアリング</div></div>
-        </div>
-      </div>
-    </div>
   </div>
 </div>
 
@@ -1215,25 +1220,7 @@ async function customSearch(query) {
 let snsSearchRunning = false;
 
 function updateSNSCounts() {
-  const total = items.length;
-  const done = items.filter(it => it.snsSearchedAt).length;
-  const pending = total - done;
-  const tcEl = document.getElementById('sns-target-count');
-  const dcEl = document.getElementById('sns-done-count');
-  const pcEl = document.getElementById('sns-pending-count');
-  if (tcEl) tcEl.textContent = total;
-  if (dcEl) dcEl.textContent = done;
-  if (pcEl) pcEl.textContent = pending;
-
-  // Geminiカウント更新
-  const geminiDone = items.filter(it => it.geminiResearched).length;
-  const geminiPending = total - geminiDone;
-  const gtEl = document.getElementById('gemini-target-count');
-  const gdEl = document.getElementById('gemini-done-count');
-  const gpEl = document.getElementById('gemini-pending-count');
-  if (gtEl) gtEl.textContent = total;
-  if (gdEl) gdEl.textContent = geminiDone;
-  if (gpEl) gpEl.textContent = geminiPending;
+  // バッジ更新のみ（SNS/Gemini機能は一時停止中）
 }
 
 // 収集後に自動呼び出し（IDセット指定・進捗コールバック付き）
@@ -1528,34 +1515,37 @@ async function loadCollectedAreas() {
   } catch(e) {}
 }
 
-async function markAreaCollected(pref, area) {
+async function markAreaCollected(pref, key) {
   if (!collectedAreas[pref]) collectedAreas[pref] = [];
-  if (!collectedAreas[pref].includes(area)) {
-    collectedAreas[pref].push(area);
+  if (!collectedAreas[pref].includes(key)) {
+    collectedAreas[pref].push(key);
     await sb.set('items', 'fw_collected_areas', collectedAreas);
   }
 }
 
-function getNextArea(pref) {
+function getNextArea(pref, ind) {
   const ranking = AREA_RANKINGS[pref] || [];
   const done = new Set(collectedAreas[pref] || []);
-  return ranking.find(a => !done.has(a)) || null;
+  const key = (area) => (ind || '') + '|' + area;
+  return ranking.find(a => !done.has(key(a))) || null;
 }
 
 function updateNextAreaPreview() {
   const pref = document.getElementById('col-pref')?.value || 'okinawa';
+  const ind = collectType === 'agency' ? '広告代理店' : (document.getElementById('col-ind')?.value || '');
   const ranking = AREA_RANKINGS[pref] || [];
-  const done = collectedAreas[pref] || [];
-  const next = getNextArea(pref);
+  const done = (collectedAreas[pref] || []).filter(x => x.startsWith(ind + '|'));
+  const next = getNextArea(pref, ind);
   const rankIdx = next ? ranking.indexOf(next) + 1 : null;
 
   const nameEl = document.getElementById('next-area-name');
   const rankEl = document.getElementById('next-area-rank');
   const progEl = document.getElementById('area-progress-text');
 
-  if (nameEl) nameEl.textContent = next || '全エリア収集完了！';
-  if (rankEl) rankEl.textContent = rankIdx ? `ランク ${rankIdx}位 / ${ranking.length}` : '';
-  if (progEl) progEl.textContent = `収集済み ${done.length} / ${ranking.length} エリア`;
+  if (nameEl) nameEl.textContent = next || '全エリア×業種の収集完了！';
+  if (rankEl) rankEl.textContent = rankIdx ? 'ランク ' + rankIdx + '位 / ' + ranking.length : '';
+  if (progEl) progEl.textContent = '収集済み ' + done.length + ' / ' + ranking.length + ' エリア';
+  renderCollectProgress();
 }
 
 // ══════════════════════════════
@@ -2273,298 +2263,122 @@ function saveApproach() {
 }
 
 // ── COLLECT ──
+let collectType = 'general'; // general or agency
+
+function selectType(type) {
+  collectType = type;
+  const generalEl = document.getElementById('type-general');
+  const agencyEl = document.getElementById('type-agency');
+  const indWrap = document.getElementById('col-industry-wrap');
+  if (type === 'general') {
+    generalEl.style.cssText = 'flex:1;padding:10px;border-radius:8px;border:2px solid var(--accent);background:var(--accent-dim);color:var(--accent);font-weight:600;font-size:13px;text-align:center;cursor:pointer';
+    agencyEl.style.cssText = 'flex:1;padding:10px;border-radius:8px;border:1px solid var(--border2);color:var(--text-mid);font-size:13px;text-align:center;cursor:pointer';
+    indWrap.style.display = '';
+  } else {
+    agencyEl.style.cssText = 'flex:1;padding:10px;border-radius:8px;border:2px solid var(--accent);background:var(--accent-dim);color:var(--accent);font-weight:600;font-size:13px;text-align:center;cursor:pointer';
+    generalEl.style.cssText = 'flex:1;padding:10px;border-radius:8px;border:1px solid var(--border2);color:var(--text-mid);font-size:13px;text-align:center;cursor:pointer';
+    indWrap.style.display = 'none';
+  }
+  updateNextAreaPreview();
+}
+
+function onPrefChange() { updateNextAreaPreview(); }
+
+function renderCollectProgress() {
+  const pref = document.getElementById('col-pref')?.value || 'okinawa';
+  const ranking = AREA_RANKINGS[pref] || [];
+  const done = collectedAreas[pref] || [];
+  const el = document.getElementById('collect-progress-list');
+  if (!el) return;
+  if (!ranking.length) { el.innerHTML = 'このエリアのランキングデータがありません'; return; }
+  const doneSet = new Set(done);
+  const recentDone = done.slice(-5).reverse();
+  el.innerHTML = (recentDone.length ? 
+    '<div style="margin-bottom:8px;font-family:var(--font-mono);font-size:9px;color:var(--text-dim);letter-spacing:0.1em">最近収集済み</div>' +
+    recentDone.map(a => '<div style="padding:4px 0;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px"><span style='color:var(--green)'>✓</span>' + a + '</div>').join('') +
+    '<div style="margin-top:10px;font-family:var(--font-mono);font-size:9px;color:var(--text-dim);letter-spacing:0.1em">進捗</div>'
+    : '') +
+    '<div style="margin-top:6px;font-size:12px">' +
+    '<span style="color:var(--green);font-weight:600">' + done.length + '</span> / ' + ranking.length + ' エリア収集済み' +
+    '</div>';
+}
+
 async function startCollect() {
-  const ind = document.getElementById('col-ind').value;
-  const pref = document.getElementById('col-pref').value;
-  // エリアを自動選択（法人密集ランキング上位から未収集を選ぶ）
-  const area = getNextArea(pref);
-  if (!area) { toast('全エリアの収集が完了しています！おめでとうございます！'); return; }
+  const pref = document.getElementById('col-pref')?.value || 'okinawa';
+  const ind = collectType === 'agency' ? '広告代理店' : document.getElementById('col-ind').value;
+  const area = getNextArea(pref, ind);
+  if (!area) {
+    toast('この業種×エリアの組み合わせは全て収集済みです！');
+    return;
+  }
   const limitVal = document.getElementById('col-limit').value;
-  const limit = parseInt(limitVal) || 100;
+  const limit = parseInt(limitVal) || 50;
+
   const btn = document.getElementById('col-btn');
   btn.disabled = true;
-  btn.textContent = 'PHASE 1: 企業収集中...';
+  btn.innerHTML = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg> 収集中...';
 
-  // ── PHASE 1: Google Maps 収集 ──
   document.getElementById('col-think').classList.add('show');
-  document.getElementById('col-think-txt').textContent = `📍 PHASE 1 — ${area} × ${ind} をGoogle Mapsで収集中...`;
+  document.getElementById('col-think-txt').textContent = area + ' × ' + ind + ' を収集中...';
   document.getElementById('col-prog').style.display = 'block';
-  document.getElementById('col-prog-fill').style.width = '10%';
-  document.getElementById('col-prog-label').textContent = 'PHASE 1/2 — Google Places APIに問い合わせ中...';
+  document.getElementById('col-prog-fill').style.width = '20%';
+  document.getElementById('col-prog-label').textContent = 'Google Places APIに問い合わせ中...';
 
   let newItems = [];
   try {
     newItems = await searchPlacesAPI(ind, area, limit);
-    document.getElementById('col-prog-fill').style.width = '40%';
-    document.getElementById('col-prog-label').textContent = `PHASE 1/2 — ${newItems.length}件取得・AIスコアリング中...`;
-    if (newItems.length === 0) {
-      newItems = genDemoItems(ind, area, limit);
-      toast('Places APIの結果が0件のためデモデータを使用');
-    }
+    if (!newItems.length) newItems = genDemoItems(ind, area, limit);
   } catch(e) {
     newItems = genDemoItems(ind, area, limit);
-    toast('Places API接続エラー。デモデータを使用');
   }
 
-  newItems.forEach(x => { x.score = calcScore(x); });
-  items.push(...newItems);
-  // 収集済みエリアとして記録
-  markAreaCollected(document.getElementById('col-pref').value, area);
-  save();
-  updateNextAreaPreview();
+  document.getElementById('col-prog-fill').style.width = '60%';
+  document.getElementById('col-prog-label').textContent = newItems.length + '件取得 → 重複チェック中...';
 
-  document.getElementById('col-prog-fill').style.width = '50%';
-  document.getElementById('col-prog-label').textContent = `PHASE 1/2 完了 — ${newItems.length}件収集。PHASE 2: SNS・求人URL調査を開始します...`;
-  document.getElementById('col-think-txt').textContent = `PHASE 2 — SNS・求人URLを自動調査中...`;
-  btn.textContent = 'PHASE 2: SNS・求人URL調査中...';
+  // ── 重複排除 ──
+  let added = 0;
+  let skipped = 0;
+  const existingPhones = new Set(items.map(x => x.phone).filter(Boolean));
+  const existingKeys = new Set(items.map(x => x.company + '|' + (x.addr || x.area)));
 
-  updateSNSCounts();
-
-  // ── PHASE 2: SNS・求人URL 自動調査（収集した企業のみ対象） ──
-  const newIds = new Set(newItems.map(x => x.id));
-  await startSNSSearchForIds(newIds, (done, total) => {
-    const pct = 34 + Math.round((done / Math.max(total, 1)) * 33);
-    document.getElementById('col-prog-fill').style.width = pct + '%';
-    document.getElementById('col-prog-label').textContent = `PHASE 2/3 — SNS・求人URL調査中 ${done} / ${total} 件...`;
-  });
-
-  // ── PHASE 3: URLスキャン → 課題情報抽出 → 基本情報保存 ──
-  document.getElementById('col-prog-fill').style.width = '67%';
-  document.getElementById('col-prog-label').textContent = 'PHASE 2/3 完了。PHASE 3: 課題情報スキャン開始...';
-  document.getElementById('col-think-txt').textContent = '🧠 PHASE 3 — URL自動スキャン・課題情報抽出中...';
-  btn.textContent = 'PHASE 3: 課題情報スキャン中...';
-
-  // URLがある企業のみ対象
-  const phase3Targets = items.filter(it => newIds.has(it.id) && (it.jobUrl || it.instaUrl || it.fbUrl || it.website));
-  let phase3Done = 0;
-  for (const it of phase3Targets) {
-    await scanIssueInfo(it);
-    phase3Done++;
-    const pct = 67 + Math.round((phase3Done / Math.max(phase3Targets.length, 1)) * 30);
-    document.getElementById('col-prog-fill').style.width = pct + '%';
-    document.getElementById('col-prog-label').textContent = `PHASE 3/3 — 課題情報スキャン ${phase3Done} / ${phase3Targets.length} 件...`;
-    if (phase3Done % 3 === 0) await sb.set('items', 'fw_items', items);
-    await new Promise(r => setTimeout(r, 200));
+  for (const it of newItems) {
+    it.score = calcScore(it);
+    // 電話番号で重複チェック
+    if (it.phone && existingPhones.has(it.phone)) { skipped++; continue; }
+    // 企業名+住所で重複チェック
+    const key = it.company + '|' + (it.addr || it.area);
+    if (existingKeys.has(key)) { skipped++; continue; }
+    // 追加
+    items.push(it);
+    if (it.phone) existingPhones.add(it.phone);
+    existingKeys.add(key);
+    added++;
   }
+
+  // 収集済みマーク（エリア×業種）
+  await markAreaCollected(pref, ind + '|' + area);
   await sb.set('items', 'fw_items', items);
 
-  // ── 完了 ──
-  document.getElementById('col-think').classList.remove('show');
   document.getElementById('col-prog-fill').style.width = '100%';
-  document.getElementById('col-prog-label').textContent = '全3工程完了！アタックリストに反映されました';
-  setTimeout(() => { document.getElementById('col-prog').style.display = 'none'; }, 2500);
+  document.getElementById('col-prog-label').textContent = '完了！新規' + added + '件追加 / ' + skipped + '件スキップ';
 
+  // 結果表示
+  document.getElementById('collect-result').style.display = 'block';
+  document.getElementById('result-added').textContent = added;
+  document.getElementById('result-skipped').textContent = skipped;
+  document.getElementById('result-total').textContent = items.length;
+
+  document.getElementById('col-think').classList.remove('show');
   btn.disabled = false;
-  btn.innerHTML = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg> 収集開始（自動でURL調査まで実行）';
-  updateSNSCounts();
-  save();
+  btn.innerHTML = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg> 収集開始';
 
-  const jobFound = items.filter(it => newIds.has(it.id) && it.jobUrl).length;
-  const instaFound = items.filter(it => newIds.has(it.id) && it.instaUrl).length;
-  const fbFound = items.filter(it => newIds.has(it.id) && it.fbUrl).length;
-  const issueFound = items.filter(it => newIds.has(it.id) && it.issueInfo?.scannedAt).length;
-  toast(`完了！${newItems.length}件収集 → 求人${jobFound}/Insta${instaFound}/FB${fbFound}件URL → ${issueFound}件の課題情報を抽出`);
-}
-
-
-// ══ GEMINI リサーチ機能 ══
-async function geminiResearch(it) {
-  const prompt = `以下の企業について、ウェブ検索で調査し、営業担当者向けにまとめてください。
-
-企業名: ${it.company}
-業種: ${it.industry}
-住所: ${it.addr || it.area}
-
-【調査項目】
-1. 代表者名
-2. 設立年・資本金・従業員数
-3. 公式サイトURL
-4. Instagram・Facebook・TikTokのURL（アカウント名も）
-5. 求人状況（募集中か、どんな職種か）
-6. この会社の強み・特徴
-7. 動画広告・SNS運用の提案の切り口
-8. 営業サマリー（この会社にアプローチする理由を2〜3文で）
-
-わかる範囲で具体的に教えてください。`;
-
-  try {
-    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: prompt }] }],
-        tools: [{ google_search: {} }],
-        generationConfig: { temperature: 0.2 }
-      })
-    });
-    const data = await res.json();
-    if (data.error) {
-      console.warn('Gemini API error:', data.error.message);
-      return null;
-    }
-    const text = (data.candidates?.[0]?.content?.parts || [])
-      .filter(p => p.text)
-      .map(p => p.text)
-      .join('');
-
-    if (!text || text.trim().length < 10) return null;
-
-    // URLをテキストから抽出
-    const instaMatch = text.match(/instagram\.com\/([a-zA-Z0-9_.]+)/i);
-    const fbMatch = text.match(/facebook\.com\/([a-zA-Z0-9_.]+)/i);
-    const tiktokMatch = text.match(/tiktok\.com\/@?([a-zA-Z0-9_.]+)/i);
-    const urlMatches = text.match(/https?:\/\/[^\s\)"']+/g) || [];
-    const websiteUrl = urlMatches.find(u => !u.match(/instagram|facebook|tiktok|google|jobantenna|indeed|mynavi|hellowork/i)) || '';
-
-    return {
-      text,
-      instagram: instaMatch ? 'https://www.instagram.com/' + instaMatch[1] : '',
-      facebook: fbMatch ? 'https://www.facebook.com/' + fbMatch[1] : '',
-      tiktok: tiktokMatch ? 'https://www.tiktok.com/@' + tiktokMatch[1] : '',
-      website: websiteUrl,
-      researchedAt: todayJST()
-    };
-  } catch(e) {
-    console.warn('Gemini research failed:', it.company, e);
-    return null;
-  }
-}
-// 選択した企業群にGeminiリサーチを実行
-async function startGeminiResearch(targetIds) {
-  const targets = targetIds 
-    ? items.filter(it => targetIds.has(it.id))
-    : items.filter(it => !it.geminiResearched);
-  
-  if (!targets.length) { toast('リサーチ対象がありません'); return; }
-
-  const btn = document.getElementById('gemini-research-btn');
-  if (btn) { btn.disabled = true; btn.textContent = 'Geminiリサーチ中...'; }
-
-  const progEl = document.getElementById('gemini-prog');
-  const progFill = document.getElementById('gemini-prog-fill');
-  const progLabel = document.getElementById('gemini-prog-label');
-  if (progEl) progEl.style.display = 'block';
-
-  let done = 0;
-  for (const it of targets) {
-    if (progLabel) progLabel.textContent = `${done + 1} / ${targets.length} — ${it.company} を調査中...`;
-    if (progFill) progFill.style.width = `${Math.round((done / targets.length) * 100)}%`;
-
-    const result = await geminiResearch(it);
-    if (result) {
-      const item = items.find(x => x.id === it.id);
-      if (item) {
-        item.geminiData = result;
-        item.geminiResearched = true;
-        // URL情報をメインフィールドにも反映
-        if (result.website && !item.website) item.website = result.website;
-        if (result.instagram && !item.instaUrl) item.instaUrl = result.instagram;
-        if (result.facebook && !item.fbUrl) item.fbUrl = result.facebook;
-        if (result.tiktok && !item.tiktokUrl) item.tiktokUrl = result.tiktok;
-        item.score = calcScore(item);
-      }
-    }
-
-    done++;
-    if (done % 3 === 0) await sb.set('items', 'fw_items', items);
-    await new Promise(r => setTimeout(r, 500)); // レート制限対策
-  }
-
-  await sb.set('items', 'fw_items', items);
-  if (progFill) progFill.style.width = '100%';
-  if (progLabel) progLabel.textContent = `完了！${done}件のリサーチが完了しました`;
-  if (btn) { btn.disabled = false; btn.textContent = 'Geminiリサーチ'; }
-
+  updateNextAreaPreview();
+  renderCollectProgress();
   updateBadges();
   renderList();
-  toast(`Geminiリサーチ完了！${done}件の企業情報を更新しました`);
+  toast('収集完了！新規' + added + '件追加（' + skipped + '件は重複スキップ）');
 }
 
-// ══ PHASE 3: URLスキャン → 課題情報抽出 ══
-// 1企業分のURL群をClaudeでスキャンし issueInfo に保存
-async function scanIssueInfo(it) {
-  // スキャン対象URLを収集（優先順：求人 > 公式HP > Insta > FB）
-  const urls = [it.jobUrl, it.website, it.instaUrl, it.fbUrl].filter(Boolean);
-  if (!urls.length) return;
-
-  const prompt = `あなたは営業支援AIです。以下の企業のURLを調査し、営業判断に必要な情報を抽出してください。
-
-企業名: ${it.company}
-業種: ${it.industry}
-エリア: ${it.area}
-調査URL:
-${urls.map(u => '- ' + u).join('\n')}
-
-以下の情報を抽出し、必ずJSON形式のみで返してください（余分なテキスト不要）:
-
-{
-  "employees": "従業員数（例: 約50名、10〜30名、不明）",
-  "revenue": "売上規模（例: 年商3億円規模、不明）",
-  "hiringSignals": [
-    {
-      "title": "求人・採用情報のタイトル",
-      "detail": "詳細（職種・条件など）",
-      "isRecent": true,
-      "url": "求人ページURL"
-    }
-  ],
-  "growthSignal": "成長・拡大シグナル（例: 新店舗オープン、新事業展開、不明）",
-  "summary": "営業判断用の一言サマリー（50字以内）"
-}
-
-※ hiringSignalsは1年以内の求人を優先。情報がない場合は空配列。
-※ 推測が強い場合は「不明」と記載。`;
-
-  try {
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 800,
-        tools: [{ type: 'web_search_20250305', name: 'web_search' }],
-        messages: [{ role: 'user', content: prompt }]
-      })
-    });
-    const data = await res.json();
-    const text = (data.content || []).filter(b => b.type === 'text').map(b => b.text).join('');
-    const jsonMatch = text.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) return;
-    const parsed = JSON.parse(jsonMatch[0]);
-
-    const item = items.find(x => x.id === it.id);
-    if (!item) return;
-
-    // issueInfo に保存
-    item.issueInfo = {
-      ...parsed,
-      scannedAt: todayJST(),
-      scannedUrls: urls,
-    };
-
-    // 従業員数・売上を基本情報にも反映
-    if (parsed.employees && parsed.employees !== '不明') {
-      item.employees = parsed.employees;
-    }
-    if (parsed.revenue && parsed.revenue !== '不明') {
-      // 既存のrevenueより詳細な情報があれば上書き
-      item.revenueDetail = parsed.revenue;
-    }
-
-    // シグナル更新: 最近の求人があれば「求人中」を付与
-    const recentHiring = (parsed.hiringSignals || []).some(s => s.isRecent);
-    if (recentHiring && !(item.signals || []).includes('hire')) {
-      item.signals = [...(item.signals || []), 'hire'];
-    }
-
-    // スコア再計算（求人ボーナス追加）
-    item.score = calcScore(item);
-
-  } catch(e) {
-    // スキャン失敗は静かにスキップ
-    console.warn('scanIssueInfo failed:', it.company, e);
-  }
-}
 
 function genDemoItems(ind, area, limit) {
   const names={
@@ -3209,6 +3023,7 @@ document.getElementById('today-label').textContent = (() => {
   updateNoticeBadge();
   updateSNSCounts();
   updateNextAreaPreview();
+  renderCollectProgress();
 })();
 </script>
 <div class="toast" id="toast"></div>
