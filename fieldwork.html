@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html lang="ja">
-<head>
-<meta charset="UTF-8">
+<!-- saved from url=(0057)https://1116maehira-ai.github.io/fieldwork/fieldwork.html -->
+<html lang="ja"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>FIELDWORK — アタックリスト × アプローチ管理</title>
-<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Noto+Sans+JP:wght@300;400;500;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="./FIELDWORK — アタックリスト × アプローチ管理_files/css2" rel="stylesheet">
 <style>
 :root {
   --bg: #FFFFFF;
@@ -601,42 +601,42 @@ tr:hover td { background: rgba(255,70,2,0.03); cursor: pointer; }
   </div>
   <div class="nav">
     <div class="nav-group">// アクション</div>
-    <div class="nav-item active" onclick="goPage('today',this)">
-      <span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></span>次のアクション
+    <div class="nav-item active" onclick="goPage(&#39;today&#39;,this)">
+      <span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg></span>次のアクション
       <span class="nav-badge gold" id="nb-today">0</span>
     </div>
 
     <div class="nav-group" style="margin-top:10px">// リスト管理</div>
-    <div class="nav-item" onclick="goPage('list',this)">
-      <span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg></span>アタックリスト
+    <div class="nav-item" onclick="goPage(&#39;list&#39;,this)">
+      <span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg></span>アタックリスト
       <span class="nav-badge g" id="nb-list">0</span>
     </div>
-    <div class="nav-item" onclick="goPage('collect',this)">
-      <span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></span>情報収集
+    <div class="nav-item" onclick="goPage(&#39;collect&#39;,this)">
+      <span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg></span>情報収集
     </div>
 
     <div class="nav-group" style="margin-top:10px">// アプローチ</div>
-    <div class="nav-item" onclick="goPage('approach',this)">
-      <span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg></span>アプローチ中
+    <div class="nav-item" onclick="goPage(&#39;approach&#39;,this)">
+      <span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg></span>アプローチ中
       <span class="nav-badge o" id="nb-ap">0</span>
     </div>
-    <div class="nav-item" onclick="goPage('apo',this)">
-      <span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></span>アポ獲得
+    <div class="nav-item" onclick="goPage(&#39;apo&#39;,this)">
+      <span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg></span>アポ獲得
       <span class="nav-badge gold" id="nb-apo">0</span>
     </div>
 
-    <div class="nav-item" onclick="goPage('notice',this)">
-      <span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg></span>送付依頼
+    <div class="nav-item" onclick="goPage(&#39;notice&#39;,this)">
+      <span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg></span>送付依頼
       <span class="nav-badge" id="nb-notice" style="background:var(--orange)">0</span>
     </div>
 
     <div class="nav-group" style="margin-top:10px">// 分析</div>
-    <div class="nav-item" onclick="goPage('dash',this)">
-      <span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg></span>ダッシュボード
+    <div class="nav-item" onclick="goPage(&#39;dash&#39;,this)">
+      <span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9"></rect><rect x="14" y="3" width="7" height="5"></rect><rect x="14" y="12" width="7" height="9"></rect><rect x="3" y="16" width="7" height="5"></rect></svg></span>ダッシュボード
     </div>
 
     <div class="nav-item" onclick="openAddModal()">
-      <span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg></span>手動追加
+      <span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="16"></line><line x1="8" y1="12" x2="16" y2="12"></line></svg></span>手動追加
     </div>
   </div>
 </nav>
@@ -663,10 +663,10 @@ tr:hover td { background: rgba(255,70,2,0.03); cursor: pointer; }
       <div class="topbar-sub">収集済み企業の一覧・スコア・シグナル確認</div>
     </div>
     <div class="topbar-actions">
-      <button class="btn btn-ghost btn-sm" onclick="exportCSV()"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> CSV</button>
-      <button class="btn btn-ghost btn-sm" onclick="openAddModal()"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> 手動追加</button>
-      <button class="btn btn-blue btn-sm" onclick="openPromptModal()"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg> Geminiプロンプト</button>
-      <button class="btn btn-green" onclick="goPage('collect',document.querySelectorAll('.nav-item')[1])"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg> 情報収集</button>
+      <button class="btn btn-ghost btn-sm" onclick="exportCSV()"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg> CSV</button>
+      <button class="btn btn-ghost btn-sm" onclick="openAddModal()"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg> 手動追加</button>
+      <button class="btn btn-blue btn-sm" onclick="openPromptModal()"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg> Geminiプロンプト</button>
+      <button class="btn btn-green" onclick="goPage(&#39;collect&#39;,document.querySelectorAll(&#39;.nav-item&#39;)[1])"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg> 情報収集</button>
     </div>
   </div>
   <div class="content">
@@ -680,11 +680,11 @@ tr:hover td { background: rgba(255,70,2,0.03); cursor: pointer; }
 
     <!-- Signal filters -->
     <div class="signal-chips">
-      <div class="schip" onclick="toggleSig(this,'noad')" data-sig="noad">広告未出稿</div>
-      <div class="schip" onclick="toggleSig(this,'hire')" data-sig="hire">求人中</div>
-      <div class="schip" onclick="toggleSig(this,'wsns')" data-sig="wsns">SNS弱</div>
-      <div class="schip" onclick="toggleSig(this,'comp')" data-sig="comp">競合契約っぽい</div>
-      <div class="schip" onclick="toggleSig(this,'rev')" data-sig="rev">Gレビュー多</div>
+      <div class="schip" onclick="toggleSig(this,&#39;noad&#39;)" data-sig="noad">広告未出稿</div>
+      <div class="schip" onclick="toggleSig(this,&#39;hire&#39;)" data-sig="hire">求人中</div>
+      <div class="schip" onclick="toggleSig(this,&#39;wsns&#39;)" data-sig="wsns">SNS弱</div>
+      <div class="schip" onclick="toggleSig(this,&#39;comp&#39;)" data-sig="comp">競合契約っぽい</div>
+      <div class="schip" onclick="toggleSig(this,&#39;rev&#39;)" data-sig="rev">Gレビュー多</div>
     </div>
 
     <div class="filter-bar">
@@ -729,8 +729,8 @@ tr:hover td { background: rgba(255,70,2,0.03); cursor: pointer; }
     <div class="table-wrap">
       <table>
         <thead><tr>
-          <th onclick="sortTable('score')">AIスコア ↕</th>
-          <th onclick="sortTable('company')">会社名 / URL情報</th>
+          <th onclick="sortTable(&#39;score&#39;)">AIスコア ↕</th>
+          <th onclick="sortTable(&#39;company&#39;)">会社名 / URL情報</th>
           <th>業種・エリア</th>
           <th>推定月商</th>
           <th>シグナル</th>
@@ -742,7 +742,7 @@ tr:hover td { background: rgba(255,70,2,0.03); cursor: pointer; }
         <tbody id="list-tbody"></tbody>
       </table>
       <div class="empty" id="list-empty" style="display:none">
-        <div class="empty-ico"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="2" y1="20" x2="2" y2="14"/><line x1="7" y1="20" x2="7" y2="8"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="17" y1="20" x2="17" y2="10"/><line x1="22" y1="20" x2="22" y2="16"/></svg></div>
+        <div class="empty-ico"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="2" y1="20" x2="2" y2="14"></line><line x1="7" y1="20" x2="7" y2="8"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="17" y1="20" x2="17" y2="10"></line><line x1="22" y1="20" x2="22" y2="16"></line></svg></div>
         <div>まだリストがありません。「情報収集」か「手動追加」から始めてください</div>
       </div>
     </div>
@@ -763,8 +763,8 @@ tr:hover td { background: rgba(255,70,2,0.03); cursor: pointer; }
       <div class="fl" style="margin-bottom:14px">
         <label class="flabel">企業種別</label>
         <div style="display:flex;gap:8px">
-          <div id="type-general" onclick="selectType('general')" style="flex:1;padding:10px;border-radius:8px;border:2px solid var(--accent);background:var(--accent-dim);color:var(--accent);font-weight:600;font-size:13px;text-align:center;cursor:pointer">一般企業</div>
-          <div id="type-agency" onclick="selectType('agency')" style="flex:1;padding:10px;border-radius:8px;border:1px solid var(--border2);color:var(--text-mid);font-size:13px;text-align:center;cursor:pointer">広告代理店</div>
+          <div id="type-general" onclick="selectType(&#39;general&#39;)" style="flex:1;padding:10px;border-radius:8px;border:2px solid var(--accent);background:var(--accent-dim);color:var(--accent);font-weight:600;font-size:13px;text-align:center;cursor:pointer">一般企業</div>
+          <div id="type-agency" onclick="selectType(&#39;agency&#39;)" style="flex:1;padding:10px;border-radius:8px;border:1px solid var(--border2);color:var(--text-mid);font-size:13px;text-align:center;cursor:pointer">広告代理店</div>
         </div>
       </div>
       <div class="fg fg3" style="margin-bottom:14px">
@@ -826,7 +826,7 @@ tr:hover td { background: rgba(255,70,2,0.03); cursor: pointer; }
         <div class="fl">
           <label class="flabel">取得件数</label>
           <select class="fsel" id="col-limit">
-            <option>20件</option><option selected>50件</option><option>100件</option>
+            <option>20件</option><option selected="">50件</option><option>100件</option>
           </select>
         </div>
       </div>
@@ -847,7 +847,7 @@ tr:hover td { background: rgba(255,70,2,0.03); cursor: pointer; }
         <div class="prog-label" id="col-prog-label"></div>
       </div>
       <button class="btn btn-green" onclick="startCollect()" id="col-btn" style="width:100%;justify-content:center;padding:12px">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
         収集開始
       </button>
     </div>
@@ -887,11 +887,8 @@ tr:hover td { background: rgba(255,70,2,0.03); cursor: pointer; }
         <strong style="color:var(--text)">対応列名：</strong>
         company_name / founding_date / anniversary_month / instagram_url / facebook_url / tiktok_url / job_posting_url / ceo_name / employee_count / notes
       </div>
-      <label style="display:block;padding:16px;border:2px dashed var(--border2);border-radius:8px;text-align:center;cursor:pointer;font-size:12px;color:var(--text-mid)"
-             ondragover="event.preventDefault();this.style.borderColor='var(--accent)'"
-             ondragleave="this.style.borderColor='var(--border2)'"
-             ondrop="handleCsvDrop(event)">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="margin:0 auto 6px;display:block"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+      <label style="display:block;padding:16px;border:2px dashed var(--border2);border-radius:8px;text-align:center;cursor:pointer;font-size:12px;color:var(--text-mid)" ondragover="event.preventDefault();this.style.borderColor=&#39;var(--accent)&#39;" ondragleave="this.style.borderColor=&#39;var(--border2)&#39;" ondrop="handleCsvDrop(event)">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="margin:0 auto 6px;display:block"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
         CSVをドラッグ＆ドロップ、またはクリックして選択
         <input type="file" accept=".csv" style="display:none" onchange="handleCsvFile(this)">
       </label>
@@ -929,7 +926,7 @@ tr:hover td { background: rgba(255,70,2,0.03); cursor: pointer; }
         <tbody id="ap-tbody"></tbody>
       </table>
       <div class="empty" id="ap-empty" style="display:none">
-        <div class="empty-ico"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"/><path d="m3.5 11.5 3 3"/><path d="M12 6l5 5"/><path d="m6 13 3-3"/><path d="m13 6-2 2-3.5 3.5"/><path d="m21 3-5.23 5.23"/><path d="m15 9 3-3 3-3-3 3"/></svg></div>
+        <div class="empty-ico"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"></path><path d="m3.5 11.5 3 3"></path><path d="M12 6l5 5"></path><path d="m6 13 3-3"></path><path d="m13 6-2 2-3.5 3.5"></path><path d="m21 3-5.23 5.23"></path><path d="m15 9 3-3 3-3-3 3"></path></svg></div>
         <div>アプローチ中の企業がありません<br>アタックリストから「アプローチ開始」してください</div>
       </div>
     </div>
@@ -945,7 +942,7 @@ tr:hover td { background: rgba(255,70,2,0.03); cursor: pointer; }
       <div class="topbar-sub">手紙担当者への送付依頼一覧</div>
     </div>
     <div class="topbar-actions">
-      <button class="btn btn-ghost btn-sm" onclick="renderNotice()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg> 更新</button>
+      <button class="btn btn-ghost btn-sm" onclick="renderNotice()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"></polyline><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path></svg> 更新</button>
     </div>
   </div>
   <div class="content" id="notice-content"></div>
@@ -989,10 +986,10 @@ tr:hover td { background: rgba(255,70,2,0.03); cursor: pointer; }
   <div class="modal lc-modal">
     <div class="mhead">
       <div>
-        <div class="mtitle"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg> 直筆手紙 作成</div>
+        <div class="mtitle"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg> 直筆手紙 作成</div>
         <div style="font-size:11px;color:var(--text-mid);margin-top:2px" id="lc-company-name"></div>
       </div>
-      <button class="mclose" onclick="cm('m-letter')">✕</button>
+      <button class="mclose" onclick="cm(&#39;m-letter&#39;)">✕</button>
     </div>
     <div class="mbody">
       <div class="lc-steps">
@@ -1007,7 +1004,7 @@ tr:hover td { background: rgba(255,70,2,0.03); cursor: pointer; }
           <div style="font-family:var(--font-mono);font-size:10px;color:var(--accent);letter-spacing:0.15em">// 検出されたトピックス（使うものを選択）</div>
           <div style="display:flex;gap:8px">
             <input class="finput" id="lc-url-input" placeholder="HP / SNS の URL を追加..." style="width:260px;font-size:11px;padding:6px 10px">
-            <button class="btn btn-ghost btn-sm" onclick="scanUrl()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg> 追加スキャン</button>
+            <button class="btn btn-ghost btn-sm" onclick="scanUrl()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg> 追加スキャン</button>
           </div>
         </div>
         <div id="lc-topics-list"></div>
@@ -1024,12 +1021,12 @@ tr:hover td { background: rgba(255,70,2,0.03); cursor: pointer; }
         <div style="font-family:var(--font-mono);font-size:10px;color:var(--accent);letter-spacing:0.15em;margin-bottom:8px">// 手紙原稿（自由に編集してください）</div>
         <textarea class="lc-letter-area" id="lc-letter-text" placeholder="生成中..."></textarea>
         <div style="margin-top:10px;font-size:11px;color:var(--text-mid)">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg> 黄色い【 】部分は必ず書き換えてください。それ以外はそのまま使えます。
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg> 黄色い【 】部分は必ず書き換えてください。それ以外はそのまま使えます。
         </div>
         <div style="display:flex;gap:8px;margin-top:14px;justify-content:space-between">
           <button class="btn btn-ghost btn-sm" onclick="lcStep2()">← トピックス選択に戻る</button>
           <div style="display:flex;gap:8px">
-            <button class="btn btn-ghost btn-sm" onclick="regenLetter()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg> 再生成</button>
+            <button class="btn btn-ghost btn-sm" onclick="regenLetter()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"></polyline><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path></svg> 再生成</button>
             <button class="btn btn-green" onclick="lcStep4()">この内容で送付依頼する →</button>
           </div>
         </div>
@@ -1037,7 +1034,7 @@ tr:hover td { background: rgba(255,70,2,0.03); cursor: pointer; }
 
       <div id="lc-step4" style="display:none">
         <div style="background:rgba(255,70,2,0.05);border:1px solid rgba(255,70,2,0.15);border-radius:10px;padding:16px 18px;margin-bottom:16px">
-          <div style="font-size:13px;font-weight:600;color:var(--accent);margin-bottom:8px"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/><path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></svg> 送付依頼の内容確認</div>
+          <div style="font-size:13px;font-weight:600;color:var(--accent);margin-bottom:8px"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 16 12 14 15 10 15 8 12 2 12"></polyline><path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"></path></svg> 送付依頼の内容確認</div>
           <div style="font-size:12px;color:var(--text-mid);line-height:1.8">
             <div>宛先：<strong id="lc-confirm-company" style="color:var(--text)"></strong></div>
             <div>担当者：<strong id="lc-confirm-person" style="color:var(--text)"></strong></div>
@@ -1048,7 +1045,7 @@ tr:hover td { background: rgba(255,70,2,0.03); cursor: pointer; }
         <div id="lc-confirm-preview" style="background:#FFF8F5;border-radius:8px;padding:14px 16px;font-size:12px;color:#a0c860;line-height:1.9;max-height:200px;overflow-y:auto"></div>
         <div style="margin-top:16px;display:flex;gap:8px;justify-content:space-between">
           <button class="btn btn-ghost btn-sm" onclick="lcStep3()">← 編集に戻る</button>
-          <button class="btn btn-green" onclick="submitNotice()"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg> 送付依頼を確定する</button>
+          <button class="btn btn-green" onclick="submitNotice()"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg> 送付依頼を確定する</button>
         </div>
       </div>
     </div>
@@ -1058,7 +1055,7 @@ tr:hover td { background: rgba(255,70,2,0.03); cursor: pointer; }
 <!-- ══ MODAL: 手動追加 ══ -->
 <div class="modal-backdrop" id="m-add">
   <div class="modal modal-w-md">
-    <div class="mhead"><div class="mtitle">企業を追加</div><button class="mclose" onclick="cm('m-add')">✕</button></div>
+    <div class="mhead"><div class="mtitle">企業を追加</div><button class="mclose" onclick="cm(&#39;m-add&#39;)">✕</button></div>
     <div class="mbody">
       <div class="fg">
         <div class="fl full"><label class="flabel">会社名 *</label><input class="finput" id="a-co" placeholder="株式会社○○"></div>
@@ -1069,7 +1066,7 @@ tr:hover td { background: rgba(255,70,2,0.03); cursor: pointer; }
         </div>
         <div class="fl"><label class="flabel">エリア</label><input class="finput" id="a-area" placeholder="那覇市"></div>
         <div class="fl"><label class="flabel">推定月商</label>
-          <select class="fsel" id="a-rev"><option>〜1000万</option><option>1000万〜3000万</option><option selected>3000万〜1億</option><option>1億以上</option></select>
+          <select class="fsel" id="a-rev"><option>〜1000万</option><option>1000万〜3000万</option><option selected="">3000万〜1億</option><option>1億以上</option></select>
         </div>
         <div class="fl"><label class="flabel">住所</label><input class="finput" id="a-addr" placeholder="那覇市久茂地1-1-1"></div>
         <div class="fl"><label class="flabel">紹介元</label><input class="finput" id="a-ref" placeholder="○○様のご紹介"></div>
@@ -1081,14 +1078,14 @@ tr:hover td { background: rgba(255,70,2,0.03); cursor: pointer; }
       </div>
       <div class="fsec">// シグナル</div>
       <div style="display:flex;gap:8px;flex-wrap:wrap">
-        <div class="schip" onclick="this.classList.toggle('on')" data-sig="noad">広告未出稿</div>
-        <div class="schip" onclick="this.classList.toggle('on')" data-sig="hire">求人中</div>
-        <div class="schip" onclick="this.classList.toggle('on')" data-sig="wsns">SNS弱</div>
-        <div class="schip" onclick="this.classList.toggle('on')" data-sig="comp">競合契約っぽい</div>
-        <div class="schip" onclick="this.classList.toggle('on')" data-sig="rev">Gレビュー多</div>
+        <div class="schip" onclick="this.classList.toggle(&#39;on&#39;)" data-sig="noad">広告未出稿</div>
+        <div class="schip" onclick="this.classList.toggle(&#39;on&#39;)" data-sig="hire">求人中</div>
+        <div class="schip" onclick="this.classList.toggle(&#39;on&#39;)" data-sig="wsns">SNS弱</div>
+        <div class="schip" onclick="this.classList.toggle(&#39;on&#39;)" data-sig="comp">競合契約っぽい</div>
+        <div class="schip" onclick="this.classList.toggle(&#39;on&#39;)" data-sig="rev">Gレビュー多</div>
       </div>
     </div>
-    <div class="mfoot"><button class="btn btn-ghost" onclick="cm('m-add')">キャンセル</button><button class="btn btn-green" onclick="saveAdd()">追加 + AIスコアリング</button></div>
+    <div class="mfoot"><button class="btn btn-ghost" onclick="cm(&#39;m-add&#39;)">キャンセル</button><button class="btn btn-green" onclick="saveAdd()">追加 + AIスコアリング</button></div>
   </div>
 </div>
 
@@ -1097,13 +1094,13 @@ tr:hover td { background: rgba(255,70,2,0.03); cursor: pointer; }
   <div class="modal modal-w-sm">
     <div class="mhead">
       <div><div class="mtitle">アプローチ記録</div><div style="font-size:11px;color:var(--text-mid);margin-top:2px" id="m-ap-sub"></div></div>
-      <button class="mclose" onclick="cm('m-ap')">✕</button>
+      <button class="mclose" onclick="cm(&#39;m-ap&#39;)">✕</button>
     </div>
     <div class="mbody">
       <div class="ap-tabs" id="ap-type-tabs">
-        <div class="apt on tv" onclick="switchApt('visit',this)"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="5" r="1"/><path d="m9 20 1-7-2-3 5-3 2 3h3"/><path d="m6 20 2-4"/></svg> 直接訪問</div>
-        <div class="apt tt" onclick="switchApt('tel',this)"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.61 3.38 2 2 0 0 1 3.6 1h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L7.91 8.6a16 16 0 0 0 6 6l.92-.92a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg> テルアポ</div>
-        <div class="apt tl" onclick="switchApt('letter',this)"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg> 直筆手紙</div>
+        <div class="apt on tv" onclick="switchApt(&#39;visit&#39;,this)"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="5" r="1"></circle><path d="m9 20 1-7-2-3 5-3 2 3h3"></path><path d="m6 20 2-4"></path></svg> 直接訪問</div>
+        <div class="apt tt" onclick="switchApt(&#39;tel&#39;,this)"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.61 3.38 2 2 0 0 1 3.6 1h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L7.91 8.6a16 16 0 0 0 6 6l.92-.92a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg> テルアポ</div>
+        <div class="apt tl" onclick="switchApt(&#39;letter&#39;,this)"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg> 直筆手紙</div>
       </div>
       <div id="special-phase-ui" style="display:none;margin-bottom:14px"></div>
       <div class="fg" style="margin-bottom:14px">
@@ -1113,30 +1110,30 @@ tr:hover td { background: rgba(255,70,2,0.03); cursor: pointer; }
       <div id="res-visit">
         <div class="flabel" style="margin-bottom:7px">訪問の結果</div>
         <div class="result-chips">
-          <div class="rchip" onclick="pickResult(this,'会えた')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> 会えた</div>
-          <div class="rchip" onclick="pickResult(this,'不在')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg> 不在</div>
-          <div class="rchip" onclick="pickResult(this,'後日折返し')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg> 後日</div>
-          <div class="rchip" onclick="pickResult(this,'お断り')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg> お断り</div>
-          <div class="rchip" onclick="pickResult(this,'アポ獲得')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg> アポ獲得！</div>
+          <div class="rchip" onclick="pickResult(this,&#39;会えた&#39;)"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> 会えた</div>
+          <div class="rchip" onclick="pickResult(this,&#39;不在&#39;)"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg> 不在</div>
+          <div class="rchip" onclick="pickResult(this,&#39;後日折返し&#39;)"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg> 後日</div>
+          <div class="rchip" onclick="pickResult(this,&#39;お断り&#39;)"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg> お断り</div>
+          <div class="rchip" onclick="pickResult(this,&#39;アポ獲得&#39;)"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="6"></circle><circle cx="12" cy="12" r="2"></circle></svg> アポ獲得！</div>
         </div>
       </div>
       <div id="res-tel" style="display:none">
         <div class="flabel" style="margin-bottom:7px">電話の結果</div>
         <div class="result-chips">
-          <div class="rchip" onclick="pickResult(this,'出た')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.61 3.38 2 2 0 0 1 3.6 1h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L7.91 8.6a16 16 0 0 0 6 6l.92-.92a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg> 出た</div>
-          <div class="rchip" onclick="pickResult(this,'不在')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg> 不在</div>
-          <div class="rchip" onclick="pickResult(this,'折返し待ち')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> 折返し待ち</div>
-          <div class="rchip" onclick="pickResult(this,'拒否')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg> 拒否</div>
-          <div class="rchip" onclick="pickResult(this,'アポ獲得')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg> アポ獲得！</div>
+          <div class="rchip" onclick="pickResult(this,&#39;出た&#39;)"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.61 3.38 2 2 0 0 1 3.6 1h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L7.91 8.6a16 16 0 0 0 6 6l.92-.92a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg> 出た</div>
+          <div class="rchip" onclick="pickResult(this,&#39;不在&#39;)"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line></svg> 不在</div>
+          <div class="rchip" onclick="pickResult(this,&#39;折返し待ち&#39;)"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg> 折返し待ち</div>
+          <div class="rchip" onclick="pickResult(this,&#39;拒否&#39;)"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line></svg> 拒否</div>
+          <div class="rchip" onclick="pickResult(this,&#39;アポ獲得&#39;)"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="6"></circle><circle cx="12" cy="12" r="2"></circle></svg> アポ獲得！</div>
         </div>
       </div>
       <div id="res-letter" style="display:none">
         <div class="flabel" style="margin-bottom:7px">手紙の状況</div>
         <div class="result-chips">
-          <div class="rchip" onclick="pickResult(this,'送付済み')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg> 送付済み</div>
-          <div class="rchip" onclick="pickResult(this,'反応あり')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/><path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></svg> 反応あり</div>
-          <div class="rchip" onclick="pickResult(this,'反応なし')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg> 反応なし</div>
-          <div class="rchip" onclick="pickResult(this,'アポ獲得')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg> アポ獲得！</div>
+          <div class="rchip" onclick="pickResult(this,&#39;送付済み&#39;)"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg> 送付済み</div>
+          <div class="rchip" onclick="pickResult(this,&#39;反応あり&#39;)"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 16 12 14 15 10 15 8 12 2 12"></polyline><path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"></path></svg> 反応あり</div>
+          <div class="rchip" onclick="pickResult(this,&#39;反応なし&#39;)"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line></svg> 反応なし</div>
+          <div class="rchip" onclick="pickResult(this,&#39;アポ獲得&#39;)"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="6"></circle><circle cx="12" cy="12" r="2"></circle></svg> アポ獲得！</div>
         </div>
       </div>
       <div class="fg" style="margin-top:14px">
@@ -1144,11 +1141,11 @@ tr:hover td { background: rgba(255,70,2,0.03); cursor: pointer; }
       </div>
       <div id="ap-next-preview" style="display:none;margin-top:12px;padding:10px 14px;background:var(--accent-dim);border:1px solid rgba(79,255,176,0.2);border-radius:8px;font-size:12px;color:var(--accent)"></div>
       <div class="phase-auto" id="ap-auto-notice" style="display:none">
-        <div class="pa-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 2l4 4-4 4"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><path d="M7 22l-4-4 4-4"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg></div>
+        <div class="pa-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 2l4 4-4 4"></path><path d="M3 11V9a4 4 0 0 1 4-4h14"></path><path d="M7 22l-4-4 4-4"></path><path d="M21 13v2a4 4 0 0 1-4 4H3"></path></svg></div>
         <div><div class="pa-title" id="ap-auto-title"></div><div class="pa-desc" id="ap-auto-desc"></div></div>
       </div>
     </div>
-    <div class="mfoot"><button class="btn btn-ghost" onclick="cm('m-ap')">キャンセル</button><button class="btn btn-green" onclick="saveApproach()">記録する</button></div>
+    <div class="mfoot"><button class="btn btn-ghost" onclick="cm(&#39;m-ap&#39;)">キャンセル</button><button class="btn btn-green" onclick="saveApproach()">記録する</button></div>
   </div>
 </div>
 
@@ -1157,18 +1154,18 @@ tr:hover td { background: rgba(255,70,2,0.03); cursor: pointer; }
   <div class="modal modal-w-lg">
     <div id="m-detail-header"></div>
     <div class="dtabs">
-      <div class="dtab on" onclick="switchDtab(this,'dt-tl')">アプローチ履歴</div>
-      <div class="dtab" onclick="switchDtab(this,'dt-letter')">直筆手紙テンプレ</div>
-      <div class="dtab" onclick="switchDtab(this,'dt-info')">基本情報</div>
+      <div class="dtab on" onclick="switchDtab(this,&#39;dt-tl&#39;)">アプローチ履歴</div>
+      <div class="dtab" onclick="switchDtab(this,&#39;dt-letter&#39;)">直筆手紙テンプレ</div>
+      <div class="dtab" onclick="switchDtab(this,&#39;dt-info&#39;)">基本情報</div>
     </div>
     <div id="dt-tl" class="tl"></div>
     <div id="dt-letter" style="padding:20px 26px;display:none"></div>
     <div id="dt-info" style="padding:20px 26px;display:none"></div>
     <div style="padding:14px 26px 20px;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center">
-      <button class="btn btn-ghost btn-sm" onclick="delCompany()" style="color:var(--red);border-color:var(--red)"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg> 削除</button>
+      <button class="btn btn-ghost btn-sm" onclick="delCompany()" style="color:var(--red);border-color:var(--red)"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg> 削除</button>
       <div style="display:flex;gap:8px">
-        <button class="btn btn-ghost btn-sm" onclick="cm('m-detail')">閉じる</button>
-        <button class="btn btn-orange btn-sm" onclick="openApFromDetail()"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> アプローチ記録</button>
+        <button class="btn btn-ghost btn-sm" onclick="cm(&#39;m-detail&#39;)">閉じる</button>
+        <button class="btn btn-orange btn-sm" onclick="openApFromDetail()"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg> アプローチ記録</button>
       </div>
     </div>
   </div>
@@ -2922,8 +2919,7 @@ function exportResearchCSV() {
     it.company, it.phone||'', it.industry||'', it.area||'', it.addr||'', it.website||'',
     it.instaUrl||'', it.fbUrl||'', it.jobUrl||''
   ].map(v => '"' + String(v||'').replace(/"/g,'""') + '"').join(','));
-  const blob = new Blob(['﻿' + [h.join(','), ...rows].join('
-')], {type:'text/csv;charset=utf-8;'});
+  const blob = new Blob(['﻿' + [h.join(','), ...rows].join('\n')], {type:'text/csv;charset=utf-8;'});
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a'); a.href = url;
   a.download = 'research_input_' + todayJST() + '.csv'; a.click();
@@ -2947,8 +2943,7 @@ function processCsvFile(file) {
   const reader = new FileReader();
   reader.onload = (e) => {
     const text = e.target.result;
-    const lines = text.split('
-').filter(l => l.trim());
+    const lines = text.split('\n').filter(l => l.trim());
     if (lines.length < 2) { toast('CSVにデータがありません'); return; }
     const header = lines[0].replace(/^﻿/, '').split(',').map(h => h.replace(/^"|"$/g,'').trim().toLowerCase());
     const coIdx = header.indexOf('company_name');
@@ -3029,8 +3024,7 @@ function exportCSV() {
     it.createdAt||'',
     it.foundingDate||'', it.anniversaryMonth||'', it.ceoName||'', it.employeeCount||'', it.researchNotes||''
   ].map(v => '"' + String(v||'').replace(/"/g,'""') + '"').join(','));
-  const blob = new Blob(['﻿' + [h.join(','), ...rows].join('
-')], {type:'text/csv;charset=utf-8;'});
+  const blob = new Blob(['﻿' + [h.join(','), ...rows].join('\n')], {type:'text/csv;charset=utf-8;'});
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a'); a.href = url;
   a.download = 'fieldwork_' + todayJST() + '.csv'; a.click();
@@ -3503,7 +3497,7 @@ document.getElementById('today-label').textContent = (() => {
         <div class="mtitle">Gemini リサーチプロンプト生成</div>
         <div style="font-size:11px;color:var(--text-mid);margin-top:2px" id="prompt-subtitle"></div>
       </div>
-      <button class="mclose" onclick="cm('m-prompt')">✕</button>
+      <button class="mclose" onclick="cm(&#39;m-prompt&#39;)">✕</button>
     </div>
     <div class="mbody">
       <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;align-items:center">
@@ -3511,23 +3505,24 @@ document.getElementById('today-label').textContent = (() => {
           対象：<strong id="prompt-target-count" style="color:var(--accent)">0</strong> 件
         </div>
         <button class="btn btn-ghost btn-sm" onclick="copyPrompt()">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
           プロンプトをコピー
         </button>
         <button class="btn btn-ghost btn-sm" onclick="exportResearchCSV()">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
           リストCSVも出力
         </button>
       </div>
       <div style="font-family:var(--font-mono);font-size:9px;color:var(--accent);letter-spacing:0.15em;margin-bottom:8px">// 自動生成プロンプト（英語・CSV出力強制）</div>
-      <textarea id="prompt-text" style="width:100%;height:360px;background:#0f1208;border:1px solid #2a3a12;border-radius:8px;padding:16px;font-family:var(--font-mono);font-size:11px;color:#d8f0b0;line-height:1.8;resize:vertical;outline:none" readonly></textarea>
+      <textarea id="prompt-text" style="width:100%;height:360px;background:#0f1208;border:1px solid #2a3a12;border-radius:8px;padding:16px;font-family:var(--font-mono);font-size:11px;color:#d8f0b0;line-height:1.8;resize:vertical;outline:none" readonly=""></textarea>
       <div style="margin-top:10px;font-size:11px;color:var(--text-dim)">
         ※ このプロンプト＋リストCSVをGeminiに貼り付けてリサーチを開始。結果CSVは「情報収集」ページからアップロードできます。
       </div>
     </div>
-    <div class="mfoot"><button class="btn btn-ghost" onclick="cm('m-prompt')">閉じる</button></div>
+    <div class="mfoot"><button class="btn btn-ghost" onclick="cm(&#39;m-prompt&#39;)">閉じる</button></div>
   </div>
 </div>
 
-</body>
-</html>
+
+
+</div></body></html>
