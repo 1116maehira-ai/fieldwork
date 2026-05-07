@@ -637,6 +637,11 @@ tr:hover td { background: rgba(255,70,2,0.03); cursor: pointer; }
 
     <div class="nav-item" onclick="openAddModal()">
       <span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="16"></line><line x1="8" y1="12" x2="16" y2="12"></line></svg></span>手動追加
+    <div class="nav-group" style="margin-top:10px">// 設定</div>
+    <div class="nav-item" onclick="goPage(&#39;settings&#39;,this)">
+      <span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></span>
+      スクリプト設定
+    </div>
     </div>
   </div>
 </nav>
@@ -1609,6 +1614,7 @@ function goPage(p, el) {
   document.getElementById('page-'+p).classList.add('active');
   if (el) el.classList.add('active');
   if (p === 'collect') updateSNSCounts();
+  if (p === 'settings') renderScriptEditor();
 }
 
 function updateBadges() {
@@ -2924,6 +2930,69 @@ function parseAndApplyGemini() {
 
 
 
+// ══ スクリプト設定 ══
+var DEFAULT_SCRIPT_NODES = [
+  {id:'start', label:'【開口】受付が出たら', yesLabel:'繋いでもらえた', noLabel:'ご用件は？と聞かれた'},
+  {id:'asked_purpose', label:'【用件を聞かれた】', yesLabel:'繋いでもらえた', noLabel:'担当者がわからない・不在'},
+  {id:'no_manager', label:'【担当者不在・わからない】', yesLabel:'名前・時間を教えてもらえた', noLabel:'教えてもらえない'},
+  {id:'connected', label:'【担当者に繋がった！】', yesLabel:'いいですよ', noLabel:'内容を聞かせて / 式典やらない / 忙しい'},
+  {id:'get_apo', label:'【アポ獲得！日程調整へ】', yesLabel:'日時確定！', noLabel:'日程が合わない'},
+  {id:'adjust_date', label:'【日程再調整】', yesLabel:'日時決定！', noLabel:'やはり難しい'},
+  {id:'no_plan', label:'【式典予定なし / もう少し聞きたい】', yesLabel:'OK、聞きましょう', noLabel:'やはり難しい'},
+  {id:'send_materials', label:'【資料送付へ】', yesLabel:'メアドをもらえた', noLabel:'それも難しい'},
+];
+
+var DEFAULT_SCRIPT_LINES = {
+  start: 'お忙しいところ失礼いたします。私、株式会社TENOHIRAの前平と申します。突然のご連絡で大変恐縮なのですが、{anniv}　周年式典のご担当者様にお繋ぎいただけますでしょうか。',
+  asked_purpose: 'はい。{anniv}　周年式典・記念イベントの演奏・エンターテインメントのご提案でご連絡させていただきました。ご担当者様にお繋ぎいただけますでしょうか。',
+  no_manager: 'そうでございますか。差し支えなければ、ご担当者様のお名前だけ教えていただけますでしょうか。恐れ入りますが、折り返しのご連絡はいつ頃がよろしいでしょうか。',
+  connected: '突然のご連絡で大変失礼いたします。株式会社TENOHIRAの前平と申します。{anniv}　周年式典や記念イベントにて、来場者様・社員様へ感謝の思いを演奏でお届けするご提案をさせていただきたいのですが、一度10分ほどお時間をいただくことは可能でしょうか。',
+  get_apo: 'ありがとうございます！では来週以降でご都合の良い日時を教えていただけますでしょうか。オンラインでも伺いでもどちらでも対応可能です。',
+  adjust_date: 'かしこまりました。ではご都合の良い日時を改めて教えていただけますでしょうか。再来週以降でも全く問題ございません。',
+  no_plan: '弊社は沖縄を拠点に、企業様の周年式典・記念パーティーにてプロの演奏家・エンターテイナーを派遣しております。式典という形でなくても、社員様や取引先様へのご感謝の場として小規模な演奏会・サプライズ演出というご提案もございます。せっかくの{years}のご縁ですので、一度10分だけお時間をいただけますでしょうか。',
+  send_materials: '承知いたしました。お忙しいところ失礼いたしました。よろしければ簡単な資料をメールでお送りさせていただいてもよろしいでしょうか。ご覧いただける時に見ていただけるだけで十分です。',
+};
+
+function loadScriptSettings() {
+  try {
+    var saved = localStorage.getItem('fw_script_lines');
+    if (saved) return JSON.parse(saved);
+  } catch(e) {}
+  return Object.assign({}, DEFAULT_SCRIPT_LINES);
+}
+
+function saveScriptSettings() {
+  var lines = {};
+  DEFAULT_SCRIPT_NODES.forEach(function(node) {
+    var el = document.getElementById('script-line-' + node.id);
+    if (el) lines[node.id] = el.value;
+  });
+  try {
+    localStorage.setItem('fw_script_lines', JSON.stringify(lines));
+    toast('スクリプトを保存しました！');
+  } catch(e) {
+    toast('保存に失敗しました');
+  }
+}
+
+function renderScriptEditor() {
+  var el = document.getElementById('script-editor-list');
+  if (!el) return;
+  var lines = loadScriptSettings();
+  el.innerHTML = DEFAULT_SCRIPT_NODES.map(function(node) {
+    return '<div style="margin-bottom:20px;padding:16px;background:var(--surface2);border-radius:8px;border:1px solid var(--border)">' +
+      '<div style="font-family:var(--font-mono);font-size:10px;color:var(--accent);letter-spacing:0.1em;margin-bottom:4px">' + node.label + '</div>' +
+      '<div style="font-size:10px;color:var(--text-dim);margin-bottom:8px">' +
+        'YES → ' + node.yesLabel + '　　NO → ' + node.noLabel +
+      '</div>' +
+      '<textarea id="script-line-' + node.id + '" ' +
+        'style="width:100%;min-height:80px;background:var(--surface);border:1px solid var(--border2);border-radius:6px;padding:10px;font-size:12px;font-family:var(--font-body);line-height:1.8;color:var(--text);outline:none;resize:vertical">' +
+        (lines[node.id] || DEFAULT_SCRIPT_LINES[node.id] || '') +
+      '</textarea>' +
+    '</div>';
+  }).join('');
+}
+
 // ══ トークスクリプト ══
 function openTalkScript(itemId) {
   var it = items.find(function(x){ return x.id === (itemId || selId); });
@@ -2938,16 +3007,18 @@ function openTalkScript(itemId) {
     ? (anniv.monthsUntil === 0 ? company + "様、今月でちょうど" + yearsText + "をお迎えになりますね。"
         : company + "様、" + monthText + "で" + yearsText + "をお迎えになりますね。")
     : company + "様、周年をお迎えになりますね。";
+  var sc = loadScriptSettings();
+  function applyVars(s){ return s.replace(/{anniv}/g,annivLine).replace(/{years}/g,yearsText).replace(/{months}/g,monthText); }
   var tree = {
-    start:{scene:"【開口】受付が出たら",line:"お忙しいところ失礼いたします。私、株式会社TENOHIRAの前平と申します。突然のご連絡で大変恐縮なのですが、"+annivLine+"　周年式典のご担当者様にお繋ぎいただけますでしょうか。",yes:"connected",no:"asked_purpose",yesLabel:"繋いでもらえた",noLabel:"ご用件は？と聞かれた"},
-    asked_purpose:{scene:"【用件を聞かれた】",line:"はい。"+annivLine+"　周年式典・記念イベントの演奏・エンターテインメントのご提案でご連絡させていただきました。ご担当者様にお繋ぎいただけますでしょうか。",yes:"connected",no:"no_manager",yesLabel:"繋いでもらえた",noLabel:"担当者がわからない・不在"},
-    no_manager:{scene:"【担当者不在・わからない】",line:"そうでございますか。差し支えなければ、ご担当者様のお名前だけ教えていただけますでしょうか。恐れ入りますが、折り返しのご連絡はいつ頃がよろしいでしょうか。",yes:"callback_set",no:"send_materials",yesLabel:"名前・時間を教えてもらえた",noLabel:"教えてもらえない"},
+    start:{scene:"【開口】受付が出たら",line:applyVars(sc.start||DEFAULT_SCRIPT_LINES.start),yes:"connected",no:"asked_purpose",yesLabel:"繋いでもらえた",noLabel:"ご用件は？と聞かれた"},
+    asked_purpose:{scene:"【用件を聞かれた】",line:applyVars(sc.asked_purpose||DEFAULT_SCRIPT_LINES.asked_purpose),yes:"connected",no:"no_manager",yesLabel:"繋いでもらえた",noLabel:"担当者がわからない・不在"},
+    no_manager:{scene:"【担当者不在・わからない】",line:applyVars(sc.no_manager||DEFAULT_SCRIPT_LINES.no_manager),yes:"callback_set",no:"send_materials",yesLabel:"名前・時間を教えてもらえた",noLabel:"教えてもらえない"},
     callback_set:{scene:"【折返し設定完了】",line:"ありがとうございます。では改めてご連絡させていただきます。失礼いたします。 アプリに折返し待ちで記録しましょう。",yes:"end_callback",no:"end_callback",yesLabel:"記録して終了",noLabel:"記録して終了",isEnd:true,result:"callback"},
-    connected:{scene:"【担当者に繋がった！】",line:"突然のご連絡で大変失礼いたします。株式会社TENOHIRAの前平と申します。"+annivLine+"　周年式典や記念イベントにて、来場者様・社員様へ感謝の思いを演奏でお届けするご提案をさせていただきたいのですが、一度10分ほどお時間をいただくことは可能でしょうか。",yes:"get_apo",no:"no_plan",yesLabel:"いいですよ",noLabel:"内容を聞かせて / 式典やらない / 忙しい"},
-    get_apo:{scene:"【アポ獲得！日程調整へ】",line:"ありがとうございます！では来週以降でご都合の良い日時を教えていただけますでしょうか。オンラインでも伺いでもどちらでも対応可能です。",yes:"end_apo",no:"adjust_date",yesLabel:"日時確定！",noLabel:"日程が合わない"},
-    adjust_date:{scene:"【日程再調整】",line:"かしこまりました。ではご都合の良い日時を改めて教えていただけますでしょうか。再来週以降でも全く問題ございません。",yes:"end_apo",no:"send_materials",yesLabel:"日時決定！",noLabel:"やはり難しい"},
-    no_plan:{scene:"【式典予定なし / もう少し聞きたい】",line:"弊社は沖縄を拠点に、企業様の周年式典・記念パーティーにてプロの演奏家・エンターテイナーを派遣しております。式典という形でなくても、社員様や取引先様へのご感謝の場として小規模な演奏会・サプライズ演出というご提案もございます。せっかくの"+yearsText+"のご縁ですので、一度10分だけお時間をいただけますでしょうか。",yes:"get_apo",no:"send_materials",yesLabel:"OK、聞きましょう",noLabel:"やはり難しい"},
-    send_materials:{scene:"【資料送付へ】",line:"承知いたしました。お忙しいところ失礼いたしました。よろしければ簡単な資料をメールでお送りさせていただいてもよろしいでしょうか。ご覧いただける時に見ていただけるだけで十分です。",yes:"end_materials",no:"end_cold",yesLabel:"メアドをもらえた",noLabel:"それも難しい"},
+    connected:{scene:"【担当者に繋がった！】",line:applyVars(sc.connected||DEFAULT_SCRIPT_LINES.connected),yes:"get_apo",no:"no_plan",yesLabel:"いいですよ",noLabel:"内容を聞かせて / 式典やらない / 忙しい"},
+    get_apo:{scene:"【アポ獲得！日程調整へ】",line:applyVars(sc.get_apo||DEFAULT_SCRIPT_LINES.get_apo),yes:"end_apo",no:"adjust_date",yesLabel:"日時確定！",noLabel:"日程が合わない"},
+    adjust_date:{scene:"【日程再調整】",line:applyVars(sc.adjust_date||DEFAULT_SCRIPT_LINES.adjust_date),yes:"end_apo",no:"send_materials",yesLabel:"日時決定！",noLabel:"やはり難しい"},
+    no_plan:{scene:"【式典予定なし / もう少し聞きたい】",line:applyVars(sc.no_plan||DEFAULT_SCRIPT_LINES.no_plan),yes:"get_apo",no:"send_materials",yesLabel:"OK、聞きましょう",noLabel:"やはり難しい"},
+    send_materials:{scene:"【資料送付へ】",line:applyVars(sc.send_materials||DEFAULT_SCRIPT_LINES.send_materials),yes:"end_materials",no:"end_cold",yesLabel:"メアドをもらえた",noLabel:"それも難しい"},
     end_apo:{scene:"完了",line:"ありがとうございます！では当日よろしくお願いいたします。失礼いたします。",isEnd:true,result:"apo"},
     end_materials:{scene:"完了",line:"ありがとうございます。本日中にお送りします。1週間後に改めてご連絡いたします。失礼いたします。",isEnd:true,result:"materials"},
     end_callback:{scene:"完了",line:"折返し待ちで記録しましょう。",isEnd:true,result:"callback"},
@@ -3905,6 +3976,29 @@ document.getElementById('today-label').textContent = (() => {
 })();
 </script>
 <div class="toast" id="toast"></div>
+
+<!-- ═══ PAGE: スクリプト設定 ═══ -->
+<div class="page" id="page-settings">
+  <div class="topbar">
+    <div class="page-title">SCRIPT EDITOR</div>
+    <div class="topbar-sub">トークスクリプトのセリフを編集</div>
+    <div class="topbar-actions">
+      <button class="btn btn-green btn-sm" onclick="saveScriptSettings()">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+        保存
+      </button>
+    </div>
+  </div>
+  <div class="content" style="max-width:700px">
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:16px">
+      <div class="fsec" style="margin-top:0">// スクリプト編集</div>
+      <div style="font-size:12px;color:var(--text-mid);margin-bottom:16px;line-height:1.8">
+        各ステップのセリフを編集できます。<strong style="color:var(--text)">{company}</strong>・<strong style="color:var(--text)">{years}</strong>・<strong style="color:var(--text)">{months}</strong> は自動で置き換わります。
+      </div>
+      <div id="script-editor-list"></div>
+    </div>
+  </div>
+</div>
 
 <!-- ══ MODAL: Geminiプロンプト生成 ══ -->
 <div class="modal-backdrop" id="m-prompt">
