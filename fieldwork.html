@@ -724,6 +724,12 @@ tr:hover td { background: rgba(255,70,2,0.03); cursor: pointer; }
         <option value="createdAt_asc">収集日（古→新）</option>
         <option value="company">会社名順</option>
       </select>
+      <select class="fi" id="ls-pref" onchange="updateAreaOptions();renderList()">
+        <option value="">全都道府県</option>
+      </select>
+      <select class="fi" id="ls-area" onchange="renderList()">
+        <option value="">全エリア</option>
+      </select>
     </div>
 
     <div class="table-wrap">
@@ -1584,6 +1590,7 @@ function checkAutoPhase(it) {
 async function save() {
   try { await sb.set('items', 'fw_items', items); } catch(e) {}
   updateBadges();
+  updatePrefOptions();
   renderList();
   renderApproach();
   renderToday();
@@ -1607,6 +1614,62 @@ function updateBadges() {
   document.getElementById('nb-ap').textContent = items.filter(x=>['visit','tel','letter'].includes(x.phase)).length;
   document.getElementById('nb-today').textContent = items.filter(x=>x.nextDate && x.nextDate<=t).length;
   document.getElementById('nb-apo').textContent = items.filter(x=>x.phase==='apo').length;
+}
+
+// ══ エリア・県絞り込み ══
+function getPrefFromArea(areaStr) {
+  const s = areaStr || '';
+  if (s.includes('那覇') || s.includes('浦添') || s.includes('沖縄市') || s.includes('宜野湾') ||
+      s.includes('豊見城') || s.includes('うるま') || s.includes('名護') || s.includes('糸満') ||
+      s.includes('南城') || s.includes('北谷') || s.includes('読谷') || s.includes('恩納') ||
+      s.includes('本部') || s.includes('石垣') || s.includes('宮古島') || s.includes('沖縄')) return '沖縄県';
+  if (s.includes('福岡') || s.includes('北九州') || s.includes('久留米')) return '福岡県';
+  if (s.includes('東京') || s.includes('千代田') || s.includes('港区') || s.includes('渋谷') ||
+      s.includes('新宿') || s.includes('中央区')) return '東京都';
+  if (s.includes('大阪')) return '大阪府';
+  if (s.includes('札幌') || s.includes('北海道')) return '北海道';
+  if (s.includes('仙台') || s.includes('宮城')) return '宮城県';
+  if (s.includes('横浜') || s.includes('川崎') || s.includes('神奈川')) return '神奈川県';
+  if (s.includes('名古屋') || s.includes('愛知')) return '愛知県';
+  if (s.includes('京都')) return '京都府';
+  if (s.includes('神戸') || s.includes('兵庫')) return '兵庫県';
+  if (s.includes('広島')) return '広島県';
+  if (s.includes('熊本')) return '熊本県';
+  if (s.includes('鹿児島')) return '鹿児島県';
+  if (s.includes('長崎')) return '長崎県';
+  if (s.includes('福岡')) return '福岡県';
+  return '';
+}
+
+function updatePrefOptions() {
+  // リストにある県を動的に生成
+  const prefs = [...new Set(items.map(it => getPrefFromArea(it.area || it.addr || '')).filter(Boolean))].sort();
+  const sel = document.getElementById('ls-pref');
+  if (!sel) return;
+  const cur = sel.value;
+  sel.innerHTML = '<option value="">全都道府県</option>' +
+    prefs.map(p => `<option value="${p}" ${p===cur?'selected':''}>${p}</option>`).join('');
+  updateAreaOptions();
+}
+
+function updateAreaOptions() {
+  const pref = document.getElementById('ls-pref')?.value || '';
+  // 選択された県のエリアを動的に生成
+  const areas = [...new Set(items
+    .filter(it => !pref || getPrefFromArea(it.area || it.addr || '') === pref)
+    .map(it => {
+      const a = it.area || '';
+      // 市区町村レベルで抽出
+      const m = a.match(/^(.+?[市区町村])/);
+      return m ? m[1] : a;
+    })
+    .filter(Boolean)
+  )].sort();
+  const sel = document.getElementById('ls-area');
+  if (!sel) return;
+  const cur = sel.value;
+  sel.innerHTML = '<option value="">全エリア</option>' +
+    areas.map(a => `<option value="${a}" ${a===cur?'selected':''}>${a}</option>`).join('');
 }
 
 // ── RENDER LIST ──
@@ -1639,10 +1702,14 @@ function renderList() {
   // 追加フィルタ
   const snsF = document.getElementById('ls-sns')?.value || '';
   const jobF = document.getElementById('ls-job')?.value || '';
+  const prefF = document.getElementById('ls-pref')?.value || '';
+  const areaF = document.getElementById('ls-area')?.value || '';
   if (snsF === 'has_sns') list = list.filter(it => it.instaUrl || it.fbUrl || it.tiktokUrl);
   if (snsF === 'no_sns') list = list.filter(it => !it.instaUrl && !it.fbUrl && !it.tiktokUrl);
   if (jobF === 'has_job') list = list.filter(it => it.jobUrl);
   if (jobF === 'no_job') list = list.filter(it => !it.jobUrl);
+  if (prefF) list = list.filter(it => getPrefFromArea(it.area || it.addr || '') === prefF);
+  if (areaF) list = list.filter(it => (it.area || '').includes(areaF));
 
   // ソート
   const sortMode = document.getElementById('ls-sort-mode')?.value || 'score';
@@ -2844,6 +2911,8 @@ function getFilteredItems() {
   const apf = document.getElementById('ls-ap')?.value || '';
   const snsFilter = document.getElementById('ls-sns')?.value || '';
   const jobFilter = document.getElementById('ls-job')?.value || '';
+  const prefFilter = document.getElementById('ls-pref')?.value || '';
+  const areaFilter = document.getElementById('ls-area')?.value || '';
   return items.filter(it => {
     if (search && !it.company.toLowerCase().includes(search)) return false;
     if (ind && it.industry !== ind) return false;
@@ -2855,6 +2924,8 @@ function getFilteredItems() {
     if (snsFilter === 'no_sns' && (it.instaUrl || it.fbUrl || it.tiktokUrl)) return false;
     if (jobFilter === 'has_job' && !it.jobUrl) return false;
     if (jobFilter === 'no_job' && it.jobUrl) return false;
+    if (prefFilter && getPrefFromArea(it.area || it.addr || '') !== prefFilter) return false;
+    if (areaFilter && !(it.area || '').includes(areaFilter)) return false;
     return true;
   });
 }
