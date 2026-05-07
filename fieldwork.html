@@ -1163,10 +1163,12 @@ tr:hover td { background: rgba(255,70,2,0.03); cursor: pointer; }
       <div class="dtab on" onclick="switchDtab(this,&#39;dt-tl&#39;)">アプローチ履歴</div>
       <div class="dtab" onclick="switchDtab(this,&#39;dt-letter&#39;)">直筆手紙テンプレ</div>
       <div class="dtab" onclick="switchDtab(this,&#39;dt-info&#39;)">基本情報</div>
+      <div class="dtab" onclick="switchDtab(this,&#39;dt-gemini&#39;)" style="color:var(--blue);font-weight:600">✦ Gemini入力</div>
     </div>
     <div id="dt-tl" class="tl"></div>
     <div id="dt-letter" style="padding:20px 26px;display:none"></div>
     <div id="dt-info" style="padding:20px 26px;display:none"></div>
+    <div id="dt-gemini" style="padding:20px 26px;display:none"></div>
     <div style="padding:14px 26px 20px;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center">
       <button class="btn btn-ghost btn-sm" onclick="delCompany()" style="color:var(--red);border-color:var(--red)"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg> 削除</button>
       <div style="display:flex;gap:8px">
@@ -2699,7 +2701,158 @@ function letterTemplate(it) {
 
 function switchDtab(el,id) {
   document.querySelectorAll('.dtab').forEach(t=>t.classList.remove('on')); el.classList.add('on');
-  ['dt-tl','dt-letter','dt-info'].forEach(i=>{ document.getElementById(i).style.display=i===id?'block':'none'; });
+  ['dt-tl','dt-letter','dt-info','dt-gemini'].forEach(i=>{ document.getElementById(i).style.display=i===id?'block':'none'; });
+  if (id === 'dt-gemini') renderGeminiTab();
+}
+
+// ══ Gemini入力タブ ══
+function renderGeminiTab() {
+  const it = items.find(x => x.id === selId);
+  if (!it) return;
+  const el = document.getElementById('dt-gemini');
+  if (!el) return;
+
+  el.innerHTML = `
+    <div style="margin-bottom:16px;padding:12px 16px;background:var(--blue-dim);border:1px solid rgba(37,99,235,0.2);border-radius:8px">
+      <div style="font-family:var(--font-mono);font-size:9px;color:var(--blue);letter-spacing:0.15em;margin-bottom:8px">// STEP 1 — Geminiに質問するプロンプトをコピー</div>
+      <div style="font-size:12px;color:var(--text-mid);margin-bottom:10px;line-height:1.8">
+        以下のボタンを押してコピー → Geminiに貼り付けて検索してください
+      </div>
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:12px;font-size:12px;color:var(--text);line-height:1.8;margin-bottom:10px;white-space:pre-wrap">${it.company}の以下の情報を調べてほしい。
+代表者名
+電話番号
+創業年月日
+創業記念月（何月か）
+Instagram URL
+Facebook URL
+TikTok URL
+求人URL（採用ページ）</div>
+      <button class="btn btn-blue btn-sm" onclick="copyGeminiPrompt()">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+        プロンプトをコピー
+      </button>
+    </div>
+
+    <div style="margin-bottom:16px">
+      <div style="font-family:var(--font-mono);font-size:9px;color:var(--accent);letter-spacing:0.15em;margin-bottom:8px">// STEP 2 — Geminiの回答をここに貼り付け</div>
+      <textarea id="gemini-paste-area"
+        style="width:100%;height:200px;background:var(--surface2);border:1px solid var(--border2);border-radius:8px;padding:12px;font-size:12px;font-family:var(--font-body);line-height:1.8;outline:none;resize:vertical"
+        placeholder="Geminiの回答をここにそのままペーストしてください..."></textarea>
+    </div>
+
+    <button class="btn btn-green" style="width:100%;justify-content:center;padding:12px" onclick="parseAndApplyGemini()">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+      情報を振り分けて保存する
+    </button>
+
+    <div id="gemini-result" style="display:none;margin-top:12px"></div>
+  `;
+}
+
+function copyGeminiPrompt() {
+  const it = items.find(x => x.id === selId);
+  if (!it) return;
+  const lines = [
+    it.company + 'の以下の情報を調べてほしい。',
+    '代表者名', '電話番号', '創業年月日', '創業記念月（何月か）',
+    'Instagram URL', 'Facebook URL', 'TikTok URL', '求人URL（採用ページ）'
+  ];
+  const text = lines.join('\n');
+  navigator.clipboard.writeText(text).then(() => toast('プロンプトをコピーしました！Geminiに貼り付けてください'));
+}
+
+function parseAndApplyGemini() {
+  const it = items.find(x => x.id === selId);
+  if (!it) return;
+  const text = document.getElementById('gemini-paste-area')?.value || '';
+  if (!text.trim()) { toast('Geminiの回答を貼り付けてください'); return; }
+
+  const applied = {};
+  const lines = text.split('\n');
+
+  // 各行をキーワードで解析
+  lines.forEach(line => {
+    const l = line.trim();
+
+    // 代表者名
+    if (/代表者?名/.test(l) && !applied['代表者名']) {
+      const m = l.match(/[：:]\s*(.+)$/);
+      if (m && m[1].trim()) { it.person = m[1].trim(); applied['代表者名'] = it.person; }
+    }
+
+    // 電話番号
+    if (/電話/.test(l) && !applied['電話番号']) {
+      const m = l.match(/[：:]\s*([\d\-()（） ]+)/);
+      if (m && m[1].trim()) { it.phone = m[1].trim().replace(/\s/g,''); applied['電話番号'] = it.phone; }
+    }
+
+    // 創業・設立年月日
+    if (/(創業|設立)(年月日|日)/.test(l) && !applied['創業年月日']) {
+      const ym = l.match(/(\d{4})年\s*(\d{1,2})月(?:\s*(\d{1,2})日)?/);
+      if (ym) {
+        const y = ym[1], mo = ym[2].padStart(2,'0'), d = ym[3]?ym[3].padStart(2,'0'):null;
+        it.foundingDate = d ? y+'-'+mo+'-'+d : y+'-'+mo;
+        applied['創業年月日'] = it.foundingDate;
+        if (!applied['創業記念月']) {
+          it.anniversaryMonth = parseInt(ym[2]);
+          applied['創業記念月'] = it.anniversaryMonth + '月';
+        }
+      }
+    }
+
+    // 創業記念月
+    if (/創業記念月/.test(l) && !applied['創業記念月']) {
+      const m = l.match(/(\d{1,2})月?/);
+      if (m) { it.anniversaryMonth = parseInt(m[1]); applied['創業記念月'] = it.anniversaryMonth + '月'; }
+    }
+
+    // Instagram
+    if (/instagram/i.test(l) && !applied['Instagram']) {
+      const m1 = l.match(/https?:\/\/(?:www\.)?instagram\.com\/[^\s）)]+/i);
+      const m2 = l.match(/@([a-zA-Z0-9_.]+)/);
+      if (m1) { it.instaUrl = m1[0]; applied['Instagram'] = it.instaUrl; }
+      else if (m2 && !l.includes('確認できません')) { it.instaUrl = 'https://www.instagram.com/' + m2[1]; applied['Instagram'] = it.instaUrl; }
+    }
+
+    // Facebook
+    if (/facebook/i.test(l) && !applied['Facebook']) {
+      const m = l.match(/https?:\/\/(?:www\.)?facebook\.com\/[^\s）)]+/i);
+      if (m) { it.fbUrl = m[0]; applied['Facebook'] = it.fbUrl; }
+    }
+
+    // TikTok
+    if (/tiktok/i.test(l) && !applied['TikTok']) {
+      const m = l.match(/https?:\/\/(?:www\.)?tiktok\.com\/@?[^\s）)]+/i);
+      if (m && !l.includes('確認できません')) { it.tiktokUrl = m[0]; applied['TikTok'] = it.tiktokUrl; }
+    }
+
+    // 求人URL
+    if (/(求人|採用).*(https?:\/\/)/.test(l) && !applied['求人URL']) {
+      const m = l.match(/https?:\/\/[^\s）)]+/);
+      if (m) { it.jobUrl = m[0]; applied['求人URL'] = it.jobUrl; }
+    }
+
+    // 公式サイト
+    if (/(公式|HP|ホームページ|サイト)/.test(l) && !it.website) {
+      const m = l.match(/https?:\/\/[^\s）)]+/);
+      if (m) { it.website = m[0]; applied['公式サイト'] = it.website; }
+    }
+  });
+
+  // シグナル更新
+  if (it.jobUrl && !(it.signals||[]).includes('hire')) it.signals = [...(it.signals||[]), 'hire'];
+  it.score = calcScore(it);
+  save();
+
+  const keys = Object.keys(applied);
+  const resultEl = document.getElementById('gemini-result');
+  if (resultEl) {
+    resultEl.style.display = 'block';
+    resultEl.innerHTML = keys.length > 0
+      ? '<div style="padding:12px 14px;background:var(--green-dim);border:1px solid rgba(22,163,74,0.2);border-radius:8px"><div style="font-size:12px;font-weight:600;color:var(--green);margin-bottom:6px">✓ ' + keys.length + '項目を振り分けました</div><div style="font-size:11px;color:var(--text-mid)">' + keys.map(k => k + '：' + applied[k]).join('<br>') + '</div></div>'
+      : '<div style="padding:12px 14px;background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.2);border-radius:8px;font-size:12px;color:var(--red)">情報を抽出できませんでした。Geminiの回答をそのままペーストしてください。</div>';
+  }
+  if (keys.length > 0) toast(keys.length + '項目を振り分けて保存しました！');
 }
 
 function saveDetailEdit() {
