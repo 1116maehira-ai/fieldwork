@@ -2561,8 +2561,58 @@ function openDetail(id) {
   }
   document.getElementById('dt-letter').innerHTML=letterTemplate(it);
   document.getElementById('dt-info').innerHTML=`
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px">
-      ${[['担当者',it.person],['電話',it.phone],['業種',it.industry],['エリア',it.area],['推定月商',it.revenue],['住所',it.addr||'—'],['情報源',SRCLBL[it.source]||'—'],['登録日',it.createdAt]].map(([k,v])=>`
+    <div style="margin-bottom:16px">
+      <div style="font-family:var(--font-mono);font-size:9px;color:var(--accent);letter-spacing:0.15em;margin-bottom:10px">// 編集可能フィールド</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div class="fl">
+          <label class="flabel">代表者名</label>
+          <input class="finput" id="edit-person" value="${it.person||''}" placeholder="山田 太郎">
+        </div>
+        <div class="fl">
+          <label class="flabel">電話番号</label>
+          <input class="finput" id="edit-phone" value="${it.phone||''}" placeholder="098-000-0000">
+        </div>
+        <div class="fl">
+          <label class="flabel">創業年月日</label>
+          <input class="finput" id="edit-founding" value="${it.foundingDate||''}" placeholder="2005-06-01">
+        </div>
+        <div class="fl">
+          <label class="flabel">創業記念月</label>
+          <select class="fsel" id="edit-anniversary">
+            <option value="">不明</option>
+            ${[1,2,3,4,5,6,7,8,9,10,11,12].map(m=>`<option value="${m}" ${it.anniversaryMonth==m?'selected':''}>${m}月</option>`).join('')}
+          </select>
+        </div>
+        <div class="fl">
+          <label class="flabel">Instagram URL</label>
+          <input class="finput" id="edit-insta" value="${it.instaUrl||''}" placeholder="https://www.instagram.com/...">
+        </div>
+        <div class="fl">
+          <label class="flabel">Facebook URL</label>
+          <input class="finput" id="edit-fb" value="${it.fbUrl||''}" placeholder="https://www.facebook.com/...">
+        </div>
+        <div class="fl">
+          <label class="flabel">TikTok URL</label>
+          <input class="finput" id="edit-tiktok" value="${it.tiktokUrl||''}" placeholder="https://www.tiktok.com/@...">
+        </div>
+        <div class="fl">
+          <label class="flabel">求人URL</label>
+          <input class="finput" id="edit-job" value="${it.jobUrl||''}" placeholder="https://...">
+        </div>
+        <div class="fl" style="grid-column:1/-1">
+          <label class="flabel">備考・提案メモ</label>
+          <textarea class="ftextarea" id="edit-notes" placeholder="提案の切り口・気づきなど...">${it.researchNotes||''}</textarea>
+        </div>
+      </div>
+      <div style="margin-top:12px;display:flex;justify-content:flex-end">
+        <button class="btn btn-green" onclick="saveDetailEdit()">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+          保存
+        </button>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;padding-top:14px;border-top:1px solid var(--border)">
+      ${[['業種',it.industry],['エリア',it.area],['推定月商',it.revenue],['住所',it.addr||'—'],['情報源',SRCLBL[it.source]||'—'],['登録日',it.createdAt]].map(([k,v])=>`
         <div><div style="font-family:var(--font-mono);font-size:9px;color:var(--text-mid);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:3px">${k}</div><div style="font-size:13px">${v||'—'}</div></div>
       `).join('')}
     </div>
@@ -2650,6 +2700,42 @@ function letterTemplate(it) {
 function switchDtab(el,id) {
   document.querySelectorAll('.dtab').forEach(t=>t.classList.remove('on')); el.classList.add('on');
   ['dt-tl','dt-letter','dt-info'].forEach(i=>{ document.getElementById(i).style.display=i===id?'block':'none'; });
+}
+
+function saveDetailEdit() {
+  const it = items.find(x => x.id === selId);
+  if (!it) return;
+
+  const person   = document.getElementById('edit-person')?.value.trim();
+  const phone    = document.getElementById('edit-phone')?.value.trim();
+  const founding = document.getElementById('edit-founding')?.value.trim();
+  const anniv    = document.getElementById('edit-anniversary')?.value;
+  const insta    = document.getElementById('edit-insta')?.value.trim();
+  const fb       = document.getElementById('edit-fb')?.value.trim();
+  const tiktok   = document.getElementById('edit-tiktok')?.value.trim();
+  const job      = document.getElementById('edit-job')?.value.trim();
+  const notes    = document.getElementById('edit-notes')?.value.trim();
+
+  if (person   !== undefined) it.person = person;
+  if (phone    !== undefined) it.phone = phone;
+  if (founding !== undefined) it.foundingDate = founding;
+  if (anniv    !== undefined) it.anniversaryMonth = anniv;
+  if (insta    !== undefined) it.instaUrl = insta;
+  if (fb       !== undefined) it.fbUrl = fb;
+  if (tiktok   !== undefined) it.tiktokUrl = tiktok;
+  if (job      !== undefined) {
+    it.jobUrl = job;
+    if (job && !(it.signals||[]).includes('hire')) {
+      it.signals = [...(it.signals||[]), 'hire'];
+    }
+  }
+  if (notes !== undefined) it.researchNotes = notes;
+
+  it.score = calcScore(it);
+  save();
+  toast('保存しました！');
+  // 詳細画面を再描画
+  openDetail(selId);
 }
 
 function delCompany() {
