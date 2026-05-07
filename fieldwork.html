@@ -663,9 +663,9 @@ tr:hover td { background: rgba(255,70,2,0.03); cursor: pointer; }
       <div class="topbar-sub">収集済み企業の一覧・スコア・シグナル確認</div>
     </div>
     <div class="topbar-actions">
-      <button class="btn btn-ghost btn-sm" onclick="exportCSV()"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> CSV出力</button>
-      <button class="btn btn-blue btn-sm" onclick="openPromptModal()"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg> Geminiプロンプト生成</button>
+      <button class="btn btn-ghost btn-sm" onclick="exportCSV()"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> CSV</button>
       <button class="btn btn-ghost btn-sm" onclick="openAddModal()"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> 手動追加</button>
+      <button class="btn btn-blue btn-sm" onclick="openPromptModal()"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg> Geminiプロンプト</button>
       <button class="btn btn-green" onclick="goPage('collect',document.querySelectorAll('.nav-item')[1])"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg> 情報収集</button>
     </div>
   </div>
@@ -718,7 +718,7 @@ tr:hover td { background: rgba(255,70,2,0.03); cursor: pointer; }
         <option value="has_job">求人あり</option>
         <option value="no_job">求人なし</option>
       </select>
-      <select class="fi" id="ls-sort" onchange="renderList()">
+      <select class="fi" id="ls-sort-mode" onchange="renderList()">
         <option value="score">スコア順</option>
         <option value="createdAt_desc">収集日（新→古）</option>
         <option value="createdAt_asc">収集日（古→新）</option>
@@ -753,171 +753,151 @@ tr:hover td { background: rgba(255,70,2,0.03); cursor: pointer; }
 <div class="page" id="page-collect">
   <div class="topbar">
     <div class="page-title">INTELLIGENCE</div>
-    <div class="topbar-sub">情報源から企業データを収集してリストに追加</div>
+    <div class="topbar-sub">企業データを収集してリストに追加</div>
   </div>
-  <div class="content" style="max-width:720px">
-    <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:22px;margin-bottom:18px">
-      <div style="display:flex;align-items:center;gap:12px;margin-bottom:18px;padding:12px 16px;background:var(--accent-dim);border:1px solid rgba(255,70,2,0.15);border-radius:10px">
-        <div style="width:36px;height:36px;border-radius:9px;background:var(--accent);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:white"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></svg></div>
-        <div>
-          <div style="font-weight:600;font-size:13px">Google マップ / Places API</div>
-          <div style="font-size:11px;color:var(--text-mid);margin-top:2px">業種×エリアで周辺企業を自動収集。レビュー数・電話番号・HP URLを取得</div>
+  <div class="content" style="max-width:640px">
+
+    <!-- 収集条件 -->
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:22px;margin-bottom:16px">
+      <div class="fsec" style="margin-top:0">// 収集条件</div>
+      <div class="fl" style="margin-bottom:14px">
+        <label class="flabel">企業種別</label>
+        <div style="display:flex;gap:8px">
+          <div id="type-general" onclick="selectType('general')" style="flex:1;padding:10px;border-radius:8px;border:2px solid var(--accent);background:var(--accent-dim);color:var(--accent);font-weight:600;font-size:13px;text-align:center;cursor:pointer">一般企業</div>
+          <div id="type-agency" onclick="selectType('agency')" style="flex:1;padding:10px;border-radius:8px;border:1px solid var(--border2);color:var(--text-mid);font-size:13px;text-align:center;cursor:pointer">広告代理店</div>
         </div>
-        <span style="margin-left:auto;font-family:var(--font-mono);font-size:10px;padding:3px 8px;border-radius:4px;background:rgba(255,70,2,0.12);color:var(--accent);border:1px solid rgba(255,70,2,0.2);white-space:nowrap">無料 API</span>
       </div>
-      <div class="fg fg3" style="margin-bottom:16px">
-        <div class="fl"><label class="flabel">業種</label>
-          <select class="fsel" id="col-ind"><option>不動産・建設</option><option>医療・クリニック・介護</option><option>飲食・食品</option><option>美容・エステ</option><option>宿泊施設・ホテル・旅館</option><option>観光施設・レジャー</option><option>行政・公共施設</option><option>学習塾・教育・スクール</option><option>広告代理店</option><option>WEB制作会社</option><option>コンサルティング会社</option><option>営業代行会社</option><option>その他</option></select>
-        </div>
-        <div class="fl"><label class="flabel">県</label>
-          <select class="fsel" id="col-pref" onchange="updateNextAreaPreview()">
+      <div class="fg fg3" style="margin-bottom:14px">
+        <div class="fl">
+          <label class="flabel">都道府県</label>
+          <select class="fsel" id="col-pref" onchange="onPrefChange()">
             <option value="okinawa">沖縄県</option>
+            <option value="fukuoka">福岡県</option>
+            <option value="tokyo">東京都</option>
+            <option value="osaka">大阪府</option>
+            <option value="kanagawa">神奈川県</option>
+            <option value="aichi">愛知県</option>
+            <option value="hokkaido">北海道</option>
+            <option value="kyoto">京都府</option>
+            <option value="hyogo">兵庫県</option>
+            <option value="miyagi">宮城県</option>
+            <option value="hiroshima">広島県</option>
+            <option value="kumamoto">熊本県</option>
+            <option value="kagoshima">鹿児島県</option>
+            <option value="nagasaki">長崎県</option>
+            <option value="oita">大分県</option>
+            <option value="miyazaki">宮崎県</option>
+            <option value="saga">佐賀県</option>
+            <option value="ehime">愛媛県</option>
+            <option value="kochi">高知県</option>
+            <option value="tokushima">徳島県</option>
+            <option value="kagawa">香川県</option>
+            <option value="yamaguchi">山口県</option>
+            <option value="nara">奈良県</option>
+            <option value="wakayama">和歌山県</option>
+            <option value="mie">三重県</option>
+            <option value="shiga">滋賀県</option>
+            <option value="fukui">福井県</option>
+            <option value="ishikawa">石川県</option>
+            <option value="toyama">富山県</option>
+            <option value="niigata">新潟県</option>
+            <option value="nagano">長野県</option>
+            <option value="shizuoka">静岡県</option>
+            <option value="gunma">群馬県</option>
+            <option value="tochigi">栃木県</option>
+            <option value="ibaraki">茨城県</option>
+            <option value="chiba">千葉県</option>
+            <option value="saitama">埼玉県</option>
+            <option value="fukushima">福島県</option>
+            <option value="aomori">青森県</option>
           </select>
         </div>
-        <div class="fl"><label class="flabel">件数上限</label>
-          <select class="fsel" id="col-limit"><option>20件</option><option>50件</option><option selected>100件</option><option>200件</option></select>
+        <div class="fl" id="col-industry-wrap">
+          <label class="flabel">業種</label>
+          <select class="fsel" id="col-ind">
+            <option>不動産・建設</option><option>医療・クリニック・介護</option>
+            <option>飲食・食品</option><option>美容・エステ</option>
+            <option>宿泊施設・ホテル・旅館</option><option>観光施設・レジャー</option>
+            <option>行政・公共施設</option><option>学習塾・教育・スクール</option>
+            <option>広告代理店</option><option>WEB制作会社</option>
+            <option>コンサルティング会社</option><option>営業代行会社</option><option>その他</option>
+          </select>
+        </div>
+        <div class="fl">
+          <label class="flabel">取得件数</label>
+          <select class="fsel" id="col-limit">
+            <option>20件</option><option selected>50件</option><option>100件</option>
+          </select>
         </div>
       </div>
-      <!-- 次回収集エリアプレビュー -->
-      <div id="next-area-preview" style="margin-bottom:14px;padding:10px 14px;background:var(--blue-dim);border:1px solid rgba(37,99,235,0.2);border-radius:8px;font-size:12px">
-        <span style="font-family:var(--font-mono);font-size:9px;color:var(--blue);letter-spacing:0.1em">次回収集エリア（自動）</span>
-        <div style="margin-top:4px;display:flex;align-items:center;gap:10px">
-          <strong id="next-area-name" style="font-size:13px;color:var(--text)">読み込み中...</strong>
+      <div id="next-area-preview" style="margin-bottom:14px;padding:12px 14px;background:var(--blue-dim);border:1px solid rgba(37,99,235,0.2);border-radius:8px">
+        <div style="font-family:var(--font-mono);font-size:9px;color:var(--blue);letter-spacing:0.1em;margin-bottom:4px">次回収集エリア（自動）</div>
+        <div style="display:flex;align-items:center;gap:10px">
+          <strong id="next-area-name" style="font-size:13px">読み込み中...</strong>
           <span id="next-area-rank" style="font-size:10px;color:var(--text-dim);font-family:var(--font-mono)"></span>
-          <span style="margin-left:auto;font-size:10px;color:var(--text-mid)" id="area-progress-text"></span>
+          <span id="area-progress-text" style="margin-left:auto;font-size:10px;color:var(--text-mid)"></span>
         </div>
       </div>
       <div class="thinking" id="col-think">
         <div class="td"></div><div class="td"></div><div class="td"></div>
         <span id="col-think-txt">収集中...</span>
       </div>
-      <div id="col-prog" style="display:none">
+      <div id="col-prog" style="display:none;margin-bottom:12px">
         <div class="prog-wrap"><div class="prog-fill" id="col-prog-fill" style="width:0%"></div></div>
-        <div class="prog-label" id="col-prog-label">0 / 100 件...</div>
+        <div class="prog-label" id="col-prog-label"></div>
       </div>
-      <div style="display:flex;align-items:center;gap:14px;margin-top:4px">
-        <button class="btn btn-green" onclick="startCollect()" id="col-btn"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg> 収集開始（自動でURL調査まで実行）</button>
-        <span style="font-family:var(--font-mono);font-size:10px;color:var(--text-dim)">企業収集 → SNS/求人URL調査 → スコアリングまで自動実行</span>
+      <button class="btn btn-green" onclick="startCollect()" id="col-btn" style="width:100%;justify-content:center;padding:12px">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+        収集開始
+      </button>
+    </div>
+
+    <!-- 収集結果 -->
+    <div id="collect-result" style="display:none;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:18px;margin-bottom:16px">
+      <div class="fsec" style="margin-top:0">// 収集結果</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;text-align:center">
+        <div style="padding:12px;background:var(--green-dim);border-radius:8px;border:1px solid rgba(22,163,74,0.2)">
+          <div style="font-family:var(--font-head);font-size:28px;color:var(--green)" id="result-added">0</div>
+          <div style="font-size:10px;color:var(--text-mid);font-family:var(--font-mono)">新規追加</div>
+        </div>
+        <div style="padding:12px;background:var(--surface2);border-radius:8px;border:1px solid var(--border)">
+          <div style="font-family:var(--font-head);font-size:28px;color:var(--text-mid)" id="result-skipped">0</div>
+          <div style="font-size:10px;color:var(--text-mid);font-family:var(--font-mono)">重複スキップ</div>
+        </div>
+        <div style="padding:12px;background:var(--accent-dim);border-radius:8px;border:1px solid rgba(255,70,2,0.15)">
+          <div style="font-family:var(--font-head);font-size:28px;color:var(--accent)" id="result-total">0</div>
+          <div style="font-size:10px;color:var(--text-mid);font-family:var(--font-mono)">累計件数</div>
+        </div>
       </div>
     </div>
 
-    <!-- ★ STEP1: SNS・求人URL自動調査パネル -->
-    <div class="sns-search-panel" id="sns-panel">
-      <div class="fsec" style="margin-top:0">// SNS・求人URL 自動調査（STEP1）</div>
-      <div style="font-size:12px;color:var(--text-mid);margin-bottom:16px;line-height:1.8">
-        収集済み企業を全件スキャンし、<strong style="color:var(--text)">求人URL・Instagram・Facebook・TikTok</strong> を自動で検索・保存します。<br>
-        Custom Search APIを使用。1企業あたり4回の検索を行います。
-      </div>
-
-      <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;padding:10px 14px;background:var(--surface2);border-radius:8px">
-        <div style="font-size:12px;color:var(--text-mid)">
-          対象企業：<strong id="sns-target-count" style="color:var(--text)">0</strong> 件
-          ／ 調査済み：<strong id="sns-done-count" style="color:var(--green)">0</strong> 件
-          ／ 未調査：<strong id="sns-pending-count" style="color:var(--orange)">0</strong> 件
-        </div>
-        <div style="margin-left:auto;display:flex;gap:8px">
-          <button class="btn btn-blue btn-sm" onclick="startSNSSearch(false)" id="sns-btn">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg> SNS・求人URL調査を開始
-          </button>
-          <button class="btn btn-ghost btn-sm" onclick="startSNSSearch(true)" id="sns-btn-all">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg> 全件再調査
-          </button>
-        </div>
-      </div>
-
-      <!-- 進捗表示エリア -->
-      <div id="sns-progress-area" style="display:none">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
-          <div style="font-family:var(--font-mono);font-size:10px;color:var(--blue);letter-spacing:0.1em">// 調査進捗</div>
-          <div style="font-family:var(--font-mono);font-size:10px;color:var(--text-dim)" id="sns-prog-text">0 / 0</div>
-        </div>
-        <div class="prog-wrap" style="margin-bottom:12px">
-          <div class="prog-fill" id="sns-prog-fill" style="width:0%;background:linear-gradient(90deg,var(--blue),var(--purple))"></div>
-        </div>
-        <div id="sns-progress-list" style="max-height:300px;overflow-y:auto;border:1px solid var(--border);border-radius:8px;padding:4px 0"></div>
-      </div>
-
-      <!-- 完了サマリー -->
-      <div id="sns-done-summary" style="display:none;margin-top:12px;padding:12px 14px;background:var(--green-dim);border:1px solid rgba(22,163,74,0.2);border-radius:8px">
-        <div style="font-size:12px;font-weight:600;color:var(--green);margin-bottom:6px"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> 調査完了</div>
-        <div id="sns-done-text" style="font-size:11px;color:var(--text-mid)"></div>
-      </div>
+    <!-- 収集進捗 -->
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:18px;margin-bottom:16px">
+      <div class="fsec" style="margin-top:0">// 収集進捗</div>
+      <div id="collect-progress-list" style="font-size:12px;color:var(--text-mid)">読み込み中...</div>
     </div>
 
-    <!-- Gemini リサーチパネル -->
-    <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:22px;margin-bottom:18px">
-      <div class="fsec" style="margin-top:0">// Gemini AIリサーチ（STEP2）</div>
-      <div style="font-size:12px;color:var(--text-mid);margin-bottom:16px;line-height:1.8">
-        収集済み企業を<strong style="color:var(--text)">Gemini AIがウェブ検索</strong>して、代表者名・SNS・求人・提案の切り口まで自動収集します。<br>
-        無料枠：1日1,500リクエスト（Custom Search APIより大幅に多い）
-      </div>
-      <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;padding:10px 14px;background:var(--surface2);border-radius:8px">
-        <div style="font-size:12px;color:var(--text-mid)">
-          対象：<strong id="gemini-target-count" style="color:var(--text)">0</strong> 件
-          ／ リサーチ済み：<strong id="gemini-done-count" style="color:var(--green)">0</strong> 件
-          ／ 未実施：<strong id="gemini-pending-count" style="color:var(--orange)">0</strong> 件
-        </div>
-        <div style="margin-left:auto">
-          <button class="btn btn-blue btn-sm" onclick="startGeminiResearch(null)" id="gemini-research-btn">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/><path d="M11 8v6M8 11h6"/></svg>
-            Geminiリサーチ開始
-          </button>
-        </div>
-      </div>
-      <div id="gemini-prog" style="display:none">
-        <div class="prog-wrap"><div class="prog-fill" id="gemini-prog-fill" style="width:0%;background:linear-gradient(90deg,#4285F4,#34A853)"></div></div>
-        <div class="prog-label" id="gemini-prog-label">準備中...</div>
-      </div>
-    </div>
-
-    <!-- ★ CSVアップロード（Gemini結果取り込み） -->
-    <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:22px;margin-bottom:18px">
+    <!-- Gemini結果CSVアップロード -->
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:22px">
       <div class="fsec" style="margin-top:0">// Gemini結果CSV 取り込み</div>
-      <div style="font-size:12px;color:var(--text-mid);margin-bottom:16px;line-height:1.8">
-        GeminiがリサーチしたCSVをアップロードすると、既存リストに<strong style="color:var(--text)">創業情報・SNS・求人URL</strong>を自動でマージします。<br>
-        CSVの1行目はヘッダー行（company_name必須）として扱います。
+      <div style="font-size:12px;color:var(--text-mid);margin-bottom:14px;line-height:1.8">
+        GeminiがリサーチしたCSVをアップロードすると、既存リストに<strong style="color:var(--text)">創業情報・SNS・求人URL</strong>を自動でマージします。
       </div>
       <div style="margin-bottom:12px;padding:10px 14px;background:var(--surface2);border-radius:8px;font-size:11px;color:var(--text-mid)">
         <strong style="color:var(--text)">対応列名：</strong>
         company_name / founding_date / anniversary_month / instagram_url / facebook_url / tiktok_url / job_posting_url / ceo_name / employee_count / notes
       </div>
-      <div style="display:flex;gap:10px;align-items:center">
-        <label style="flex:1;padding:12px;border:2px dashed var(--border2);border-radius:8px;text-align:center;cursor:pointer;font-size:12px;color:var(--text-mid);transition:all 0.15s" 
-               id="csv-upload-label"
-               ondragover="event.preventDefault();this.style.borderColor='var(--accent)'"
-               ondragleave="this.style.borderColor='var(--border2)'"
-               ondrop="handleCsvDrop(event)">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="margin:0 auto 6px;display:block"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-          CSVファイルをドラッグ＆ドロップ、またはクリックして選択
-          <input type="file" accept=".csv" style="display:none" id="csv-file-input" onchange="handleCsvFile(this)">
-        </label>
-      </div>
+      <label style="display:block;padding:16px;border:2px dashed var(--border2);border-radius:8px;text-align:center;cursor:pointer;font-size:12px;color:var(--text-mid)"
+             ondragover="event.preventDefault();this.style.borderColor='var(--accent)'"
+             ondragleave="this.style.borderColor='var(--border2)'"
+             ondrop="handleCsvDrop(event)">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="margin:0 auto 6px;display:block"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+        CSVをドラッグ＆ドロップ、またはクリックして選択
+        <input type="file" accept=".csv" style="display:none" onchange="handleCsvFile(this)">
+      </label>
       <div id="csv-preview" style="display:none;margin-top:12px"></div>
     </div>
 
-    <!-- How it works -->
-
-    <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:22px">
-      <div class="fsec" style="margin-top:0">// 実運用フロー</div>
-      <div style="display:flex;flex-direction:column;gap:14px">
-        <div style="display:flex;gap:12px">
-          <div style="width:26px;height:26px;border-radius:50%;border:1px solid rgba(79,255,176,0.3);display:flex;align-items:center;justify-content:center;font-family:var(--font-mono);font-size:11px;color:var(--accent);flex-shrink:0">1</div>
-          <div><div style="font-weight:600;font-size:13px;margin-bottom:2px">Google Maps API でエリア×業種スキャン</div><div style="font-size:12px;color:var(--text-mid)">業種・住所・電話・評価・レビュー数を自動取得</div></div>
-        </div>
-        <div style="display:flex;gap:12px">
-          <div style="width:26px;height:26px;border-radius:50%;border:1px solid rgba(37,99,235,0.3);display:flex;align-items:center;justify-content:center;font-family:var(--font-mono);font-size:11px;color:var(--blue);flex-shrink:0">2</div>
-          <div><div style="font-weight:600;font-size:13px;margin-bottom:2px">Custom Search API で求人・SNS URL自動収集 ← NEW</div><div style="font-size:12px;color:var(--text-mid)">全企業を自動ループ。求人・Instagram・FacebookのURLを取得してリストに追加</div></div>
-        </div>
-        <div style="display:flex;gap:12px">
-          <div style="width:26px;height:26px;border-radius:50%;border:1px solid rgba(255,124,53,0.3);display:flex;align-items:center;justify-content:center;font-family:var(--font-mono);font-size:11px;color:var(--orange);flex-shrink:0">3</div>
-          <div><div style="font-weight:600;font-size:13px;margin-bottom:2px">Facebook広告ライブラリで出稿状況チェック</div><div style="font-size:12px;color:var(--text-mid)">未出稿企業を自動フラグ。「まだやっていない」潜在層を可視化</div></div>
-        </div>
-        <div style="display:flex;gap:12px">
-          <div style="width:26px;height:26px;border-radius:50%;border:1px solid rgba(168,85,247,0.3);display:flex;align-items:center;justify-content:center;font-family:var(--font-mono);font-size:11px;color:var(--purple);flex-shrink:0">4</div>
-          <div><div style="font-weight:600;font-size:13px;margin-bottom:2px">AIが自動スコアリング → S/A/B/Cランク付け</div><div style="font-size:12px;color:var(--text-mid)">予算ポテンシャル・緊急度・アプローチ適性の3軸でスコアリング</div></div>
-        </div>
-      </div>
-    </div>
   </div>
 </div>
 
@@ -1214,6 +1194,17 @@ const sb = {
   },
   async set(table, key, data) {
     try {
+      const patchRes = await fetch(`${SUPABASE_URL}/rest/v1/${table}?user_id=eq.${encodeURIComponent(key)}`, {
+        method: 'PATCH',
+        headers: {
+          'apikey': SUPABASE_KEY,
+          'Authorization': `Bearer ${SUPABASE_KEY}`,
+          'Content-Type': 'application/json',
+          'Prefer': 'return=minimal',
+        },
+        body: JSON.stringify({ data: data, updated_at: new Date().toISOString() })
+      });
+      if (patchRes.status === 200 || patchRes.status === 204) return;
       await fetch(`${SUPABASE_URL}/rest/v1/${table}`, {
         method: 'POST',
         headers: {
@@ -1224,7 +1215,7 @@ const sb = {
         },
         body: JSON.stringify({ user_id: key, data: data, updated_at: new Date().toISOString() })
       });
-    } catch(e) {}
+    } catch(e) { console.error('sb.set error:', e); }
   }
 };
 
@@ -1692,8 +1683,8 @@ function checkAutoPhase(it) {
   return getNextPhaseInfo(it);
 }
 
-function save() {
-  sb.set('items', 'fw_items', items).catch(()=>{});
+async function save() {
+  try { await sb.set('items', 'fw_items', items); } catch(e) {}
   updateBadges();
   renderList();
   renderApproach();
@@ -1747,25 +1738,21 @@ function renderList() {
     return true;
   });
 
+  // 追加フィルタ
+  const snsF = document.getElementById('ls-sns')?.value || '';
+  const jobF = document.getElementById('ls-job')?.value || '';
+  if (snsF === 'has_sns') list = list.filter(it => it.instaUrl || it.fbUrl || it.tiktokUrl);
+  if (snsF === 'no_sns') list = list.filter(it => !it.instaUrl && !it.fbUrl && !it.tiktokUrl);
+  if (jobF === 'has_job') list = list.filter(it => it.jobUrl);
+  if (jobF === 'no_job') list = list.filter(it => !it.jobUrl);
+
   // ソート
-  const sortMode = document.getElementById('ls-sort')?.value || 'score';
-  const snsFilter = document.getElementById('ls-sns')?.value || '';
-  const jobFilter = document.getElementById('ls-job')?.value || '';
-
-  // SNSフィルタ
-  if (snsFilter === 'has_sns') list = list.filter(it => it.instaUrl || it.fbUrl || it.tiktokUrl);
-  if (snsFilter === 'no_sns') list = list.filter(it => !it.instaUrl && !it.fbUrl && !it.tiktokUrl);
-
-  // 求人フィルタ
-  if (jobFilter === 'has_job') list = list.filter(it => it.jobUrl);
-  if (jobFilter === 'no_job') list = list.filter(it => !it.jobUrl);
-
+  const sortMode = document.getElementById('ls-sort-mode')?.value || 'score';
   list.sort((a,b) => {
-    if (sortMode === 'score') return (b.score?.total||0)-(a.score?.total||0);
-    if (sortMode === 'company') return a.company.localeCompare(b.company);
     if (sortMode === 'createdAt_desc') return (b.createdAt||'').localeCompare(a.createdAt||'');
     if (sortMode === 'createdAt_asc') return (a.createdAt||'').localeCompare(b.createdAt||'');
-    if (sortKey==='score') return sortDir*((b.score?.total||0)-(a.score?.total||0));
+    if (sortMode === 'company') return a.company.localeCompare(b.company);
+    if (sortKey==='score' || sortMode === 'score') return sortDir*((b.score?.total||0)-(a.score?.total||0));
     if (sortKey==='company') return sortDir*a.company.localeCompare(b.company);
     return 0;
   });
@@ -2800,7 +2787,251 @@ function delCompany() {
   save(); cm('m-detail'); toast('<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg> 削除しました');
 }
 
-// ── EXPORT ──
+// ══ AREA RANKINGS ══
+const AREA_RANKINGS = {
+  okinawa: [
+    "那覇市久茂地1丁目","那覇市久茂地2丁目","那覇市久茂地3丁目",
+    "那覇市泉崎1丁目","那覇市泉崎2丁目",
+    "那覇市おもろまち1丁目","那覇市おもろまち2丁目","那覇市おもろまち3丁目","那覇市おもろまち4丁目",
+    "那覇市松山1丁目","那覇市松山2丁目","那覇市旭町",
+    "那覇市牧志1丁目","那覇市牧志2丁目","那覇市牧志3丁目",
+    "那覇市前島1丁目","那覇市前島2丁目","那覇市前島3丁目",
+    "那覇市壺川1丁目","那覇市壺川2丁目","那覇市壺川3丁目",
+    "那覇市古島1丁目","那覇市古島2丁目","那覇市古島3丁目",
+    "那覇市寄宮1丁目","那覇市寄宮2丁目","那覇市寄宮3丁目",
+    "那覇市天久1丁目","那覇市天久2丁目","那覇市天久3丁目",
+    "那覇市安謝1丁目","那覇市安謝2丁目",
+    "那覇市銘苅1丁目","那覇市銘苅2丁目","那覇市銘苅3丁目",
+    "那覇市首里久場川町1丁目","那覇市首里久場川町2丁目",
+    "那覇市小禄1丁目","那覇市小禄2丁目","那覇市字小禄",
+    "浦添市字伊祖","浦添市伊祖1丁目","浦添市伊祖2丁目","浦添市伊祖3丁目",
+    "浦添市字城間","浦添市城間1丁目","浦添市城間2丁目",
+    "浦添市宮城1丁目","浦添市宮城2丁目","浦添市宮城3丁目",
+    "浦添市字前田","浦添市前田1丁目","浦添市前田2丁目",
+    "浦添市牧港1丁目","浦添市牧港2丁目","浦添市牧港3丁目","浦添市牧港4丁目","浦添市牧港5丁目",
+    "沖縄市中央1丁目","沖縄市中央2丁目","沖縄市中央3丁目","沖縄市中央4丁目",
+    "沖縄市上地1丁目","沖縄市上地2丁目","沖縄市上地3丁目","沖縄市字上地",
+    "沖縄市胡屋1丁目","沖縄市胡屋2丁目","沖縄市胡屋3丁目","沖縄市胡屋4丁目","沖縄市胡屋5丁目",
+    "沖縄市照屋1丁目","沖縄市照屋2丁目",
+    "宜野湾市大山1丁目","宜野湾市大山2丁目","宜野湾市大山3丁目","宜野湾市字大山",
+    "宜野湾市普天間1丁目","宜野湾市普天間2丁目",
+    "宜野湾市野嵩1丁目","宜野湾市野嵩2丁目",
+    "宜野湾市宇地泊1丁目","宜野湾市宇地泊2丁目",
+    "豊見城市字豊見城","豊見城市豊崎1丁目","豊見城市豊崎2丁目","豊見城市豊崎3丁目",
+    "豊見城市字根差部","豊見城市字真玉橋",
+    "うるま市字具志川","うるま市みどり町1丁目","うるま市みどり町2丁目","うるま市みどり町3丁目",
+    "うるま市字石川","うるま市字赤道",
+    "名護市字名護","名護市大中1丁目","名護市大中2丁目","名護市大中3丁目",
+    "名護市城1丁目","名護市城2丁目",
+    "糸満市字糸満","糸満市潮崎町","糸満市西崎町1丁目","糸満市西崎町2丁目",
+    "南城市字大里","南城市字佐敷",
+    "中頭郡北谷町字美浜","中頭郡北谷町字北谷","中頭郡北谷町字桑江",
+    "中頭郡読谷村字楚辺","中頭郡読谷村字波平",
+    "国頭郡恩納村字恩納","国頭郡恩納村字瀬良垣",
+    "国頭郡本部町字山川","国頭郡本部町字渡久地",
+    "石垣市字石垣","石垣市新栄町","石垣市美崎町","石垣市字登野城",
+    "宮古島市平良字西里","宮古島市平良字東仲宗根","宮古島市平良字下里",
+  ],
+  fukuoka: [
+    "福岡市中央区天神1丁目","福岡市中央区天神2丁目","福岡市中央区天神3丁目","福岡市中央区天神4丁目","福岡市中央区天神5丁目",
+    "福岡市中央区大名1丁目","福岡市中央区大名2丁目",
+    "福岡市中央区今泉1丁目","福岡市中央区今泉2丁目",
+    "福岡市中央区薬院1丁目","福岡市中央区薬院2丁目","福岡市中央区薬院3丁目","福岡市中央区薬院4丁目",
+    "福岡市中央区渡辺通1丁目","福岡市中央区渡辺通2丁目","福岡市中央区渡辺通3丁目","福岡市中央区渡辺通4丁目","福岡市中央区渡辺通5丁目",
+    "福岡市中央区清川1丁目","福岡市中央区清川2丁目","福岡市中央区清川3丁目",
+    "福岡市中央区赤坂1丁目","福岡市中央区赤坂2丁目","福岡市中央区赤坂3丁目",
+    "福岡市博多区博多駅前1丁目","福岡市博多区博多駅前2丁目","福岡市博多区博多駅前3丁目","福岡市博多区博多駅前4丁目",
+    "福岡市博多区博多駅東1丁目","福岡市博多区博多駅東2丁目","福岡市博多区博多駅東3丁目",
+    "福岡市博多区住吉1丁目","福岡市博多区住吉2丁目","福岡市博多区住吉3丁目","福岡市博多区住吉4丁目","福岡市博多区住吉5丁目",
+    "福岡市博多区千代1丁目","福岡市博多区千代2丁目","福岡市博多区千代3丁目","福岡市博多区千代4丁目","福岡市博多区千代5丁目",
+    "福岡市博多区中洲1丁目","福岡市博多区中洲2丁目","福岡市博多区中洲3丁目","福岡市博多区中洲4丁目","福岡市博多区中洲5丁目",
+    "福岡市東区香椎1丁目","福岡市東区香椎2丁目","福岡市東区香椎3丁目","福岡市東区香椎4丁目","福岡市東区香椎5丁目",
+    "福岡市東区千早1丁目","福岡市東区千早2丁目","福岡市東区千早3丁目","福岡市東区千早4丁目",
+    "福岡市南区大橋1丁目","福岡市南区大橋2丁目","福岡市南区大橋3丁目","福岡市南区大橋4丁目",
+    "福岡市南区高宮1丁目","福岡市南区高宮2丁目","福岡市南区高宮3丁目","福岡市南区高宮4丁目","福岡市南区高宮5丁目","福岡市南区高宮6丁目",
+    "北九州市小倉北区魚町1丁目","北九州市小倉北区魚町2丁目","北九州市小倉北区魚町3丁目","北九州市小倉北区魚町4丁目",
+    "北九州市小倉北区浅野1丁目","北九州市小倉北区浅野2丁目","北九州市小倉北区浅野3丁目",
+    "久留米市中央町","久留米市東町","久留米市西町","久留米市南町",
+  ],
+  tokyo: [
+    "千代田区丸の内1丁目","千代田区丸の内2丁目","千代田区丸の内3丁目",
+    "千代田区大手町1丁目","千代田区大手町2丁目",
+    "千代田区有楽町1丁目","千代田区有楽町2丁目",
+    "千代田区神田錦町1丁目","千代田区神田錦町2丁目","千代田区神田錦町3丁目",
+    "千代田区内幸町1丁目","千代田区内幸町2丁目",
+    "港区赤坂1丁目","港区赤坂2丁目","港区赤坂3丁目","港区赤坂4丁目","港区赤坂5丁目","港区赤坂6丁目","港区赤坂7丁目","港区赤坂8丁目","港区赤坂9丁目",
+    "港区六本木1丁目","港区六本木2丁目","港区六本木3丁目","港区六本木4丁目","港区六本木5丁目","港区六本木6丁目","港区六本木7丁目",
+    "港区虎ノ門1丁目","港区虎ノ門2丁目","港区虎ノ門3丁目","港区虎ノ門4丁目","港区虎ノ門5丁目",
+    "港区芝浦1丁目","港区芝浦2丁目","港区芝浦3丁目","港区芝浦4丁目",
+    "渋谷区渋谷1丁目","渋谷区渋谷2丁目","渋谷区渋谷3丁目","渋谷区渋谷4丁目",
+    "渋谷区道玄坂1丁目","渋谷区道玄坂2丁目",
+    "渋谷区代々木1丁目","渋谷区代々木2丁目","渋谷区代々木3丁目","渋谷区代々木4丁目","渋谷区代々木5丁目",
+    "新宿区西新宿1丁目","新宿区西新宿2丁目","新宿区西新宿3丁目","新宿区西新宿4丁目","新宿区西新宿5丁目","新宿区西新宿6丁目","新宿区西新宿7丁目","新宿区西新宿8丁目",
+    "新宿区新宿1丁目","新宿区新宿2丁目","新宿区新宿3丁目","新宿区新宿4丁目","新宿区新宿5丁目","新宿区新宿6丁目","新宿区新宿7丁目",
+    "中央区銀座1丁目","中央区銀座2丁目","中央区銀座3丁目","中央区銀座4丁目","中央区銀座5丁目","中央区銀座6丁目","中央区銀座7丁目","中央区銀座8丁目",
+    "中央区日本橋1丁目","中央区日本橋2丁目","中央区日本橋3丁目",
+  ],
+  osaka: [
+    "大阪市北区梅田1丁目","大阪市北区梅田2丁目","大阪市北区梅田3丁目",
+    "大阪市北区大深町","大阪市北区茶屋町","大阪市北区堂島1丁目","大阪市北区堂島2丁目",
+    "大阪市北区曾根崎1丁目","大阪市北区曾根崎2丁目","大阪市北区曾根崎新地1丁目","大阪市北区曾根崎新地2丁目",
+    "大阪市北区西天満1丁目","大阪市北区西天満2丁目","大阪市北区西天満3丁目","大阪市北区西天満4丁目","大阪市北区西天満5丁目","大阪市北区西天満6丁目",
+    "大阪市中央区本町1丁目","大阪市中央区本町2丁目","大阪市中央区本町3丁目","大阪市中央区本町4丁目",
+    "大阪市中央区心斎橋筋1丁目","大阪市中央区心斎橋筋2丁目",
+    "大阪市中央区難波1丁目","大阪市中央区難波2丁目","大阪市中央区難波3丁目","大阪市中央区難波4丁目","大阪市中央区難波5丁目",
+    "大阪市中央区南船場1丁目","大阪市中央区南船場2丁目","大阪市中央区南船場3丁目","大阪市中央区南船場4丁目",
+    "大阪市西区靭本町1丁目","大阪市西区靭本町2丁目","大阪市西区靭本町3丁目",
+    "大阪市西区江戸堀1丁目","大阪市西区江戸堀2丁目","大阪市西区江戸堀3丁目",
+    "大阪市浪速区難波中1丁目","大阪市浪速区難波中2丁目","大阪市浪速区難波中3丁目",
+  ],
+};
+
+let collectedAreas = {};
+
+async function loadCollectedAreas() {
+  try {
+    const data = await sb.get('items', 'fw_collected_areas');
+    if (data) collectedAreas = data;
+  } catch(e) {}
+}
+
+async function markAreaCollected(pref, key) {
+  if (!collectedAreas[pref]) collectedAreas[pref] = [];
+  if (!collectedAreas[pref].includes(key)) {
+    collectedAreas[pref].push(key);
+    await sb.set('items', 'fw_collected_areas', collectedAreas);
+  }
+}
+
+function getNextArea(pref, ind) {
+  const ranking = AREA_RANKINGS[pref] || [];
+  const done = new Set(collectedAreas[pref] || []);
+  return ranking.find(a => !done.has((ind||'') + '|' + a)) || null;
+}
+
+function updateNextAreaPreview() {
+  const pref = document.getElementById('col-pref')?.value || 'okinawa';
+  const ind = collectType === 'agency' ? '広告代理店' : (document.getElementById('col-ind')?.value || '');
+  const ranking = AREA_RANKINGS[pref] || [];
+  const nameEl = document.getElementById('next-area-name');
+  const rankEl = document.getElementById('next-area-rank');
+  const progEl = document.getElementById('area-progress-text');
+  if (!ranking.length) {
+    if (nameEl) nameEl.textContent = 'このエリアのランキングデータは未登録です';
+    if (rankEl) rankEl.textContent = '';
+    if (progEl) progEl.textContent = '';
+    renderCollectProgress();
+    return;
+  }
+  const done = (collectedAreas[pref] || []).filter(x => x.startsWith(ind + '|'));
+  const next = getNextArea(pref, ind);
+  const rankIdx = next ? ranking.indexOf(next) + 1 : null;
+  if (nameEl) nameEl.textContent = next || '全エリア×業種の収集完了！';
+  if (rankEl) rankEl.textContent = rankIdx ? 'ランク ' + rankIdx + '位 / ' + ranking.length : '';
+  if (progEl) progEl.textContent = '収集済み ' + done.length + ' / ' + ranking.length + ' エリア';
+  renderCollectProgress();
+}
+
+function onPrefChange() { updateNextAreaPreview(); renderCollectProgress(); }
+
+function renderCollectProgress() {
+  const pref = document.getElementById('col-pref')?.value || 'okinawa';
+  const ranking = AREA_RANKINGS[pref] || [];
+  const done = collectedAreas[pref] || [];
+  const el = document.getElementById('collect-progress-list');
+  if (!el) return;
+  if (!ranking.length) { el.innerHTML = 'このエリアのランキングデータがありません'; return; }
+  const recentDone = done.slice(-5).reverse();
+  el.innerHTML =
+    (recentDone.length ? '<div style="margin-bottom:8px;font-family:var(--font-mono);font-size:9px;color:var(--text-dim);letter-spacing:0.1em">最近収集済み</div>' +
+    recentDone.map(a => '<div style="padding:4px 0;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px"><span style="color:var(--green)">✓</span>' + a + '</div>').join('') +
+    '<div style="margin-top:10px"></div>' : '') +
+    '<div style="font-size:12px"><span style="color:var(--green);font-weight:600">' + done.length + '</span> / ' + ranking.length + ' エリア収集済み</div>';
+}
+
+let collectType = 'general';
+
+function selectType(type) {
+  collectType = type;
+  const g = document.getElementById('type-general');
+  const a = document.getElementById('type-agency');
+  const iw = document.getElementById('col-industry-wrap');
+  if (type === 'general') {
+    g.style.cssText = 'flex:1;padding:10px;border-radius:8px;border:2px solid var(--accent);background:var(--accent-dim);color:var(--accent);font-weight:600;font-size:13px;text-align:center;cursor:pointer';
+    a.style.cssText = 'flex:1;padding:10px;border-radius:8px;border:1px solid var(--border2);color:var(--text-mid);font-size:13px;text-align:center;cursor:pointer';
+    if (iw) iw.style.display = '';
+  } else {
+    a.style.cssText = 'flex:1;padding:10px;border-radius:8px;border:2px solid var(--accent);background:var(--accent-dim);color:var(--accent);font-weight:600;font-size:13px;text-align:center;cursor:pointer';
+    g.style.cssText = 'flex:1;padding:10px;border-radius:8px;border:1px solid var(--border2);color:var(--text-mid);font-size:13px;text-align:center;cursor:pointer';
+    if (iw) iw.style.display = 'none';
+  }
+  updateNextAreaPreview();
+}
+
+async function startCollect() {
+  const pref = document.getElementById('col-pref')?.value || 'okinawa';
+  const ind = collectType === 'agency' ? '広告代理店' : document.getElementById('col-ind').value;
+  const ranking = AREA_RANKINGS[pref] || [];
+  if (!ranking.length) { toast('この都道府県のエリアデータがありません。'); return; }
+  const area = getNextArea(pref, ind);
+  if (!area) { toast('この条件の収集は全エリア完了しています！'); return; }
+  const limit = parseInt(document.getElementById('col-limit').value) || 50;
+
+  const btn = document.getElementById('col-btn');
+  btn.disabled = true;
+  btn.innerHTML = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg> 収集中...';
+  document.getElementById('col-think').classList.add('show');
+  document.getElementById('col-think-txt').textContent = area + ' × ' + ind + ' を収集中...';
+  document.getElementById('col-prog').style.display = 'block';
+  document.getElementById('col-prog-fill').style.width = '20%';
+  document.getElementById('col-prog-label').textContent = 'Google Places APIに問い合わせ中...';
+
+  let newItems = [];
+  try {
+    newItems = await searchPlacesAPI(ind, area, limit);
+    if (!newItems.length) newItems = genDemoItems(ind, area, limit);
+  } catch(e) {
+    newItems = genDemoItems(ind, area, limit);
+  }
+
+  document.getElementById('col-prog-fill').style.width = '60%';
+  document.getElementById('col-prog-label').textContent = newItems.length + '件取得 → 重複チェック中...';
+
+  let added = 0, skipped = 0;
+  const existingPhones = new Set(items.map(x => x.phone).filter(Boolean));
+  const existingKeys = new Set(items.map(x => x.company + '|' + (x.addr || x.area)));
+  for (const it of newItems) {
+    it.score = calcScore(it);
+    if (it.phone && existingPhones.has(it.phone)) { skipped++; continue; }
+    const key = it.company + '|' + (it.addr || it.area);
+    if (existingKeys.has(key)) { skipped++; continue; }
+    items.push(it);
+    if (it.phone) existingPhones.add(it.phone);
+    existingKeys.add(key);
+    added++;
+  }
+
+  await markAreaCollected(pref, ind + '|' + area);
+  await sb.set('items', 'fw_items', items);
+
+  document.getElementById('col-prog-fill').style.width = '100%';
+  document.getElementById('col-prog-label').textContent = '完了！新規' + added + '件追加 / ' + skipped + '件スキップ';
+  document.getElementById('collect-result').style.display = 'block';
+  document.getElementById('result-added').textContent = added;
+  document.getElementById('result-skipped').textContent = skipped;
+  document.getElementById('result-total').textContent = items.length;
+  document.getElementById('col-think').classList.remove('show');
+  btn.disabled = false;
+  btn.innerHTML = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg> 収集開始';
+  setTimeout(() => { document.getElementById('col-prog').style.display = 'none'; }, 2000);
+  updateNextAreaPreview();
+  renderCollectProgress();
+  updateBadges();
+  renderList();
+  toast('収集完了！新規' + added + '件追加（' + skipped + '件は重複スキップ）');
+}
+
+// ══ PHASE1: フィルタ後リスト取得 ══
 function getFilteredItems() {
   const search = document.getElementById('ls-search')?.value.toLowerCase() || '';
   const ind = document.getElementById('ls-industry')?.value || '';
@@ -2808,7 +3039,7 @@ function getFilteredItems() {
   const apf = document.getElementById('ls-ap')?.value || '';
   const snsFilter = document.getElementById('ls-sns')?.value || '';
   const jobFilter = document.getElementById('ls-job')?.value || '';
-  let list = items.filter(it => {
+  return items.filter(it => {
     if (search && !it.company.toLowerCase().includes(search)) return false;
     if (ind && it.industry !== ind) return false;
     if (rank && it.score?.rank !== rank) return false;
@@ -2821,17 +3052,164 @@ function getFilteredItems() {
     if (jobFilter === 'no_job' && it.jobUrl) return false;
     return true;
   });
-  return list;
 }
 
+// ══ PHASE1: Geminiプロンプト生成 ══
+function openPromptModal() {
+  const list = getFilteredItems();
+  if (!list.length) { toast('対象リストがありません'); return; }
+  const industries = [...new Set(list.map(it => it.industry).filter(Boolean))];
+  const areas = [...new Set(list.map(it => (it.area||'').split('市')[0] + '市').filter(Boolean))].slice(0,5);
+  const companyList = list.map((it, i) => (i+1) + '. ' + it.company + ' (' + (it.area||'') + (it.addr ? ' / ' + it.addr : '') + ')').join('
+');
+
+  const prompt = `You are a professional business intelligence researcher. Research the following ${list.length} companies located in ${areas.join(' / ')}, operating in the ${industries.join(' / ')} industry.
+
+For EACH company, find and return ALL of the following information. Return results ONLY as CSV format with NO additional text or explanation.
+
+=== REQUIRED CSV OUTPUT FORMAT ===
+Return a CSV with these exact column headers in row 1:
+company_name,founding_date,anniversary_month,instagram_url,facebook_url,tiktok_url,job_posting_url,ceo_name,employee_count,notes
+
+=== RESEARCH INSTRUCTIONS ===
+- founding_date: Company founding date (YYYY-MM-DD format, or YYYY-MM if day unknown)
+- anniversary_month: Month number of founding (1-12). Critical for anniversary marketing campaigns.
+- instagram_url: Full Instagram profile URL
+- facebook_url: Full Facebook page URL
+- tiktok_url: Full TikTok profile URL if exists
+- job_posting_url: Current job posting URL (Indeed, HelloWork, company site, etc.)
+- ceo_name: CEO or representative director name (search in Japanese too)
+- employee_count: Approximate number of employees
+- notes: Notable info for advertising proposal (awards, expansion plans, recent news)
+
+=== IMPORTANT RULES ===
+- Output ONLY the CSV data. No markdown, no explanations, no summaries.
+- Use "N/A" for any field where information cannot be found.
+- anniversary_month is the MOST important field. Research thoroughly.
+- Search company names in Japanese for better accuracy.
+- If company has multiple SNS accounts, use the most active/official one.
+
+=== COMPANIES TO RESEARCH (${list.length} total) ===
+${companyList}
+
+=== BEGIN CSV OUTPUT NOW ===`;
+
+  document.getElementById('prompt-subtitle').textContent = list.length + '件対象 / ' + industries.join('・');
+  document.getElementById('prompt-target-count').textContent = list.length;
+  document.getElementById('prompt-text').value = prompt;
+  document.getElementById('m-prompt').classList.add('open');
+}
+
+function copyPrompt() {
+  navigator.clipboard.writeText(document.getElementById('prompt-text').value)
+    .then(() => toast('プロンプトをコピーしました！GeminiまたはChatGPTに貼り付けてください'));
+}
+
+// ══ PHASE1: CSV出力（強化版） ══
+function exportResearchCSV() {
+  const list = getFilteredItems();
+  const h = ['company_name','phone','industry','area','address','website_url','existing_instagram','existing_facebook','existing_job_url'];
+  const rows = list.map(it => [
+    it.company, it.phone||'', it.industry||'', it.area||'', it.addr||'', it.website||'',
+    it.instaUrl||'', it.fbUrl||'', it.jobUrl||''
+  ].map(v => '"' + String(v||'').replace(/"/g,'""') + '"').join(','));
+  const blob = new Blob(['﻿' + [h.join(','), ...rows].join('
+')], {type:'text/csv;charset=utf-8;'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href = url;
+  a.download = 'research_input_' + todayJST() + '.csv'; a.click();
+  toast('リサーチ用CSV出力完了（' + list.length + '件）');
+}
+
+// ══ PHASE1: Gemini結果CSVアップロード・マージ ══
+function handleCsvDrop(e) {
+  e.preventDefault();
+  const file = e.dataTransfer.files[0];
+  if (file && file.name.endsWith('.csv')) processCsvFile(file);
+  else toast('CSVファイルを選択してください');
+}
+
+function handleCsvFile(input) {
+  const file = input.files[0];
+  if (file) processCsvFile(file);
+}
+
+function processCsvFile(file) {
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    const text = e.target.result;
+    const lines = text.split('
+').filter(l => l.trim());
+    if (lines.length < 2) { toast('CSVにデータがありません'); return; }
+    const header = lines[0].replace(/^﻿/, '').split(',').map(h => h.replace(/^"|"$/g,'').trim().toLowerCase());
+    const coIdx = header.indexOf('company_name');
+    if (coIdx === -1) { toast('company_name 列が見つかりません'); return; }
+    const colMap = {
+      founding_date: header.indexOf('founding_date'),
+      anniversary_month: header.indexOf('anniversary_month'),
+      instagram_url: header.indexOf('instagram_url'),
+      facebook_url: header.indexOf('facebook_url'),
+      tiktok_url: header.indexOf('tiktok_url'),
+      job_posting_url: header.indexOf('job_posting_url'),
+      ceo_name: header.indexOf('ceo_name'),
+      employee_count: header.indexOf('employee_count'),
+      notes: header.indexOf('notes'),
+    };
+    let merged = 0, notFound = 0;
+    lines.slice(1).forEach(line => {
+      const cols = parseCSVLine(line);
+      const coName = (cols[coIdx]||'').replace(/^"|"$/g,'').trim();
+      if (!coName) return;
+      const item = items.find(it => it.company === coName || it.company.includes(coName) || coName.includes(it.company));
+      if (!item) { notFound++; return; }
+      const get = (key) => {
+        const idx = colMap[key];
+        if (idx === -1 || idx === undefined) return '';
+        const val = (cols[idx]||'').replace(/^"|"$/g,'').trim();
+        return val === 'N/A' ? '' : val;
+      };
+      if (get('founding_date'))    item.foundingDate = get('founding_date');
+      if (get('anniversary_month')) item.anniversaryMonth = get('anniversary_month');
+      if (get('instagram_url'))    item.instaUrl = get('instagram_url');
+      if (get('facebook_url'))     item.fbUrl = get('facebook_url');
+      if (get('tiktok_url'))       item.tiktokUrl = get('tiktok_url');
+      if (get('job_posting_url'))  item.jobUrl = get('job_posting_url');
+      if (get('ceo_name'))         item.ceoName = get('ceo_name');
+      if (get('employee_count'))   item.employeeCount = get('employee_count');
+      if (get('notes'))            item.researchNotes = get('notes');
+      if (item.jobUrl && !(item.signals||[]).includes('hire')) item.signals = [...(item.signals||[]), 'hire'];
+      item.score = calcScore(item);
+      merged++;
+    });
+    save();
+    const prev = document.getElementById('csv-preview');
+    if (prev) {
+      prev.style.display = 'block';
+      prev.innerHTML = '<div style="padding:12px 14px;background:var(--green-dim);border:1px solid rgba(22,163,74,0.2);border-radius:8px;font-size:12px"><strong style="color:var(--green)">✓ マージ完了</strong><div style="margin-top:4px;color:var(--text-mid)">更新: <strong>' + merged + '件</strong> ／ 未マッチ: <strong>' + notFound + '件</strong></div></div>';
+    }
+    toast('Gemini結果をマージしました！' + merged + '件更新');
+  };
+  reader.readAsText(file, 'UTF-8');
+}
+
+function parseCSVLine(line) {
+  const result = []; let current = ''; let inQuotes = false;
+  for (let i = 0; i < line.length; i++) {
+    if (line[i] === '"') { if (inQuotes && line[i+1] === '"') { current += '"'; i++; } else inQuotes = !inQuotes; }
+    else if (line[i] === ',' && !inQuotes) { result.push(current); current = ''; }
+    else { current += line[i]; }
+  }
+  result.push(current);
+  return result;
+}
+
+// ── EXPORT ──
 function exportCSV() {
   const list = getFilteredItems();
   const h = [
     '会社名','担当者','電話','業種','エリア','住所','推定月商',
     'AIスコア','ランク','フェーズ','シグナル','アプローチ回数','次回日','紹介元',
-    '公式HPURL','求人URL','InstagramURL','FacebookURL','TikTokURL','SNS調査日',
-    '収集日',
-    // Gemini追加列（空）
+    '公式HPURL','求人URL','InstagramURL','FacebookURL','TikTokURL','SNS調査日','収集日',
     '創業年月日','創業記念月','代表者名','従業員数','備考'
   ];
   const rows = list.map(it => [
@@ -2840,31 +3218,14 @@ function exportCSV() {
     (it.signals||[]).join('|'), (it.logs||[]).length, it.nextDate||'', it.referral||'',
     it.website||'', it.jobUrl||'', it.instaUrl||'', it.fbUrl||'', it.tiktokUrl||'', it.snsSearchedAt||'',
     it.createdAt||'',
-    // Gemini追加列
     it.foundingDate||'', it.anniversaryMonth||'', it.ceoName||'', it.employeeCount||'', it.researchNotes||''
-  ].map(v => `"${String(v||'').replace(/"/g,'""')}"`).join(','));
+  ].map(v => '"' + String(v||'').replace(/"/g,'""') + '"').join(','));
   const blob = new Blob(['﻿' + [h.join(','), ...rows].join('
-')], {type: 'text/csv;charset=utf-8;'});
+')], {type:'text/csv;charset=utf-8;'});
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a'); a.href = url;
   a.download = 'fieldwork_' + todayJST() + '.csv'; a.click();
-  toast(`CSVエクスポート完了（${list.length}件）`);
-}
-
-// Geminiリサーチ用CSVも出力（会社名・電話・業種・エリア・住所・HP URLのみ）
-function exportResearchCSV() {
-  const list = getFilteredItems();
-  const h = ['company_name','phone','industry','area','address','website_url','existing_instagram','existing_facebook','existing_job_url'];
-  const rows = list.map(it => [
-    it.company, it.phone||'', it.industry||'', it.area||'', it.addr||'', it.website||'',
-    it.instaUrl||'', it.fbUrl||'', it.jobUrl||''
-  ].map(v => `"${String(v||'').replace(/"/g,'""')}"`).join(','));
-  const blob = new Blob(['﻿' + [h.join(','), ...rows].join('
-')], {type: 'text/csv;charset=utf-8;'});
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a'); a.href = url;
-  a.download = 'research_input_' + todayJST() + '.csv'; a.click();
-  toast(`リサーチ用CSV出力完了（${list.length}件）`);
+  toast('CSVエクスポート完了（' + list.length + '件）');
 }
 
 // ══════════════════════════════
@@ -3287,191 +3648,6 @@ function updateNoticeBadge() {
   badge.style.display = pending > 0 ? '' : 'none';
 }
 
-// ══ PHASE1: プロンプト生成 ══
-function openPromptModal() {
-  const list = getFilteredItems();
-  if (!list.length) { toast('対象リストがありません。フィルタを確認してください。'); return; }
-
-  // 業種・エリアを自動抽出
-  const industries = [...new Set(list.map(it => it.industry).filter(Boolean))];
-  const prefs = [...new Set(list.map(it => {
-    const a = it.area || '';
-    if (a.includes('沖縄') || a.includes('那覇') || a.includes('浦添') || a.includes('沖縄市')) return '沖縄県';
-    if (a.includes('福岡') || a.includes('北九州') || a.includes('久留米')) return '福岡県';
-    if (a.includes('東京') || a.includes('渋谷') || a.includes('新宿') || a.includes('港区')) return '東京都';
-    if (a.includes('大阪')) return '大阪府';
-    return a.split('市')[0] + '市' || a;
-  }))];
-
-  // 空欄が多い項目を自動判断
-  const missingSnsPct = Math.round(list.filter(it => !it.instaUrl && !it.fbUrl).length / list.length * 100);
-  const missingJobPct = Math.round(list.filter(it => !it.jobUrl).length / list.length * 100);
-  const missingFoundingPct = Math.round(list.filter(it => !it.foundingDate).length / list.length * 100);
-
-  const companyList = list.map((it, i) => `${i+1}. ${it.company} (${it.area||''})`).join('
-');
-
-  const prompt = `You are a professional business intelligence researcher. Research the following ${list.length} companies located in ${prefs.join(' / ')}, operating in the ${industries.join(' / ')} industry.
-
-For EACH company, find and return ALL of the following information. Return results ONLY as CSV format with NO additional text or explanation.
-
-=== REQUIRED CSV OUTPUT FORMAT ===
-Return a CSV with these exact column headers in row 1:
-company_name,founding_date,anniversary_month,instagram_url,facebook_url,tiktok_url,job_posting_url,ceo_name,employee_count,notes
-
-=== RESEARCH INSTRUCTIONS ===
-- founding_date: Company founding date (YYYY-MM-DD format, or YYYY-MM if day unknown)
-- anniversary_month: Month number of founding (1-12). This is critical for anniversary marketing campaigns.
-- instagram_url: Full Instagram profile URL (https://www.instagram.com/username)
-- facebook_url: Full Facebook page URL
-- tiktok_url: Full TikTok profile URL if exists
-- job_posting_url: Current job posting URL (Indeed, HelloWork, company site, etc.)
-- ceo_name: CEO or representative director name
-- employee_count: Approximate number of employees
-- notes: Any notable info (awards, expansion plans, recent news, approach angle for advertising proposal)
-
-=== IMPORTANT RULES ===
-- Output ONLY the CSV data. No markdown, no explanations, no summaries.
-- Use "N/A" for any field where information cannot be found.
-- anniversary_month is the MOST important field. Research thoroughly.
-- Search in Japanese as well as English for better accuracy.
-- If company has multiple SNS accounts, use the most active/official one.
-
-=== COMPANIES TO RESEARCH (${list.length} total) ===
-${companyList}
-
-=== BEGIN CSV OUTPUT NOW ===`;
-
-  document.getElementById('prompt-subtitle').textContent = `${list.length}件対象 / 業種: ${industries.join('・')} / エリア: ${prefs.join('・')}`;
-  document.getElementById('prompt-target-count').textContent = list.length;
-  document.getElementById('prompt-text').value = prompt;
-  document.getElementById('m-prompt').classList.add('open');
-}
-
-function copyPrompt() {
-  const text = document.getElementById('prompt-text').value;
-  navigator.clipboard.writeText(text).then(() => {
-    toast('プロンプトをコピーしました！GeminiまたはChatGPTに貼り付けてください');
-  });
-}
-
-// ══ PHASE1: CSVアップロード・マージ ══
-function handleCsvDrop(e) {
-  e.preventDefault();
-  document.getElementById('csv-upload-label').style.borderColor = 'var(--border2)';
-  const file = e.dataTransfer.files[0];
-  if (file && file.name.endsWith('.csv')) processCsvFile(file);
-  else toast('CSVファイルを選択してください');
-}
-
-function handleCsvFile(input) {
-  const file = input.files[0];
-  if (file) processCsvFile(file);
-}
-
-function processCsvFile(file) {
-  const reader = new FileReader();
-  reader.onload = (e) => {
-    const text = e.target.result;
-    const lines = text.split('
-').filter(l => l.trim());
-    if (lines.length < 2) { toast('CSVにデータがありません'); return; }
-
-    // BOM除去・ヘッダー解析
-    const header = lines[0].replace(/^﻿/, '').split(',').map(h => h.replace(/^"|"$/g,'').trim().toLowerCase());
-    const coIdx = header.indexOf('company_name');
-    if (coIdx === -1) { toast('company_name 列が見つかりません'); return; }
-
-    const colMap = {
-      founding_date: header.indexOf('founding_date'),
-      anniversary_month: header.indexOf('anniversary_month'),
-      instagram_url: header.indexOf('instagram_url'),
-      facebook_url: header.indexOf('facebook_url'),
-      tiktok_url: header.indexOf('tiktok_url'),
-      job_posting_url: header.indexOf('job_posting_url'),
-      ceo_name: header.indexOf('ceo_name'),
-      employee_count: header.indexOf('employee_count'),
-      notes: header.indexOf('notes'),
-    };
-
-    let merged = 0, notFound = 0;
-    const rows = lines.slice(1);
-
-    rows.forEach(line => {
-      const cols = parseCSVLine(line);
-      const coName = cols[coIdx]?.replace(/^"|"$/g,'').trim();
-      if (!coName) return;
-
-      // 会社名で既存リストを検索（部分一致）
-      const item = items.find(it =>
-        it.company === coName ||
-        it.company.includes(coName) ||
-        coName.includes(it.company)
-      );
-
-      if (!item) { notFound++; return; }
-
-      const get = (key) => {
-        const idx = colMap[key];
-        if (idx === -1 || idx === undefined) return '';
-        const val = (cols[idx] || '').replace(/^"|"$/g,'').trim();
-        return val === 'N/A' ? '' : val;
-      };
-
-      if (get('founding_date'))    item.foundingDate = get('founding_date');
-      if (get('anniversary_month')) item.anniversaryMonth = get('anniversary_month');
-      if (get('instagram_url'))    item.instaUrl = get('instagram_url');
-      if (get('facebook_url'))     item.fbUrl = get('facebook_url');
-      if (get('tiktok_url'))       item.tiktokUrl = get('tiktok_url');
-      if (get('job_posting_url'))  item.jobUrl = get('job_posting_url');
-      if (get('ceo_name'))         item.ceoName = get('ceo_name');
-      if (get('employee_count'))   item.employeeCount = get('employee_count');
-      if (get('notes'))            item.researchNotes = get('notes');
-
-      // シグナル・スコア再計算
-      if (item.jobUrl && !(item.signals||[]).includes('hire')) {
-        item.signals = [...(item.signals||[]), 'hire'];
-      }
-      item.score = calcScore(item);
-      merged++;
-    });
-
-    save();
-
-    // プレビュー表示
-    document.getElementById('csv-preview').style.display = 'block';
-    document.getElementById('csv-preview').innerHTML = `
-      <div style="padding:12px 14px;background:var(--green-dim);border:1px solid rgba(22,163,74,0.2);border-radius:8px;font-size:12px">
-        <strong style="color:var(--green)">✓ マージ完了</strong>
-        <div style="margin-top:4px;color:var(--text-mid)">
-          更新: <strong style="color:var(--text)">${merged}件</strong> ／ 
-          未マッチ: <strong style="color:var(--text)">${notFound}件</strong>
-        </div>
-      </div>`;
-
-    toast(`Gemini結果をマージしました！${merged}件更新`);
-  };
-  reader.readAsText(file, 'UTF-8');
-}
-
-function parseCSVLine(line) {
-  const result = [];
-  let current = '';
-  let inQuotes = false;
-  for (let i = 0; i < line.length; i++) {
-    if (line[i] === '"') {
-      if (inQuotes && line[i+1] === '"') { current += '"'; i++; }
-      else inQuotes = !inQuotes;
-    } else if (line[i] === ',' && !inQuotes) {
-      result.push(current); current = '';
-    } else {
-      current += line[i];
-    }
-  }
-  result.push(current);
-  return result;
-}
-
 // ── INIT ──
 document.getElementById('today-label').textContent = (() => {
   const d = nowJST();
@@ -3502,8 +3678,10 @@ document.getElementById('today-label').textContent = (() => {
   renderDash();
   renderNotice();
   updateNoticeBadge();
+  await loadCollectedAreas();
   updateSNSCounts();
   updateNextAreaPreview();
+  renderCollectProgress();
 })();
 </script>
 <div class="toast" id="toast"></div>
@@ -3519,10 +3697,9 @@ document.getElementById('today-label').textContent = (() => {
       <button class="mclose" onclick="cm('m-prompt')">✕</button>
     </div>
     <div class="mbody">
-      <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap">
-        <div style="font-size:12px;color:var(--text-mid);padding:8px 12px;background:var(--surface2);border-radius:6px;flex:1">
+      <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;align-items:center">
+        <div style="font-size:12px;color:var(--text-mid);padding:8px 12px;background:var(--surface2);border-radius:6px">
           対象：<strong id="prompt-target-count" style="color:var(--accent)">0</strong> 件
-          （フィルタ後のリスト全件）
         </div>
         <button class="btn btn-ghost btn-sm" onclick="copyPrompt()">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
@@ -3536,12 +3713,10 @@ document.getElementById('today-label').textContent = (() => {
       <div style="font-family:var(--font-mono);font-size:9px;color:var(--accent);letter-spacing:0.15em;margin-bottom:8px">// 自動生成プロンプト（英語・CSV出力強制）</div>
       <textarea id="prompt-text" style="width:100%;height:360px;background:#0f1208;border:1px solid #2a3a12;border-radius:8px;padding:16px;font-family:var(--font-mono);font-size:11px;color:#d8f0b0;line-height:1.8;resize:vertical;outline:none" readonly></textarea>
       <div style="margin-top:10px;font-size:11px;color:var(--text-dim)">
-        ※ このプロンプト＋リストCSVをGeminiに貼り付けてリサーチを開始してください。結果CSVは「情報収集」ページからアップロードできます。
+        ※ このプロンプト＋リストCSVをGeminiに貼り付けてリサーチを開始。結果CSVは「情報収集」ページからアップロードできます。
       </div>
     </div>
-    <div class="mfoot">
-      <button class="btn btn-ghost" onclick="cm('m-prompt')">閉じる</button>
-    </div>
+    <div class="mfoot"><button class="btn btn-ghost" onclick="cm('m-prompt')">閉じる</button></div>
   </div>
 </div>
 
