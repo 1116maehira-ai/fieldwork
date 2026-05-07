@@ -2868,46 +2868,47 @@ function openPromptModal() {
   if (!list.length) { toast('対象リストがありません'); return; }
   const industries = [...new Set(list.map(it => it.industry).filter(Boolean))];
   const areas = [...new Set(list.map(it => (it.area||'').split('市')[0] + '市').filter(Boolean))].slice(0,5);
-  const companyList = list.map((it, i) => (i+1) + '. ' + it.company + ' (' + (it.area||'') + (it.addr ? ' / ' + it.addr : '') + ')').join('
-');
+  const companyList = list.map((it, i) => {
+    return (i+1) + '. ' + it.company + ' (' + (it.area||'') + (it.addr ? ' / ' + it.addr : '') + ')';
+  }).join('\n');
 
-  const prompt = `You are a professional business intelligence researcher. Research the following ${list.length} companies located in ${areas.join(' / ')}, operating in the ${industries.join(' / ')} industry.
-
-For EACH company, find and return ALL of the following information. Return results ONLY as CSV format with NO additional text or explanation.
-
-=== REQUIRED CSV OUTPUT FORMAT ===
-Return a CSV with these exact column headers in row 1:
-company_name,founding_date,anniversary_month,instagram_url,facebook_url,tiktok_url,job_posting_url,ceo_name,employee_count,notes
-
-=== RESEARCH INSTRUCTIONS ===
-- founding_date: Company founding date (YYYY-MM-DD format, or YYYY-MM if day unknown)
-- anniversary_month: Month number of founding (1-12). Critical for anniversary marketing campaigns.
-- instagram_url: Full Instagram profile URL
-- facebook_url: Full Facebook page URL
-- tiktok_url: Full TikTok profile URL if exists
-- job_posting_url: Current job posting URL (Indeed, HelloWork, company site, etc.)
-- ceo_name: CEO or representative director name (search in Japanese too)
-- employee_count: Approximate number of employees
-- notes: Notable info for advertising proposal (awards, expansion plans, recent news)
-
-=== IMPORTANT RULES ===
-- Output ONLY the CSV data. No markdown, no explanations, no summaries.
-- Use "N/A" for any field where information cannot be found.
-- anniversary_month is the MOST important field. Research thoroughly.
-- Search company names in Japanese for better accuracy.
-- If company has multiple SNS accounts, use the most active/official one.
-
-=== COMPANIES TO RESEARCH (${list.length} total) ===
-${companyList}
-
-=== BEGIN CSV OUTPUT NOW ===`;
+  const prompt = [
+    'You are a professional business intelligence researcher. Research the following ' + list.length + ' companies located in ' + areas.join(' / ') + ', operating in the ' + industries.join(' / ') + ' industry.',
+    '',
+    'For EACH company, find and return ALL of the following information. Return results ONLY as CSV format with NO additional text or explanation.',
+    '',
+    '=== REQUIRED CSV OUTPUT FORMAT ===',
+    'Return a CSV with these exact column headers in row 1:',
+    'company_name,founding_date,anniversary_month,instagram_url,facebook_url,tiktok_url,job_posting_url,ceo_name,employee_count,notes',
+    '',
+    '=== RESEARCH INSTRUCTIONS ===',
+    '- founding_date: Company founding date (YYYY-MM-DD format, or YYYY-MM if day unknown)',
+    '- anniversary_month: Month number of founding (1-12). Critical for anniversary marketing campaigns.',
+    '- instagram_url: Full Instagram profile URL',
+    '- facebook_url: Full Facebook page URL',
+    '- tiktok_url: Full TikTok profile URL if exists',
+    '- job_posting_url: Current job posting URL (Indeed, HelloWork, company site, etc.)',
+    '- ceo_name: CEO or representative director name (search in Japanese too)',
+    '- employee_count: Approximate number of employees',
+    '- notes: Notable info for advertising proposal (awards, expansion plans, recent news)',
+    '',
+    '=== IMPORTANT RULES ===',
+    '- Output ONLY the CSV data. No markdown, no explanations, no summaries.',
+    '- Use "N/A" for any field where information cannot be found.',
+    '- anniversary_month is the MOST important field. Research thoroughly.',
+    '- Search company names in Japanese for better accuracy.',
+    '',
+    '=== COMPANIES TO RESEARCH (' + list.length + ' total) ===',
+    companyList,
+    '',
+    '=== BEGIN CSV OUTPUT NOW ==='
+  ].join('\n');
 
   document.getElementById('prompt-subtitle').textContent = list.length + '件対象 / ' + industries.join('・');
   document.getElementById('prompt-target-count').textContent = list.length;
   document.getElementById('prompt-text').value = prompt;
   document.getElementById('m-prompt').classList.add('open');
 }
-
 function copyPrompt() {
   navigator.clipboard.writeText(document.getElementById('prompt-text').value)
     .then(() => toast('プロンプトをコピーしました！GeminiまたはChatGPTに貼り付けてください'));
