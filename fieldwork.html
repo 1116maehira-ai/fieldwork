@@ -1178,7 +1178,7 @@ tr:hover td { background: rgba(255,70,2,0.03); cursor: pointer; }
       <button class="btn btn-ghost btn-sm" onclick="delCompany()" style="color:var(--red);border-color:var(--red)"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg> 削除</button>
       <div style="display:flex;gap:8px">
         <button class="btn btn-ghost btn-sm" onclick="cm(&#39;m-detail&#39;)">閉じる</button>
-        <button class="btn btn-blue btn-sm" onclick="openTalkScript(selId)"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg> トークスクリプト</button>
+        <button class="btn btn-blue btn-sm" onclick="openScriptSelector(selId)"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg> トークスクリプト</button>
         <button class="btn btn-orange btn-sm" onclick="openApFromDetail()"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg> アプローチ記録</button>
       </div>
     </div>
@@ -2931,70 +2931,205 @@ function parseAndApplyGemini() {
 
 
 // ══ スクリプト設定 ══
-var DEFAULT_SCRIPT_NODES = [
-  {id:'start', label:'【開口】受付が出たら', yesLabel:'繋いでもらえた', noLabel:'ご用件は？と聞かれた'},
-  {id:'asked_purpose', label:'【用件を聞かれた】', yesLabel:'繋いでもらえた', noLabel:'担当者がわからない・不在'},
-  {id:'no_manager', label:'【担当者不在・わからない】', yesLabel:'名前・時間を教えてもらえた', noLabel:'教えてもらえない'},
-  {id:'connected', label:'【担当者に繋がった！】', yesLabel:'いいですよ', noLabel:'内容を聞かせて / 式典やらない / 忙しい'},
-  {id:'get_apo', label:'【アポ獲得！日程調整へ】', yesLabel:'日時確定！', noLabel:'日程が合わない'},
-  {id:'adjust_date', label:'【日程再調整】', yesLabel:'日時決定！', noLabel:'やはり難しい'},
-  {id:'no_plan', label:'【式典予定なし / もう少し聞きたい】', yesLabel:'OK、聞きましょう', noLabel:'やはり難しい'},
-  {id:'send_materials', label:'【資料送付へ】', yesLabel:'メアドをもらえた', noLabel:'それも難しい'},
+
+// スクリプトテンプレート一覧
+var SCRIPT_TEMPLATES = [
+  {
+    id: 'anniversary',
+    name: '周年式典 演奏提案',
+    desc: '創業周年×式典演奏。周年が近い企業向け。',
+    color: '#FF4602',
+    nodes: [
+      {id:'start', label:'【開口】受付が出たら', yesLabel:'繋いでもらえた', noLabel:'ご用件は？と聞かれた',
+       line:'お忙しいところ失礼いたします。私、株式会社TENOHIRAの前平と申します。突然のご連絡で大変恐縮なのですが、{anniv}　周年式典のご担当者様にお繋ぎいただけますでしょうか。'},
+      {id:'asked_purpose', label:'【用件を聞かれた】', yesLabel:'繋いでもらえた', noLabel:'担当者がわからない・不在',
+       line:'はい。{anniv}　周年式典・記念イベントの演奏・エンターテインメントのご提案でご連絡させていただきました。ご担当者様にお繋ぎいただけますでしょうか。'},
+      {id:'no_manager', label:'【担当者不在・わからない】', yesLabel:'名前・時間を教えてもらえた', noLabel:'教えてもらえない',
+       line:'そうでございますか。差し支えなければ、ご担当者様のお名前だけ教えていただけますでしょうか。恐れ入りますが、折り返しのご連絡はいつ頃がよろしいでしょうか。'},
+      {id:'connected', label:'【担当者に繋がった！】', yesLabel:'いいですよ', noLabel:'内容を聞かせて / 式典やらない / 忙しい',
+       line:'突然のご連絡で大変失礼いたします。株式会社TENOHIRAの前平と申します。{anniv}　周年式典や記念イベントにて、来場者様・社員様へ感謝の思いを演奏でお届けするご提案をさせていただきたいのですが、一度10分ほどお時間をいただくことは可能でしょうか。'},
+      {id:'no_plan', label:'【式典予定なし / もう少し聞きたい】', yesLabel:'OK、聞きましょう', noLabel:'やはり難しい',
+       line:'弊社は沖縄を拠点に、企業様の周年式典・記念パーティーにてプロの演奏家・エンターテイナーを派遣しております。式典という形でなくても、社員様や取引先様へのご感謝の場として小規模な演奏会・サプライズ演出というご提案もございます。せっかくの{years}のご縁ですので、一度10分だけお時間をいただけますでしょうか。'},
+      {id:'get_apo', label:'【アポ獲得！日程調整へ】', yesLabel:'日時確定！', noLabel:'日程が合わない',
+       line:'ありがとうございます！では来週以降でご都合の良い日時を教えていただけますでしょうか。オンラインでも伺いでもどちらでも対応可能です。'},
+      {id:'adjust_date', label:'【日程再調整】', yesLabel:'日時決定！', noLabel:'やはり難しい',
+       line:'かしこまりました。ではご都合の良い日時を改めて教えていただけますでしょうか。再来週以降でも全く問題ございません。'},
+      {id:'send_materials', label:'【資料送付へ】', yesLabel:'メアドをもらえた', noLabel:'それも難しい',
+       line:'承知いたしました。お忙しいところ失礼いたしました。よろしければ簡単な資料をメールでお送りさせていただいてもよろしいでしょうか。ご覧いただける時に見ていただけるだけで十分です。'},
+    ]
+  },
+  {
+    id: 'tvcm_monitor',
+    name: 'AI×TVCM モニター提案',
+    desc: '商品サンプル預かり型。AI高品質CMを半額以下で。',
+    color: '#2563EB',
+    nodes: [
+      {id:'start', label:'【開口】受付が出たら', yesLabel:'繋いでもらえた', noLabel:'ご用件は？と聞かれた',
+       line:'お忙しいところ失礼いたします。私、TENOHIRAの前平と申します。マーケティング・広告ご担当者様にお繋ぎいただけますでしょうか。'},
+      {id:'asked_purpose', label:'【用件を聞かれた】', yesLabel:'繋いでもらえた', noLabel:'担当者がわからない・不在',
+       line:'はい。商品やサービスのサンプルをお預かりするだけで、最新のAIを使った高品質なTVCMをご制作するモニター企画のご案内でご連絡いたしました。ご担当者様にお繋ぎいただけますでしょうか。'},
+      {id:'no_manager', label:'【担当者不在・わからない】', yesLabel:'名前・時間を教えてもらえた', noLabel:'教えてもらえない',
+       line:'そうでございますか。差し支えなければ、ご担当者様のお名前だけ教えていただけますでしょうか。改めてご連絡させていただきます。'},
+      {id:'connected', label:'【担当者に繋がった！】', yesLabel:'ぜひ聞きたい', noLabel:'もう少し内容を / 今は忙しい',
+       line:'突然のご連絡で失礼いたします。TENOHIRAの前平です。商品やサービスのサンプルを一つお預けいただければ、最新のAIで高品質なTVCMが制作できるモニター企画のご案内です。通常20万円程度で販売予定のコンテンツを、今なら半額以下でご提供しております。まず10分だけご説明させていただけますでしょうか。'},
+      {id:'no_plan', label:'【興味はあるが迷っている】', yesLabel:'それなら聞きたい', noLabel:'やはり難しい',
+       line:'サンプルをお預けいただくだけで制作可能ですので、御社側のご負担は最小限です。完成したCMはTVだけでなくSNSや採用活動にもご活用いただけます。10分だけお時間いただけますでしょうか。'},
+      {id:'get_apo', label:'【アポ獲得！日程調整へ】', yesLabel:'日時確定！', noLabel:'日程が合わない',
+       line:'ありがとうございます！来週以降でご都合の良いお日にちを教えていただけますでしょうか。オンラインでも伺いでも対応可能です。'},
+      {id:'adjust_date', label:'【日程再調整】', yesLabel:'日時決定！', noLabel:'やはり難しい',
+       line:'かしこまりました。では再来週以降でも全く問題ございません。ご都合の良い時期を教えていただけますか。'},
+      {id:'send_materials', label:'【資料送付へ】', yesLabel:'メアドをもらえた', noLabel:'それも難しい',
+       line:'承知いたしました。簡単な資料をメールでお送りさせていただいてもよろしいでしょうか。ご覧いただける時に見ていただけるだけで十分です。'},
+    ]
+  },
+  {
+    id: 'tvcm_recruit',
+    name: 'TVCM × 採用強化提案',
+    desc: '採用課題を抱える企業向け。低コストTVCMで認知獲得。',
+    color: '#16A34A',
+    nodes: [
+      {id:'start', label:'【開口】受付が出たら', yesLabel:'繋いでもらえた', noLabel:'ご用件は？と聞かれた',
+       line:'お忙しいところ失礼いたします。私、TENOHIRAの前平と申します。採用・人事ご担当者様にお繋ぎいただけますでしょうか。'},
+      {id:'asked_purpose', label:'【用件を聞かれた】', yesLabel:'繋いでもらえた', noLabel:'担当者がわからない・不在',
+       line:'はい。採用課題をお持ちの企業様向けに、テレビCMで圧倒的な認知を獲得するご提案でご連絡いたしました。採用ご担当者様にお繋ぎいただけますでしょうか。'},
+      {id:'no_manager', label:'【担当者不在・わからない】', yesLabel:'名前・時間を教えてもらえた', noLabel:'教えてもらえない',
+       line:'そうでございますか。差し支えなければ、採用ご担当者様のお名前だけ教えていただけますでしょうか。改めてご連絡させていただきます。'},
+      {id:'connected', label:'【担当者に繋がった！】', yesLabel:'ぜひ聞きたい', noLabel:'もう少し内容を / 今は忙しい',
+       line:'突然のご連絡で失礼いたします。TENOHIRAの前平です。採用課題を抱える企業様向けに、テレビCMで圧倒的な認知を始めてみませんかというご提案です。これまで100万円程度と高額で手が出しにくかったTVCMが、テンプレートを活用することでコストを大幅に抑えた金額でご提案できます。今モニター募集中で、通常25万円程度のコンテンツを半額以下でご提供しております。まず10分だけいかがでしょうか。'},
+      {id:'no_plan', label:'【興味はあるが迷っている】', yesLabel:'それなら聞きたい', noLabel:'やはり難しい',
+       line:'採用難の時代に、TVCMで社名を広く認知いただくことで、求人サイトだけでは届かない層へのリーチが可能です。モニター価格での今がチャンスです。10分だけお時間いただけますか。'},
+      {id:'get_apo', label:'【アポ獲得！日程調整へ】', yesLabel:'日時確定！', noLabel:'日程が合わない',
+       line:'ありがとうございます！来週以降でご都合の良いお日にちを教えていただけますでしょうか。オンラインでも対応可能です。'},
+      {id:'adjust_date', label:'【日程再調整】', yesLabel:'日時決定！', noLabel:'やはり難しい',
+       line:'かしこまりました。再来週以降でも全く問題ございません。'},
+      {id:'send_materials', label:'【資料送付へ】', yesLabel:'メアドをもらえた', noLabel:'それも難しい',
+       line:'承知いたしました。資料をメールでお送りさせていただいてもよろしいでしょうか。'},
+    ]
+  },
+  {
+    id: 'interview_video',
+    name: '企業インタビュー動画提案',
+    desc: '採用・SNS向け。低予算でも関係構築を積み上げる提案。',
+    color: '#B45309',
+    nodes: [
+      {id:'start', label:'【開口】受付が出たら', yesLabel:'繋いでもらえた', noLabel:'ご用件は？と聞かれた',
+       line:'お忙しいところ失礼いたします。私、TENOHIRAの前平と申します。採用・広報のご担当者様にお繋ぎいただけますでしょうか。'},
+      {id:'asked_purpose', label:'【用件を聞かれた】', yesLabel:'繋いでもらえた', noLabel:'担当者がわからない・不在',
+       line:'はい。採用や認知向けのSNS・Web動画制作のご提案でご連絡いたしました。ご担当者様にお繋ぎいただけますでしょうか。'},
+      {id:'no_manager', label:'【担当者不在・わからない】', yesLabel:'名前・時間を教えてもらえた', noLabel:'教えてもらえない',
+       line:'そうでございますか。差し支えなければ、担当者様のお名前だけ教えていただけますでしょうか。改めてご連絡します。'},
+      {id:'connected', label:'【担当者に繋がった！】', yesLabel:'ぜひ聞きたい', noLabel:'もう少し内容を / 今は忙しい',
+       line:'突然のご連絡で失礼いたします。TENOHIRAの前平です。採用課題をお持ちの企業様向けに、SNSやWebサイト向けの企業インタビュー動画のご提案です。会社の雰囲気や代表者の想いを、求職者が聞きたいことと一緒に親近感を持ってお伝えする動画です。「あまり予算がないな」というお財布事情にも寄り添い、まずは御社との接点が途切れない関係を積み上げていくところから始められます。10分だけお時間をいただけますでしょうか。'},
+      {id:'no_plan', label:'【興味はあるが予算が心配】', yesLabel:'それなら話を聞きたい', noLabel:'やはり難しい',
+       line:'動画の規模や本数はご予算に合わせて柔軟にご提案できます。まずは小さく始めて、効果を見ながら積み上げていく形も歓迎です。10分だけいかがでしょうか。'},
+      {id:'get_apo', label:'【アポ獲得！日程調整へ】', yesLabel:'日時確定！', noLabel:'日程が合わない',
+       line:'ありがとうございます！来週以降でご都合の良いお日にちを教えていただけますでしょうか。'},
+      {id:'adjust_date', label:'【日程再調整】', yesLabel:'日時決定！', noLabel:'やはり難しい',
+       line:'かしこまりました。ご都合の良い時期を教えていただければ合わせます。'},
+      {id:'send_materials', label:'【資料送付へ】', yesLabel:'メアドをもらえた', noLabel:'それも難しい',
+       line:'承知いたしました。事例を含む資料をメールでお送りさせていただいてもよろしいでしょうか。'},
+    ]
+  },
 ];
 
-var DEFAULT_SCRIPT_LINES = {
-  start: 'お忙しいところ失礼いたします。私、株式会社TENOHIRAの前平と申します。突然のご連絡で大変恐縮なのですが、{anniv}　周年式典のご担当者様にお繋ぎいただけますでしょうか。',
-  asked_purpose: 'はい。{anniv}　周年式典・記念イベントの演奏・エンターテインメントのご提案でご連絡させていただきました。ご担当者様にお繋ぎいただけますでしょうか。',
-  no_manager: 'そうでございますか。差し支えなければ、ご担当者様のお名前だけ教えていただけますでしょうか。恐れ入りますが、折り返しのご連絡はいつ頃がよろしいでしょうか。',
-  connected: '突然のご連絡で大変失礼いたします。株式会社TENOHIRAの前平と申します。{anniv}　周年式典や記念イベントにて、来場者様・社員様へ感謝の思いを演奏でお届けするご提案をさせていただきたいのですが、一度10分ほどお時間をいただくことは可能でしょうか。',
-  get_apo: 'ありがとうございます！では来週以降でご都合の良い日時を教えていただけますでしょうか。オンラインでも伺いでもどちらでも対応可能です。',
-  adjust_date: 'かしこまりました。ではご都合の良い日時を改めて教えていただけますでしょうか。再来週以降でも全く問題ございません。',
-  no_plan: '弊社は沖縄を拠点に、企業様の周年式典・記念パーティーにてプロの演奏家・エンターテイナーを派遣しております。式典という形でなくても、社員様や取引先様へのご感謝の場として小規模な演奏会・サプライズ演出というご提案もございます。せっかくの{years}のご縁ですので、一度10分だけお時間をいただけますでしょうか。',
-  send_materials: '承知いたしました。お忙しいところ失礼いたしました。よろしければ簡単な資料をメールでお送りさせていただいてもよろしいでしょうか。ご覧いただける時に見ていただけるだけで十分です。',
-};
 
 function loadScriptSettings() {
   try {
     var saved = localStorage.getItem('fw_script_lines');
     if (saved) return JSON.parse(saved);
   } catch(e) {}
-  return Object.assign({}, DEFAULT_SCRIPT_LINES);
+  return {};
 }
 
 function saveScriptSettings() {
+  var tpl = SCRIPT_TEMPLATES.find(function(t){ return t.id === currentScriptTemplateId; }) || SCRIPT_TEMPLATES[0];
   var lines = {};
-  DEFAULT_SCRIPT_NODES.forEach(function(node) {
+  tpl.nodes.forEach(function(node) {
     var el = document.getElementById('script-line-' + node.id);
     if (el) lines[node.id] = el.value;
   });
   try {
-    localStorage.setItem('fw_script_lines', JSON.stringify(lines));
-    toast('スクリプトを保存しました！');
+    var all = loadScriptSettings();
+    all[currentScriptTemplateId] = lines;
+    localStorage.setItem('fw_script_lines', JSON.stringify(all));
+    toast('「' + tpl.name + '」のスクリプトを保存しました！');
   } catch(e) {
     toast('保存に失敗しました');
   }
 }
 
+var currentScriptTemplateId = 'anniversary';
+
 function renderScriptEditor() {
+  // テンプレートボタン
+  var btnEl = document.getElementById('script-template-btns');
+  if (btnEl) {
+    btnEl.innerHTML = SCRIPT_TEMPLATES.map(function(t) {
+      var active = t.id === currentScriptTemplateId;
+      var btn = document.createElement('button');
+      btn.style.cssText = 'width:100%;padding:12px;border-radius:8px;border:2px solid ' + (active ? t.color : 'var(--border)') + ';background:' + (active ? 'rgba(' + hexToRgb(t.color) + ',0.1)' : 'var(--surface2)') + ';cursor:pointer;text-align:left;transition:all 0.15s';
+      btn.innerHTML = '<div style="font-size:11px;font-weight:700;color:' + (active ? t.color : 'var(--text)') + ';margin-bottom:3px">' + t.name + '</div><div style="font-size:10px;color:var(--text-dim)">' + t.desc + '</div>';
+      btn.onclick = (function(tid){ return function(){ selectScriptTemplate(tid); }; })(t.id);
+      return btn.outerHTML;
+    }).join('');
+  }
+
+  // ノードエディタ
   var el = document.getElementById('script-editor-list');
   if (!el) return;
-  var lines = loadScriptSettings();
-  el.innerHTML = DEFAULT_SCRIPT_NODES.map(function(node) {
-    return '<div style="margin-bottom:20px;padding:16px;background:var(--surface2);border-radius:8px;border:1px solid var(--border)">' +
-      '<div style="font-family:var(--font-mono);font-size:10px;color:var(--accent);letter-spacing:0.1em;margin-bottom:4px">' + node.label + '</div>' +
+  var tpl = SCRIPT_TEMPLATES.find(function(t){ return t.id === currentScriptTemplateId; }) || SCRIPT_TEMPLATES[0];
+  var saved = loadScriptSettings();
+  var lines = (saved[currentScriptTemplateId] || {});
+
+  el.innerHTML = tpl.nodes.map(function(node) {
+    return '<div style="margin-bottom:16px;padding:14px 16px;background:var(--surface2);border-radius:8px;border:1px solid var(--border)">' +
+      '<div style="font-family:var(--font-mono);font-size:10px;color:' + tpl.color + ';letter-spacing:0.1em;margin-bottom:4px">' + node.label + '</div>' +
       '<div style="font-size:10px;color:var(--text-dim);margin-bottom:8px">' +
-        'YES → ' + node.yesLabel + '　　NO → ' + node.noLabel +
+        '<span style="color:var(--green)">YES</span> → ' + node.yesLabel +
+        '　　<span style="color:var(--red,#ef4444)">NO</span> → ' + node.noLabel +
       '</div>' +
       '<textarea id="script-line-' + node.id + '" ' +
         'style="width:100%;min-height:80px;background:var(--surface);border:1px solid var(--border2);border-radius:6px;padding:10px;font-size:12px;font-family:var(--font-body);line-height:1.8;color:var(--text);outline:none;resize:vertical">' +
-        (lines[node.id] || DEFAULT_SCRIPT_LINES[node.id] || '') +
+        (lines[node.id] || node.line || '') +
       '</textarea>' +
     '</div>';
-  }).join('');
+  }).join('') +
+  '<div style="font-size:11px;color:var(--text-dim);padding:8px 0">' +
+    'ヒント：セリフ内に <strong>{anniv}</strong>（周年文言）、<strong>{years}</strong>（周年数）、<strong>{months}</strong>（残り月数）を入れると自動で差し込まれます。' +
+  '</div>';
+}
+
+function selectScriptTemplate(id) {
+  currentScriptTemplateId = id;
+  renderScriptEditor();
+}
+
+function hexToRgb(hex) {
+  var r = parseInt(hex.slice(1,3),16), g = parseInt(hex.slice(3,5),16), b = parseInt(hex.slice(5,7),16);
+  return r+','+g+','+b;
 }
 
 // ══ トークスクリプト ══
-function openTalkScript(itemId) {
+var scriptTargetId = null;
+
+function openScriptSelector(itemId) {
+  scriptTargetId = itemId || selId;
+  var el = document.getElementById('script-select-list');
+  if (!el) return;
+  var frag = document.createDocumentFragment();
+  SCRIPT_TEMPLATES.forEach(function(t) {
+    var btn = document.createElement("button");
+    btn.style.cssText = "width:100%;padding:14px 16px;border-radius:10px;border:2px solid " + t.color + ";background:rgba(" + hexToRgb(t.color) + ",0.08);cursor:pointer;text-align:left;transition:all 0.15s;margin-bottom:8px";
+    btn.innerHTML = "<div style=\"font-size:13px;font-weight:700;color:" + t.color + ";margin-bottom:4px\">" + t.name + "</div><div style=\"font-size:11px;color:var(--text-mid)\">" + t.desc + "</div>";
+    btn.onclick = (function(tid){ return function(){ openTalkScript(scriptTargetId, tid); }; })(t.id);
+    frag.appendChild(btn);
+  });
+  el.innerHTML = ""; el.appendChild(frag);
+  document.getElementById('m-script-select').classList.add('open');
+}
+
+function openTalkScript(itemId, templateId) {
+  cm('m-script-select');
   var it = items.find(function(x){ return x.id === (itemId || selId); });
   if (!it) return;
   var company = it.company || "御社";
@@ -3007,18 +3142,22 @@ function openTalkScript(itemId) {
     ? (anniv.monthsUntil === 0 ? company + "様、今月でちょうど" + yearsText + "をお迎えになりますね。"
         : company + "様、" + monthText + "で" + yearsText + "をお迎えになりますね。")
     : company + "様、周年をお迎えになりますね。";
-  var sc = loadScriptSettings();
+  var tplId = templateId || 'anniversary';
+  var tpl = SCRIPT_TEMPLATES.find(function(t){ return t.id === tplId; }) || SCRIPT_TEMPLATES[0];
+  var saved = loadScriptSettings();
+  var sc = saved[tplId] || {};
   function applyVars(s){ return s.replace(/{anniv}/g,annivLine).replace(/{years}/g,yearsText).replace(/{months}/g,monthText); }
+  function line(id){ var n = tpl.nodes.find(function(x){return x.id===id;}); return applyVars(sc[id] || (n ? n.line : '') || ''); }
   var tree = {
-    start:{scene:"【開口】受付が出たら",line:applyVars(sc.start||DEFAULT_SCRIPT_LINES.start),yes:"connected",no:"asked_purpose",yesLabel:"繋いでもらえた",noLabel:"ご用件は？と聞かれた"},
-    asked_purpose:{scene:"【用件を聞かれた】",line:applyVars(sc.asked_purpose||DEFAULT_SCRIPT_LINES.asked_purpose),yes:"connected",no:"no_manager",yesLabel:"繋いでもらえた",noLabel:"担当者がわからない・不在"},
-    no_manager:{scene:"【担当者不在・わからない】",line:applyVars(sc.no_manager||DEFAULT_SCRIPT_LINES.no_manager),yes:"callback_set",no:"send_materials",yesLabel:"名前・時間を教えてもらえた",noLabel:"教えてもらえない"},
+    start:{scene:"【開口】受付が出たら",line:line("start"),yes:"connected",no:"asked_purpose",yesLabel:"繋いでもらえた",noLabel:"ご用件は？と聞かれた"},
+    asked_purpose:{scene:"【用件を聞かれた】",line:line("asked_purpose"),yes:"connected",no:"no_manager",yesLabel:"繋いでもらえた",noLabel:"担当者がわからない・不在"},
+    no_manager:{scene:"【担当者不在・わからない】",line:line("no_manager"),yes:"callback_set",no:"send_materials",yesLabel:"名前・時間を教えてもらえた",noLabel:"教えてもらえない"},
     callback_set:{scene:"【折返し設定完了】",line:"ありがとうございます。では改めてご連絡させていただきます。失礼いたします。 アプリに折返し待ちで記録しましょう。",yes:"end_callback",no:"end_callback",yesLabel:"記録して終了",noLabel:"記録して終了",isEnd:true,result:"callback"},
-    connected:{scene:"【担当者に繋がった！】",line:applyVars(sc.connected||DEFAULT_SCRIPT_LINES.connected),yes:"get_apo",no:"no_plan",yesLabel:"いいですよ",noLabel:"内容を聞かせて / 式典やらない / 忙しい"},
-    get_apo:{scene:"【アポ獲得！日程調整へ】",line:applyVars(sc.get_apo||DEFAULT_SCRIPT_LINES.get_apo),yes:"end_apo",no:"adjust_date",yesLabel:"日時確定！",noLabel:"日程が合わない"},
-    adjust_date:{scene:"【日程再調整】",line:applyVars(sc.adjust_date||DEFAULT_SCRIPT_LINES.adjust_date),yes:"end_apo",no:"send_materials",yesLabel:"日時決定！",noLabel:"やはり難しい"},
-    no_plan:{scene:"【式典予定なし / もう少し聞きたい】",line:applyVars(sc.no_plan||DEFAULT_SCRIPT_LINES.no_plan),yes:"get_apo",no:"send_materials",yesLabel:"OK、聞きましょう",noLabel:"やはり難しい"},
-    send_materials:{scene:"【資料送付へ】",line:applyVars(sc.send_materials||DEFAULT_SCRIPT_LINES.send_materials),yes:"end_materials",no:"end_cold",yesLabel:"メアドをもらえた",noLabel:"それも難しい"},
+    connected:{scene:"【担当者に繋がった！】",line:line("connected"),yes:"get_apo",no:"no_plan",yesLabel:"いいですよ",noLabel:"内容を聞かせて / 式典やらない / 忙しい"},
+    get_apo:{scene:"【アポ獲得！日程調整へ】",line:line("get_apo"),yes:"end_apo",no:"adjust_date",yesLabel:"日時確定！",noLabel:"日程が合わない"},
+    adjust_date:{scene:"【日程再調整】",line:line("adjust_date"),yes:"end_apo",no:"send_materials",yesLabel:"日時決定！",noLabel:"やはり難しい"},
+    no_plan:{scene:"【式典予定なし / もう少し聞きたい】",line:line("no_plan"),yes:"get_apo",no:"send_materials",yesLabel:"OK、聞きましょう",noLabel:"やはり難しい"},
+    send_materials:{scene:"【資料送付へ】",line:line("send_materials"),yes:"end_materials",no:"end_cold",yesLabel:"メアドをもらえた",noLabel:"それも難しい"},
     end_apo:{scene:"完了",line:"ありがとうございます！では当日よろしくお願いいたします。失礼いたします。",isEnd:true,result:"apo"},
     end_materials:{scene:"完了",line:"ありがとうございます。本日中にお送りします。1週間後に改めてご連絡いたします。失礼いたします。",isEnd:true,result:"materials"},
     end_callback:{scene:"完了",line:"折返し待ちで記録しましょう。",isEnd:true,result:"callback"},
@@ -3995,8 +4134,25 @@ document.getElementById('today-label').textContent = (() => {
       <div style="font-size:12px;color:var(--text-mid);margin-bottom:16px;line-height:1.8">
         各ステップのセリフを編集できます。<strong style="color:var(--text)">{company}</strong>・<strong style="color:var(--text)">{years}</strong>・<strong style="color:var(--text)">{months}</strong> は自動で置き換わります。
       </div>
+      <!-- テンプレート選択 -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px" id="script-template-btns"></div>
+      <!-- ノードエディタ -->
       <div id="script-editor-list"></div>
     </div>
+  </div>
+</div>
+
+<!-- ══ MODAL: スクリプト選択 ══ -->
+<div class="modal-backdrop" id="m-script-select">
+  <div class="modal">
+    <div class="mhead">
+      <div class="mtitle">トークスクリプトを選択</div>
+      <button class="mclose" onclick="cm(&#39;m-script-select&#39;)">✕</button>
+    </div>
+    <div class="mbody">
+      <div id="script-select-list" style="display:grid;gap:10px"></div>
+    </div>
+    <div class="mfoot"><button class="btn btn-ghost" onclick="cm(&#39;m-script-select&#39;)">キャンセル</button></div>
   </div>
 </div>
 
