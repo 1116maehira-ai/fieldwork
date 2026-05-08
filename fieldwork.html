@@ -2784,135 +2784,130 @@ function renderGeminiTab() {
   const el = document.getElementById('dt-gemini');
   if (!el) return;
 
-  el.innerHTML = `
-    <div style="margin-bottom:16px;padding:12px 16px;background:var(--blue-dim);border:1px solid rgba(37,99,235,0.2);border-radius:8px">
-      <div style="font-family:var(--font-mono);font-size:9px;color:var(--blue);letter-spacing:0.15em;margin-bottom:8px">// STEP 1 — Geminiに質問するプロンプトをコピー</div>
-      <div style="font-size:12px;color:var(--text-mid);margin-bottom:10px;line-height:1.8">
-        以下のボタンを押してコピー → Geminiに貼り付けて検索してください
-      </div>
-      <div style="background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:12px;font-size:12px;color:var(--text);line-height:1.8;margin-bottom:10px;white-space:pre-wrap">${it.company}の以下の情報を調べてほしい。
-代表者名
-電話番号
-創業年月日
-創業記念月（何月か）
-Instagram URL
-Facebook URL
-TikTok URL
-求人URL（採用ページ）</div>
-      <button class="btn btn-blue btn-sm" onclick="copyGeminiPrompt()">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-        プロンプトをコピー
-      </button>
-    </div>
+  const prompt = [
+    '以下のフォーマットで企業情報を調べて、必ずこのCSV形式で出力してください。',
+    'ヘッダー行も含めて出力すること。不明な項目はN/Aと記入。',
+    '',
+    'company_name,ceo_name,phone,founding_date,anniversary_month,instagram_url,facebook_url,tiktok_url,job_url,notes',
+    '"' + it.company + '","代表者名","電話番号","創業年月日(YYYY-MM形式)","創業月(数字のみ)","Instagram URL","Facebook URL","TikTok URL","求人URL","備考"',
+    '',
+    '【重要】',
+    '・必ず上記のCSV形式で出力すること',
+    '・各値はダブルクォートで囲む',
+    '・URLは完全なhttps://から始まる形式で',
+    '・創業年月日はYYYY-MM形式（例：2005-07）',
+    '・創業月は数字のみ（例：7）',
+    '・不明な項目はN/Aと記入（空白不可）',
+  ].join('\n');
 
-    <div style="margin-bottom:16px">
-      <div style="font-family:var(--font-mono);font-size:9px;color:var(--accent);letter-spacing:0.15em;margin-bottom:8px">// STEP 2 — Geminiの回答をここに貼り付け</div>
-      <textarea id="gemini-paste-area"
-        style="width:100%;height:200px;background:var(--surface2);border:1px solid var(--border2);border-radius:8px;padding:12px;font-size:12px;font-family:var(--font-body);line-height:1.8;outline:none;resize:vertical"
-        placeholder="Geminiの回答をここにそのままペーストしてください..."></textarea>
-    </div>
+  el.innerHTML =
+    '<div style="margin-bottom:16px;padding:12px 16px;background:var(--blue-dim);border:1px solid rgba(37,99,235,0.2);border-radius:8px">' +
+      '<div style="font-family:var(--font-mono);font-size:9px;color:var(--blue);letter-spacing:0.15em;margin-bottom:8px">// STEP 1 — Geminiにコピーして貼り付け</div>' +
+      '<div style="background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:12px;font-size:11px;font-family:var(--font-mono);color:var(--text);line-height:1.8;margin-bottom:10px;white-space:pre-wrap;user-select:all" id="gemini-prompt-box">' + prompt.replace(/</g,'&lt;').replace(/>/g,'&gt;') + '</div>' +
+      '<button class="btn btn-blue btn-sm" onclick="copyGeminiPrompt()">' +
+        '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>' +
+        'プロンプトをコピー' +
+      '</button>' +
+    '</div>' +
 
-    <button class="btn btn-green" style="width:100%;justify-content:center;padding:12px" onclick="parseAndApplyGemini()">
-      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
-      情報を振り分けて保存する
-    </button>
+    '<div style="margin-bottom:16px">' +
+      '<div style="font-family:var(--font-mono);font-size:9px;color:var(--accent);letter-spacing:0.15em;margin-bottom:8px">// STEP 2 — GeminiのCSV出力をここに貼り付け</div>' +
+      '<div style="font-size:11px;color:var(--text-dim);margin-bottom:8px">Geminiが出力したCSVをそのままコピーして貼り付けてください</div>' +
+      "<textarea id=\"gemini-paste-area\" style=\"width:100%;height:160px;background:var(--surface2);border:1px solid var(--border2);border-radius:8px;padding:12px;font-size:11px;font-family:var(--font-mono);line-height:1.8;outline:none;resize:vertical;color:var(--text)\" placeholder=\"company_name,ceo_name,...\n(GeminiのCSV出力をここに)\"></textarea>" +
+    '</div>' +
 
-    <div id="gemini-result" style="display:none;margin-top:12px"></div>
-  `;
+    '<button class="btn btn-green" style="width:100%;justify-content:center;padding:12px" onclick="parseAndApplyGemini()">' +
+      '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>' +
+      'CSVを読み込んで保存する' +
+    '</button>' +
+    '<div id="gemini-result" style="display:none;margin-top:12px"></div>';
 }
+
 
 function copyGeminiPrompt() {
   const it = items.find(x => x.id === selId);
   if (!it) return;
-  const lines = [
-    it.company + 'の以下の情報を調べてほしい。',
-    '代表者名', '電話番号', '創業年月日', '創業記念月（何月か）',
-    'Instagram URL', 'Facebook URL', 'TikTok URL', '求人URL（採用ページ）'
-  ];
-  const text = lines.join('\n');
+  const text = document.getElementById('gemini-prompt-box')?.innerText || '';
   navigator.clipboard.writeText(text).then(() => toast('プロンプトをコピーしました！Geminiに貼り付けてください'));
 }
 
 function parseAndApplyGemini() {
   const it = items.find(x => x.id === selId);
   if (!it) return;
-  const text = document.getElementById('gemini-paste-area')?.value || '';
-  if (!text.trim()) { toast('Geminiの回答を貼り付けてください'); return; }
+  const raw = (document.getElementById('gemini-paste-area')?.value || '').trim();
+  if (!raw) { toast('CSVを貼り付けてください'); return; }
+
+  // CSV行を解析
+  const rows = raw.split('\n').map(l => l.trim()).filter(l => l);
+  if (rows.length < 2) { toast('ヘッダー行とデータ行が必要です'); return; }
+
+  // ヘッダー行を取得
+  const headers = parseCSVLine(rows[0]).map(h => h.replace(/^"|"$/g,'').trim().toLowerCase());
+  // データ行（ヘッダーの次の行、またはcompany_nameが一致する行）
+  let dataRow = null;
+  for (let i = 1; i < rows.length; i++) {
+    const cols = parseCSVLine(rows[i]);
+    const coIdx = headers.indexOf('company_name');
+    if (coIdx >= 0) {
+      const name = (cols[coIdx] || '').replace(/^"|"$/g,'').trim();
+      // 会社名が含まれていればOK（完全一致でなくても）
+      if (name && (name.includes(it.company.slice(0,4)) || it.company.includes(name.slice(0,4)))) {
+        dataRow = cols;
+        break;
+      }
+      // 先頭行をデフォルトとして使う
+      if (i === 1) dataRow = cols;
+    }
+  }
+  if (!dataRow) { toast('データ行が見つかりません'); return; }
+
+  const get = (key) => {
+    const idx = headers.indexOf(key);
+    if (idx < 0 || idx >= dataRow.length) return '';
+    const v = (dataRow[idx] || '').replace(/^"|"$/g,'').trim();
+    return v === 'N/A' || v === 'n/a' ? '' : v;
+  };
 
   const applied = {};
-  const lines = text.split('\n');
 
-  // 各行をキーワードで解析
-  lines.forEach(line => {
-    const l = line.trim();
+  const ceo = get('ceo_name');
+  if (ceo) { it.person = ceo; applied['代表者名'] = ceo; }
 
-    // 代表者名
-    if (/代表者?名/.test(l) && !applied['代表者名']) {
-      const m = l.match(/[：:]\s*(.+)$/);
-      if (m && m[1].trim()) { it.person = m[1].trim(); applied['代表者名'] = it.person; }
-    }
+  const phone = get('phone');
+  if (phone) { it.phone = phone.replace(/\s/g,''); applied['電話番号'] = it.phone; }
 
-    // 電話番号
-    if (/電話/.test(l) && !applied['電話番号']) {
-      const m = l.match(/[：:]\s*([\d\-()（） ]+)/);
-      if (m && m[1].trim()) { it.phone = m[1].trim().replace(/\s/g,''); applied['電話番号'] = it.phone; }
-    }
+  const founding = get('founding_date');
+  if (founding) { it.foundingDate = founding; applied['創業年月日'] = founding; }
 
-    // 創業・設立年月日
-    if (/(創業|設立)(年月日|日)/.test(l) && !applied['創業年月日']) {
-      const ym = l.match(/(\d{4})年\s*(\d{1,2})月(?:\s*(\d{1,2})日)?/);
-      if (ym) {
-        const y = ym[1], mo = ym[2].padStart(2,'0'), d = ym[3]?ym[3].padStart(2,'0'):null;
-        it.foundingDate = d ? y+'-'+mo+'-'+d : y+'-'+mo;
-        applied['創業年月日'] = it.foundingDate;
-        if (!applied['創業記念月']) {
-          it.anniversaryMonth = parseInt(ym[2]);
-          applied['創業記念月'] = it.anniversaryMonth + '月';
-        }
-      }
-    }
+  const annivMonth = get('anniversary_month');
+  if (annivMonth) {
+    it.anniversaryMonth = parseInt(annivMonth);
+    applied['創業記念月'] = it.anniversaryMonth + '月';
+  } else if (founding) {
+    // founding_dateからも月を抽出できる場合
+    const m = founding.match(/\d{4}-(\d{2})/);
+    if (m) { it.anniversaryMonth = parseInt(m[1]); applied['創業記念月(自動)'] = it.anniversaryMonth + '月'; }
+  }
 
-    // 創業記念月
-    if (/創業記念月/.test(l) && !applied['創業記念月']) {
-      const m = l.match(/(\d{1,2})月?/);
-      if (m) { it.anniversaryMonth = parseInt(m[1]); applied['創業記念月'] = it.anniversaryMonth + '月'; }
-    }
+  const insta = get('instagram_url');
+  if (insta) { it.instaUrl = insta; applied['Instagram'] = insta; }
 
-    // Instagram
-    if (/instagram/i.test(l) && !applied['Instagram']) {
-      const m1 = l.match(/https?:\/\/(?:www\.)?instagram\.com\/[^\s）)]+/i);
-      const m2 = l.match(/@([a-zA-Z0-9_.]+)/);
-      if (m1) { it.instaUrl = m1[0]; applied['Instagram'] = it.instaUrl; }
-      else if (m2 && !l.includes('確認できません')) { it.instaUrl = 'https://www.instagram.com/' + m2[1]; applied['Instagram'] = it.instaUrl; }
-    }
+  const fb = get('facebook_url');
+  if (fb) { it.fbUrl = fb; applied['Facebook'] = fb; }
 
-    // Facebook
-    if (/facebook/i.test(l) && !applied['Facebook']) {
-      const m = l.match(/https?:\/\/(?:www\.)?facebook\.com\/[^\s）)]+/i);
-      if (m) { it.fbUrl = m[0]; applied['Facebook'] = it.fbUrl; }
-    }
+  const tiktok = get('tiktok_url');
+  if (tiktok) { it.tiktokUrl = tiktok; applied['TikTok'] = tiktok; }
 
-    // TikTok
-    if (/tiktok/i.test(l) && !applied['TikTok']) {
-      const m = l.match(/https?:\/\/(?:www\.)?tiktok\.com\/@?[^\s）)]+/i);
-      if (m && !l.includes('確認できません')) { it.tiktokUrl = m[0]; applied['TikTok'] = it.tiktokUrl; }
-    }
+  const job = get('job_url');
+  if (job) {
+    it.jobUrl = job;
+    if (!(it.signals||[]).includes('hire')) it.signals = [...(it.signals||[]), 'hire'];
+    applied['求人URL'] = job;
+  }
 
-    // 求人URL
-    if (/(求人|採用).*(https?:\/\/)/.test(l) && !applied['求人URL']) {
-      const m = l.match(/https?:\/\/[^\s）)]+/);
-      if (m) { it.jobUrl = m[0]; applied['求人URL'] = it.jobUrl; }
-    }
+  const notes = get('notes');
+  if (notes) { it.researchNotes = notes; applied['備考'] = notes; }
 
-    // 公式サイト
-    if (/(公式|HP|ホームページ|サイト)/.test(l) && !it.website) {
-      const m = l.match(/https?:\/\/[^\s）)]+/);
-      if (m) { it.website = m[0]; applied['公式サイト'] = it.website; }
-    }
-  });
-
-  // シグナル更新
-  if (it.jobUrl && !(it.signals||[]).includes('hire')) it.signals = [...(it.signals||[]), 'hire'];
   it.score = calcScore(it);
   save();
 
@@ -2921,255 +2916,30 @@ function parseAndApplyGemini() {
   if (resultEl) {
     resultEl.style.display = 'block';
     resultEl.innerHTML = keys.length > 0
-      ? '<div style="padding:12px 14px;background:var(--green-dim);border:1px solid rgba(22,163,74,0.2);border-radius:8px"><div style="font-size:12px;font-weight:600;color:var(--green);margin-bottom:6px">✓ ' + keys.length + '項目を振り分けました</div><div style="font-size:11px;color:var(--text-mid)">' + keys.map(k => k + '：' + applied[k]).join('<br>') + '</div></div>'
-      : '<div style="padding:12px 14px;background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.2);border-radius:8px;font-size:12px;color:var(--red)">情報を抽出できませんでした。Geminiの回答をそのままペーストしてください。</div>';
+      ? '<div style="padding:12px 14px;background:var(--green-dim);border:1px solid rgba(22,163,74,0.2);border-radius:8px">' +
+        '<div style="font-size:12px;font-weight:600;color:var(--green);margin-bottom:6px">✓ ' + keys.length + '項目を読み込みました</div>' +
+        '<div style="font-size:11px;color:var(--text-mid)">' + keys.map(k => k + '：' + applied[k]).join('<br>') + '</div>' +
+        '</div>'
+      : '<div style="padding:12px 14px;background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.2);border-radius:8px;font-size:12px;color:var(--red)">読み込める情報がありませんでした。CSVのフォーマットを確認してください。</div>';
   }
-  if (keys.length > 0) toast(keys.length + '項目を振り分けて保存しました！');
-}
-
-
-
-
-// ══ スクリプト設定 ══
-
-// スクリプトテンプレート一覧
-var SCRIPT_TEMPLATES = [
-  {
-    id: 'anniversary',
-    name: '周年式典 演奏提案',
-    desc: '創業周年×式典演奏。周年が近い企業向け。',
-    color: '#FF4602',
-    nodes: [
-      {id:'start', label:'【開口】受付が出たら', yesLabel:'繋いでもらえた', noLabel:'ご用件は？と聞かれた',
-       line:'お忙しいところ失礼いたします。私、株式会社TENOHIRAの前平と申します。突然のご連絡で大変恐縮なのですが、{anniv}　周年式典のご担当者様にお繋ぎいただけますでしょうか。'},
-      {id:'asked_purpose', label:'【用件を聞かれた】', yesLabel:'繋いでもらえた', noLabel:'担当者がわからない・不在',
-       line:'はい。{anniv}　周年式典・記念イベントの演奏・エンターテインメントのご提案でご連絡させていただきました。ご担当者様にお繋ぎいただけますでしょうか。'},
-      {id:'no_manager', label:'【担当者不在・わからない】', yesLabel:'名前・時間を教えてもらえた', noLabel:'教えてもらえない',
-       line:'そうでございますか。差し支えなければ、ご担当者様のお名前だけ教えていただけますでしょうか。恐れ入りますが、折り返しのご連絡はいつ頃がよろしいでしょうか。'},
-      {id:'connected', label:'【担当者に繋がった！】', yesLabel:'いいですよ', noLabel:'内容を聞かせて / 式典やらない / 忙しい',
-       line:'突然のご連絡で大変失礼いたします。株式会社TENOHIRAの前平と申します。{anniv}　周年式典や記念イベントにて、来場者様・社員様へ感謝の思いを演奏でお届けするご提案をさせていただきたいのですが、一度10分ほどお時間をいただくことは可能でしょうか。'},
-      {id:'no_plan', label:'【式典予定なし / もう少し聞きたい】', yesLabel:'OK、聞きましょう', noLabel:'やはり難しい',
-       line:'弊社は沖縄を拠点に、企業様の周年式典・記念パーティーにてプロの演奏家・エンターテイナーを派遣しております。式典という形でなくても、社員様や取引先様へのご感謝の場として小規模な演奏会・サプライズ演出というご提案もございます。せっかくの{years}のご縁ですので、一度10分だけお時間をいただけますでしょうか。'},
-      {id:'get_apo', label:'【アポ獲得！日程調整へ】', yesLabel:'日時確定！', noLabel:'日程が合わない',
-       line:'ありがとうございます！では来週以降でご都合の良い日時を教えていただけますでしょうか。オンラインでも伺いでもどちらでも対応可能です。'},
-      {id:'adjust_date', label:'【日程再調整】', yesLabel:'日時決定！', noLabel:'やはり難しい',
-       line:'かしこまりました。ではご都合の良い日時を改めて教えていただけますでしょうか。再来週以降でも全く問題ございません。'},
-      {id:'send_materials', label:'【資料送付へ】', yesLabel:'メアドをもらえた', noLabel:'それも難しい',
-       line:'承知いたしました。お忙しいところ失礼いたしました。よろしければ簡単な資料をメールでお送りさせていただいてもよろしいでしょうか。ご覧いただける時に見ていただけるだけで十分です。'},
-    ]
-  },
-  {
-    id: 'tvcm_monitor',
-    name: 'AI×TVCM モニター提案',
-    desc: '商品サンプル預かり型。AI高品質CMを半額以下で。',
-    color: '#2563EB',
-    nodes: [
-      {id:'start', label:'【開口】受付が出たら', yesLabel:'繋いでもらえた', noLabel:'ご用件は？と聞かれた',
-       line:'お忙しいところ失礼いたします。私、TENOHIRAの前平と申します。マーケティング・広告ご担当者様にお繋ぎいただけますでしょうか。'},
-      {id:'asked_purpose', label:'【用件を聞かれた】', yesLabel:'繋いでもらえた', noLabel:'担当者がわからない・不在',
-       line:'はい。商品やサービスのサンプルをお預かりするだけで、最新のAIを使った高品質なTVCMをご制作するモニター企画のご案内でご連絡いたしました。ご担当者様にお繋ぎいただけますでしょうか。'},
-      {id:'no_manager', label:'【担当者不在・わからない】', yesLabel:'名前・時間を教えてもらえた', noLabel:'教えてもらえない',
-       line:'そうでございますか。差し支えなければ、ご担当者様のお名前だけ教えていただけますでしょうか。改めてご連絡させていただきます。'},
-      {id:'connected', label:'【担当者に繋がった！】', yesLabel:'ぜひ聞きたい', noLabel:'もう少し内容を / 今は忙しい',
-       line:'突然のご連絡で失礼いたします。TENOHIRAの前平です。商品やサービスのサンプルを一つお預けいただければ、最新のAIで高品質なTVCMが制作できるモニター企画のご案内です。通常20万円程度で販売予定のコンテンツを、今なら半額以下でご提供しております。まず10分だけご説明させていただけますでしょうか。'},
-      {id:'no_plan', label:'【興味はあるが迷っている】', yesLabel:'それなら聞きたい', noLabel:'やはり難しい',
-       line:'サンプルをお預けいただくだけで制作可能ですので、御社側のご負担は最小限です。完成したCMはTVだけでなくSNSや採用活動にもご活用いただけます。10分だけお時間いただけますでしょうか。'},
-      {id:'get_apo', label:'【アポ獲得！日程調整へ】', yesLabel:'日時確定！', noLabel:'日程が合わない',
-       line:'ありがとうございます！来週以降でご都合の良いお日にちを教えていただけますでしょうか。オンラインでも伺いでも対応可能です。'},
-      {id:'adjust_date', label:'【日程再調整】', yesLabel:'日時決定！', noLabel:'やはり難しい',
-       line:'かしこまりました。では再来週以降でも全く問題ございません。ご都合の良い時期を教えていただけますか。'},
-      {id:'send_materials', label:'【資料送付へ】', yesLabel:'メアドをもらえた', noLabel:'それも難しい',
-       line:'承知いたしました。簡単な資料をメールでお送りさせていただいてもよろしいでしょうか。ご覧いただける時に見ていただけるだけで十分です。'},
-    ]
-  },
-  {
-    id: 'tvcm_recruit',
-    name: 'TVCM × 採用強化提案',
-    desc: '採用課題を抱える企業向け。低コストTVCMで認知獲得。',
-    color: '#16A34A',
-    nodes: [
-      {id:'start', label:'【開口】受付が出たら', yesLabel:'繋いでもらえた', noLabel:'ご用件は？と聞かれた',
-       line:'お忙しいところ失礼いたします。私、TENOHIRAの前平と申します。採用・人事ご担当者様にお繋ぎいただけますでしょうか。'},
-      {id:'asked_purpose', label:'【用件を聞かれた】', yesLabel:'繋いでもらえた', noLabel:'担当者がわからない・不在',
-       line:'はい。採用課題をお持ちの企業様向けに、テレビCMで圧倒的な認知を獲得するご提案でご連絡いたしました。採用ご担当者様にお繋ぎいただけますでしょうか。'},
-      {id:'no_manager', label:'【担当者不在・わからない】', yesLabel:'名前・時間を教えてもらえた', noLabel:'教えてもらえない',
-       line:'そうでございますか。差し支えなければ、採用ご担当者様のお名前だけ教えていただけますでしょうか。改めてご連絡させていただきます。'},
-      {id:'connected', label:'【担当者に繋がった！】', yesLabel:'ぜひ聞きたい', noLabel:'もう少し内容を / 今は忙しい',
-       line:'突然のご連絡で失礼いたします。TENOHIRAの前平です。採用課題を抱える企業様向けに、テレビCMで圧倒的な認知を始めてみませんかというご提案です。これまで100万円程度と高額で手が出しにくかったTVCMが、テンプレートを活用することでコストを大幅に抑えた金額でご提案できます。今モニター募集中で、通常25万円程度のコンテンツを半額以下でご提供しております。まず10分だけいかがでしょうか。'},
-      {id:'no_plan', label:'【興味はあるが迷っている】', yesLabel:'それなら聞きたい', noLabel:'やはり難しい',
-       line:'採用難の時代に、TVCMで社名を広く認知いただくことで、求人サイトだけでは届かない層へのリーチが可能です。モニター価格での今がチャンスです。10分だけお時間いただけますか。'},
-      {id:'get_apo', label:'【アポ獲得！日程調整へ】', yesLabel:'日時確定！', noLabel:'日程が合わない',
-       line:'ありがとうございます！来週以降でご都合の良いお日にちを教えていただけますでしょうか。オンラインでも対応可能です。'},
-      {id:'adjust_date', label:'【日程再調整】', yesLabel:'日時決定！', noLabel:'やはり難しい',
-       line:'かしこまりました。再来週以降でも全く問題ございません。'},
-      {id:'send_materials', label:'【資料送付へ】', yesLabel:'メアドをもらえた', noLabel:'それも難しい',
-       line:'承知いたしました。資料をメールでお送りさせていただいてもよろしいでしょうか。'},
-    ]
-  },
-  {
-    id: 'interview_video',
-    name: '企業インタビュー動画提案',
-    desc: '採用・SNS向け。低予算でも関係構築を積み上げる提案。',
-    color: '#B45309',
-    nodes: [
-      {id:'start', label:'【開口】受付が出たら', yesLabel:'繋いでもらえた', noLabel:'ご用件は？と聞かれた',
-       line:'お忙しいところ失礼いたします。私、TENOHIRAの前平と申します。採用・広報のご担当者様にお繋ぎいただけますでしょうか。'},
-      {id:'asked_purpose', label:'【用件を聞かれた】', yesLabel:'繋いでもらえた', noLabel:'担当者がわからない・不在',
-       line:'はい。採用や認知向けのSNS・Web動画制作のご提案でご連絡いたしました。ご担当者様にお繋ぎいただけますでしょうか。'},
-      {id:'no_manager', label:'【担当者不在・わからない】', yesLabel:'名前・時間を教えてもらえた', noLabel:'教えてもらえない',
-       line:'そうでございますか。差し支えなければ、担当者様のお名前だけ教えていただけますでしょうか。改めてご連絡します。'},
-      {id:'connected', label:'【担当者に繋がった！】', yesLabel:'ぜひ聞きたい', noLabel:'もう少し内容を / 今は忙しい',
-       line:'突然のご連絡で失礼いたします。TENOHIRAの前平です。採用課題をお持ちの企業様向けに、SNSやWebサイト向けの企業インタビュー動画のご提案です。会社の雰囲気や代表者の想いを、求職者が聞きたいことと一緒に親近感を持ってお伝えする動画です。「あまり予算がないな」というお財布事情にも寄り添い、まずは御社との接点が途切れない関係を積み上げていくところから始められます。10分だけお時間をいただけますでしょうか。'},
-      {id:'no_plan', label:'【興味はあるが予算が心配】', yesLabel:'それなら話を聞きたい', noLabel:'やはり難しい',
-       line:'動画の規模や本数はご予算に合わせて柔軟にご提案できます。まずは小さく始めて、効果を見ながら積み上げていく形も歓迎です。10分だけいかがでしょうか。'},
-      {id:'get_apo', label:'【アポ獲得！日程調整へ】', yesLabel:'日時確定！', noLabel:'日程が合わない',
-       line:'ありがとうございます！来週以降でご都合の良いお日にちを教えていただけますでしょうか。'},
-      {id:'adjust_date', label:'【日程再調整】', yesLabel:'日時決定！', noLabel:'やはり難しい',
-       line:'かしこまりました。ご都合の良い時期を教えていただければ合わせます。'},
-      {id:'send_materials', label:'【資料送付へ】', yesLabel:'メアドをもらえた', noLabel:'それも難しい',
-       line:'承知いたしました。事例を含む資料をメールでお送りさせていただいてもよろしいでしょうか。'},
-    ]
-  },
-];
-
-
-function loadScriptSettings() {
-  try {
-    var saved = localStorage.getItem('fw_script_lines');
-    if (saved) return JSON.parse(saved);
-  } catch(e) {}
-  return {};
-}
-
-function saveScriptSettings() {
-  var tpl = SCRIPT_TEMPLATES.find(function(t){ return t.id === currentScriptTemplateId; }) || SCRIPT_TEMPLATES[0];
-  var lines = {};
-  tpl.nodes.forEach(function(node) {
-    var el = document.getElementById('script-line-' + node.id);
-    if (el) lines[node.id] = el.value;
-  });
-  try {
-    var all = loadScriptSettings();
-    all[currentScriptTemplateId] = lines;
-    localStorage.setItem('fw_script_lines', JSON.stringify(all));
-    toast('「' + tpl.name + '」のスクリプトを保存しました！');
-  } catch(e) {
-    toast('保存に失敗しました');
+  if (keys.length > 0) {
+    toast(keys.length + '項目を保存しました！');
+    // 基本情報タブも更新
+    openDetail(selId);
+    // Geminiタブに戻る
+    setTimeout(() => {
+      document.querySelectorAll('.dtab').forEach(t => t.classList.remove('on'));
+      const tabs = document.querySelectorAll('.dtab');
+      tabs.forEach(t => { if(t.textContent.includes('Gemini')) t.classList.add('on'); });
+      ['dt-tl','dt-letter','dt-info','dt-gemini'].forEach(i => {
+        const el2 = document.getElementById(i);
+        if(el2) el2.style.display = i==='dt-gemini'?'block':'none';
+      });
+      renderGeminiTab();
+    }, 300);
   }
 }
 
-var currentScriptTemplateId = 'anniversary';
-
-function renderScriptEditor() {
-  // テンプレートボタン
-  var btnEl = document.getElementById('script-template-btns');
-  if (btnEl) {
-    btnEl.innerHTML = SCRIPT_TEMPLATES.map(function(t) {
-      var active = t.id === currentScriptTemplateId;
-      var btn = document.createElement('button');
-      btn.style.cssText = 'width:100%;padding:12px;border-radius:8px;border:2px solid ' + (active ? t.color : 'var(--border)') + ';background:' + (active ? 'rgba(' + hexToRgb(t.color) + ',0.1)' : 'var(--surface2)') + ';cursor:pointer;text-align:left;transition:all 0.15s';
-      btn.innerHTML = '<div style="font-size:11px;font-weight:700;color:' + (active ? t.color : 'var(--text)') + ';margin-bottom:3px">' + t.name + '</div><div style="font-size:10px;color:var(--text-dim)">' + t.desc + '</div>';
-      btn.onclick = (function(tid){ return function(){ selectScriptTemplate(tid); }; })(t.id);
-      return btn.outerHTML;
-    }).join('');
-  }
-
-  // ノードエディタ
-  var el = document.getElementById('script-editor-list');
-  if (!el) return;
-  var tpl = SCRIPT_TEMPLATES.find(function(t){ return t.id === currentScriptTemplateId; }) || SCRIPT_TEMPLATES[0];
-  var saved = loadScriptSettings();
-  var lines = (saved[currentScriptTemplateId] || {});
-
-  el.innerHTML = tpl.nodes.map(function(node) {
-    return '<div style="margin-bottom:16px;padding:14px 16px;background:var(--surface2);border-radius:8px;border:1px solid var(--border)">' +
-      '<div style="font-family:var(--font-mono);font-size:10px;color:' + tpl.color + ';letter-spacing:0.1em;margin-bottom:4px">' + node.label + '</div>' +
-      '<div style="font-size:10px;color:var(--text-dim);margin-bottom:8px">' +
-        '<span style="color:var(--green)">YES</span> → ' + node.yesLabel +
-        '　　<span style="color:var(--red,#ef4444)">NO</span> → ' + node.noLabel +
-      '</div>' +
-      '<textarea id="script-line-' + node.id + '" ' +
-        'style="width:100%;min-height:80px;background:var(--surface);border:1px solid var(--border2);border-radius:6px;padding:10px;font-size:12px;font-family:var(--font-body);line-height:1.8;color:var(--text);outline:none;resize:vertical">' +
-        (lines[node.id] || node.line || '') +
-      '</textarea>' +
-    '</div>';
-  }).join('') +
-  '<div style="font-size:11px;color:var(--text-dim);padding:8px 0">' +
-    'ヒント：セリフ内に <strong>{anniv}</strong>（周年文言）、<strong>{years}</strong>（周年数）、<strong>{months}</strong>（残り月数）を入れると自動で差し込まれます。' +
-  '</div>';
-}
-
-function selectScriptTemplate(id) {
-  currentScriptTemplateId = id;
-  renderScriptEditor();
-}
-
-function hexToRgb(hex) {
-  var r = parseInt(hex.slice(1,3),16), g = parseInt(hex.slice(3,5),16), b = parseInt(hex.slice(5,7),16);
-  return r+','+g+','+b;
-}
-
-// ══ トークスクリプト ══
-var scriptTargetId = null;
-
-function openScriptSelector(itemId) {
-  scriptTargetId = itemId || selId;
-  var el = document.getElementById('script-select-list');
-  if (!el) return;
-  var frag = document.createDocumentFragment();
-  SCRIPT_TEMPLATES.forEach(function(t) {
-    var btn = document.createElement("button");
-    btn.style.cssText = "width:100%;padding:14px 16px;border-radius:10px;border:2px solid " + t.color + ";background:rgba(" + hexToRgb(t.color) + ",0.08);cursor:pointer;text-align:left;transition:all 0.15s;margin-bottom:8px";
-    btn.innerHTML = "<div style=\"font-size:13px;font-weight:700;color:" + t.color + ";margin-bottom:4px\">" + t.name + "</div><div style=\"font-size:11px;color:var(--text-mid)\">" + t.desc + "</div>";
-    btn.onclick = (function(tid){ return function(){ openTalkScript(scriptTargetId, tid); }; })(t.id);
-    frag.appendChild(btn);
-  });
-  el.innerHTML = ""; el.appendChild(frag);
-  document.getElementById('m-script-select').classList.add('open');
-}
-
-function openTalkScript(itemId, templateId) {
-  cm('m-script-select');
-  var it = items.find(function(x){ return x.id === (itemId || selId); });
-  if (!it) return;
-  var company = it.company || "御社";
-  var person = it.person || "";
-  var anniv = calcAnniversary(it);
-  var yearsText = anniv ? anniv.nextYears + "周年" : "";
-  var monthText = anniv ? (anniv.monthsUntil === 0 ? "今月" : "あと" + anniv.monthsUntil + "ヶ月") : "";
-  var annivText = anniv ? yearsText + " " + monthText : "";
-  var annivLine = anniv
-    ? (anniv.monthsUntil === 0 ? company + "様、今月でちょうど" + yearsText + "をお迎えになりますね。"
-        : company + "様、" + monthText + "で" + yearsText + "をお迎えになりますね。")
-    : company + "様、周年をお迎えになりますね。";
-  var tplId = templateId || 'anniversary';
-  var tpl = SCRIPT_TEMPLATES.find(function(t){ return t.id === tplId; }) || SCRIPT_TEMPLATES[0];
-  var saved = loadScriptSettings();
-  var sc = saved[tplId] || {};
-  function applyVars(s){ return s.replace(/{anniv}/g,annivLine).replace(/{years}/g,yearsText).replace(/{months}/g,monthText); }
-  function line(id){ var n = tpl.nodes.find(function(x){return x.id===id;}); return applyVars(sc[id] || (n ? n.line : '') || ''); }
-  var tree = {
-    start:{scene:"【開口】受付が出たら",line:line("start"),yes:"connected",no:"asked_purpose",yesLabel:"繋いでもらえた",noLabel:"ご用件は？と聞かれた"},
-    asked_purpose:{scene:"【用件を聞かれた】",line:line("asked_purpose"),yes:"connected",no:"no_manager",yesLabel:"繋いでもらえた",noLabel:"担当者がわからない・不在"},
-    no_manager:{scene:"【担当者不在・わからない】",line:line("no_manager"),yes:"callback_set",no:"send_materials",yesLabel:"名前・時間を教えてもらえた",noLabel:"教えてもらえない"},
-    callback_set:{scene:"【折返し設定完了】",line:"ありがとうございます。では改めてご連絡させていただきます。失礼いたします。 アプリに折返し待ちで記録しましょう。",yes:"end_callback",no:"end_callback",yesLabel:"記録して終了",noLabel:"記録して終了",isEnd:true,result:"callback"},
-    connected:{scene:"【担当者に繋がった！】",line:line("connected"),yes:"get_apo",no:"no_plan",yesLabel:"いいですよ",noLabel:"内容を聞かせて / 式典やらない / 忙しい"},
-    get_apo:{scene:"【アポ獲得！日程調整へ】",line:line("get_apo"),yes:"end_apo",no:"adjust_date",yesLabel:"日時確定！",noLabel:"日程が合わない"},
-    adjust_date:{scene:"【日程再調整】",line:line("adjust_date"),yes:"end_apo",no:"send_materials",yesLabel:"日時決定！",noLabel:"やはり難しい"},
-    no_plan:{scene:"【式典予定なし / もう少し聞きたい】",line:line("no_plan"),yes:"get_apo",no:"send_materials",yesLabel:"OK、聞きましょう",noLabel:"やはり難しい"},
-    send_materials:{scene:"【資料送付へ】",line:line("send_materials"),yes:"end_materials",no:"end_cold",yesLabel:"メアドをもらえた",noLabel:"それも難しい"},
-    end_apo:{scene:"完了",line:"ありがとうございます！では当日よろしくお願いいたします。失礼いたします。",isEnd:true,result:"apo"},
-    end_materials:{scene:"完了",line:"ありがとうございます。本日中にお送りします。1週間後に改めてご連絡いたします。失礼いたします。",isEnd:true,result:"materials"},
-    end_callback:{scene:"完了",line:"折返し待ちで記録しましょう。",isEnd:true,result:"callback"},
-    end_cold:{scene:"完了",line:"承知いたしました。大変失礼いたしました。またご縁があればよろしくお願いいたします。失礼いたします。",isEnd:true,result:"cold"}
-  };
-  var b64 = "PCFET0NUWVBFIGh0bWw+PGh0bWwgbGFuZz0iamEiPjxoZWFkPjxtZXRhIGNoYXJzZXQ9IlVURi04Ij48bWV0YSBuYW1lPSJ2aWV3cG9ydCIgY29udGVudD0id2lkdGg9ZGV2aWNlLXdpZHRoLGluaXRpYWwtc2NhbGU9MS4wIj48dGl0bGU+VEFMSyBTQ1JJUFQ8L3RpdGxlPjxsaW5rIGhyZWY9Imh0dHBzOi8vZm9udHMuZ29vZ2xlYXBpcy5jb20vY3NzMj9mYW1pbHk9QmViYXMrTmV1ZSZmYW1pbHk9Tm90bytTYW5zK0pQOndnaHRANDAwOzUwMDs3MDAmZmFtaWx5PUpldEJyYWlucytNb25vOndnaHRANDAwOzUwMCZkaXNwbGF5PXN3YXAiIHJlbD0ic3R5bGVzaGVldCI+PHN0eWxlPip7Ym94LXNpemluZzpib3JkZXItYm94O21hcmdpbjowO3BhZGRpbmc6MH1ib2R5e2JhY2tncm91bmQ6IzBBMEEwQTtjb2xvcjojRjBGMEYwO2ZvbnQtZmFtaWx5OidOb3RvIFNhbnMgSlAnLHNhbnMtc2VyaWY7bWluLWhlaWdodDoxMDB2aDtkaXNwbGF5OmZsZXg7ZmxleC1kaXJlY3Rpb246Y29sdW1ufS5oZHtwYWRkaW5nOjE0cHggMjBweDtib3JkZXItYm90dG9tOjFweCBzb2xpZCAjMUUxRTFFO2JhY2tncm91bmQ6IzExMTtkaXNwbGF5OmZsZXg7YWxpZ24taXRlbXM6Y2VudGVyO2dhcDoxMnB4fS5oZC1sb2dve2ZvbnQtZmFtaWx5OidCZWJhcyBOZXVlJyxzYW5zLXNlcmlmO2ZvbnQtc2l6ZToyMHB4O2xldHRlci1zcGFjaW5nOi4xZW07Y29sb3I6I0ZGNDYwMn0uaGQtY297Zm9udC1zaXplOjEycHg7Y29sb3I6IzY2Nn0uaGQtYmFkZ2V7bWFyZ2luLWxlZnQ6YXV0bztmb250LWZhbWlseTptb25vc3BhY2U7Zm9udC1zaXplOjEwcHg7cGFkZGluZzozcHggMTBweDtib3JkZXItcmFkaXVzOjIwcHg7YmFja2dyb3VuZDpyZ2JhKDI1NSw3MCwyLC4xMik7Y29sb3I6I0ZGNDYwMjtib3JkZXI6MXB4IHNvbGlkIHJnYmEoMjU1LDcwLDIsLjI1KX0ubWFpbntmbGV4OjE7ZGlzcGxheTpmbGV4O2ZsZXgtZGlyZWN0aW9uOmNvbHVtbjthbGlnbi1pdGVtczpjZW50ZXI7anVzdGlmeS1jb250ZW50OmNlbnRlcjtwYWRkaW5nOjI4cHggMjBweDttYXgtd2lkdGg6NjYwcHg7bWFyZ2luOjAgYXV0bzt3aWR0aDoxMDAlfS5wcm9ne3dpZHRoOjEwMCU7aGVpZ2h0OjJweDtiYWNrZ3JvdW5kOiMxQTFBMUE7Ym9yZGVyLXJhZGl1czoycHg7b3ZlcmZsb3c6aGlkZGVuO21hcmdpbi1ib3R0b206MjBweH0ucHJvZy1maWxse2hlaWdodDoxMDAlO2JhY2tncm91bmQ6I0ZGNDYwMjtib3JkZXItcmFkaXVzOjJweDt0cmFuc2l0aW9uOndpZHRoIC40cyBlYXNlfS5zY2VuZXtmb250LWZhbWlseTptb25vc3BhY2U7Zm9udC1zaXplOjlweDtsZXR0ZXItc3BhY2luZzouMTVlbTtjb2xvcjojNDQ0O21hcmdpbi1ib3R0b206MTJweDthbGlnbi1zZWxmOmZsZXgtc3RhcnR9LmJ1YmJsZXtiYWNrZ3JvdW5kOiMxNDE0MTQ7Ym9yZGVyOjFweCBzb2xpZCAjMjIyO2JvcmRlci1sZWZ0OjNweCBzb2xpZCAjRkY0NjAyO2JvcmRlci1yYWRpdXM6MTJweDtwYWRkaW5nOjI0cHggMjhweDtmb250LXNpemU6MTVweDtsaW5lLWhlaWdodDoyO2NvbG9yOiNFRUVFRUU7d2lkdGg6MTAwJTttYXJnaW4tYm90dG9tOjI0cHg7bWluLWhlaWdodDoxMDBweH0uYnRuc3tkaXNwbGF5OmZsZXg7Z2FwOjEycHg7d2lkdGg6MTAwJX0uYnRuLXksLmJ0bi1ue2ZsZXg6MTtwYWRkaW5nOjE2cHggMjBweDtib3JkZXItcmFkaXVzOjEwcHg7Ym9yZGVyOm5vbmU7Y3Vyc29yOnBvaW50ZXI7Zm9udC1mYW1pbHk6J05vdG8gU2FucyBKUCcsc2Fucy1zZXJpZjtmb250LXdlaWdodDo3MDA7Zm9udC1zaXplOjEzcHg7dHJhbnNpdGlvbjphbGwgLjE1cztkaXNwbGF5OmZsZXg7ZmxleC1kaXJlY3Rpb246Y29sdW1uO2FsaWduLWl0ZW1zOmNlbnRlcjtnYXA6NXB4fS5idG4teXtiYWNrZ3JvdW5kOnJnYmEoMjIsMTYzLDc0LC4xMik7Y29sb3I6IzRBREU4MDtib3JkZXI6MnB4IHNvbGlkIHJnYmEoMjIsMTYzLDc0LC4zKX0uYnRuLXk6aG92ZXJ7YmFja2dyb3VuZDpyZ2JhKDIyLDE2Myw3NCwuMjUpO2JvcmRlci1jb2xvcjojNEFERTgwO3RyYW5zZm9ybTp0cmFuc2xhdGVZKC0ycHgpfS5idG4tbntiYWNrZ3JvdW5kOnJnYmEoMjM5LDY4LDY4LC4xKTtjb2xvcjojRjg3MTcxO2JvcmRlcjoycHggc29saWQgcmdiYSgyMzksNjgsNjgsLjI1KX0uYnRuLW46aG92ZXJ7YmFja2dyb3VuZDpyZ2JhKDIzOSw2OCw2OCwuMjIpO2JvcmRlci1jb2xvcjojRjg3MTcxO3RyYW5zZm9ybTp0cmFuc2xhdGVZKC0ycHgpfS5rZXl7Zm9udC1mYW1pbHk6bW9ub3NwYWNlO2ZvbnQtc2l6ZTo5cHg7cGFkZGluZzoycHggNnB4O2JvcmRlci1yYWRpdXM6M3B4O2JhY2tncm91bmQ6cmdiYSgyNTUsMjU1LDI1NSwuMDYpO2NvbG9yOiM1NTV9Lmhpc3R7d2lkdGg6MTAwJTttYXJnaW4tdG9wOjIwcHg7Ym9yZGVyLXRvcDoxcHggc29saWQgIzFBMUExQTtwYWRkaW5nLXRvcDoxMnB4O21heC1oZWlnaHQ6MTIwcHg7b3ZlcmZsb3cteTphdXRvfS5oaXtmb250LXNpemU6MTBweDtwYWRkaW5nOjNweCAwO2JvcmRlci1ib3R0b206MXB4IHNvbGlkICMxQTFBMUE7ZGlzcGxheTpmbGV4O2dhcDo4cHg7Y29sb3I6IzMzM30uaGkteXtjb2xvcjojMTY2NTM0fS5oaS1ue2NvbG9yOiM3RjFEMUR9LmVuZC13cmFwe3RleHQtYWxpZ246Y2VudGVyO3BhZGRpbmc6MjRweDt3aWR0aDoxMDAlfS5lbmQtaWNve2ZvbnQtc2l6ZTo0NHB4O21hcmdpbi1ib3R0b206MTJweH0uZW5kLWxibHtmb250LXNpemU6MTZweDtmb250LXdlaWdodDo3MDA7bWFyZ2luLWJvdHRvbTo2cHh9LmVuZC1zdWJ7Zm9udC1zaXplOjEycHg7Y29sb3I6IzY2NjttYXJnaW4tYm90dG9tOjIwcHh9LmJ0bi1ye3BhZGRpbmc6MTBweCAyOHB4O2JvcmRlci1yYWRpdXM6OHB4O2JvcmRlcjoxcHggc29saWQgIzJBMkEyQTtiYWNrZ3JvdW5kOiMxQTFBMUE7Y29sb3I6I0NDQztmb250LXNpemU6MTJweDtjdXJzb3I6cG9pbnRlcn0uYnRuLXI6aG92ZXJ7YmFja2dyb3VuZDojMjIyfTwvc3R5bGU+PC9oZWFkPjxib2R5PjxkaXYgY2xhc3M9ImhkIj48ZGl2IGNsYXNzPSJoZC1sb2dvIj5UQUxLIFNDUklQVDwvZGl2PjxkaXYgY2xhc3M9ImhkLWNvIiBpZD0iaGQtY28iPjwvZGl2PjxkaXYgY2xhc3M9ImhkLWJhZGdlIiBpZD0iaGQtYmFkZ2UiIHN0eWxlPSJkaXNwbGF5Om5vbmUiPjwvZGl2PjwvZGl2PjxkaXYgY2xhc3M9Im1haW4iPjxkaXYgY2xhc3M9InByb2ciPjxkaXYgY2xhc3M9InByb2ctZmlsbCIgaWQ9InByb2ciIHN0eWxlPSJ3aWR0aDo1JSI+PC9kaXY+PC9kaXY+PGRpdiBjbGFzcz0ic2NlbmUiIGlkPSJzY2VuZSI+PC9kaXY+PGRpdiBjbGFzcz0iYnViYmxlIiBpZD0iYnViYmxlIj48L2Rpdj48ZGl2IGNsYXNzPSJidG5zIiBpZD0iYnRucyI+PC9kaXY+PGRpdiBjbGFzcz0iaGlzdCIgaWQ9Imhpc3QiPjwvZGl2PjwvZGl2PjxzY3JpcHQ+dmFyIFQ9e30sY3VyPSdzdGFydCcsbGc9W107dmFyIFBHPXtzdGFydDo1LGFza2VkX3B1cnBvc2U6MTUsbm9fbWFuYWdlcjoyNSxjYWxsYmFja19zZXQ6NDUsY29ubmVjdGVkOjQwLGdldF9hcG86NzUsYWRqdXN0X2RhdGU6NjIsbm9fcGxhbjo1NSxzZW5kX21hdGVyaWFsczo3MCxlbmRfYXBvOjEwMCxlbmRfbWF0ZXJpYWxzOjg1LGVuZF9jYWxsYmFjazo4MCxlbmRfY29sZDo2MH07dmFyIFJMPXthcG86J0FQTyBHRVQhIFJlY29yZCBpbiBhcHAnLG1hdGVyaWFsczonU2VuZCBtYXRlcmlhbHMuIEZvbGxvdyB1cCBpbiAxIHdlZWsnLGNhbGxiYWNrOidDYWxsYmFjayBzZXQuIFJlY29yZCBuYW1lICYgdGltZScsY29sZDonQ29vbGluZyBwZXJpb2QuIFJlY29yZCB0ZW1wPTEnfTt2YXIgUkk9e2FwbzonQVBQR0VUJyxtYXRlcmlhbHM6J01BSUwnLGNhbGxiYWNrOidQSE9ORScsY29sZDonU0xFRVAnfTt2YXIgUkM9e2FwbzonIzE2QTM0QScsbWF0ZXJpYWxzOicjMjU2M0VCJyxjYWxsYmFjazonI0I0NTMwOScsY29sZDonIzU1NSd9O3ZhciBJQ09OPXtBUFBHRVQ6JyYjMTI3ODgxOycsTUFJTDonJiMxMjgyMzE7JyxQSE9ORTonJiMxMjgyMjI7JyxTTEVFUDonJiMxMjgxNjQ7J307ZnVuY3Rpb24gaW5pdChkKXtUPWQudHJlZTtkb2N1bWVudC5nZXRFbGVtZW50QnlJZCgnaGQtY28nKS50ZXh0Q29udGVudD1kLmNvbXBhbnkrKGQucGVyc29uPycgICcrZC5wZXJzb246JycpO3ZhciBiPWRvY3VtZW50LmdldEVsZW1lbnRCeUlkKCdoZC1iYWRnZScpO2lmKGQuYW5uaXZUZXh0KXtiLnRleHRDb250ZW50PWQuYW5uaXZUZXh0O2Iuc3R5bGUuZGlzcGxheT0nJzt9cmVuZGVyKCk7fWZ1bmN0aW9uIHJlbmRlcigpe3ZhciBuPVRbY3VyXTtpZighbilyZXR1cm47ZG9jdW1lbnQuZ2V0RWxlbWVudEJ5SWQoJ3NjZW5lJykudGV4dENvbnRlbnQ9bi5zY2VuZTtkb2N1bWVudC5nZXRFbGVtZW50QnlJZCgnYnViYmxlJykudGV4dENvbnRlbnQ9bi5saW5lO2RvY3VtZW50LmdldEVsZW1lbnRCeUlkKCdwcm9nJykuc3R5bGUud2lkdGg9KFBHW2N1cl18fDUwKSsnJSc7dmFyIGI9ZG9jdW1lbnQuZ2V0RWxlbWVudEJ5SWQoJ2J0bnMnKTtpZihuLmlzRW5kKXtiLmlubmVySFRNTD0nPGRpdiBjbGFzcz0iZW5kLXdyYXAiPjxkaXYgY2xhc3M9ImVuZC1pY28iPicrSUNPTltSSVtuLnJlc3VsdF1dKyc8L2Rpdj48ZGl2IGNsYXNzPSJlbmQtbGJsIiBzdHlsZT0iY29sb3I6JytSQ1tuLnJlc3VsdF0rJyI+JytSTFtuLnJlc3VsdF0rJzwvZGl2PjxkaXYgY2xhc3M9ImVuZC1zdWIiPmVuZCBjYWxsPC9kaXY+PGJ1dHRvbiBjbGFzcz0iYnRuLXIiIG9uY2xpY2s9InJlc3RhcnQoKSI+cmVzdGFydDwvYnV0dG9uPjwvZGl2Pic7cmV0dXJuO31iLmlubmVySFRNTD0nPGJ1dHRvbiBjbGFzcz0iYnRuLXkiIG9uY2xpY2s9ImdvKHRydWUpIj48c3Bhbj4nKyhuLnllc0xhYmVsfHwnWUVTJykrJzwvc3Bhbj48c3BhbiBjbGFzcz0ia2V5Ij4mbGFycjsga2V5PC9zcGFuPjwvYnV0dG9uPjxidXR0b24gY2xhc3M9ImJ0bi1uIiBvbmNsaWNrPSJnbyhmYWxzZSkiPjxzcGFuPicrKG4ubm9MYWJlbHx8J05PJykrJzwvc3Bhbj48c3BhbiBjbGFzcz0ia2V5Ij4mcmFycjsga2V5PC9zcGFuPjwvYnV0dG9uPic7fWZ1bmN0aW9uIGdvKHkpe3ZhciBuPVRbY3VyXTtpZighbnx8bi5pc0VuZClyZXR1cm47bGcucHVzaCh7czpuLnNjZW5lLGM6eT9uLnllc0xhYmVsOm4ubm9MYWJlbCx5Onl9KTtjdXI9eT9uLnllczpuLm5vO3JlbmRlcigpO3JoKCk7fWZ1bmN0aW9uIHJlc3RhcnQoKXtjdXI9J3N0YXJ0JztsZz1bXTtkb2N1bWVudC5nZXRFbGVtZW50QnlJZCgnaGlzdCcpLmlubmVySFRNTD0nJztyZW5kZXIoKTt9ZnVuY3Rpb24gcmgoKXtkb2N1bWVudC5nZXRFbGVtZW50QnlJZCgnaGlzdCcpLmlubmVySFRNTD1sZy5zbGljZSgpLnJldmVyc2UoKS5tYXAoZnVuY3Rpb24oaCl7cmV0dXJuICc8ZGl2IGNsYXNzPSJoaSI+PHNwYW4gY2xhc3M9IicrKGgueT8naGkteSc6J2hpLW4nKSsnIj4nKyhoLnk/J1knOidOJykrJzwvc3Bhbj48c3Bhbj4nK2gucysnPC9zcGFuPjxzcGFuIHN0eWxlPSJtYXJnaW4tbGVmdDphdXRvIj4nK2guYysnPC9zcGFuPjwvZGl2Pic7fSkuam9pbignJyk7fWRvY3VtZW50LmFkZEV2ZW50TGlzdGVuZXIoJ2tleWRvd24nLGZ1bmN0aW9uKGUpe2lmKGUua2V5PT09J0Fycm93TGVmdCcpZ28odHJ1ZSk7aWYoZS5rZXk9PT0nQXJyb3dSaWdodCcpZ28oZmFsc2UpO30pOzwvc2NyaXB0PjwvYm9keT48L2h0bWw+";
-  var html = decodeURIComponent(escape(atob(b64)));
-  var w = window.open("", "_blank", "width=720,height=620,resizable=yes,scrollbars=yes");
-  w.document.open(); w.document.write(html); w.document.close();
-  var data = {tree:tree,company:company,person:person,annivText:annivText};
-  setTimeout(function(){ if(w.init) w.init(data); }, 500);
-}
 
 function saveDetailEdit() {
   const it = items.find(x => x.id === selId);
