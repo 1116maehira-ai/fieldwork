@@ -4104,8 +4104,7 @@ function previewNotice(id) {
 function updateNoticeBadge() {
   const pending = notices.filter(n => n.status === 'pending').length;
   const badge = document.getElementById('nb-notice');
-  badge.textContent = pending;
-  badge.style.display = pending > 0 ? '' : 'none';
+  if (badge) { badge.textContent = pending; badge.style.display = pending > 0 ? '' : 'none'; }
 }
 
 // ── INIT ──
