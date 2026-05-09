@@ -710,6 +710,9 @@ tr:hover td { background: rgba(255,70,2,0.03); cursor: pointer; }
     <div class="topbar-actions">
       <button class="btn btn-ghost btn-sm" onclick="exportCSV()"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg> CSV</button>
       <button class="btn btn-ghost btn-sm" onclick="openAddModal()"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg> 手動追加</button>
+      <button class="btn btn-green btn-sm" onclick="startResearchMode()" style="font-weight:700">
+        🤖 Geminiリサーチモード（30件）
+      </button>
       <button class="btn btn-blue btn-sm" onclick="openPromptModal()"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg> Geminiプロンプト</button>
       <button class="btn btn-green" onclick="goPage(&#39;collect&#39;,document.querySelectorAll(&#39;.nav-item&#39;)[1])"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg> 情報収集</button>
     </div>
@@ -764,10 +767,10 @@ tr:hover td { background: rgba(255,70,2,0.03); cursor: pointer; }
         <option value="no_job">求人なし</option>
       </select>
       <select class="fi" id="ls-sort-mode" onchange="renderList()">
-        <option value="score">スコア順</option>
         <option value="createdAt_desc">収集日（新→古）</option>
         <option value="createdAt_asc">収集日（古→新）</option>
         <option value="company">会社名順</option>
+        <option value="info_asc">情報充実度（低→高）</option>
       </select>
       <select class="fi" id="ls-pref" onchange="updateAreaOptions();renderList()">
         <option value="">全都道府県</option>
@@ -775,20 +778,27 @@ tr:hover td { background: rgba(255,70,2,0.03); cursor: pointer; }
       <select class="fi" id="ls-area" onchange="renderList()">
         <option value="">全エリア</option>
       </select>
+      <select class="fi" id="ls-research" onchange="renderList()">
+        <option value="">リサーチ状況</option>
+        <option value="none">未調査のみ</option>
+        <option value="sent">依頼済みのみ</option>
+        <option value="done">取込済みのみ</option>
+      </select>
+      <label style="display:flex;align-items:center;gap:4px;font-size:11px;color:var(--text-mid);cursor:pointer">
+        <input type="checkbox" id="ls-show-excluded" onchange="renderList()"> 除外も表示
+      </label>
     </div>
 
     <div class="table-wrap">
       <table>
         <thead><tr>
-          <th onclick="sortTable(&#39;score&#39;)">AIスコア ↕</th>
-          <th onclick="sortTable(&#39;company&#39;)">会社名 / URL情報</th>
-          <th>業種・エリア</th>
-          <th>推定月商</th>
-          <th>シグナル</th>
-          <th>情報源</th>
-          <th>フェーズ</th>
-          <th>アプローチ</th>
-          <th></th>
+           <th style="width:180px" onclick="sortTable(&#39;company&#39;)">会社名</th>
+          <th>住所・電話</th>
+          <th>業種</th>
+          <th>SNS・求人</th>
+          <th style="width:100px">リサーチ</th>
+          <th style="width:80px">フェーズ</th>
+          <th style="width:60px"></th>
         </tr></thead>
         <tbody id="list-tbody"></tbody>
       </table>
@@ -1911,6 +1921,10 @@ function renderList() {
     if (sortMode === 'createdAt_desc') return (b.createdAt||'').localeCompare(a.createdAt||'');
     if (sortMode === 'createdAt_asc') return (a.createdAt||'').localeCompare(b.createdAt||'');
     if (sortMode === 'company') return a.company.localeCompare(b.company);
+    if (sortMode === 'info_asc') {
+      const infoScore = it => [it.person,it.phone,it.foundingDate,it.instaUrl,it.fbUrl,it.xUrl,it.tiktokUrl,it.indeedUrl,it.jobAntennaUrl,it.agreUrl,it.email].filter(Boolean).length;
+      return infoScore(a) - infoScore(b);
+    }
     if (sortKey==='score' || sortMode === 'score') return sortDir*((b.score?.total||0)-(a.score?.total||0));
     if (sortKey==='company') return sortDir*a.company.localeCompare(b.company);
     return 0;
@@ -1949,63 +1963,76 @@ function renderList() {
   };
 
   tbody.innerHTML = list.map(it => {
-    const sc = it.score;
     const ph = PHASE[it.phase];
-    const an = checkAutoPhase(it);
-    const sigDots = (it.signals||[]).map(s=>`<div class="sdot ${SIGCLS[s]||''}" title="${SIGLBL[s]||s}"></div>`).join('');
-    const trailDots = (it.logs||[]).slice(-6).map(l=>{
-      let c='apd-ng';
-      if(l.result==='アポ獲得') c='apd-ok';
-      else if(['会えた','出た','後日折返し','送付済み','反応あり'].includes(l.result)) c='apd-mid';
-      else if(l.type==='letter') c='apd-let';
-      return `<div class="ap-dot ${c}" title="${l.date} ${l.result}"></div>`;
-    }).join('');
-    const overdue = it.nextDate && it.nextDate<today;
-    const urlBadges = makeUrlBadges(it);
-    return `
-      <tr onclick="openDetail(${it.id})">
-        <td>
-          <div style="display:flex;align-items:center;gap:8px">
-            <div class="score-ring ${rCls(sc?.total||0)}">${sc?sc.total:'—'}</div>
-            <div style="flex:1;min-width:50px">
-              <div style="height:3px;background:var(--border2);border-radius:2px">
-                <div style="width:${barW(sc?.total)};height:100%;background:${barC(sc?.total||0)};border-radius:2px;transition:width 0.5s"></div>
-              </div>
-            </div>
-          </div>
-        </td>
-        <td>
-          <div class="co-name">${it.company}</div>
-          <div class="co-sub">${it.person||'—'} ${it.referral?'· 紹介:'+it.referral:''}</div>
-          ${anniversaryBadge(it)}
-          ${urlBadges}
-          ${it.snsSearchedAt ? `<div style="font-size:9px;color:var(--text-dim);margin-top:2px;font-family:var(--font-mono)">調査済 ${it.snsSearchedAt}</div>` : ''}
-          ${it.issueInfo?.scannedAt ? `<div style="margin-top:3px;display:flex;gap:4px;flex-wrap:wrap">
-            ${it.issueInfo.employees && it.issueInfo.employees !== '不明' ? `<span style="font-size:9px;padding:1px 6px;border-radius:3px;background:rgba(37,99,235,0.08);color:var(--blue);border:1px solid rgba(37,99,235,0.2)">${it.issueInfo.employees}</span>` : ''}
-            ${(it.issueInfo.hiringSignals||[]).some(h=>h.isRecent) ? `<span style="font-size:9px;padding:1px 6px;border-radius:3px;background:var(--green-dim);color:var(--green);border:1px solid rgba(22,163,74,0.2)">求人中</span>` : ''}
-            ${it.issueInfo.growthSignal && it.issueInfo.growthSignal !== '不明' ? `<span style="font-size:9px;padding:1px 6px;border-radius:3px;background:var(--gold-dim);color:var(--gold);border:1px solid rgba(250,207,76,0.3)">成長</span>` : ''}
-          </div>` : ''}
-        </td>
-        <td><div style="font-size:12px">${it.industry}</div><div style="font-size:10px;color:var(--text-mid);margin-top:1px">${it.area}</div></td>
-        <td><div style="font-size:12px">${it.revenue||'—'}</div><div style="font-size:10px;color:var(--text-dim);font-family:var(--font-mono)">粗利${MARGIN[it.industry]||20}%</div></td>
-        <td><div class="sig-dots">${sigDots}</div></td>
-        <td><span class="src ${SRCMAP[it.source]||'src-man'}">${SRCLBL[it.source]||'—'}</span></td>
-        <td>
-          <span class="pb ${ph?.pbcls||'pb-none'}">${ph?.icon||''} ${ph?.label||'—'}</span>
-          ${an?`<div style="margin-top:4px"><span class="auto-alert">! ${PHASE[an]?.label}へ移行推奨</span></div>`:''}
-        </td>
-        <td>
-          ${trailDots?`<div class="ap-trail">${trailDots}</div>`:''}
-          <div class="ap-count">${(it.logs||[]).length}回</div>
-        </td>
-        <td>
-          ${(it.logs||[]).length===0
-            ? `<button class="btn btn-green btn-xs" onclick="event.stopPropagation();startApproach(${it.id})">開始</button>`
-            : `<button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openAp(${it.id})">+記録</button>`
-          }
-        </td>
-      </tr>`;
+    const overdue = it.nextDate && it.nextDate < today;
+
+    // SNS・求人バッジ
+    const snsBadges = [];
+    if (it.instaUrl) snsBadges.push('<a href="' + it.instaUrl + '" target="_blank" class="url-badge url-badge-insta" onclick="event.stopPropagation()">IG</a>');
+    if (it.fbUrl)    snsBadges.push('<a href="' + it.fbUrl + '" target="_blank" class="url-badge url-badge-fb" onclick="event.stopPropagation()">FB</a>');
+    if (it.xUrl)     snsBadges.push('<a href="' + it.xUrl + '" target="_blank" class="url-badge" style="border-color:rgba(0,0,0,0.2);color:#333;background:#F5F5F5" onclick="event.stopPropagation()">X</a>');
+    if (it.tiktokUrl) snsBadges.push('<a href="' + it.tiktokUrl + '" target="_blank" class="url-badge" style="border-color:rgba(0,0,0,0.2);color:#333;background:#F5F5F5" onclick="event.stopPropagation()">TikTok</a>');
+    if (it.indeedUrl)    snsBadges.push('<a href="' + it.indeedUrl + '" target="_blank" class="url-badge url-badge-job" onclick="event.stopPropagation()">Indeed</a>');
+    if (it.jobAntennaUrl) snsBadges.push('<a href="' + it.jobAntennaUrl + '" target="_blank" class="url-badge url-badge-job" onclick="event.stopPropagation()">JA</a>');
+    if (it.agreUrl)      snsBadges.push('<a href="' + it.agreUrl + '" target="_blank" class="url-badge url-badge-job" onclick="event.stopPropagation()">アグレ</a>');
+    if (it.mynaviExists === 'あり') snsBadges.push('<span class="url-badge" style="border-color:rgba(37,99,235,0.3);color:var(--blue);background:var(--blue-dim)">マイナビ</span>');
+
+    // リサーチステータス
+    const researchStatus = it.researchStatus || 'none';
+    const statusMap = {
+      none:    { label: '未調査',  color: '#9CA3AF', bg: '#F3F4F6' },
+      sent:    { label: '依頼済み', color: '#F59E0B', bg: '#FFFBEB' },
+      done:    { label: '取込済み', color: '#10B981', bg: '#F0FFF4' },
+      excluded:{ label: '除外',    color: '#EF4444', bg: '#FFF0F0' },
+    };
+    const st = statusMap[researchStatus] || statusMap.none;
+
+    // 周年バッジ
+    const annBadge = anniversaryBadge(it);
+
+    return '<tr onclick="openDetail(' + it.id + ')" style="' + (it.excluded ? 'opacity:0.4' : '') + '">' +
+
+      // 会社名・HP
+      '<td>' +
+        '<div style="font-weight:700;font-size:13px;color:#222">' + it.company + '</div>' +
+        (it.website ? '<a href="' + it.website + '" target="_blank" style="font-size:10px;color:var(--blue);text-decoration:none" onclick="event.stopPropagation()">🌐 HP</a>' : '') +
+        (annBadge ? '<div style="margin-top:4px">' + annBadge + '</div>' : '') +
+      '</td>' +
+
+      // 住所・電話
+      '<td>' +
+        '<div style="font-size:12px;color:#555">' + (it.addr || it.area || '—') + '</div>' +
+        (it.phone ? '<div style="font-size:12px;color:#333;font-weight:600;margin-top:2px">📞 ' + it.phone + '</div>' : '<div style="font-size:11px;color:#CCC;margin-top:2px">電話番号なし</div>') +
+        (it.person ? '<div style="font-size:11px;color:#888;margin-top:1px">👤 ' + it.person + '</div>' : '') +
+      '</td>' +
+
+      // 業種
+      '<td>' +
+        '<div style="font-size:12px;color:#555">' + (it.industry || '—') + '</div>' +
+        (it.foundingDate ? '<div style="font-size:10px;color:#888;margin-top:2px">創業 ' + it.foundingDate + '</div>' : '') +
+      '</td>' +
+
+      // SNS・求人
+      '<td><div class="url-badges">' + (snsBadges.length ? snsBadges.join('') : '<span style="font-size:11px;color:#CCC">なし</span>') + '</div></td>' +
+
+      // リサーチステータス
+      '<td>' +
+        '<span style="font-size:11px;font-weight:700;padding:3px 8px;border-radius:20px;background:' + st.bg + ';color:' + st.color + '">' + st.label + '</span>' +
+      '</td>' +
+
+      // フェーズ
+      '<td>' +
+        (ph ? '<span style="font-size:11px;padding:3px 8px;border-radius:6px;background:var(--accent-dim);color:var(--accent)">' + ph.label + '</span>' : '<span style="font-size:11px;color:#CCC">未着手</span>') +
+      '</td>' +
+
+      // アクション
+      '<td>' +
+        '<button onclick="event.stopPropagation();startApproach(' + it.id + ')" style="background:var(--accent);color:#fff;border:none;border-radius:6px;padding:6px 10px;font-size:11px;font-weight:700;cursor:pointer">開始</button>' +
+      '</td>' +
+
+    '</tr>';
   }).join('');
+  
 }
 
 // ── RENDER APPROACH ──
@@ -3116,6 +3143,80 @@ function openGeminiGuide() {
   document.getElementById('m-gemini-guide').classList.add('open');
 }
 
+// ══ Geminiリサーチモード ══
+function startResearchMode() {
+  // 未調査の企業を上から30件選ぶ
+  const candidates = getFilteredItems().filter(it => !it.excluded && (it.researchStatus || 'none') === 'none');
+  if (!candidates.length) { toast('未調査の企業がありません！'); return; }
+  const batch = candidates.slice(0, 30);
+
+  // 依頼済みフラグを立てる
+  batch.forEach(it => { it.researchStatus = 'sent'; });
+  save();
+
+  // プロンプトモーダルを開く（対象を30件に絞って）
+  const industries = [...new Set(batch.map(it => it.industry).filter(Boolean))];
+  const areas = [...new Set(batch.map(it => (it.area||'').split('市')[0] + '市').filter(Boolean))].slice(0,5);
+  const companyList = batch.map((it, i) => {
+    return (i+1) + '. ' + it.company + ' (' + (it.area||'') + (it.addr ? ' / ' + it.addr : '') + ')';
+  }).join('\n');
+
+  const today = new Date().toLocaleDateString('ja-JP', {year:'numeric',month:'2-digit',day:'2-digit'});
+  const prompt = [
+    '以下の' + batch.length + '社について調査し、必ずCSV形式のみで返答してください。説明文は不要です。',
+    '',
+    '【出力CSV列】',
+    'company_name,ceo_name,email,founding_date,anniversary_month,months_until_anniversary,next_anniversary_years,instagram_url,facebook_url,x_url,tiktok_url,indeed_url,job_antenna_url,agre_url,mynavi_exists,revenue,employees,notes',
+    '',
+    '【調査対象】' + areas.join('/') + ' / ' + industries.join('・'),
+    '',
+    '【各列の説明】',
+    '・ceo_name: 代表者名',
+    '・email: 公開メールアドレス',
+    '・founding_date: 創業年月日（YYYY-MM形式）',
+    '・anniversary_month: 創業月（数字のみ）',
+    '・months_until_anniversary: 今日（' + today + '）から次の周年まで何ヶ月（数字）',
+    '・next_anniversary_years: 次の周年は何周年（数字）',
+    '・instagram_url / facebook_url / x_url / tiktok_url: 各公式URL',
+    '・indeed_url: IndeedのURL',
+    '・job_antenna_url: ジョブアンテナのURL',
+    '・agre_url: アグレのURL',
+    '・mynavi_exists: マイナビページの有無（あり/なし/N/A）',
+    '・revenue: 年商（例：約5億円）',
+    '・employees: 従業員数',
+    '・notes: 営業提案に使える情報',
+    '',
+    '【重要ルール】',
+    '・1行目はヘッダー行、2行目以降がデータ行',
+    '・各値は必ずダブルクォートで囲む',
+    '・不明はN/A（空白不可）',
+    '・URLはhttps://から始まる完全形式で',
+    '',
+    '【対象企業 ' + batch.length + '社】',
+    companyList,
+    '',
+    '=== BEGIN CSV OUTPUT NOW ===',
+  ].join('\n');
+
+  document.getElementById('prompt-subtitle').textContent = batch.length + '社（未調査→依頼済みに変更済み）';
+  document.getElementById('prompt-target-count').textContent = batch.length;
+  document.getElementById('prompt-text').value = prompt;
+  document.getElementById('m-prompt').classList.add('open');
+
+  renderList();
+  toast('30社を「依頼済み」にしました。プロンプトをコピーしてGeminiへ！');
+}
+
+// ══ 企業除外 ══
+function excludeCompany(itemId) {
+  const it = items.find(x => x.id === (itemId || selId));
+  if (!it) return;
+  it.excluded = !it.excluded;
+  save();
+  renderList();
+  toast(it.excluded ? '除外しました' : '除外を解除しました');
+}
+
 function saveDetailEdit() {
   const it = items.find(x => x.id === selId);
   if (!it) return;
@@ -3563,7 +3664,10 @@ function getFilteredItems() {
   const jobFilter = document.getElementById('ls-job')?.value || '';
   const prefFilter = document.getElementById('ls-pref')?.value || '';
   const areaFilter = document.getElementById('ls-area')?.value || '';
+  const researchFilter = document.getElementById('ls-research')?.value || '';
+  const showExcluded = document.getElementById('ls-show-excluded')?.checked || false;
   return items.filter(it => {
+    if (!showExcluded && it.excluded) return false;
     if (search && !it.company.toLowerCase().includes(search)) return false;
     if (ind && it.industry !== ind) return false;
     if (rank && it.score?.rank !== rank) return false;
@@ -3576,6 +3680,7 @@ function getFilteredItems() {
     if (jobFilter === 'no_job' && it.jobUrl) return false;
     if (prefFilter && getPrefFromArea(it.area || it.addr || '') !== prefFilter) return false;
     if (areaFilter && !(it.area || '').includes(areaFilter)) return false;
+    if (researchFilter && (it.researchStatus || 'none') !== researchFilter) return false;
     return true;
   });
 }
