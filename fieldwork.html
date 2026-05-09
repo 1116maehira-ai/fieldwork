@@ -704,41 +704,63 @@ tr:hover td { background: rgba(255,70,2,0.03); cursor: pointer; }
 <div class="page" id="page-list">
   <div class="topbar">
     <div>
-      <div class="page-title">ATTACK LIST</div>
-      <div class="topbar-sub">収集済み企業の一覧・スコア・シグナル確認</div>
+      <div class="page-title" style="font-size:22px">📋 アタックリスト</div>
+      <div class="topbar-sub" style="font-size:13px">集めた会社の一覧です。絞り込んでGeminiに投げよう！</div>
     </div>
     <div class="topbar-actions">
-      <button class="btn btn-ghost btn-sm" onclick="exportCSV()"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg> CSV</button>
-      <button class="btn btn-ghost btn-sm" onclick="openAddModal()"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg> 手動追加</button>
-      <button class="btn btn-green btn-sm" onclick="startResearchMode()" style="font-weight:700">
-        🤖 Geminiリサーチモード（30件）
+      <button class="btn btn-ghost btn-sm" onclick="exportCSV()">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        CSV出力
       </button>
-      <button class="btn btn-blue btn-sm" onclick="openPromptModal()"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg> Geminiプロンプト</button>
-      <button class="btn btn-green" onclick="goPage(&#39;collect&#39;,document.querySelectorAll(&#39;.nav-item&#39;)[1])"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg> 情報収集</button>
+      <button class="btn btn-green btn-sm" onclick="startResearchMode()" style="font-weight:700;font-size:13px">
+        🤖 Geminiリサーチ（30件）
+      </button>
+      <button class="btn btn-blue btn-sm" onclick="openPromptModal()">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+        プロンプト生成
+      </button>
+      <button class="btn btn-ghost btn-sm" onclick="openAddModal()">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        手動追加
+      </button>
     </div>
   </div>
   <div class="content">
-    <div class="stat-row stat-row-5">
-      <div class="stat-card"><div class="stat-label">TOTAL</div><div class="stat-value" id="ls-total">0</div><div class="stat-sub">件</div></div>
-      <div class="stat-card"><div class="stat-label" style="color:var(--accent)">S+Aランク</div><div class="stat-value" id="ls-sa" style="color:var(--accent)">0</div><div class="stat-sub">優先ターゲット</div></div>
-      <div class="stat-card"><div class="stat-label" style="color:var(--text-mid)">未着手</div><div class="stat-value" id="ls-new">0</div><div class="stat-sub">件</div></div>
-      <div class="stat-card"><div class="stat-label" style="color:var(--orange)">広告未出稿</div><div class="stat-value" id="ls-noad" style="color:var(--orange)">0</div><div class="stat-sub">潜在層</div></div>
-      <div class="stat-card"><div class="stat-label" style="color:var(--blue)">求人シグナル</div><div class="stat-value" id="ls-hire" style="color:var(--blue)">0</div><div class="stat-sub">成長企業</div></div>
+
+    <!-- ★ 統合サマリーカード -->
+    <div style="display:flex;gap:12px;margin-bottom:20px;flex-wrap:wrap">
+      <div style="flex:1;min-width:120px;background:#FFF3EE;border:2px solid #FFD0BC;border-radius:16px;padding:16px 20px;text-align:center">
+        <div style="font-size:13px;font-weight:700;color:#FF4602;margin-bottom:4px">📊 合計</div>
+        <div id="ls-total" style="font-size:36px;font-weight:900;color:#FF4602;line-height:1">0</div>
+        <div style="font-size:12px;color:#FFA07A;margin-top:4px">件</div>
+      </div>
+      <div style="flex:1;min-width:120px;background:#F0FFF4;border:2px solid #A7F3D0;border-radius:16px;padding:16px 20px;text-align:center">
+        <div style="font-size:13px;font-weight:700;color:#059669;margin-bottom:4px">✨ 未着手</div>
+        <div id="ls-new" style="font-size:36px;font-weight:900;color:#059669;line-height:1">0</div>
+        <div style="font-size:12px;color:#6EE7B7;margin-top:4px">件</div>
+      </div>
+      <div style="flex:1;min-width:120px;background:#EEF2FF;border:2px solid #C7D2FE;border-radius:16px;padding:16px 20px;text-align:center">
+        <div style="font-size:13px;font-weight:700;color:#6366F1;margin-bottom:4px">🤖 未調査</div>
+        <div id="ls-unresearched" style="font-size:36px;font-weight:900;color:#6366F1;line-height:1">0</div>
+        <div style="font-size:12px;color:#A5B4FC;margin-top:4px">件</div>
+      </div>
+      <div style="flex:1;min-width:120px;background:#F0FFF4;border:2px solid #A7F3D0;border-radius:16px;padding:16px 20px;text-align:center">
+        <div style="font-size:13px;font-weight:700;color:#059669;margin-bottom:4px">💼 求人掲載あり</div>
+        <div id="ls-hire" style="font-size:36px;font-weight:900;color:#059669;line-height:1">0</div>
+        <div style="font-size:12px;color:#6EE7B7;margin-top:4px">件</div>
+      </div>
+      <div style="flex:1;min-width:120px;background:#F5F3FF;border:2px solid #DDD6FE;border-radius:16px;padding:16px 20px;text-align:center">
+        <div style="font-size:13px;font-weight:700;color:#7C3AED;margin-bottom:4px">📱 SNSあり</div>
+        <div id="ls-sns-count" style="font-size:36px;font-weight:900;color:#7C3AED;line-height:1">0</div>
+        <div style="font-size:12px;color:#C4B5FD;margin-top:4px">件</div>
+      </div>
     </div>
 
-    <!-- Signal filters -->
-    <div class="signal-chips">
-      <div class="schip" onclick="toggleSig(this,&#39;noad&#39;)" data-sig="noad">広告未出稿</div>
-      <div class="schip" onclick="toggleSig(this,&#39;hire&#39;)" data-sig="hire">求人中</div>
-      <div class="schip" onclick="toggleSig(this,&#39;wsns&#39;)" data-sig="wsns">SNS弱</div>
-      <div class="schip" onclick="toggleSig(this,&#39;comp&#39;)" data-sig="comp">競合契約っぽい</div>
-      <div class="schip" onclick="toggleSig(this,&#39;rev&#39;)" data-sig="rev">Gレビュー多</div>
-    </div>
-
-    <div class="filter-bar">
-      <input class="fi fi-wide" type="text" id="ls-search" placeholder="会社名で検索..." oninput="renderList()">
-      <select class="fi" id="ls-industry" onchange="renderList()">
-        <option value="">全業種</option>
+    <!-- フィルター -->
+    <div style="background:#fff;border-radius:16px;padding:16px 20px;margin-bottom:16px;border:2px solid #F3F4F6;display:flex;flex-wrap:wrap;gap:10px;align-items:center">
+      <input style="flex:1;min-width:160px;padding:10px 14px;border-radius:12px;border:2px solid #E5E7EB;font-size:14px;font-weight:600;color:#333;outline:none" type="text" id="ls-search" placeholder="🔍 会社名で検索..." oninput="renderList()">
+      <select style="padding:10px 12px;border-radius:12px;border:2px solid #E5E7EB;font-size:13px;font-weight:600;color:#555;background:#fff;outline:none" id="ls-industry" onchange="renderList()">
+        <option value="">🏭 全業種</option>
         <option>不動産・建設</option><option>医療・クリニック・介護</option>
         <option>飲食・食品</option><option>美容・エステ</option>
         <option>宿泊施設・ホテル・旅館</option><option>観光施設・レジャー</option>
@@ -746,67 +768,79 @@ tr:hover td { background: rgba(255,70,2,0.03); cursor: pointer; }
         <option>広告代理店</option><option>WEB制作会社</option>
         <option>コンサルティング会社</option><option>営業代行会社</option><option>その他</option>
       </select>
-      <select class="fi" id="ls-rank" onchange="renderList()">
-        <option value="">全ランク</option>
-        <option>S</option><option>A</option><option>B</option><option>C</option>
-      </select>
-      <select class="fi" id="ls-ap" onchange="renderList()">
-        <option value="">全ステータス</option>
+      <select style="padding:10px 12px;border-radius:12px;border:2px solid #E5E7EB;font-size:13px;font-weight:600;color:#555;background:#fff;outline:none" id="ls-ap" onchange="renderList()">
+        <option value="">📌 全ステータス</option>
         <option value="none">未着手</option>
         <option value="ongoing">アプローチ中</option>
         <option value="apo">アポ獲得</option>
       </select>
-      <select class="fi" id="ls-sns" onchange="renderList()">
-        <option value="">SNS状況</option>
-        <option value="has_sns">SNSあり</option>
-        <option value="no_sns">SNSなし</option>
-      </select>
-      <select class="fi" id="ls-job" onchange="renderList()">
-        <option value="">求人状況</option>
-        <option value="has_job">求人あり</option>
-        <option value="no_job">求人なし</option>
-      </select>
-      <select class="fi" id="ls-sort-mode" onchange="renderList()">
-        <option value="createdAt_desc">収集日（新→古）</option>
-        <option value="createdAt_asc">収集日（古→新）</option>
-        <option value="company">会社名順</option>
-        <option value="info_asc">情報充実度（低→高）</option>
-      </select>
-      <select class="fi" id="ls-pref" onchange="updateAreaOptions();renderList()">
-        <option value="">全都道府県</option>
-      </select>
-      <select class="fi" id="ls-area" onchange="renderList()">
-        <option value="">全エリア</option>
-      </select>
-      <select class="fi" id="ls-research" onchange="renderList()">
-        <option value="">リサーチ状況</option>
+      <select style="padding:10px 12px;border-radius:12px;border:2px solid #E5E7EB;font-size:13px;font-weight:600;color:#555;background:#fff;outline:none" id="ls-research" onchange="renderList()">
+        <option value="">🤖 リサーチ状況</option>
         <option value="none">未調査のみ</option>
         <option value="sent">依頼済みのみ</option>
         <option value="done">取込済みのみ</option>
       </select>
-      <label style="display:flex;align-items:center;gap:4px;font-size:11px;color:var(--text-mid);cursor:pointer">
+      <select style="padding:10px 12px;border-radius:12px;border:2px solid #E5E7EB;font-size:13px;font-weight:600;color:#555;background:#fff;outline:none" id="ls-sns" onchange="renderList()">
+        <option value="">📱 SNS状況</option>
+        <option value="has_sns">SNSあり</option>
+        <option value="no_sns">SNSなし</option>
+      </select>
+      <select style="padding:10px 12px;border-radius:12px;border:2px solid #E5E7EB;font-size:13px;font-weight:600;color:#555;background:#fff;outline:none" id="ls-job" onchange="renderList()">
+        <option value="">💼 求人状況</option>
+        <option value="has_job">求人あり</option>
+        <option value="no_job">求人なし</option>
+      </select>
+      <select style="padding:10px 12px;border-radius:12px;border:2px solid #E5E7EB;font-size:13px;font-weight:600;color:#555;background:#fff;outline:none" id="ls-pref" onchange="updateAreaOptions();renderList()">
+        <option value="">📍 全都道府県</option>
+      </select>
+      <select style="padding:10px 12px;border-radius:12px;border:2px solid #E5E7EB;font-size:13px;font-weight:600;color:#555;background:#fff;outline:none" id="ls-area" onchange="renderList()">
+        <option value="">🏙 全エリア</option>
+      </select>
+      <select style="padding:10px 12px;border-radius:12px;border:2px solid #E5E7EB;font-size:13px;font-weight:600;color:#555;background:#fff;outline:none" id="ls-sort-mode" onchange="renderList()">
+        <option value="createdAt_desc">🕐 収集日（新→古）</option>
+        <option value="createdAt_asc">🕐 収集日（古→新）</option>
+        <option value="company">🔤 会社名順</option>
+        <option value="info_asc">📊 情報充実度（低→高）</option>
+        <option value="phase">📌 フェーズ順</option>
+        <option value="area">📍 エリア順</option>
+      </select>
+      <label style="display:flex;align-items:center;gap:6px;font-size:13px;font-weight:600;color:#888;cursor:pointer">
         <input type="checkbox" id="ls-show-excluded" onchange="renderList()"> 除外も表示
       </label>
     </div>
 
-    <div class="table-wrap">
-      <table>
-        <thead><tr>
-           <th style="width:180px" onclick="sortTable(&#39;company&#39;)">会社名</th>
-          <th>住所・電話</th>
-          <th>業種</th>
-          <th>SNS・求人</th>
-          <th style="width:100px">リサーチ</th>
-          <th style="width:80px">フェーズ</th>
-          <th style="width:60px"></th>
-        </tr></thead>
+    <!-- 件数表示 -->
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;padding:0 4px">
+      <div style="font-size:15px;font-weight:800;color:#333">
+        <span id="ls-filtered-count" style="font-size:24px;color:#FF4602;font-weight:900">0</span> 件表示中
+      </div>
+      <div style="font-size:12px;color:#999">タップで詳細を見る</div>
+    </div>
+
+    <!-- テーブル -->
+    <div style="background:#fff;border-radius:16px;overflow:hidden;border:2px solid #F3F4F6">
+      <table class="list-table" style="width:100%;border-collapse:collapse">
+        <thead>
+          <tr style="background:#FAFAFA;border-bottom:2px solid #F3F4F6">
+            <th style="padding:12px 16px;text-align:left;font-size:12px;font-weight:700;color:#999;width:40px">#</th>
+            <th style="padding:12px 16px;text-align:left;font-size:12px;font-weight:700;color:#999;cursor:pointer" onclick="setSortMode('company')">会社名 ↕</th>
+            <th style="padding:12px 16px;text-align:left;font-size:12px;font-weight:700;color:#999;cursor:pointer" onclick="setSortMode('area')">住所・電話 ↕</th>
+            <th style="padding:12px 16px;text-align:left;font-size:12px;font-weight:700;color:#999;cursor:pointer" onclick="setSortMode('industry')">業種 ↕</th>
+            <th style="padding:12px 16px;text-align:left;font-size:12px;font-weight:700;color:#999">SNS・求人</th>
+            <th style="padding:12px 16px;text-align:left;font-size:12px;font-weight:700;color:#999">リサーチ</th>
+            <th style="padding:12px 16px;text-align:left;font-size:12px;font-weight:700;color:#999;cursor:pointer" onclick="setSortMode('phase')">フェーズ ↕</th>
+            <th style="padding:12px 16px;width:60px"></th>
+          </tr>
+        </thead>
         <tbody id="list-tbody"></tbody>
       </table>
-      <div class="empty" id="list-empty" style="display:none">
-        <div class="empty-ico"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="2" y1="20" x2="2" y2="14"></line><line x1="7" y1="20" x2="7" y2="8"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="17" y1="20" x2="17" y2="10"></line><line x1="22" y1="20" x2="22" y2="16"></line></svg></div>
-        <div>まだリストがありません。「情報収集」か「手動追加」から始めてください</div>
+      <div class="empty" id="list-empty" style="display:none;padding:60px;text-align:center">
+        <div style="font-size:48px;margin-bottom:12px">🔍</div>
+        <div style="font-size:16px;font-weight:700;color:#999">条件に合う会社が見つかりません</div>
+        <div style="font-size:13px;color:#CCC;margin-top:6px">フィルタを変えてみてください</div>
       </div>
     </div>
+
   </div>
 </div>
 
@@ -1876,6 +1910,12 @@ function anniversaryBadge(it) {
   return badge;
 }
 
+function setSortMode(mode) {
+  const sel = document.getElementById('ls-sort-mode');
+  if (sel) sel.value = mode;
+  renderList();
+}
+
 // ── RENDER LIST ──
 let activeSigs = new Set();
 function toggleSig(el, sig) {
@@ -1925,6 +1965,9 @@ function renderList() {
       const infoScore = it => [it.person,it.phone,it.foundingDate,it.instaUrl,it.fbUrl,it.xUrl,it.tiktokUrl,it.indeedUrl,it.jobAntennaUrl,it.agreUrl,it.email].filter(Boolean).length;
       return infoScore(a) - infoScore(b);
     }
+    if (sortMode === 'phase') return (a.phase||'').localeCompare(b.phase||'');
+    if (sortMode === 'area') return (a.area||a.addr||'').localeCompare(b.area||b.addr||'');
+    if (sortMode === 'industry') return (a.industry||'').localeCompare(b.industry||'');
     if (sortKey==='score' || sortMode === 'score') return sortDir*((b.score?.total||0)-(a.score?.total||0));
     if (sortKey==='company') return sortDir*a.company.localeCompare(b.company);
     return 0;
@@ -1934,11 +1977,13 @@ function renderList() {
   const empty = document.getElementById('list-empty');
 
   const all = items;
-  document.getElementById('ls-total').textContent = all.length;
-  document.getElementById('ls-sa').textContent = all.filter(x=>['S','A'].includes(x.score?.rank)).length;
-  document.getElementById('ls-new').textContent = all.filter(x=>!(x.logs||[]).length).length;
-  document.getElementById('ls-noad').textContent = all.filter(x=>(x.signals||[]).includes('noad')).length;
-  document.getElementById('ls-hire').textContent = all.filter(x=>(x.signals||[]).includes('hire')).length;
+  const set = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+  set('ls-total', all.length);
+  set('ls-new', all.filter(x=>!(x.logs||[]).length && !x.excluded).length);
+  set('ls-unresearched', all.filter(x=>!x.excluded && (x.researchStatus||'none')==='none').length);
+  set('ls-hire', all.filter(x=>x.indeedUrl||x.jobAntennaUrl||x.agreUrl).length);
+  set('ls-sns-count', all.filter(x=>x.instaUrl||x.fbUrl||x.xUrl||x.tiktokUrl).length);
+  set('ls-filtered-count', list.length);
 
   if (!list.length) { tbody.innerHTML=''; empty.style.display='block'; return; }
   empty.style.display='none';
@@ -1962,7 +2007,7 @@ function renderList() {
     return badges.length ? `<div class="url-badges">${badges.join('')}</div>` : '';
   };
 
-  tbody.innerHTML = list.map(it => {
+  tbody.innerHTML = list.map((it, idx) => {
     const ph = PHASE[it.phase];
     const overdue = it.nextDate && it.nextDate < today;
 
@@ -1991,6 +2036,9 @@ function renderList() {
     const annBadge = anniversaryBadge(it);
 
     return '<tr onclick="openDetail(' + it.id + ')" style="' + (it.excluded ? 'opacity:0.4' : '') + '">' +
+
+      // 番号
+      '<td style="padding:12px 8px 12px 16px;font-size:13px;font-weight:700;color:#CCC;text-align:center">' + (idx+1) + '</td>' +
 
       // 会社名・HP
       '<td>' +
@@ -2057,7 +2105,7 @@ function renderApproach() {
   empty.style.display='none';
 
   const today = todayJST();
-  tbody.innerHTML = list.map(it => {
+  tbody.innerHTML = list.map((it, idx) => {
     const ph = PHASE[it.phase];
     const an = checkAutoPhase(it);
     const overdue = it.nextDate && it.nextDate<today;
