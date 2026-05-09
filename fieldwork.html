@@ -2001,8 +2001,9 @@ function renderToday() {
   const today = todayJST();
   const d = nowJST();
   const weekdays = ['日','月','火','水','木','金','土'];
-  document.getElementById('today-label').textContent =
-    `${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日（${weekdays[d.getDay()]}）`;
+  const todayLabel = document.getElementById('today-label');
+  if (todayLabel) todayLabel.textContent =
+    d.getFullYear()+'年'+(d.getMonth()+1)+'月'+d.getDate()+'日（'+weekdays[d.getDay()]+'）';
   const in3days = addBusinessDays(3);
   const active = items.filter(x => x.phase !== 'apo' && x.phase !== 'excluded');
   const overdue = active.filter(x => x.nextDate && x.nextDate < today)
@@ -2012,9 +2013,11 @@ function renderToday() {
     .sort((a,b) => a.nextDate.localeCompare(b.nextDate));
   const total = overdue.length + dueToday.length + soon.length;
   const badge = document.getElementById('nb-today');
-  badge.textContent = overdue.length + dueToday.length;
-  badge.style.background = overdue.length ? 'var(--red)' : 'var(--gold)';
-  const content = document.getElementById('today-content');
+  if (badge) {
+    badge.textContent = overdue.length + dueToday.length;
+    badge.style.background = overdue.length ? 'var(--red)' : 'var(--gold)';
+  }
+  const content = document.getElementById('today-content'); if (!content) return;
   const summaryHTML = `
     <div class="aq-summary">
       <div class="aq-sum-card">
