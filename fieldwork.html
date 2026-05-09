@@ -896,10 +896,31 @@ tr:hover td { background: rgba(255,70,2,0.03); cursor: pointer; }
         <div class="prog-wrap"><div class="prog-fill" id="col-prog-fill" style="width:0%"></div></div>
         <div class="prog-label" id="col-prog-label"></div>
       </div>
-      <button class="btn btn-green" onclick="startCollect()" id="col-btn" style="width:100%;justify-content:center;padding:12px">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
-        収集開始
-      </button>
+      <div style="display:flex;gap:10px">
+        <button class="btn btn-green" onclick="startAutoCollect()" id="col-btn" style="flex:1;justify-content:center;padding:14px;font-size:14px;font-weight:700">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+          全エリア自動収集
+        </button>
+        <button class="btn btn-ghost" onclick="startCollect()" id="col-btn-single" style="padding:14px 16px;font-size:13px" title="現在のエリアだけ収集">
+          1エリアのみ
+        </button>
+      </div>
+      <div style="display:none;gap:10px;margin-top:10px" id="col-auto-controls">
+        <button class="btn btn-ghost" onclick="pauseAutoCollect()" id="col-pause-btn" style="flex:1;justify-content:center;padding:12px">
+          ⏸ 一時停止
+        </button>
+        <button class="btn btn-ghost" onclick="stopAutoCollect()" style="padding:12px 16px;color:var(--red,#ef4444)">
+          ⏹ 中止
+        </button>
+      </div>
+      <!-- 同じエリア再収集 -->
+      <div style="margin-top:10px;padding:10px 14px;background:var(--surface2);border-radius:8px;border:1px solid var(--border);display:flex;align-items:center;justify-content:space-between">
+        <div style="font-size:11px;color:var(--text-mid)">
+          収集済みエリアをリセットして最初から回す<br>
+          <span style="font-size:10px;color:var(--green)">※企業データは守られます。新規のみ上乗せされます。</span>
+        </div>
+        <button class="btn btn-ghost btn-sm" onclick="resetCollectedAreas()" style="flex-shrink:0;margin-left:10px">再収集</button>
+      </div>
     </div>
 
     <!-- 収集結果 -->
@@ -2824,19 +2845,39 @@ function renderGeminiTab() {
   if (!el) return;
 
   const prompt = [
-    '以下のフォーマットで企業情報を調べて、必ずこのCSV形式で出力してください。',
-    'ヘッダー行も含めて出力すること。不明な項目はN/Aと記入。',
+    '以下の企業について調査し、必ずCSV形式のみで返答してください。説明文は不要です。',
     '',
-    'company_name,ceo_name,phone,founding_date,anniversary_month,instagram_url,facebook_url,tiktok_url,job_url,notes',
-    '"' + it.company + '","代表者名","電話番号","創業年月日(YYYY-MM形式)","創業月(数字のみ)","Instagram URL","Facebook URL","TikTok URL","求人URL","備考"',
+    '【出力CSV列】',
+    'company_name,ceo_name,email,founding_date,anniversary_month,months_until_anniversary,next_anniversary_years,instagram_url,facebook_url,x_url,tiktok_url,indeed_url,job_antenna_url,agre_url,mynavi_exists,revenue,employees,notes',
     '',
-    '【重要】',
-    '・必ず上記のCSV形式で出力すること',
-    '・各値はダブルクォートで囲む',
-    '・URLは完全なhttps://から始まる形式で',
-    '・創業年月日はYYYY-MM形式（例：2005-07）',
-    '・創業月は数字のみ（例：7）',
-    '・不明な項目はN/Aと記入（空白不可）',
+    '【調査対象企業】',
+    '"' + it.company + '" （住所：' + (it.addr||it.area||'') + '）',
+    '',
+    '【各列の説明】',
+    '・ceo_name: 代表者名',
+    '・email: 公開されているメールアドレス',
+    '・founding_date: 創業年月日（YYYY-MM形式。例：2005-07）',
+    '・anniversary_month: 創業月（数字のみ。例：7）',
+    '・months_until_anniversary: 今日（' + new Date().toLocaleDateString('ja-JP',{year:'numeric',month:'2-digit',day:'2-digit'}) + '）から次の周年まで何ヶ月か（数字）',
+    '・next_anniversary_years: 次の周年は何周年か（数字）',
+    '・instagram_url: Instagram公式URL（https://www.instagram.com/...）',
+    '・facebook_url: Facebook公式URL',
+    '・x_url: X（旧Twitter）公式URL',
+    '・tiktok_url: TikTok公式URL',
+    '・indeed_url: Indeed求人ページURL',
+    '・job_antenna_url: ジョブアンテナ求人ページURL',
+    '・agre_url: アグレ求人ページURL',
+    '・mynavi_exists: マイナビに掲載ページが存在するか（あり/なし/N/A）',
+    '・revenue: 年商（例：約5億円）',
+    '・employees: 従業員数（例：約50名）',
+    '・notes: 営業提案に活かせる情報（受賞歴・拡大傾向・特徴など）',
+    '',
+    '【重要ルール】',
+    '・1行目はヘッダー行、2行目がデータ行',
+    '・各値は必ずダブルクォートで囲む',
+    '・不明な項目はN/A（空白不可）',
+    '・URLはhttps://から始まる完全形式で',
+    '・months_until_anniversaryとnext_anniversary_yearsはfounding_dateから自動計算すること',
   ].join('\n');
 
   el.innerHTML =
@@ -2912,6 +2953,9 @@ function parseAndApplyGemini() {
   const ceo = get('ceo_name');
   if (ceo) { it.person = ceo; applied['代表者名'] = ceo; }
 
+  const email = get('email');
+  if (email) { it.email = email; applied['メール'] = email; }
+
   const phone = get('phone');
   if (phone) { it.phone = phone.replace(/\s/g,''); applied['電話番号'] = it.phone; }
 
@@ -2923,10 +2967,15 @@ function parseAndApplyGemini() {
     it.anniversaryMonth = parseInt(annivMonth);
     applied['創業記念月'] = it.anniversaryMonth + '月';
   } else if (founding) {
-    // founding_dateからも月を抽出できる場合
     const m = founding.match(/\d{4}-(\d{2})/);
     if (m) { it.anniversaryMonth = parseInt(m[1]); applied['創業記念月(自動)'] = it.anniversaryMonth + '月'; }
   }
+
+  const monthsUntil = get('months_until_anniversary');
+  if (monthsUntil && monthsUntil !== 'N/A') { it.monthsUntilAnniversary = parseInt(monthsUntil); applied['周年まで'] = monthsUntil + 'ヶ月'; }
+
+  const nextYears = get('next_anniversary_years');
+  if (nextYears && nextYears !== 'N/A') { it.nextAnniversaryYears = parseInt(nextYears); applied['次の周年'] = nextYears + '周年'; }
 
   const insta = get('instagram_url');
   if (insta) { it.instaUrl = insta; applied['Instagram'] = insta; }
@@ -2934,15 +2983,33 @@ function parseAndApplyGemini() {
   const fb = get('facebook_url');
   if (fb) { it.fbUrl = fb; applied['Facebook'] = fb; }
 
+  const xurl = get('x_url');
+  if (xurl) { it.xUrl = xurl; applied['X'] = xurl; }
+
   const tiktok = get('tiktok_url');
   if (tiktok) { it.tiktokUrl = tiktok; applied['TikTok'] = tiktok; }
 
-  const job = get('job_url');
-  if (job) {
-    it.jobUrl = job;
+  const indeed = get('indeed_url');
+  if (indeed) {
+    it.indeedUrl = indeed;
     if (!(it.signals||[]).includes('hire')) it.signals = [...(it.signals||[]), 'hire'];
-    applied['求人URL'] = job;
+    applied['Indeed'] = indeed;
   }
+
+  const jobAntenna = get('job_antenna_url');
+  if (jobAntenna) { it.jobAntennaUrl = jobAntenna; applied['ジョブアンテナ'] = jobAntenna; }
+
+  const agre = get('agre_url');
+  if (agre) { it.agreUrl = agre; applied['アグレ'] = agre; }
+
+  const mynavi = get('mynavi_exists');
+  if (mynavi) { it.mynaviExists = mynavi; applied['マイナビ'] = mynavi; }
+
+  const revenue = get('revenue');
+  if (revenue) { it.revenue = revenue; applied['年商'] = revenue; }
+
+  const employees = get('employees');
+  if (employees) { it.employeeCount = employees; applied['従業員数'] = employees; }
 
   const notes = get('notes');
   if (notes) { it.researchNotes = notes; applied['備考'] = notes; }
@@ -3202,6 +3269,156 @@ function selectType(type) {
     if (iw) iw.style.display = 'none';
   }
   updateNextAreaPreview();
+}
+
+// ══ 全エリア自動収集 ══
+var autoCollectRunning = false;
+var autoCollectPaused = false;
+var autoCollectStopped = false;
+var autoCollectStats = {added: 0, skipped: 0};
+
+async function startAutoCollect() {
+  const pref = document.getElementById('col-pref')?.value || 'okinawa';
+  const ind = collectType === 'agency' ? '広告代理店' : document.getElementById('col-ind').value;
+  const ranking = AREA_RANKINGS[pref] || [];
+  if (!ranking.length) { toast('この都道府県のエリアデータがありません。'); return; }
+
+  const remaining = ranking.filter(a => {
+    const done = new Set(collectedAreas[pref] || []);
+    return !done.has(ind + '|' + a);
+  });
+
+  if (!remaining.length) {
+    toast('この業種は全エリア収集済みです！「再収集」ボタンでリセットできます。');
+    return;
+  }
+
+  autoCollectRunning = true;
+  autoCollectPaused = false;
+  autoCollectStopped = false;
+  autoCollectStats = {added: 0, skipped: 0};
+
+  // UIを収集モードに
+  document.getElementById('col-btn').style.display = 'none';
+  document.getElementById('col-btn-single').style.display = 'none';
+  document.getElementById('col-auto-controls').style.display = 'flex';
+  document.getElementById('col-prog').style.display = 'block';
+  document.getElementById('collect-result').style.display = 'block';
+
+  const limit = parseInt(document.getElementById('col-limit').value) || 50;
+  const total = ranking.length;
+
+  for (let i = 0; i < remaining.length; i++) {
+    // 中止チェック
+    if (autoCollectStopped) break;
+
+    // 一時停止チェック
+    while (autoCollectPaused && !autoCollectStopped) {
+      await new Promise(r => setTimeout(r, 500));
+    }
+    if (autoCollectStopped) break;
+
+    const area = remaining[i];
+    const doneCount = (collectedAreas[pref] || []).filter(x => x.startsWith(ind + '|')).length;
+    const progress = Math.round((doneCount / total) * 100);
+
+    // プログレス更新
+    document.getElementById('col-prog-fill').style.width = progress + '%';
+    document.getElementById('col-prog-label').textContent =
+      area + ' を収集中... (' + (i+1) + '/' + remaining.length + 'エリア)';
+    document.getElementById('col-think-txt').textContent =
+      area + ' × ' + ind + ' を収集中...';
+    document.getElementById('col-think').classList.add('show');
+
+    // 収集実行
+    let newItems = [];
+    try {
+      newItems = await searchPlacesAPI(ind, area, limit);
+      if (!newItems.length) newItems = genDemoItems(ind, area, limit);
+    } catch(e) {
+      newItems = genDemoItems(ind, area, limit);
+    }
+
+    // 重複チェック・追加
+    const existingPhones = new Set(items.map(x => x.phone).filter(Boolean));
+    const existingKeys = new Set(items.map(x => x.company + '|' + (x.addr || x.area)));
+    for (const it of newItems) {
+      it.score = calcScore(it);
+      if (it.phone && existingPhones.has(it.phone)) { autoCollectStats.skipped++; continue; }
+      const key = it.company + '|' + (it.addr || it.area);
+      if (existingKeys.has(key)) { autoCollectStats.skipped++; continue; }
+      items.push(it);
+      if (it.phone) existingPhones.add(it.phone);
+      existingKeys.add(key);
+      autoCollectStats.added++;
+    }
+
+    // エリア収集済みに記録
+    await markAreaCollected(pref, ind + '|' + area);
+    await sb.set('items', 'fw_items', items);
+
+    // 結果表示更新
+    document.getElementById('result-added').textContent = autoCollectStats.added;
+    document.getElementById('result-skipped').textContent = autoCollectStats.skipped;
+    document.getElementById('result-total').textContent = items.length;
+    updateBadges();
+    updatePrefOptions();
+
+    // エリア間のウェイト（API負荷軽減）
+    await new Promise(r => setTimeout(r, 800));
+  }
+
+  // 完了
+  autoCollectRunning = false;
+  document.getElementById('col-think').classList.remove('show');
+  document.getElementById('col-btn').style.display = '';
+  document.getElementById('col-btn-single').style.display = '';
+  document.getElementById('col-auto-controls').style.display = 'none';
+
+  if (autoCollectStopped) {
+    document.getElementById('col-prog-label').textContent = '中止しました。続きから再開できます。';
+    toast('収集を中止しました。次回は続きから再開します。');
+  } else {
+    document.getElementById('col-prog-fill').style.width = '100%';
+    document.getElementById('col-prog-label').textContent =
+      '完了！ 新規' + autoCollectStats.added + '件追加 / ' + autoCollectStats.skipped + '件スキップ';
+    toast('全エリア収集完了！新規' + autoCollectStats.added + '件追加');
+  }
+
+  renderList();
+  renderCollectProgress();
+  updateNextAreaPreview();
+}
+
+function pauseAutoCollect() {
+  autoCollectPaused = !autoCollectPaused;
+  const btn = document.getElementById('col-pause-btn');
+  if (autoCollectPaused) {
+    btn.textContent = '▶ 再開';
+    document.getElementById('col-prog-label').textContent = '一時停止中... 「再開」で続きから収集します。';
+    document.getElementById('col-think').classList.remove('show');
+  } else {
+    btn.textContent = '⏸ 一時停止';
+    document.getElementById('col-think').classList.add('show');
+  }
+}
+
+function stopAutoCollect() {
+  if (!confirm('収集を中止しますか？続きから再開できます。')) return;
+  autoCollectStopped = true;
+  autoCollectPaused = false;
+}
+
+async function resetCollectedAreas() {
+  const pref = document.getElementById('col-pref')?.value || 'okinawa';
+  const ind = collectType === 'agency' ? '広告代理店' : (document.getElementById('col-ind')?.value || '');
+  if (!confirm(pref + ' × ' + ind + ' の収集済みエリアをリセットしますか？企業データは削除されません。')) return;
+  if (!collectedAreas[pref]) collectedAreas[pref] = [];
+  collectedAreas[pref] = collectedAreas[pref].filter(x => !x.startsWith(ind + '|'));
+  await sb.set('items', 'fw_collected_areas', collectedAreas);
+  updateNextAreaPreview();
+  renderCollectProgress();
+  toast('リセットしました。全エリアを再収集できます。');
 }
 
 async function startCollect() {
