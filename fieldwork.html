@@ -1679,10 +1679,12 @@ function goPage(p, el) {
 
 function updateBadges() {
   const t = todayJST();
-  document.getElementById('nb-list').textContent = items.length;
-  document.getElementById('nb-ap').textContent = items.filter(x=>['visit','tel','letter'].includes(x.phase)).length;
-  document.getElementById('nb-today').textContent = items.filter(x=>x.nextDate && x.nextDate<=t).length;
-  document.getElementById('nb-apo').textContent = items.filter(x=>x.phase==='apo').length;
+  const set = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+  set('nb-list', items.length);
+  set('nb-ap', items.filter(x=>['visit','tel','letter'].includes(x.phase)).length);
+  set('nb-today', items.filter(x=>x.nextDate && x.nextDate<=t).length);
+  set('nb-apo', items.filter(x=>x.phase==='apo').length);
+  set('nb-notice', (notices||[]).length);
 }
 
 // ══ エリア・県絞り込み ══
