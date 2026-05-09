@@ -3,6 +3,7 @@
 <html lang="ja"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAzMiAzMiI+CiAgPHJlY3Qgd2lkdGg9IjMyIiBoZWlnaHQ9IjMyIiByeD0iNiIgZmlsbD0iI0Y1RkYwMCIvPgogIDx0ZXh0IHg9IjE2IiB5PSIyNCIgZm9udC1mYW1pbHk9IkFyaWFsIEJsYWNrLCBzYW5zLXNlcmlmIiBmb250LXNpemU9IjI0IiBmb250LXdlaWdodD0iOTAwIiBmaWxsPSIjRkY0NjAyIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj5UPC90ZXh0Pgo8L3N2Zz4=">
 <title>FIELDWORK — アタックリスト × アプローチ管理</title>
 <link href="./FIELDWORK — アタックリスト × アプローチ管理_files/css2" rel="stylesheet">
 <style>
@@ -1695,6 +1696,14 @@ async function save() {
 
 // ── NAV ──
 function goPage(p, el) {
+  if (autoCollectRunning && !autoCollectPaused && p !== 'collect') {
+    showCollectingDialog(p, el);
+    return;
+  }
+  _doGoPage(p, el);
+}
+
+function _doGoPage(p, el) {
   document.querySelectorAll('.page').forEach(x=>x.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(x=>x.classList.remove('active'));
   document.getElementById('page-'+p).classList.add('active');
@@ -1702,6 +1711,31 @@ function goPage(p, el) {
   if (p === 'collect') updateSNSCounts();
   if (p === 'settings') renderScriptEditor();
 }
+
+function showCollectingDialog(targetPage, targetEl) {
+  document.getElementById('m-collecting-alert').classList.add('open');
+  document.getElementById('collect-alert-stay').onclick = function() {
+    document.getElementById('m-collecting-alert').classList.remove('open');
+  };
+  document.getElementById('collect-alert-newtab').onclick = function() {
+    document.getElementById('m-collecting-alert').classList.remove('open');
+    window.open(window.location.href, '_blank');
+    setTimeout(function(){ toast('新しいタブでアプリを開きました！'); }, 300);
+  };
+  document.getElementById('collect-alert-stop').onclick = function() {
+    document.getElementById('m-collecting-alert').classList.remove('open');
+    autoCollectStopped = true;
+    autoCollectPaused = false;
+    autoCollectRunning = false;
+    document.getElementById('col-btn').style.display = '';
+    document.getElementById('col-btn-single').style.display = '';
+    document.getElementById('col-auto-controls').style.display = 'none';
+    document.getElementById('col-think').classList.remove('show');
+    toast('収集を止めました。続きから再開できます。');
+    _doGoPage(targetPage, targetEl);
+  };
+}
+
 
 function updateBadges() {
   const t = todayJST();
@@ -4175,6 +4209,29 @@ document.getElementById('today-label').textContent = (() => {
 })();
 </script>
 <div class="toast" id="toast"></div>
+
+<!-- ══ MODAL: 収集中アラート ══ -->
+<div class="modal-backdrop" id="m-collecting-alert">
+  <div class="modal" style="max-width:400px">
+    <div class="mhead" style="border-bottom:3px solid #FF9800">
+      <div>
+        <div class="mtitle" style="color:#FF9800">🔄 収集中です！</div>
+        <div style="font-size:12px;color:var(--text-mid);margin-top:4px">別のページに移動しますか？</div>
+      </div>
+    </div>
+    <div class="mbody" style="padding:20px 24px;display:flex;flex-direction:column;gap:10px">
+      <button id="collect-alert-stay" style="padding:14px;border-radius:12px;border:2px solid #E5E7EB;background:#F9FAFB;font-size:14px;font-weight:700;color:#374151;cursor:pointer;text-align:left">
+        ▶ 収集を続ける（このページに留まる）
+      </button>
+      <button id="collect-alert-newtab" style="padding:14px;border-radius:12px;border:2px solid #6366F1;background:#EEF2FF;font-size:14px;font-weight:700;color:#6366F1;cursor:pointer;text-align:left">
+        🗂 別タブで新しく開く（収集は続く）
+      </button>
+      <button id="collect-alert-stop" style="padding:14px;border-radius:12px;border:2px solid #FCA5A5;background:#FFF0F0;font-size:14px;font-weight:700;color:#EF4444;cursor:pointer;text-align:left">
+        ⏹ 収集を止めてページ移動（続きから再開できます）
+      </button>
+    </div>
+  </div>
+</div>
 
 <!-- ══ MODAL: Gemini使い方ガイド ══ -->
 <div class="modal-backdrop" id="m-gemini-guide">
