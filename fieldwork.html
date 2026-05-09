@@ -1927,10 +1927,10 @@ function toggleSig(el, sig) {
 function sortTable(k) { sortKey===k ? sortDir*=-1 : (sortKey=k, sortDir=-1); renderList(); }
 
 function renderList() {
-  const search = document.getElementById('ls-search').value.toLowerCase();
-  const ind = document.getElementById('ls-industry').value;
-  const rank = document.getElementById('ls-rank').value;
-  const apf = document.getElementById('ls-ap').value;
+  const search = (document.getElementById('ls-search')?.value || '').toLowerCase();
+  const ind = document.getElementById('ls-industry')?.value || '';
+  const rank = document.getElementById('ls-rank')?.value || '';
+  const apf = document.getElementById('ls-ap')?.value || '';
 
   let list = items.filter(it => {
     if (search && !it.company.toLowerCase().includes(search)) return false;
