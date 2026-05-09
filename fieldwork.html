@@ -754,6 +754,11 @@ tr:hover td { background: rgba(255,70,2,0.03); cursor: pointer; }
         <div id="ls-sns-count" style="font-size:36px;font-weight:900;color:#7C3AED;line-height:1">0</div>
         <div style="font-size:12px;color:#C4B5FD;margin-top:4px">件</div>
       </div>
+      <div style="flex:1;min-width:120px;background:#FEF3C7;border:2px solid #FCD34D;border-radius:16px;padding:16px 20px;text-align:center">
+        <div style="font-size:13px;font-weight:700;color:#92400E;margin-bottom:4px">🏞 非企業</div>
+        <div id="ls-noncompany" style="font-size:36px;font-weight:900;color:#92400E;line-height:1">0</div>
+        <div style="font-size:12px;color:#FCD34D;margin-top:4px">件</div>
+      </div>
     </div>
 
     <!-- フィルター -->
@@ -796,9 +801,23 @@ tr:hover td { background: rgba(255,70,2,0.03); cursor: pointer; }
       <select style="padding:10px 12px;border-radius:12px;border:2px solid #E5E7EB;font-size:13px;font-weight:600;color:#555;background:#fff;outline:none" id="ls-area" onchange="renderList()">
         <option value="">🏙 全エリア</option>
       </select>
+      <select style="padding:10px 12px;border-radius:12px;border:2px solid #E5E7EB;font-size:13px;font-weight:600;color:#555;background:#fff;outline:none" id="ls-company-type" onchange="renderList()">
+        <option value="">🏢 企業/非企業</option>
+        <option value="company">企業のみ</option>
+        <option value="non_company">非企業のみ</option>
+      </select>
+      <select style="padding:10px 12px;border-radius:12px;border:2px solid #E5E7EB;font-size:13px;font-weight:600;color:#555;background:#fff;outline:none" id="ls-period" onchange="renderList()">
+        <option value="">📅 期間（全期間）</option>
+        <option value="today">今日収集</option>
+        <option value="week">直近7日収集</option>
+        <option value="month">直近30日収集</option>
+        <option value="updated_today">今日情報更新</option>
+        <option value="updated_week">直近7日更新</option>
+      </select>
       <select style="padding:10px 12px;border-radius:12px;border:2px solid #E5E7EB;font-size:13px;font-weight:600;color:#555;background:#fff;outline:none" id="ls-sort-mode" onchange="renderList()">
         <option value="createdAt_desc">🕐 収集日（新→古）</option>
         <option value="createdAt_asc">🕐 収集日（古→新）</option>
+        <option value="updated_desc">✨ 更新日（新→古）</option>
         <option value="company">🔤 会社名順</option>
         <option value="info_asc">📊 情報充実度（低→高）</option>
         <option value="phase">📌 フェーズ順</option>
@@ -827,7 +846,7 @@ tr:hover td { background: rgba(255,70,2,0.03); cursor: pointer; }
             <th style="padding:12px 16px;text-align:left;font-size:12px;font-weight:700;color:#999;cursor:pointer" onclick="setSortMode('area')">住所・電話 ↕</th>
             <th style="padding:12px 16px;text-align:left;font-size:12px;font-weight:700;color:#999;cursor:pointer" onclick="setSortMode('industry')">業種 ↕</th>
             <th style="padding:12px 16px;text-align:left;font-size:12px;font-weight:700;color:#999">SNS・求人</th>
-            <th style="padding:12px 16px;text-align:left;font-size:12px;font-weight:700;color:#999">リサーチ</th>
+            <th style="padding:12px 16px;text-align:left;font-size:12px;font-weight:700;color:#999">創業年月日</th>
             <th style="padding:12px 16px;text-align:left;font-size:12px;font-weight:700;color:#999;cursor:pointer" onclick="setSortMode('phase')">フェーズ ↕</th>
             <th style="padding:12px 16px;width:60px"></th>
           </tr>
@@ -1955,11 +1974,37 @@ function renderList() {
   if (prefF) list = list.filter(it => getPrefFromArea(it.area || it.addr || '') === prefF);
   if (areaF) list = list.filter(it => (it.area || '').includes(areaF));
 
+  // 期間フィルタ
+  const periodF = document.getElementById('ls-period')?.value || '';
+  if (periodF) {
+    const now = new Date();
+    const todayStr = todayJST();
+    const startOfDay = (d => d).bind(null);
+    const daysAgo = (n) => {
+      const d = new Date(now); d.setDate(d.getDate() - n);
+      return d.toISOString().slice(0,10);
+    };
+    if (periodF === 'today') list = list.filter(it => (it.createdAt||'').slice(0,10) === todayStr);
+    else if (periodF === 'week') {
+      const limit = daysAgo(7);
+      list = list.filter(it => (it.createdAt||'').slice(0,10) >= limit);
+    } else if (periodF === 'month') {
+      const limit = daysAgo(30);
+      list = list.filter(it => (it.createdAt||'').slice(0,10) >= limit);
+    } else if (periodF === 'updated_today') {
+      list = list.filter(it => (it.lastUpdatedAt||'').slice(0,10) === todayStr);
+    } else if (periodF === 'updated_week') {
+      const limit = daysAgo(7);
+      list = list.filter(it => (it.lastUpdatedAt||'').slice(0,10) >= limit);
+    }
+  }
+
   // ソート
   const sortMode = document.getElementById('ls-sort-mode')?.value || 'score';
   list.sort((a,b) => {
     if (sortMode === 'createdAt_desc') return (b.createdAt||'').localeCompare(a.createdAt||'');
     if (sortMode === 'createdAt_asc') return (a.createdAt||'').localeCompare(b.createdAt||'');
+    if (sortMode === 'updated_desc') return (b.lastUpdatedAt||'').localeCompare(a.lastUpdatedAt||'');
     if (sortMode === 'company') return a.company.localeCompare(b.company);
     if (sortMode === 'info_asc') {
       const infoScore = it => [it.person,it.phone,it.foundingDate,it.instaUrl,it.fbUrl,it.xUrl,it.tiktokUrl,it.indeedUrl,it.jobAntennaUrl,it.agreUrl,it.email].filter(Boolean).length;
@@ -1983,6 +2028,7 @@ function renderList() {
   set('ls-unresearched', all.filter(x=>!x.excluded && (x.researchStatus||'none')==='none').length);
   set('ls-hire', all.filter(x=>x.indeedUrl||x.jobAntennaUrl||x.agreUrl).length);
   set('ls-sns-count', all.filter(x=>x.instaUrl||x.fbUrl||x.xUrl||x.tiktokUrl).length);
+  set('ls-noncompany', all.filter(x=>!isLikelyCompany(x)).length);
   set('ls-filtered-count', list.length);
 
   if (!list.length) { tbody.innerHTML=''; empty.style.display='block'; return; }
@@ -2042,8 +2088,14 @@ function renderList() {
 
       // 会社名・HP
       '<td>' +
-        '<div style="font-weight:700;font-size:13px;color:#222">' + it.company + '</div>' +
-        (it.website ? '<a href="' + it.website + '" target="_blank" style="font-size:10px;color:var(--blue);text-decoration:none" onclick="event.stopPropagation()">🌐 HP</a>' : '') +
+        '<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">' +
+          '<div style="font-weight:700;font-size:13px;color:#222">' + it.company + '</div>' +
+          (!isLikelyCompany(it) ? '<span title="自動判定：非企業（行政施設・自然地形・地名）" style="font-size:9px;font-weight:800;padding:2px 6px;border-radius:6px;background:#FEF3C7;color:#92400E;border:1px solid #FCD34D">🏞 非企業</span>' : '') +
+          (it.manualCompanyFlag ? '<span title="手動上書き中" style="font-size:9px;font-weight:800;padding:2px 6px;border-radius:6px;background:#E0E7FF;color:#3730A3;border:1px solid #C7D2FE">✋手動</span>' : '') +
+          (isRecentlyUpdated(it) ? '<span title="' + (it.lastUpdatedAt||'') + ' に情報更新" style="font-size:9px;font-weight:800;padding:2px 6px;border-radius:6px;background:#DCFCE7;color:#166534;border:1px solid #86EFAC">✨ 更新</span>' : '') +
+          '<button onclick="event.stopPropagation();showCompanyFlagMenu(event,' + it.id + ')" title="企業/非企業の手動設定" style="background:transparent;border:none;cursor:pointer;font-size:14px;padding:2px 4px;color:#9CA3AF">⚙</button>' +
+        '</div>' +
+        (it.website ? '<a href="' + it.website + '" target="_blank" style="font-size:10px;color:var(--blue);text-decoration:none" onclick="event.stopPropagation()">🌐 HP</a>' : '<span style="font-size:10px;color:#CCC">HP未登録</span>') +
         (annBadge ? '<div style="margin-top:4px">' + annBadge + '</div>' : '') +
       '</td>' +
 
@@ -2057,15 +2109,17 @@ function renderList() {
       // 業種
       '<td>' +
         '<div style="font-size:12px;color:#555">' + (it.industry || '—') + '</div>' +
-        (it.foundingDate ? '<div style="font-size:10px;color:#888;margin-top:2px">創業 ' + it.foundingDate + '</div>' : '') +
       '</td>' +
 
       // SNS・求人
       '<td><div class="url-badges">' + (snsBadges.length ? snsBadges.join('') : '<span style="font-size:11px;color:#CCC">なし</span>') + '</div></td>' +
 
-      // リサーチステータス
+      // 創業年月日（新規列）
       '<td>' +
-        '<span style="font-size:11px;font-weight:700;padding:3px 8px;border-radius:20px;background:' + st.bg + ';color:' + st.color + '">' + st.label + '</span>' +
+        (it.foundingDate
+          ? '<div style="font-size:12px;color:#333;font-weight:700">' + it.foundingDate + '</div>' +
+            (it.anniversaryMonth ? '<div style="font-size:10px;color:#FF4602;font-weight:700;margin-top:2px">🎂 ' + it.anniversaryMonth + '月創業</div>' : '')
+          : '<span style="font-size:11px;color:#CCC">未調査</span>') +
       '</td>' +
 
       // フェーズ
@@ -2891,7 +2945,12 @@ function openDetail(id) {
       `).join('')}
     </div>
     <div style="margin-bottom:14px">
-      <div style="font-family:var(--font-mono);font-size:9px;color:var(--blue);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:8px">// URL情報</div>
+      <div style="font-family:var(--font-mono);font-size:9px;color:var(--blue);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center">
+        <span>// URL情報</span>
+        <button onclick="editWebsite(${it.id})" style="background:transparent;border:1px solid var(--border);border-radius:6px;padding:4px 10px;font-size:10px;color:var(--blue);cursor:pointer;font-family:inherit">
+          ✏️ 公式HPを${it.website?'編集':'登録'}
+        </button>
+      </div>
       <div style="display:flex;gap:8px;flex-wrap:wrap">
         ${it.website?`<a href="${it.website}" target="_blank" class="url-badge url-badge-hp"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg> 公式HP</a>`:'<span style="font-size:11px;color:var(--text-dim)">HP未登録</span>'}
         ${it.jobUrl?`<a href="${it.jobUrl}" target="_blank" class="url-badge url-badge-job"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg> 求人URL</a>`:''}
@@ -2984,14 +3043,21 @@ function renderGeminiTab() {
   const el = document.getElementById('dt-gemini');
   if (!el) return;
 
+  // 既知情報の整理（Geminiが重複調査しなくて済むよう既知URLを伝える）
+  const known = [];
+  if (it.website) known.push('・既知の公式HP：' + it.website);
+  if (it.phone) known.push('・電話番号：' + it.phone);
+  if (it.addr) known.push('・所在地：' + it.addr);
+
   const prompt = [
     '以下の企業について調査し、必ずCSV形式のみで返答してください。説明文は不要です。',
     '',
     '【出力CSV列】',
-    'company_name,ceo_name,email,founding_date,anniversary_month,months_until_anniversary,next_anniversary_years,instagram_url,facebook_url,x_url,tiktok_url,indeed_url,job_antenna_url,agre_url,mynavi_exists,revenue,employees,notes',
+    'company_name,ceo_name,email,founding_date,anniversary_month,months_until_anniversary,next_anniversary_years,website_url,instagram_url,facebook_url,x_url,tiktok_url,indeed_url,job_antenna_url,agre_url,mynavi_exists,revenue,employees,notes',
     '',
     '【調査対象企業】',
     '"' + it.company + '" （住所：' + (it.addr||it.area||'') + '）',
+    ...(known.length ? ['', '【既知情報】（参考、調査の重複を避けるため）', ...known] : []),
     '',
     '【各列の説明】',
     '・ceo_name: 代表者名',
@@ -3000,6 +3066,7 @@ function renderGeminiTab() {
     '・anniversary_month: 創業月（数字のみ。例：7）',
     '・months_until_anniversary: 今日（' + new Date().toLocaleDateString('ja-JP',{year:'numeric',month:'2-digit',day:'2-digit'}) + '）から次の周年まで何ヶ月か（数字）',
     '・next_anniversary_years: 次の周年は何周年か（数字）',
+    '・website_url: 公式ホームページのフルURL（既知のものと違うURLが見つかった場合のみ記入、なければN/A）',
     '・instagram_url: Instagram公式URL（https://www.instagram.com/...）',
     '・facebook_url: Facebook公式URL',
     '・x_url: X（旧Twitter）公式URL',
@@ -3153,6 +3220,24 @@ function parseAndApplyGemini() {
 
   const notes = get('notes');
   if (notes) { it.researchNotes = notes; applied['備考'] = notes; }
+
+  // ★ 公式HP（website_url）取込：既存値がない場合のみ上書き
+  const webUrl = get('website_url') || get('official_website') || get('hp_url') || get('homepage_url');
+  if (webUrl) {
+    if (!it.website) {
+      it.website = webUrl;
+      applied['公式HP'] = webUrl;
+    } else if (it.website !== webUrl) {
+      // 既存と違うURLならメモだけ残す（上書きはしない）
+      applied['公式HP（既存維持）'] = it.website + ' / 提案値: ' + webUrl;
+    }
+  }
+
+  // ★ 更新日時を記録（「✨更新」バッジ表示のため）
+  if (Object.keys(applied).length > 0) {
+    it.lastUpdatedAt = nowJSTISO();
+    it.researchStatus = 'done';
+  }
 
   it.score = calcScore(it);
   save();
@@ -3713,9 +3798,12 @@ function getFilteredItems() {
   const prefFilter = document.getElementById('ls-pref')?.value || '';
   const areaFilter = document.getElementById('ls-area')?.value || '';
   const researchFilter = document.getElementById('ls-research')?.value || '';
+  const companyTypeFilter = document.getElementById('ls-company-type')?.value || '';
   const showExcluded = document.getElementById('ls-show-excluded')?.checked || false;
   return items.filter(it => {
     if (!showExcluded && it.excluded) return false;
+    if (companyTypeFilter === 'company' && !isLikelyCompany(it)) return false;
+    if (companyTypeFilter === 'non_company' && isLikelyCompany(it)) return false;
     if (search && !it.company.toLowerCase().includes(search)) return false;
     if (ind && it.industry !== ind) return false;
     if (rank && it.score?.rank !== rank) return false;
@@ -3733,37 +3821,107 @@ function getFilteredItems() {
   });
 }
 
+// ══ 直近24時間以内に情報更新されたかどうか ══
+function isRecentlyUpdated(it) {
+  if (!it.lastUpdatedAt) return false;
+  const updated = new Date(it.lastUpdatedAt);
+  if (isNaN(updated)) return false;
+  const now = new Date();
+  return (now - updated) < 24 * 60 * 60 * 1000;
+}
+// ISO datetime（JST）取得
+function nowJSTISO() {
+  const d = new Date();
+  const jst = new Date(d.getTime() + 9*60*60*1000);
+  return jst.toISOString().replace('Z','+09:00');
+}
+
 // ══ PHASE1: Geminiプロンプト生成 ══
-// 企業じゃないもの（行政施設・自然地形・地名）を弾くキーワード
-const NON_COMPANY_KEYWORDS = [
-  // 自然地形・ビーチ・洞窟系
-  'ビーチ','浜','海岸','岬','洞窟','ガマ','滝','川','池','湖','湾','岩','崖','森','山','島',
-  'バンタ','ザネー','トベラ','ウドゥイ','アポガマ','ティーダ',
-  // 行政・公共施設系
-  '市役所','役場','役所','支所','公民館','博物館','資料館','美術館','図書館','文化センター',
-  '体育館','武道館','運動公園','多目的広場','広場','公園','記念館','学習センター','研修所',
-  '保健所','保健センター','児童館','福祉センター','コミュニティセンター',
-  '警察署','派出所','駐在所','消防署','消防','自衛隊','基地',
-  '小学校','中学校','高等学校','大学','短期大学','専門学校','保育園','幼稚園','こども園',
-  // 地名のみ
-  '丁目','字','大字'
+// === 企業判定システム ===
+// 1) 企業確定ワード（これがあれば即・企業として扱う）
+const COMPANY_KEYWORDS = [
+  '株式会社','有限会社','合同会社','合資会社','合名会社','一般社団','社団法人','財団法人',
+  '医療法人','学校法人','宗教法人','社会福祉法人','NPO','特定非営利',
+  '(株)','(有)','㈱','㈲',
+  // ホスピタリティ・小売系（施設名でも事業者として扱う）
+  'ホテル','旅館','民宿','ペンション','ヴィラ','ヴィラズ','リゾート','コテージ','ロッジ',
+  'カフェ','レストラン','ダイニング','バル','居酒屋','食堂',
+  'ショップ','ストア','マート','直売所','物産','工房','ファーム','農園','牧場','酒造',
+  'クリニック','歯科','医院','整体','整骨院','接骨院','薬局','美容室','サロン','エステ','ネイル',
+  'ジム','スタジオ','スクール','教室','塾','水族館','動物園','テーマパーク',
+  // 法人系英字
+  'Inc.','Inc','Co.','Co.,','Ltd.','Ltd','LLC','LLP','Corp','Corporation','Company','Hotel','Resort','Cafe','Restaurant','Studio',
+  // 沖縄でよく使う法人接尾
+  'グループ','ホールディングス','HD','HOLDINGS'
 ];
-// 企業判定：trueなら企業、falseなら除外
+// 2) 純粋な行政・公共施設ワード（運営は自治体や指定管理者で、商業企業として営業対象外）
+//    ※ 長いワードを先に書く（部分一致の優先順）
+const PURE_PUBLIC_KEYWORDS = [
+  '体験学習センター','文化センター','学習センター','コミュニティセンター','保健センター','福祉センター',
+  '総合運動公園','運動公園','多目的広場','活性化施設',
+  '市役所','区役所','町役場','村役場','役所支所',
+  '警察署','派出所','駐在所','交番','消防署','消防本部','消防団',
+  '保健所','博物館','資料館','美術館','図書館','記念館','研修所','児童館','体育館','武道館','公民館',
+  '小学校','中学校','高等学校','幼稚園','こども園',
+  '裁判所','検察庁','法務局','税務署','入管','刑務所','拘置所',
+  '海浜公園'  // 「○○海浜公園」も基本は公共
+];
+// 3) 自然地形ワード（末尾にあれば地形と判定）
+const TERRAIN_SUFFIX = [
+  'ビーチ','浜','海岸','岬','洞窟','ガマ','滝','湾','岩','崖','干潟','離島','島','バンタ'
+];
+
+// 企業判定：true=企業/施設運営者あり、false=非企業（地形・地名・純行政）
 function isLikelyCompany(it) {
+  // 手動上書きを最優先
+  if (it.manualCompanyFlag === 'company') return true;
+  if (it.manualCompanyFlag === 'non_company') return false;
+
   const name = (it.company || '').trim();
   if (!name) return false;
-  // 完全一致で地名っぽいもの除外（「恩納村恩納」など）
-  if (/^[\u4e00-\u9fa5]+村[\u4e00-\u9fa5]+$/.test(name) && name.length <= 8) return false;
-  // キーワード含有チェック
-  for (const kw of NON_COMPANY_KEYWORDS) {
-    if (name.includes(kw)) {
-      // 例外：「○○ホテル」「○○リゾート」の中に「ビーチ」「島」などが入っているケースは企業として扱う
-      if (/ホテル|リゾート|株式会社|有限会社|合同会社|\(株\)|\(有\)|Hotel|Resort|Inc\.|Co\.|LLC/i.test(name)) {
-        continue;
-      }
-      return false;
-    }
+
+  // 0) 純粋な行政・公共施設は最優先で除外（COMPANY_KEYWORDSより先に判定）
+  for (const kw of PURE_PUBLIC_KEYWORDS) {
+    if (name.includes(kw)) return false;
   }
+
+  // 1) 大学・専門学校系（運営法人はあるがB2B営業対象として除外）
+  if (/(大学|短期大学|専門学校|学院大学|職業訓練校)/.test(name) && !/株式会社|学校法人/.test(name)) return false;
+
+  // 2) 地名のみ（「恩納村恩納」「読谷村波平」など短い村+地名）
+  if (/^[\u4e00-\u9fa5々]+村[\u4e00-\u9fa5々]+$/.test(name) && name.length <= 8) return false;
+  if (/^[\u4e00-\u9fa5々]+市[\u4e00-\u9fa5々]+$/.test(name) && name.length <= 8) return false;
+
+  // 3) 自然地形：末尾チェック（「○○ビーチ」「○○岬」「○○島」などで、企業確定ワードを含まないもの）
+  // まず企業確定ワードがあれば企業として扱う
+  let hasCompanyKw = false;
+  for (const kw of COMPANY_KEYWORDS) {
+    if (name.includes(kw)) { hasCompanyKw = true; break; }
+  }
+  if (hasCompanyKw) return true;
+
+  // 企業確定ワードがない状態で末尾が地形 → 地形として除外
+  for (const suf of TERRAIN_SUFFIX) {
+    if (name.endsWith(suf)) return false;
+  }
+
+  // 4) 「アカティーダバンタ」「ザネー浜」のような全カナの地名
+  if (/^[\u30A0-\u30FF\u3040-\u309F]+$/.test(name) && name.length <= 10) {
+    // 短いカナのみで地形ワードを含む
+    for (const suf of TERRAIN_SUFFIX) {
+      if (name.includes(suf)) return false;
+    }
+    // 「アポガマ」「ウドゥイガマ」「トベラ岩」など、ガマ・岩を含むカナのみ
+    if (/(ガマ|バンタ|ティーダ)/.test(name)) return false;
+  }
+
+  // 5) 「THE BEACH」「○○ BEACH」など英語の地形名（短い・地形語が末尾）
+  if (/\b(BEACH|COAST|CAPE|ISLAND|REEF|BAY|CLUB)\b/i.test(name) && name.length <= 25) {
+    // ホテル/リゾート/カフェなどがなければ地形/施設として除外
+    if (!/(HOTEL|RESORT|HOTELS|CAFE|RESTAURANT|INN|VILLA|SUITES|PLAZA)/i.test(name)) return false;
+  }
+
+  // それ以外は企業/施設運営者ありとみなす（取りこぼし防止）
   return true;
 }
 
@@ -3796,12 +3954,13 @@ function openPromptModal() {
     '・実在企業・法人のみ調査対象。施設名であっても運営会社が存在する前提で調べる（例：ホテル運営会社、指定管理者など）。',
     '',
     '【CSVフォーマット】1行目はヘッダー、2行目以降にデータ：',
-    'company_name,founding_date,anniversary_month,instagram_url,facebook_url,tiktok_url,job_posting_url,ceo_name,employee_count,notes',
+    'company_name,founding_date,anniversary_month,website_url,instagram_url,facebook_url,tiktok_url,job_posting_url,ceo_name,employee_count,notes',
     '',
     '【各項目の説明】',
     '・company_name: 入力したリスト通りの会社名',
     '・founding_date: 創業日（YYYY-MM-DD、日付不明ならYYYY-MM）',
     '・anniversary_month: 創業月の数字（1〜12）。周年マーケティング企画で最重要項目。',
+    '・website_url: 公式ホームページのフルURL（http://またはhttps://から始まる）',
     '・instagram_url: InstagramプロフィールのフルURL',
     '・facebook_url: FacebookページのフルURL',
     '・tiktok_url: TikTokプロフィールのフルURL',
@@ -3830,13 +3989,99 @@ function openPromptModal() {
       excludedEl.style.display = 'block';
       excludedEl.innerHTML = '<div style="font-size:12px;font-weight:700;color:#92400E;margin-bottom:6px;">⚠ 以下' + excluded.length + '件は調査対象から除外（行政施設・自然地形・地名のため）：</div>' +
         '<div style="font-size:12px;color:#78350F;line-height:1.6;">' +
-        excluded.map(it => '・' + it.company).join('<br>') + '</div>';
+        excluded.map(it => '・' + it.company + (it.manualCompanyFlag==='non_company' ? ' <span style="color:#9CA3AF">[手動]</span>' : '')).join('<br>') + '</div>' +
+        '<div style="font-size:11px;color:#92400E;margin-top:8px;">※ もし企業として調査したい場合は、アタックリストで該当行の「⚙」→「企業として扱う」を選択してください。</div>';
     } else {
       excludedEl.style.display = 'none';
     }
   }
 
   document.getElementById('m-prompt').classList.add('open');
+}
+
+// ══ 公式HPの手入力 ══
+function editWebsite(id) {
+  const it = items.find(x => x.id === id);
+  if (!it) return;
+  const current = it.website || '';
+  const input = window.prompt('公式ホームページのURLを入力してください（http://またはhttps://から）：', current);
+  if (input === null) return; // キャンセル
+  const trimmed = input.trim();
+  if (trimmed && !/^https?:\/\//i.test(trimmed)) {
+    toast('URLは http:// または https:// から始まる必要があります');
+    return;
+  }
+  it.website = trimmed;
+  it.lastUpdatedAt = nowJSTISO();
+  save();
+  toast(trimmed ? '公式HPを更新しました' : '公式HPを削除しました');
+  if (selId === id) openDetail(id);
+}
+
+// ══ 個別の企業/非企業フラグを切り替え ══
+function toggleCompanyFlag(id, flag) {
+  const it = items.find(x => x.id === id);
+  if (!it) return;
+  // flag: 'company' / 'non_company' / null（自動判定に戻す）
+  if (flag === null || it.manualCompanyFlag === flag) {
+    delete it.manualCompanyFlag;
+    toast('自動判定に戻しました');
+  } else {
+    it.manualCompanyFlag = flag;
+    toast(flag === 'company' ? '企業として扱います' : '非企業として除外します');
+  }
+  saveItems_compat();
+  renderList();
+}
+// 既存の永続化関数 save() を呼び出すラッパー（renderListは内側で呼ばれるが冪等）
+function saveItems_compat() {
+  if (typeof save === 'function') save();
+}
+
+// 企業/非企業フラグのポップアップメニュー
+function showCompanyFlagMenu(e, id) {
+  e.preventDefault();
+  e.stopPropagation();
+  // 既存メニューがあれば消す
+  const old = document.getElementById('company-flag-menu');
+  if (old) old.remove();
+
+  const it = items.find(x => x.id === id);
+  if (!it) return;
+  const auto = isLikelyCompany({ ...it, manualCompanyFlag: undefined });
+  const current = it.manualCompanyFlag;
+
+  const menu = document.createElement('div');
+  menu.id = 'company-flag-menu';
+  menu.style.cssText = 'position:fixed;background:#fff;border:2px solid #E5E7EB;border-radius:10px;padding:6px;box-shadow:0 8px 24px rgba(0,0,0,0.15);z-index:9999;font-size:13px;min-width:200px';
+  const rect = e.target.getBoundingClientRect();
+  menu.style.top = (rect.bottom + 4) + 'px';
+  menu.style.left = Math.max(8, rect.left - 120) + 'px';
+
+  const mkItem = (label, flag, active) => {
+    const btn = document.createElement('button');
+    btn.style.cssText = 'display:block;width:100%;text-align:left;padding:8px 12px;border:none;background:' + (active?'#FFF3EE':'transparent') + ';color:' + (active?'#FF4602':'#333') + ';border-radius:6px;cursor:pointer;font-size:13px;font-weight:' + (active?'700':'500');
+    btn.innerHTML = (active ? '✓ ' : '') + label;
+    btn.onmouseenter = () => btn.style.background = active ? '#FFE4D6' : '#F9FAFB';
+    btn.onmouseleave = () => btn.style.background = active ? '#FFF3EE' : 'transparent';
+    btn.onclick = (ev) => { ev.stopPropagation(); toggleCompanyFlag(id, flag); menu.remove(); };
+    return btn;
+  };
+  menu.appendChild(mkItem('🤖 自動判定（' + (auto?'企業':'非企業') + '）', null, !current));
+  menu.appendChild(mkItem('🏢 企業として扱う', 'company', current==='company'));
+  menu.appendChild(mkItem('🏞 非企業として除外', 'non_company', current==='non_company'));
+
+  document.body.appendChild(menu);
+  // 外側クリックで閉じる
+  setTimeout(() => {
+    const closeMenu = (ev) => {
+      if (!menu.contains(ev.target)) {
+        menu.remove();
+        document.removeEventListener('click', closeMenu);
+      }
+    };
+    document.addEventListener('click', closeMenu);
+  }, 10);
 }
 function copyPrompt() {
   navigator.clipboard.writeText(document.getElementById('prompt-text').value)
@@ -3890,8 +4135,12 @@ function processCsvFile(file) {
       ceo_name: header.indexOf('ceo_name'),
       employee_count: header.indexOf('employee_count'),
       notes: header.indexOf('notes'),
+      website_url: header.indexOf('website_url') !== -1 ? header.indexOf('website_url')
+                  : header.indexOf('official_website') !== -1 ? header.indexOf('official_website')
+                  : header.indexOf('homepage_url'),
     };
     let merged = 0, notFound = 0;
+    const updatedFields = []; // 更新内容のサマリ
     lines.slice(1).forEach(line => {
       const cols = parseCSVLine(line);
       const coName = (cols[coIdx]||'').replace(/^"|"$/g,'').trim();
@@ -3904,15 +4153,28 @@ function processCsvFile(file) {
         const val = (cols[idx]||'').replace(/^"|"$/g,'').trim();
         return val === 'N/A' ? '' : val;
       };
-      if (get('founding_date'))    item.foundingDate = get('founding_date');
-      if (get('anniversary_month')) item.anniversaryMonth = get('anniversary_month');
-      if (get('instagram_url'))    item.instaUrl = get('instagram_url');
-      if (get('facebook_url'))     item.fbUrl = get('facebook_url');
-      if (get('tiktok_url'))       item.tiktokUrl = get('tiktok_url');
-      if (get('job_posting_url'))  item.jobUrl = get('job_posting_url');
-      if (get('ceo_name'))         item.ceoName = get('ceo_name');
-      if (get('employee_count'))   item.employeeCount = get('employee_count');
-      if (get('notes'))            item.researchNotes = get('notes');
+      let changed = false;
+      const itemFields = [];
+      if (get('founding_date'))    { item.foundingDate = get('founding_date'); changed=true; itemFields.push('創業日'); }
+      if (get('anniversary_month')){ item.anniversaryMonth = get('anniversary_month'); changed=true; itemFields.push('創業月'); }
+      if (get('instagram_url'))    { item.instaUrl = get('instagram_url'); changed=true; itemFields.push('IG'); }
+      if (get('facebook_url'))     { item.fbUrl = get('facebook_url'); changed=true; itemFields.push('FB'); }
+      if (get('tiktok_url'))       { item.tiktokUrl = get('tiktok_url'); changed=true; itemFields.push('TikTok'); }
+      if (get('job_posting_url'))  { item.jobUrl = get('job_posting_url'); changed=true; itemFields.push('求人'); }
+      if (get('ceo_name'))         { item.ceoName = get('ceo_name'); item.person = item.person || get('ceo_name'); changed=true; itemFields.push('代表者'); }
+      if (get('employee_count'))   { item.employeeCount = get('employee_count'); changed=true; itemFields.push('従業員数'); }
+      if (get('notes'))            { item.researchNotes = get('notes'); changed=true; itemFields.push('備考'); }
+      // 公式HP（website_url）：既存値がない場合のみ上書き
+      if (get('website_url') && !item.website) {
+        item.website = get('website_url');
+        changed = true;
+        itemFields.push('公式HP');
+      }
+      if (changed) {
+        item.lastUpdatedAt = nowJSTISO();
+        item.researchStatus = 'done';
+        updatedFields.push({ name: item.company, fields: itemFields });
+      }
       if (item.jobUrl && !(item.signals||[]).includes('hire')) item.signals = [...(item.signals||[]), 'hire'];
       item.score = calcScore(item);
       merged++;
@@ -3921,7 +4183,13 @@ function processCsvFile(file) {
     const prev = document.getElementById('csv-preview');
     if (prev) {
       prev.style.display = 'block';
-      prev.innerHTML = '<div style="padding:12px 14px;background:var(--green-dim);border:1px solid rgba(22,163,74,0.2);border-radius:8px;font-size:12px"><strong style="color:var(--green)">✓ マージ完了</strong><div style="margin-top:4px;color:var(--text-mid)">更新: <strong>' + merged + '件</strong> ／ 未マッチ: <strong>' + notFound + '件</strong></div></div>';
+      const updatedHtml = updatedFields.length
+        ? '<details style="margin-top:8px"><summary style="cursor:pointer;font-size:11px;color:var(--green);font-weight:700">📝 更新詳細を見る（' + updatedFields.length + '社）</summary>' +
+          '<div style="max-height:240px;overflow-y:auto;margin-top:6px;padding:8px;background:#fff;border-radius:6px;font-size:11px;line-height:1.7">' +
+          updatedFields.map(u => '<div><strong>' + u.name + '</strong>: ' + u.fields.join('・') + '</div>').join('') +
+          '</div></details>'
+        : '';
+      prev.innerHTML = '<div style="padding:12px 14px;background:var(--green-dim);border:1px solid rgba(22,163,74,0.2);border-radius:8px;font-size:12px"><strong style="color:var(--green)">✓ マージ完了</strong><div style="margin-top:4px;color:var(--text-mid)">更新: <strong>' + merged + '件</strong> ／ 未マッチ: <strong>' + notFound + '件</strong></div>' + updatedHtml + '</div>';
     }
     toast('Gemini結果をマージしました！' + merged + '件更新');
   };
