@@ -3734,9 +3734,52 @@ function getFilteredItems() {
 }
 
 // ══ PHASE1: Geminiプロンプト生成 ══
+// 企業じゃないもの（行政施設・自然地形・地名）を弾くキーワード
+const NON_COMPANY_KEYWORDS = [
+  // 自然地形・ビーチ・洞窟系
+  'ビーチ','浜','海岸','岬','洞窟','ガマ','滝','川','池','湖','湾','岩','崖','森','山','島',
+  'バンタ','ザネー','トベラ','ウドゥイ','アポガマ','ティーダ',
+  // 行政・公共施設系
+  '市役所','役場','役所','支所','公民館','博物館','資料館','美術館','図書館','文化センター',
+  '体育館','武道館','運動公園','多目的広場','広場','公園','記念館','学習センター','研修所',
+  '保健所','保健センター','児童館','福祉センター','コミュニティセンター',
+  '警察署','派出所','駐在所','消防署','消防','自衛隊','基地',
+  '小学校','中学校','高等学校','大学','短期大学','専門学校','保育園','幼稚園','こども園',
+  // 地名のみ
+  '丁目','字','大字'
+];
+// 企業判定：trueなら企業、falseなら除外
+function isLikelyCompany(it) {
+  const name = (it.company || '').trim();
+  if (!name) return false;
+  // 完全一致で地名っぽいもの除外（「恩納村恩納」など）
+  if (/^[\u4e00-\u9fa5]+村[\u4e00-\u9fa5]+$/.test(name) && name.length <= 8) return false;
+  // キーワード含有チェック
+  for (const kw of NON_COMPANY_KEYWORDS) {
+    if (name.includes(kw)) {
+      // 例外：「○○ホテル」「○○リゾート」の中に「ビーチ」「島」などが入っているケースは企業として扱う
+      if (/ホテル|リゾート|株式会社|有限会社|合同会社|\(株\)|\(有\)|Hotel|Resort|Inc\.|Co\.|LLC/i.test(name)) {
+        continue;
+      }
+      return false;
+    }
+  }
+  return true;
+}
+
 function openPromptModal() {
-  const list = getFilteredItems();
-  if (!list.length) { toast('対象リストがありません'); return; }
+  const allList = getFilteredItems();
+  if (!allList.length) { toast('対象リストがありません'); return; }
+
+  // 企業のみ抽出
+  const list = allList.filter(isLikelyCompany);
+  const excluded = allList.filter(it => !isLikelyCompany(it));
+
+  if (!list.length) {
+    toast('企業として調査可能な対象がありません（行政施設・自然地形のみ）');
+    return;
+  }
+
   const industries = [...new Set(list.map(it => it.industry).filter(Boolean))];
   const areas = [...new Set(list.map(it => (it.area||'').split('市')[0] + '市').filter(Boolean))].slice(0,5);
   const companyList = list.map((it, i) => {
@@ -3744,40 +3787,55 @@ function openPromptModal() {
   }).join('\n');
 
   const prompt = [
-    'You are a professional business intelligence researcher. Research the following ' + list.length + ' companies located in ' + areas.join(' / ') + ', operating in the ' + industries.join(' / ') + ' industry.',
+    'あなたは沖縄の企業調査の専門家です。以下の' + list.length + '社（' + areas.join('・') + '・' + industries.join('・') + '）について、ウェブ検索で調査し、CSV形式のみで結果を返してください。',
     '',
-    'For EACH company, find and return ALL of the following information. Return results ONLY as CSV format with NO additional text or explanation.',
+    '【最重要ルール】',
+    '・出力はCSVのみ。前置き・説明・コードブロック・マークダウンは一切不要。',
+    '・情報が見つからない項目は必ず "N/A" と記入する。推測・創作・想像で埋めるのは絶対NG。',
+    '・全' + list.length + '社分、必ず1行ずつ出力する（途中で省略しない）。',
+    '・実在企業・法人のみ調査対象。施設名であっても運営会社が存在する前提で調べる（例：ホテル運営会社、指定管理者など）。',
     '',
-    '=== REQUIRED CSV OUTPUT FORMAT ===',
-    'Return a CSV with these exact column headers in row 1:',
+    '【CSVフォーマット】1行目はヘッダー、2行目以降にデータ：',
     'company_name,founding_date,anniversary_month,instagram_url,facebook_url,tiktok_url,job_posting_url,ceo_name,employee_count,notes',
     '',
-    '=== RESEARCH INSTRUCTIONS ===',
-    '- founding_date: Company founding date (YYYY-MM-DD format, or YYYY-MM if day unknown)',
-    '- anniversary_month: Month number of founding (1-12). Critical for anniversary marketing campaigns.',
-    '- instagram_url: Full Instagram profile URL',
-    '- facebook_url: Full Facebook page URL',
-    '- tiktok_url: Full TikTok profile URL if exists',
-    '- job_posting_url: Current job posting URL (Indeed, HelloWork, company site, etc.)',
-    '- ceo_name: CEO or representative director name (search in Japanese too)',
-    '- employee_count: Approximate number of employees',
-    '- notes: Notable info for advertising proposal (awards, expansion plans, recent news)',
+    '【各項目の説明】',
+    '・company_name: 入力したリスト通りの会社名',
+    '・founding_date: 創業日（YYYY-MM-DD、日付不明ならYYYY-MM）',
+    '・anniversary_month: 創業月の数字（1〜12）。周年マーケティング企画で最重要項目。',
+    '・instagram_url: InstagramプロフィールのフルURL',
+    '・facebook_url: FacebookページのフルURL',
+    '・tiktok_url: TikTokプロフィールのフルURL',
+    '・job_posting_url: 求人ページURL（Indeed・ハローワーク・自社サイト等）',
+    '・ceo_name: 代表者名・社長名（日本語で検索すること）',
+    '・employee_count: 従業員数の概算',
+    '・notes: 営業提案に役立つ情報（受賞歴・新店舗・最近のニュース等）。カンマは使わず、全角読点「、」を使う。',
     '',
-    '=== IMPORTANT RULES ===',
-    '- Output ONLY the CSV data. No markdown, no explanations, no summaries.',
-    '- Use "N/A" for any field where information cannot be found.',
-    '- anniversary_month is the MOST important field. Research thoroughly.',
-    '- Search company names in Japanese for better accuracy.',
-    '',
-    '=== COMPANIES TO RESEARCH (' + list.length + ' total) ===',
+    '【調査対象（' + list.length + '社）】',
     companyList,
     '',
-    '=== BEGIN CSV OUTPUT NOW ==='
+    '上記' + list.length + '社のCSVを今すぐ出力してください。1行目はヘッダー、2行目から' + (list.length+1) + '行目までデータ。'
   ].join('\n');
 
-  document.getElementById('prompt-subtitle').textContent = list.length + '件対象 / ' + industries.join('・');
+  // サブタイトルに除外件数も表示
+  const subtitle = list.length + '件対象 / ' + industries.join('・') +
+    (excluded.length ? ' (※非企業' + excluded.length + '件除外)' : '');
+  document.getElementById('prompt-subtitle').textContent = subtitle;
   document.getElementById('prompt-target-count').textContent = list.length;
   document.getElementById('prompt-text').value = prompt;
+
+  // 除外リストを表示
+  const excludedEl = document.getElementById('prompt-excluded-list');
+  if (excludedEl) {
+    if (excluded.length) {
+      excludedEl.style.display = 'block';
+      excludedEl.innerHTML = '<div style="font-size:12px;font-weight:700;color:#92400E;margin-bottom:6px;">⚠ 以下' + excluded.length + '件は調査対象から除外（行政施設・自然地形・地名のため）：</div>' +
+        '<div style="font-size:12px;color:#78350F;line-height:1.6;">' +
+        excluded.map(it => '・' + it.company).join('<br>') + '</div>';
+    } else {
+      excludedEl.style.display = 'none';
+    }
+  }
+
   document.getElementById('m-prompt').classList.add('open');
 }
 function copyPrompt() {
@@ -4493,8 +4551,9 @@ document.getElementById('today-label').textContent = (() => {
           リストCSVも出力
         </button>
       </div>
-      <div style="font-family:var(--font-mono);font-size:9px;color:var(--accent);letter-spacing:0.15em;margin-bottom:8px">// 自動生成プロンプト（英語・CSV出力強制）</div>
+      <div style="font-family:var(--font-mono);font-size:9px;color:var(--accent);letter-spacing:0.15em;margin-bottom:8px">// 自動生成プロンプト（日本語・CSV出力強制・非企業自動除外）</div>
       <textarea id="prompt-text" style="width:100%;height:360px;background:#0f1208;border:1px solid #2a3a12;border-radius:8px;padding:16px;font-family:var(--font-mono);font-size:11px;color:#d8f0b0;line-height:1.8;resize:vertical;outline:none" readonly=""></textarea>
+      <div id="prompt-excluded-list" style="display:none;margin-top:10px;padding:12px 14px;background:#FEF3C7;border:2px solid #FCD34D;border-radius:10px"></div>
       <div style="margin-top:10px;font-size:11px;color:var(--text-dim)">
         ※ このプロンプト＋リストCSVをGeminiに貼り付けてリサーチを開始。結果CSVは「情報収集」ページからアップロードできます。
       </div>
