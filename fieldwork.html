@@ -2152,6 +2152,10 @@ function renderList() {
           (!isLikelyCompany(it) ? '<span title="自動判定：非企業（行政施設・自然地形・地名）" style="font-size:9px;font-weight:800;padding:2px 6px;border-radius:6px;background:#FEF3C7;color:#92400E;border:1px solid #FCD34D">🏞 非企業</span>' : '') +
           (it.manualCompanyFlag ? '<span title="手動上書き中" style="font-size:9px;font-weight:800;padding:2px 6px;border-radius:6px;background:#E0E7FF;color:#3730A3;border:1px solid #C7D2FE">✋手動</span>' : '') +
           (isRecentlyUpdated(it) ? '<span title="' + (it.lastUpdatedAt||'') + ' に情報拡張" style="font-size:9px;font-weight:800;padding:2px 6px;border-radius:6px;background:#DCFCE7;color:#166534;border:1px solid #86EFAC">✨ 拡張</span>' : '') +
+          // ワンクリック除外（瞬時非企業化）
+          (isLikelyCompany(it) && it.manualCompanyFlag !== 'non_company'
+            ? '<button onclick="event.stopPropagation();quickExcludeAsNonCompany(' + it.id + ',this)" title="ワンクリックで非企業として除外" style="background:#FEF3C7;border:1px solid #FCD34D;color:#92400E;border-radius:6px;cursor:pointer;font-size:10px;padding:2px 6px;font-weight:700">🚫 営業対象外</button>'
+            : '') +
           '<button onclick="event.stopPropagation();showCompanyFlagMenu(event,' + it.id + ')" title="企業/非企業の手動設定" style="background:transparent;border:none;cursor:pointer;font-size:14px;padding:2px 4px;color:#9CA3AF">⚙</button>' +
         '</div>' +
         (it.website ? '<a href="' + it.website + '" target="_blank" style="font-size:10px;color:var(--blue);text-decoration:none" onclick="event.stopPropagation()">🌐 HP</a>' : '<span style="font-size:10px;color:#CCC">HP未登録</span>') +
@@ -3961,11 +3965,24 @@ const PURE_PUBLIC_KEYWORDS = [
   '保健所','博物館','資料館','美術館','図書館','記念館','研修所','児童館','体育館','武道館','公民館',
   '小学校','中学校','高等学校','幼稚園','こども園',
   '裁判所','検察庁','法務局','税務署','入管','刑務所','拘置所',
-  '海浜公園'  // 「○○海浜公園」も基本は公共
+  '海浜公園','観光案内所','案内所',
+  // 神社・寺・教会系（運営法人はあるが営業対象外）
+  '神社','大社','八幡宮','稲荷','天満宮','護国寺','大師','禅寺','教会','聖堂','大聖堂','モスク',
+  // 駅・港・空港系
+  '空港','フェリーターミナル',
+  // 沖縄の有名な城跡・庭園・宮（観光地）
+  '城跡','御嶽','うたき','ウタキ','拝所','遺跡',
+  '首里城','中城城','勝連城','今帰仁城','座喜味城','三重城','糸数城','玉陵',
+  '識名園','福州園','末吉宮','普天間宮','沖宮','安里八幡宮','波上宮','金武宮'
 ];
 // 3) 自然地形ワード（末尾にあれば地形と判定）
 const TERRAIN_SUFFIX = [
   'ビーチ','浜','海岸','岬','洞窟','ガマ','滝','湾','岩','崖','干潟','離島','島','バンタ'
+];
+// 4) 末尾一致で非企業と判定するワード（"○○公園"全般、"○○広場"全般など）
+const PUBLIC_SUFFIX = [
+  '公園','広場','緑地','遊園地','植物園','動物園展示館','史跡','遺跡','古墳','城跡','陵墓',
+  '駅','港'
 ];
 
 // 企業判定：true=企業/施設運営者あり、false=非企業（地形・地名・純行政）
@@ -3982,12 +3999,36 @@ function isLikelyCompany(it) {
     if (name.includes(kw)) return false;
   }
 
+  // 0.5) 末尾一致で公共施設（○○公園、○○広場など）
+  // ただし企業確定ワード（ホテル等）が前にあれば企業扱い
+  for (const suf of PUBLIC_SUFFIX) {
+    if (name.endsWith(suf)) {
+      // 企業ワードがあれば例外的に企業扱い
+      let hasCorp = false;
+      for (const kw of COMPANY_KEYWORDS) {
+        if (name.includes(kw)) { hasCorp = true; break; }
+      }
+      if (!hasCorp) return false;
+    }
+  }
+
   // 1) 大学・専門学校系（運営法人はあるがB2B営業対象として除外）
   if (/(大学|短期大学|専門学校|学院大学|職業訓練校)/.test(name) && !/株式会社|学校法人/.test(name)) return false;
 
-  // 2) 地名のみ（「恩納村恩納」「読谷村波平」など短い村+地名）
-  if (/^[\u4e00-\u9fa5々]+村[\u4e00-\u9fa5々]+$/.test(name) && name.length <= 8) return false;
-  if (/^[\u4e00-\u9fa5々]+市[\u4e00-\u9fa5々]+$/.test(name) && name.length <= 8) return false;
+  // 2) 地名のみ（「恩納村恩納」「読谷村波平」など、村/市の前後に企業っぽくない地名が並ぶケース）
+  // ※ 「中村医院」「田村クリニック」のような、たまたま「村」を含む企業名は除外しない
+  // 沖縄の村名一覧で前方限定マッチ
+  const OKINAWA_VILLAGES = ['恩納','読谷','北中城','中城','宜野座','金武','東','大宜味','国頭','本部','今帰仁','北谷','嘉手納','西原','与那原','南風原','八重瀬','久米島','渡嘉敷','座間味','粟国','渡名喜','南大東','北大東','伊江','伊平屋','伊是名','多良間','竹富','与那国'];
+  for (const v of OKINAWA_VILLAGES) {
+    if (name === v + '村' || name === v + '村' + v) return false;
+    // 「○○村字○○」「○○村大字○○」パターン
+    if (new RegExp('^' + v + '村(字|大字)?[\\u4e00-\\u9fa5]{1,4}$').test(name)) return false;
+  }
+  // 「○○市○○」も同様（沖縄の主要都市）
+  const OKINAWA_CITIES = ['那覇','沖縄','宜野湾','浦添','糸満','豊見城','名護','うるま','南城','石垣','宮古島'];
+  for (const c of OKINAWA_CITIES) {
+    if (new RegExp('^' + c + '市[\\u4e00-\\u9fa5]{1,4}$').test(name)) return false;
+  }
 
   // 3) 自然地形：末尾チェック（「○○ビーチ」「○○岬」「○○島」などで、企業確定ワードを含まないもの）
   // まず企業確定ワードがあれば企業として扱う
@@ -4113,6 +4154,24 @@ function editWebsite(id) {
   save();
   toast(trimmed ? '公式HPを更新しました' : '公式HPを削除しました');
   if (selId === id) openDetail(id);
+}
+
+// ══ ワンクリックで非企業として除外（営業対象外フラグ） ══
+function quickExcludeAsNonCompany(id, btnEl) {
+  const it = items.find(x => x.id === id);
+  if (!it) return;
+  it.manualCompanyFlag = 'non_company';
+  // 視覚的フィードバック：ボタンを一瞬光らせる
+  if (btnEl) {
+    btnEl.style.transition = 'all 0.2s';
+    btnEl.style.transform = 'scale(1.2)';
+    btnEl.style.background = '#FEE2E2';
+    btnEl.textContent = '✓ 除外しました';
+  }
+  saveItems_compat();
+  toast('「' + it.company + '」を営業対象外にしました');
+  // 0.3秒後にリスト再描画（フィードバック後）
+  setTimeout(() => renderList(), 300);
 }
 
 // ══ 個別の企業/非企業フラグを切り替え ══
