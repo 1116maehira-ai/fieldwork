@@ -2618,8 +2618,14 @@ function renderList() {
   const ind = document.getElementById('ls-industry')?.value || '';
   const rank = document.getElementById('ls-rank')?.value || '';
   const apf = document.getElementById('ls-ap')?.value || '';
+  const showExcluded = document.getElementById('ls-show-excluded')?.checked || false;
+  const showNonBiz = document.getElementById('ls-show-nonbiz')?.checked !== false;
 
   let list = items.filter(it => {
+    // 「対象外も表示」OFF時：手動で営業対象外にした企業 + 旧 excluded フラグを非表示
+    if (!showExcluded && (it.manualCompanyFlag === 'non_company' || it.excluded)) return false;
+    // 「非企業も表示」OFF時：自動判定で非企業 かつ 手動企業扱いされてないものを非表示
+    if (!showNonBiz && !isLikelyCompany(it) && it.manualCompanyFlag !== 'company') return false;
     if (search && !it.company.toLowerCase().includes(search)) return false;
     if (ind && it.industry !== ind) return false;
     if (rank && it.score?.rank !== rank) return false;
