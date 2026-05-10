@@ -3695,101 +3695,389 @@ function renderApprCompanyDetail(it) {
 }
 
 // トークスクリプト選択ボタン群を描画
+// ══════════════════════════════════════════
+// トークスクリプト：ツリー構造（3階層）
+// 5本の商材すべて N1以降は同じ骨格、N1のみ商材ごと
+// ══════════════════════════════════════════
+
+// 共通の N2/N3 ノード（全商材で使い回し）
+const SCRIPT_COMMON_NODES = {
+  // N2: N1の分岐
+  rejected: {
+    title: '🚫 取次を拒否された',
+    script: '承知しました。\nもしよろしければ、改めて代表のご担当者様にお電話差し上げたいので、\n**ご担当者様のお名前**と、**いつ頃ご在席されているか**を伺ってもよろしいでしょうか？',
+    branches: [
+      { label: '✅ 名前と在席時間を教えてくれた', next: 'rejected_got_info' },
+      { label: '🚫 それも教えてくれない', next: 'rejected_send_doc' },
+    ],
+  },
+  rejected_got_info: {
+    title: '✅ 名前と時間を聞けた → 再電日を決める',
+    script: 'ありがとうございます。\nでは **○月○日の○時頃** に改めてお電話させていただきます。\n本日はお時間頂きありがとうございました。失礼いたします。',
+    branches: [],
+  },
+  rejected_send_doc: {
+    title: '🚫 拒否継続 → 資料送付に切り替え',
+    script: '承知しました。\nでは資料だけでもお送りしたいので、**メールアドレス** または **HPの問い合わせ先** を教えていただけますでしょうか？\n（連絡先が取れた／取れなかった、どちらでも丁寧に締める）\n本日はお時間頂きありがとうございました。失礼いたします。',
+    branches: [],
+  },
+
+  toContact: {
+    title: '👤 担当者に電話が代わった',
+    script: 'お電話代わりました、TENOHIRAの石川と申します。\nお忙しいところ恐れ入ります。改めまして、{company}様にぜひご紹介したい内容があり、お電話しました。\n\n（ここで商材の詳細を簡潔に説明）\n\nぜひ一度、**30分ほどお時間いただいてお打ち合わせ** させていただきたいのですが、\n来週・再来週でご都合のよろしい日はございますでしょうか？',
+    branches: [
+      { label: '✅ アポOK', next: 'apo_ok' },
+      { label: '📧 まず資料を送って', next: 'send_doc' },
+      { label: '🤔 検討して折り返す', next: 'callback_later' },
+      { label: '🚫 興味なし', next: 'no_interest' },
+    ],
+  },
+  apo_ok: {
+    title: '✅ アポ獲得！',
+    script: 'ありがとうございます！\nでは **○月○日 ○時** にお伺いさせていただきます。\nご足労おかけしますが、当日は資料をお持ちしますので、\nどうぞよろしくお願いいたします。',
+    branches: [],
+  },
+  send_doc: {
+    title: '📧 資料送付の依頼',
+    script: '承知しました。\n本日中に資料をお送りしますので、**メールアドレス** を伺ってもよろしいでしょうか？\n資料をご確認いただいた後、改めてお電話させていただきます。',
+    branches: [],
+  },
+  callback_later: {
+    title: '🤔 折り返し希望',
+    script: '承知しました。\nでは **いつ頃** こちらから改めてご連絡差し上げればよろしいでしょうか？\n本日はお時間頂きありがとうございました。',
+    branches: [],
+  },
+  no_interest: {
+    title: '🚫 興味なし',
+    script: '承知しました。\nお時間頂きありがとうございました。\nまた何か機会がございましたら、よろしくお願いいたします。',
+    branches: [],
+  },
+
+  absent: {
+    title: '🏠 担当者は不在',
+    script: '承知しました。\n改めてお電話したいので、**ご担当者様のお名前**と、**いつ頃お戻りになるか** を伺ってもよろしいでしょうか？',
+    branches: [
+      { label: '✅ 名前と戻り時間を聞けた', next: 'absent_got_info' },
+      { label: '🤔 詳細はわからない', next: 'absent_no_info' },
+    ],
+  },
+  absent_got_info: {
+    title: '✅ 名前と時間を聞けた',
+    script: 'ありがとうございます。\nでは **○月○日の○時頃** に改めてお電話させていただきます。\n本日はお時間頂きありがとうございました。失礼いたします。',
+    branches: [],
+  },
+  absent_no_info: {
+    title: '🤔 情報なし → 翌営業日に再電',
+    script: '承知しました。\nでは改めてお電話させていただきます。\nお時間頂きありがとうございました。',
+    branches: [],
+  },
+};
+
+// 5本の商材スクリプト
+const SCRIPT_TEMPLATES = [
+  {
+    id: 'shunen_eizou',
+    name: '🎂 周年式典映像',
+    target: '創業○○年の節目を迎える企業',
+    color: '#F59E0B',
+    n1: 'お世話になっております。**TENOHIRAの石川**と申します。\n突然のお電話失礼します。{company}様は、今年で **{years}周年** とのこと、おめでとうございます。\n\n周年のタイミングで「式典に用いる映像」や、来場者様に感謝とこれまでの歴史を振り返る「企業の記念史映像」を作られる会社が増えていまして、\n{company}様にもご案内できればと思いお電話しました。\n\n代表の{person}様はお引き合わせいただけませんでしょうか？\n\n（どうせ断られる）\n\nでは、**ご担当者様**にお繋ぎいただけますでしょうか？',
+  },
+  {
+    id: 'saiyou_interview',
+    name: '🎬 採用インタビュー動画',
+    target: '求人掲載中・採用に課題がありそうな企業',
+    color: '#3B82F6',
+    n1: 'お世話になっております。**TENOHIRAの石川**と申します。\n突然のお電話失礼します。{company}様の **求人情報を拝見** しまして、現在採用にお力を入れられているように見えたのでお電話しました。\n\n**「会社の本音と空気を伝える」ショート動画** をSNSや採用サイトで発信して、応募の質と量が変わる事例が増えていまして、\n{company}様にもご案内できればと思いお電話しました。\n\n代表の{person}様はお引き合わせいただけませんでしょうか？\n\n（どうせ断られる）\n\nでは、**人事か採用のご担当者様**にお繋ぎいただけますでしょうか？',
+  },
+  {
+    id: 'ai_tvcm',
+    name: '🤖 AIでテレビCM',
+    target: 'TVCMに興味あるが予算で諦めてた中小企業',
+    color: '#7C3AED',
+    n1: 'お世話になっております。**TENOHIRAの石川**と申します。\n突然のお電話失礼します。**AI技術を使ったテレビCM制作** で **従来の1/10の予算・最短3日納品** が可能になりまして、これまで「テレビCMは予算的に難しい」と諦めていた企業様にも届けられるようになりました。\n\n{company}様にもご案内できればと思いお電話しました。\n\n代表の{person}様はお引き合わせいただけませんでしょうか？\n\n（どうせ断られる）\n\nでは、**広告か広報、もしくは採用のご担当者様**にお繋ぎいただけますでしょうか？',
+  },
+  {
+    id: 'saiyou_tvcm',
+    name: '📺 採用広告テレビCM',
+    target: '採用に困っており、地域認知拡大が効きそうな中堅以上',
+    color: '#DC2626',
+    n1: 'お世話になっております。**TENOHIRAの石川**と申します。\n突然のお電話失礼します。{company}様の **求人を拝見** したのですが、{industry}業界の採用競争が県内でも年々厳しくなっておりますよね。\n\n弊社では **「採用に特化したテレビCM」** で **地域全体に一斉認知**を広げ、応募数が安定する企業様の支援をしております。\n{company}様にもご案内できればと思いお電話しました。\n\n代表の{person}様はお引き合わせいただけませんでしょうか？\n\n（どうせ断られる）\n\nでは、**人事か総務のご担当者様**にお繋ぎいただけますでしょうか？',
+  },
+  {
+    id: 'posmane',
+    name: '📦 ポスマネ・パンフ配布',
+    target: '来店・来場で売上が立つ企業（観光・宿泊・飲食・小売）',
+    color: '#16A34A',
+    n1: 'お世話になっております。**TENOHIRAの石川**と申します。\n突然のお電話失礼します。\n\nホテルやレンタカーの各施設 **230箇所以上** にパンフレットを補充して、観光客様の来客までの最後の1押しをお手伝いしている **「パンフレット良質配布・ポスマネ」** を提供しておりまして、\n{company}様の **販促パンフレットの配布**でもお役に立てればと思いお電話しました。\n\n代表の{person}様はお引き合わせいただけませんでしょうか？\n\n（どうせ断られる）\n\nでは、**販促か広報のご担当者様**にお繋ぎいただけますでしょうか？',
+  },
+];
+
 function renderApprScriptSelector(it) {
   const el = document.getElementById('appr-tel-scripts');
   if (!el) return;
-  // localStorageから保存済みスクリプトを取得（既存システムを参照）
-  let scripts = [];
-  try {
-    const saved = localStorage.getItem('scriptTemplates');
-    if (saved) scripts = JSON.parse(saved);
-  } catch(e) {}
 
-  // デフォルトスクリプト（ストレージにない場合）
-  if (!scripts.length) {
-    scripts = [
-      { id: 'default_anniv', name: '🎂 周年アプローチ', context: '創業記念月の企業向け' },
-      { id: 'default_growth', name: '📈 成長企業アプローチ', context: '求人掲載・SNS活発な企業向け' },
-      { id: 'default_general', name: '💼 一般企業アプローチ', context: '汎用スクリプト' },
-    ];
-  }
-
-  el.innerHTML = scripts.map(s =>
-    '<button onclick="openScriptWindow(\'' + s.id + '\',' + it.id + ')" style="padding:8px 12px;background:#fff;border:2px solid #C4B5FD;color:#7C3AED;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;transition:all 0.15s" onmouseover="this.style.background=\'#7C3AED\';this.style.color=\'#fff\'" onmouseout="this.style.background=\'#fff\';this.style.color=\'#7C3AED\'">' +
-      (s.name || s.id) +
+  el.innerHTML = SCRIPT_TEMPLATES.map(s =>
+    '<button onclick="openScriptWindow(\'' + s.id + '\',' + it.id + ')" ' +
+    'style="text-align:left;padding:10px 14px;background:#fff;border:2px solid ' + s.color + ';color:' + s.color + ';border-radius:10px;font-size:12px;cursor:pointer;transition:all 0.15s;flex:1;min-width:200px;line-height:1.4" ' +
+    'onmouseover="this.style.background=\'' + s.color + '\';this.style.color=\'#fff\'" ' +
+    'onmouseout="this.style.background=\'#fff\';this.style.color=\'' + s.color + '\'">' +
+      '<div style="font-weight:800;margin-bottom:2px">' + s.name + '</div>' +
+      '<div style="font-size:10px;opacity:0.85;font-weight:500">▶ ' + s.target + '</div>' +
     '</button>'
-  ).join('') + '<button onclick="goPage(\'settings\')" style="padding:8px 10px;background:transparent;border:1px dashed #C4B5FD;color:#7C3AED;border-radius:8px;font-size:11px;cursor:pointer;font-weight:600">＋ 編集</button>';
+  ).join('');
 }
 
-// スクリプトを別ウィンドウで開く
+// スクリプトを別ウィンドウでツリー型表示
 function openScriptWindow(scriptId, companyId) {
   const it = items.find(x => x.id === companyId);
   if (!it) return;
-  // スクリプト本文取得
-  let scripts = [];
-  try {
-    const saved = localStorage.getItem('scriptTemplates');
-    if (saved) scripts = JSON.parse(saved);
-  } catch(e) {}
-  let script = scripts.find(s => s.id === scriptId);
+  const tpl = SCRIPT_TEMPLATES.find(s => s.id === scriptId);
+  if (!tpl) { toast('スクリプトが見つかりません'); return; }
 
-  // デフォルト本文
-  const defaultScripts = {
-    default_anniv: {
-      name: '🎂 周年アプローチ',
-      content: 'お世話になっております、〇〇社の〇〇と申します。\n\n貴社は今年で {years} 周年を迎えられるとのこと、おめでとうございます！\n\n実は周年タイミングで広告制作のご相談を多くいただいておりまして、よろしければ少しお時間いただけませんか？\n\n■ 提案内容\n・周年記念キャンペーン動画\n・SNS連動プロモーション\n・採用強化\n\nまずは10分のお打ち合わせからでも！'
-    },
-    default_growth: {
-      name: '📈 成長企業アプローチ',
-      content: 'お世話になっております、〇〇社の〇〇と申します。\n\n貴社のSNS発信や求人掲載を拝見し、勢いがあるなと感じご連絡しました。\n\n■ お話しできること\n・採用動画／PR動画の制作\n・SNS運用代行\n・Web集客支援\n\n10分ほどお打ち合わせのお時間いただけませんか？'
-    },
-    default_general: {
-      name: '💼 一般企業アプローチ',
-      content: 'お世話になっております、〇〇社の〇〇と申します。\n\n本日は{company}様の広告・販促のお手伝いができればと思いご連絡しました。\n\n■ ご提案できる領域\n・動画制作（CM・採用・PR）\n・SNS運用\n・Webサイト制作\n\nまずは情報交換のお時間を10分ほどいただけないでしょうか？'
-    }
-  };
-
-  if (!script) script = defaultScripts[scriptId] || { name: 'スクリプト', content: '（スクリプト本文を設定してください）' };
-
-  // テンプレ変数を置換
+  // テンプレ変数の値を準備
   const today = new Date();
   const foundingYear = it.foundingDate ? parseInt(it.foundingDate.slice(0,4)) : null;
-  const years = foundingYear ? today.getFullYear() - foundingYear : '？';
-  let content = (script.content || '')
-    .replace(/{company}/g, it.company)
-    .replace(/{years}/g, years)
-    .replace(/{months}/g, it.anniversaryMonth || '？')
-    .replace(/{person}/g, it.person || 'ご担当者');
+  const years = foundingYear ? today.getFullYear() - foundingYear : '○○';
+  const variables = {
+    company: it.company,
+    years: years,
+    months: it.anniversaryMonth || '○○',
+    person: it.person || '社長',
+    industry: it.industry || '貴',
+  };
+
+  // 全ノードを統合（N1 + 共通N2/N3）
+  const allNodes = {
+    n1: {
+      title: '📞 N1：最初のセリフ',
+      script: tpl.n1,
+      branches: [
+        { label: '🚫 取次を拒否された', next: 'rejected' },
+        { label: '👤 担当者に電話が代わった', next: 'toContact' },
+        { label: '🏠 担当者は不在と言われた', next: 'absent' },
+      ],
+    },
+    ...SCRIPT_COMMON_NODES,
+  };
 
   // 別ウィンドウで開く
-  const w = window.open('', 'script_' + companyId, 'width=540,height=720,scrollbars=yes,resizable=yes');
+  const w = window.open('', 'script_' + companyId, 'width=620,height=820,scrollbars=yes,resizable=yes');
   if (!w) {
     toast('ポップアップがブロックされました。ブラウザ設定で許可してください');
     return;
   }
-  w.document.write(`
-    <!DOCTYPE html><html><head><meta charset="UTF-8"><title>${script.name} - ${it.company}</title>
-    <style>
-      body { font-family: 'Hiragino Sans', sans-serif; padding: 20px; line-height: 1.8; background: #FFF8F3; margin: 0; }
-      .header { background: linear-gradient(135deg, #FF4602, #FF6B35); color: #fff; padding: 16px 20px; margin: -20px -20px 16px; border-radius: 0 0 16px 16px; }
-      .h-title { font-size: 18px; font-weight: 900; margin: 0 0 4px; }
-      .h-sub { font-size: 13px; opacity: 0.9; }
-      .phone { background: #fff; border: 2px solid #FFD0BC; padding: 12px 16px; border-radius: 12px; margin-bottom: 16px; text-align:center; }
-      .phone-num { font-size: 22px; font-weight: 900; color: #FF4602; font-family: monospace; }
-      .script { background: #fff; padding: 20px; border-radius: 14px; box-shadow: 0 4px 12px rgba(0,0,0,0.06); white-space: pre-wrap; font-size: 15px; line-height: 1.9; color: #333; border-left: 6px solid #FF4602; }
-      .footer { margin-top: 16px; padding: 12px; text-align: center; color: #999; font-size: 11px; }
-    </style></head><body>
-    <div class="header">
-      <div class="h-title">${script.name}</div>
-      <div class="h-sub">${it.company}</div>
-    </div>
-    ${it.phone ? `<div class="phone"><div class="phone-num">📞 ${it.phone}</div></div>` : ''}
-    <div class="script">${content.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</div>
-    <div class="footer">FIELDWORK · 結果はメインウィンドウで記録してください</div>
-    </body></html>
-  `);
+  w.document.write(buildScriptHTML(tpl, it, allNodes, variables));
   w.document.close();
-  toast('🎙️ ' + script.name + ' を別ウィンドウで開きました');
+  toast('🎙️ ' + tpl.name + ' を別ウィンドウで開きました');
+}
+
+// スクリプトウィンドウのHTML組み立て
+function buildScriptHTML(tpl, it, allNodes, variables) {
+  // 変数置換（**太字**は<strong>に変換、改行は<br>に）
+  const renderScript = (text) => {
+    let s = (text || '').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    Object.keys(variables).forEach(k => {
+      s = s.replace(new RegExp('\\{' + k + '\\}', 'g'), '<span class="var">' + variables[k] + '</span>');
+    });
+    s = s.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+    s = s.replace(/\n/g, '<br>');
+    return s;
+  };
+
+  // 全ノードをJSONに（クライアント側のJSで使う）
+  const nodesJson = {};
+  Object.keys(allNodes).forEach(k => {
+    nodesJson[k] = {
+      title: allNodes[k].title,
+      script: renderScript(allNodes[k].script),
+      branches: allNodes[k].branches || [],
+    };
+  });
+  const nodesJsonStr = JSON.stringify(nodesJson).replace(/<\/script/g, '<\\/script');
+
+  return `<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><title>${tpl.name} - ${it.company}</title>
+<style>
+  * { box-sizing: border-box; }
+  body { font-family: 'Hiragino Sans', 'Yu Gothic UI', sans-serif; padding: 0; margin: 0; background: linear-gradient(135deg,#FFF8F3 0%,#FFEEDD 100%); min-height: 100vh; line-height: 1.8; }
+  .container { max-width: 580px; margin: 0 auto; padding: 0 16px 32px; }
+
+  /* ヘッダー */
+  .header { background: linear-gradient(135deg, ${tpl.color}, ${tpl.color}DD); color: #fff; padding: 14px 20px; text-align: center; }
+  .h-title { font-size: 18px; font-weight: 900; margin: 0 0 4px; letter-spacing: 0.04em; }
+  .h-target { font-size: 11px; opacity: 0.9; }
+
+  /* 企業名・電話番号カード（2.5倍デカ） */
+  .company-card {
+    background: #fff;
+    border: 3px solid ${tpl.color};
+    border-radius: 18px;
+    padding: 24px 20px;
+    margin: 16px 0 20px;
+    text-align: center;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.08);
+  }
+  .company-name {
+    font-size: 32px;
+    font-weight: 900;
+    color: #1F2937;
+    line-height: 1.3;
+    margin-bottom: 12px;
+    letter-spacing: 0.02em;
+    word-break: break-all;
+  }
+  .phone-number {
+    font-size: 36px;
+    font-weight: 900;
+    color: ${tpl.color};
+    font-family: 'SF Mono', 'Menlo', monospace;
+    letter-spacing: 0.05em;
+  }
+  .phone-prefix { font-size: 18px; margin-right: 6px; }
+
+  /* パンくず */
+  .breadcrumb { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; padding: 8px 12px; background: rgba(255,255,255,0.6); border-radius: 10px; margin-bottom: 14px; font-size: 11px; color: #6B7280; }
+  .breadcrumb-item { padding: 3px 8px; background: #fff; border-radius: 6px; font-weight: 700; cursor: pointer; transition: all 0.15s; }
+  .breadcrumb-item:hover { background: ${tpl.color}; color: #fff; }
+  .breadcrumb-item.current { background: ${tpl.color}; color: #fff; cursor: default; }
+
+  /* セリフカード */
+  .node-title { font-size: 12px; font-weight: 800; color: ${tpl.color}; margin-bottom: 8px; letter-spacing: 0.05em; padding-left: 4px; }
+  .script-card {
+    background: #fff;
+    padding: 24px 22px;
+    border-radius: 16px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+    font-size: 17px;
+    line-height: 2.1;
+    color: #1F2937;
+    border-left: 8px solid ${tpl.color};
+    margin-bottom: 16px;
+    word-wrap: break-word;
+  }
+  .script-card strong { color: ${tpl.color}; font-weight: 900; }
+  .script-card .var { background: #FEF3C7; color: #92400E; padding: 1px 8px; border-radius: 6px; font-weight: 700; font-size: 16px; }
+
+  /* 反応ボタン */
+  .branches-label { font-size: 13px; font-weight: 800; color: #374151; margin: 18px 0 10px; padding-left: 4px; }
+  .branches { display: grid; gap: 10px; }
+  .branch-btn {
+    background: #fff;
+    border: 2px solid #E5E7EB;
+    color: #374151;
+    padding: 16px 18px;
+    border-radius: 14px;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    text-align: left;
+    transition: all 0.15s;
+    font-family: inherit;
+  }
+  .branch-btn:hover { border-color: ${tpl.color}; background: ${tpl.color}; color: #fff; transform: translateY(-2px); box-shadow: 0 6px 14px rgba(0,0,0,0.1); }
+
+  /* 戻る・終端 */
+  .back-bar { display: flex; gap: 8px; margin-top: 16px; }
+  .back-btn { flex: 1; background: #fff; border: 2px solid #E5E7EB; color: #6B7280; padding: 12px; border-radius: 12px; font-size: 13px; font-weight: 700; cursor: pointer; font-family: inherit; transition: all 0.15s; }
+  .back-btn:hover { border-color: #FF4602; color: #FF4602; }
+
+  .terminal-box { background: #ECFDF5; border: 2px solid #86EFAC; padding: 18px; border-radius: 14px; text-align: center; color: #065F46; font-weight: 700; margin-top: 14px; }
+  .terminal-box-title { font-size: 14px; margin-bottom: 8px; }
+  .terminal-box-sub { font-size: 11px; color: #065F46; opacity: 0.8; font-weight: 500; }
+
+  .footer { padding: 16px; text-align: center; color: #9CA3AF; font-size: 10px; }
+</style></head><body>
+<div class="header">
+  <div class="h-title">${tpl.name}</div>
+  <div class="h-target">▶ ${tpl.target}</div>
+</div>
+
+<div class="container">
+
+  <!-- 企業名・電話番号 -->
+  <div class="company-card">
+    <div class="company-name">${it.company}</div>
+    ${it.phone ? `<div class="phone-number"><span class="phone-prefix">📞</span>${it.phone}</div>` : '<div style="color:#9CA3AF;font-size:14px;font-weight:700">電話番号未登録</div>'}
+  </div>
+
+  <!-- パンくず -->
+  <div class="breadcrumb" id="breadcrumb"></div>
+
+  <!-- セリフ表示エリア -->
+  <div id="script-area"></div>
+
+  <!-- 戻るバー -->
+  <div class="back-bar">
+    <button class="back-btn" onclick="goN1()">⏮ 最初に戻る</button>
+    <button class="back-btn" onclick="goBack()">← 一つ戻る</button>
+  </div>
+
+  <div class="footer">FIELDWORK · ツリースクリプト</div>
+</div>
+
+<` + `script>
+  const NODES = ${nodesJsonStr};
+  let history = ['n1'];
+
+  function render() {
+    const cur = history[history.length - 1];
+    const node = NODES[cur];
+    if (!node) return;
+
+    // パンくず
+    const bc = document.getElementById('breadcrumb');
+    bc.innerHTML = history.map((id, i) => {
+      const n = NODES[id];
+      const isLast = i === history.length - 1;
+      const label = n ? (n.title.replace(/^[\\u{1F300}-\\u{1F6FF}\\u{1F900}-\\u{1F9FF}]+\\s*/u, '').slice(0, 12)) : id;
+      return '<span class="breadcrumb-item' + (isLast ? ' current' : '') + '"' +
+        (isLast ? '' : ' onclick="jumpTo(' + i + ')"') + '>' + label + '</span>';
+    }).join(' ▶ ');
+
+    // セリフエリア
+    let html = '<div class="node-title">' + node.title + '</div>';
+    html += '<div class="script-card">' + node.script + '</div>';
+    if (node.branches && node.branches.length) {
+      html += '<div class="branches-label">相手の反応は？</div>';
+      html += '<div class="branches">';
+      node.branches.forEach(b => {
+        html += '<button class="branch-btn" onclick="goNext(\\'' + b.next + '\\')">' + b.label + '  →</button>';
+      });
+      html += '</div>';
+    } else {
+      html += '<div class="terminal-box"><div class="terminal-box-title">📝 ここでこの分岐は完了です</div><div class="terminal-box-sub">メインウィンドウに戻って結果を記録してください</div></div>';
+    }
+    document.getElementById('script-area').innerHTML = html;
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function goNext(nextId) {
+    if (NODES[nextId]) {
+      history.push(nextId);
+      render();
+    }
+  }
+
+  function goBack() {
+    if (history.length > 1) {
+      history.pop();
+      render();
+    }
+  }
+
+  function goN1() {
+    history = ['n1'];
+    render();
+  }
+
+  function jumpTo(idx) {
+    history = history.slice(0, idx + 1);
+    render();
+  }
+
+  render();
+<` + `/script>
+</body></html>`;
 }
 
 // 訪問アクションモーダル（プレースホルダー：シンプル実装）
