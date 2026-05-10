@@ -2154,20 +2154,41 @@ function recordVisitResult(it, result, opts={}) {
     memo: opts.memo || '',
   };
   if (result === 'meeting') {
+    // ✅ アポ取れた
     a.currentPhase = 'meeting_won';
     entry.nextPhase = 'meeting_won';
-  } else if (result === 'reached') {
-    // 会えたが商談に至らず → 再電フェーズに戻す
+  } else if (result === 'reached_card') {
+    // 💌 名刺交換のみ → 2週間後に再電
     a.currentPhase = 'tel_repeat';
     a.dormantUntil = addDaysJST(14);
     a.dormantReason = 'cooldown_2w';
     entry.nextPhase = 'dormant_2w';
-  } else if (result === 'absent') {
-    // 不在 → 直筆手紙へ
+  } else if (result === 'reached') {
+    // （旧）会えたが商談に至らず → 再電フェーズに戻す
+    a.currentPhase = 'tel_repeat';
+    a.dormantUntil = addDaysJST(14);
+    a.dormantReason = 'cooldown_2w';
+    entry.nextPhase = 'dormant_2w';
+  } else if (result === 'rejected_retel') {
+    // 🚪 門前払い → 再電
+    a.rejectCount++;
+    a.currentPhase = a.rejectCount >= 4 ? 'dormant_5m' : 'tel_repeat';
+    a.dormantUntil = addDaysJST(a.rejectCount >= 4 ? 150 : 14);
+    a.dormantReason = a.rejectCount >= 4 ? 'rejected_4times_5m' : 'cooldown_2w';
+    entry.nextPhase = a.currentPhase;
+    entry.rejectCount = a.rejectCount;
+  } else if (result === 'rejected_letter') {
+    // 🚪 門前払い → 手紙
     a.currentPhase = 'letter';
-    a.letterSentAt = null; // 手紙はまだ送ってない、これから準備
+    a.letterSentAt = null;
+    entry.nextPhase = 'letter';
+  } else if (result === 'absent') {
+    // 不在 → 直筆手紙へ（旧仕様、互換用）
+    a.currentPhase = 'letter';
+    a.letterSentAt = null;
     entry.nextPhase = 'letter';
   } else if (result === 'rejected') {
+    // （旧）お断り
     a.rejectCount++;
     a.currentPhase = a.rejectCount >= 4 ? 'dormant_5m' : 'dormant_2w';
     a.dormantUntil = addDaysJST(a.rejectCount >= 4 ? 150 : 14);
@@ -3651,7 +3672,10 @@ function openApproachAction(id) {
   const phase = it.approach.currentPhase;
   if (phase === 'tel_first' || phase === 'tel_repeat') {
     openTelActionModal(it);
-  } else if (phase === 'visit_ready' || phase === 'visit_done') {
+  } else if (phase === 'visit_ready') {
+    // 訪問可フェーズは「訪問 or 再電」を選べるようにする
+    openVisitOrTelChoiceModal(it);
+  } else if (phase === 'visit_done') {
     openVisitActionModal(it);
   } else if (phase === 'letter') {
     openLetterActionModal(it);
@@ -4620,21 +4644,205 @@ function buildScriptHTML(tpl, it, allNodes, variables) {
 </body></html>`;
 }
 
+// 訪問可フェーズ：訪問するか再電するか選べる
+function openVisitOrTelChoiceModal(it) {
+  const existing = document.getElementById('m-visit-choice');
+  if (existing) existing.remove();
+
+  const div = document.createElement('div');
+  div.className = 'modal-backdrop open';
+  div.id = 'm-visit-choice';
+  div.innerHTML = `
+    <div class="modal" style="max-width:520px;border-radius:20px">
+      <div class="mhead" style="border-bottom:none;padding-bottom:8px">
+        <div>
+          <div class="mtitle" style="display:flex;align-items:center;gap:8px;font-size:18px">
+            🚀 アプローチ続行
+          </div>
+        </div>
+        <button class="mclose" onclick="cm('m-visit-choice')">✕</button>
+      </div>
+      <div class="mbody">
+
+        <!-- 企業名カード -->
+        <div style="background:linear-gradient(135deg,#FFF8F3 0%,#FFEEDD 100%);border:3px solid #FF4602;border-radius:18px;padding:20px;margin-bottom:18px;text-align:center">
+          <div style="font-size:24px;font-weight:900;color:#1F2937;line-height:1.3;margin-bottom:6px;word-break:break-all">${escapeHtml(it.company)}</div>
+          <div style="display:inline-block;background:#16A34A;color:#fff;padding:4px 12px;border-radius:8px;font-size:11px;font-weight:800;margin-top:4px">🚀 訪問可フェーズ</div>
+        </div>
+
+        <div style="font-size:13px;color:#6B7280;text-align:center;margin-bottom:16px;line-height:1.7">
+          訪問してみる？それとも、もう一度電話してみる？<br>
+          <span style="font-size:11px;color:#9CA3AF">どっちを選んでもOK！状況に合わせて自由にね♪</span>
+        </div>
+
+        <!-- 2択ボタン -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+          <button onclick="chooseVisitAction(${it.id},'visit')" style="padding:24px 16px;background:linear-gradient(135deg,#16A34A,#22C55E);color:#fff;border:none;border-radius:16px;font-size:16px;font-weight:900;cursor:pointer;font-family:'Hiragino Maru Gothic ProN','Yu Gothic UI',sans-serif;box-shadow:0 6px 16px rgba(22,163,74,0.3);transition:all 0.15s" onmouseover="this.style.transform='translateY(-3px)';this.style.boxShadow='0 10px 22px rgba(22,163,74,0.4)'" onmouseout="this.style.transform='translateY(0)';this.style.boxShadow='0 6px 16px rgba(22,163,74,0.3)'">
+            <div style="font-size:36px;margin-bottom:6px">🚶</div>
+            訪問する
+            <div style="font-size:11px;font-weight:600;opacity:0.9;margin-top:4px">直接お会いしに行く</div>
+          </button>
+          <button onclick="chooseVisitAction(${it.id},'tel')" style="padding:24px 16px;background:linear-gradient(135deg,#FF4602,#FFB347);color:#fff;border:none;border-radius:16px;font-size:16px;font-weight:900;cursor:pointer;font-family:'Hiragino Maru Gothic ProN','Yu Gothic UI',sans-serif;box-shadow:0 6px 16px rgba(255,70,2,0.3);transition:all 0.15s" onmouseover="this.style.transform='translateY(-3px)';this.style.boxShadow='0 10px 22px rgba(255,70,2,0.4)'" onmouseout="this.style.transform='translateY(0)';this.style.boxShadow='0 6px 16px rgba(255,70,2,0.3)'">
+            <div style="font-size:36px;margin-bottom:6px">📞</div>
+            電話する
+            <div style="font-size:11px;font-weight:600;opacity:0.9;margin-top:4px">もう一度電話で接触</div>
+          </button>
+        </div>
+
+      </div>
+    </div>
+  `;
+  document.body.appendChild(div);
+}
+
+function chooseVisitAction(id, action) {
+  cm('m-visit-choice');
+  const it = items.find(x => x.id === id);
+  if (!it) return;
+  setTimeout(() => {
+    if (action === 'visit') {
+      openVisitActionModal(it);
+    } else {
+      openTelActionModal(it);
+    }
+  }, 200);
+}
+
 // 訪問アクションモーダル（プレースホルダー：シンプル実装）
 function openVisitActionModal(it) {
-  const result = prompt(
-    '飛び込み訪問の結果を記録します：\n\n' +
-    'reached = 会えた\n' +
-    'meeting = 商談獲得\n' +
-    'absent = 不在 → 直筆手紙へ\n' +
-    'rejected = お断り\n\n' +
-    '結果を入力（reached/meeting/absent/rejected）:'
-  );
-  if (!result) return;
-  const memo = prompt('メモ（任意）:') || '';
+  const existing = document.getElementById('m-visit-result');
+  if (existing) existing.remove();
+
+  const div = document.createElement('div');
+  div.className = 'modal-backdrop open';
+  div.id = 'm-visit-result';
+  div.innerHTML = `
+    <div class="modal" style="max-width:560px;max-height:92vh;overflow-y:auto;border-radius:20px">
+      <div class="mhead" style="border-bottom:none;padding-bottom:8px">
+        <div>
+          <div class="mtitle" style="display:flex;align-items:center;gap:8px;font-size:18px">
+            🚶 訪問の結果は？
+          </div>
+        </div>
+        <button class="mclose" onclick="cm('m-visit-result')">✕</button>
+      </div>
+      <div class="mbody">
+
+        <!-- 企業名・住所カード -->
+        <div style="background:linear-gradient(135deg,#FFF8F3 0%,#FFEEDD 100%);border:3px solid #FF4602;border-radius:18px;padding:20px;margin-bottom:18px;text-align:center;box-shadow:0 6px 20px rgba(255,70,2,0.12)">
+          <div style="font-size:24px;font-weight:900;color:#1F2937;line-height:1.3;margin-bottom:6px;word-break:break-all">${escapeHtml(it.company)}</div>
+          ${it.addr ? `<div style="font-size:12px;color:#6B7280;font-weight:600">📍 ${escapeHtml(it.addr)}</div>` : ''}
+        </div>
+
+        <!-- メモ入力 -->
+        <div style="margin-bottom:18px">
+          <div style="font-size:13px;font-weight:800;color:#374151;margin-bottom:8px;display:flex;align-items:center;gap:6px">
+            <span>✏️ 訪問メモ</span>
+            <span style="font-size:10px;color:#DC2626;font-weight:700">必須</span>
+            <span id="visit-memo-hint" style="margin-left:auto;font-size:11px;color:#FF4602;font-weight:700">↓ メモ書いてから結果を選んでね♪</span>
+          </div>
+          <textarea id="visit-result-memo" oninput="updateVisitMemoState()" placeholder="例：玉城社長と話せた／応対者は受付の方／チラシ受け取ってもらえた..." style="width:100%;min-height:100px;padding:12px;border:2px solid #FCA5A5;border-radius:12px;font-size:14px;line-height:1.7;resize:vertical;outline:none;font-family:inherit;background:#FFFBEB;transition:all 0.2s" onfocus="this.style.borderColor='#FF4602'" onblur="this.style.borderColor=this.value.trim()?'#16A34A':'#FCA5A5'"></textarea>
+        </div>
+
+        <!-- 結果ボタン群 -->
+        <div style="margin-bottom:6px;font-size:13px;font-weight:800;color:#374151">どうだった？</div>
+
+        <!-- 会えた系（緑系） -->
+        <div style="background:#F0FDF4;border:2px solid #BBF7D0;border-radius:14px;padding:14px;margin-bottom:10px">
+          <div style="font-size:12px;font-weight:800;color:#16A34A;margin-bottom:10px;display:flex;align-items:center;gap:6px">✅ 会えた</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+            <button class="visit-result-btn" data-needs-memo="1" onclick="submitVisitResult('meeting')" style="padding:14px;background:#fff;border:2px solid #16A34A;color:#16A34A;border-radius:12px;font-size:14px;font-weight:900;cursor:pointer;transition:all 0.15s;font-family:'Hiragino Maru Gothic ProN','Yu Gothic UI',sans-serif">
+              🎯<br>アポ取れた
+            </button>
+            <button class="visit-result-btn" data-needs-memo="1" onclick="submitVisitResult('reached_card')" style="padding:14px;background:#fff;border:2px solid #0891B2;color:#0891B2;border-radius:12px;font-size:14px;font-weight:900;cursor:pointer;transition:all 0.15s;font-family:'Hiragino Maru Gothic ProN','Yu Gothic UI',sans-serif">
+              💌<br>名刺交換のみ
+            </button>
+          </div>
+        </div>
+
+        <!-- 門前払い系（オレンジ系） -->
+        <div style="background:#FEF3C7;border:2px solid #FCD34D;border-radius:14px;padding:14px">
+          <div style="font-size:12px;font-weight:800;color:#92400E;margin-bottom:10px;display:flex;align-items:center;gap:6px">🚪 門前払いだった</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+            <button class="visit-result-btn" data-needs-memo="1" onclick="submitVisitResult('rejected_retel')" style="padding:14px;background:#fff;border:2px solid #F59E0B;color:#92400E;border-radius:12px;font-size:14px;font-weight:900;cursor:pointer;transition:all 0.15s;font-family:'Hiragino Maru Gothic ProN','Yu Gothic UI',sans-serif">
+              📞<br>2週間後に再電
+            </button>
+            <button class="visit-result-btn" data-needs-memo="1" onclick="submitVisitResult('rejected_letter')" style="padding:14px;background:#fff;border:2px solid #DC2626;color:#DC2626;border-radius:12px;font-size:14px;font-weight:900;cursor:pointer;transition:all 0.15s;font-family:'Hiragino Maru Gothic ProN','Yu Gothic UI',sans-serif">
+              ✉️<br>手紙を送る
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  `;
+  document.body.appendChild(div);
+  // 状態保持用
+  div.dataset.itemId = it.id;
+  // 初期状態：ボタン無効化
+  setTimeout(updateVisitMemoState, 50);
+}
+
+// メモが書かれてるかでボタン有効化
+function updateVisitMemoState() {
+  const memo = document.getElementById('visit-result-memo');
+  const hint = document.getElementById('visit-memo-hint');
+  const btns = document.querySelectorAll('.visit-result-btn');
+  const ok = memo && memo.value.trim().length > 0;
+  btns.forEach(b => {
+    if (ok) {
+      b.disabled = false;
+      b.style.opacity = '1';
+      b.style.cursor = 'pointer';
+    } else {
+      b.disabled = true;
+      b.style.opacity = '0.45';
+      b.style.cursor = 'not-allowed';
+    }
+  });
+  if (hint) hint.style.display = ok ? 'none' : 'inline';
+}
+
+// 結果ボタン押下
+function submitVisitResult(result) {
+  const modal = document.getElementById('m-visit-result');
+  if (!modal) return;
+  const memo = (document.getElementById('visit-result-memo')?.value || '').trim();
+  if (!memo) {
+    // shake
+    const ta = document.getElementById('visit-result-memo');
+    if (ta) {
+      ta.style.borderColor = '#DC2626';
+      ta.style.background = '#FEE2E2';
+      ta.animate([
+        { transform: 'translateX(0)' },
+        { transform: 'translateX(-6px)' },
+        { transform: 'translateX(6px)' },
+        { transform: 'translateX(-4px)' },
+        { transform: 'translateX(0)' },
+      ], { duration: 350 });
+      ta.focus();
+    }
+    return;
+  }
+  const id = parseInt(modal.dataset.itemId);
+  const it = items.find(x => x.id === id);
+  if (!it) return;
   recordVisitResult(it, result, { memo });
   save();
-  toast('訪問結果を記録しました');
+  cm('m-visit-result');
+  // 完了フィードバック
+  const messages = {
+    meeting: '🎯 アポ獲得！\nおめでとう✨',
+    reached_card: '💌 名刺交換できたね！\n2週間後に再電予定',
+    rejected_retel: '📞 OK！2週間後に再電に戻すよ',
+    rejected_letter: '✉️ 手紙作戦に切替！\nがんばろう♪',
+  };
+  if (typeof showCopyAnimation === 'function') {
+    showCopyAnimation(messages[result] || '訪問結果を記録しました！');
+  } else {
+    toast(messages[result] || '訪問結果を記録しました');
+  }
 }
 
 // 直筆手紙アクションモーダル（プレースホルダー）
