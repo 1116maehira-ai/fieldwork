@@ -1,11 +1,9 @@
 <!DOCTYPE html>
-<!-- saved from url=(0057)https://1116maehira-ai.github.io/fieldwork/fieldwork.html -->
 <html lang="ja"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAzMiAzMiI+CiAgPHJlY3Qgd2lkdGg9IjMyIiBoZWlnaHQ9IjMyIiByeD0iNiIgZmlsbD0iI0Y1RkYwMCIvPgogIDx0ZXh0IHg9IjE2IiB5PSIyNCIgZm9udC1mYW1pbHk9IkFyaWFsIEJsYWNrLCBzYW5zLXNlcmlmIiBmb250LXNpemU9IjI0IiBmb250LXdlaWdodD0iOTAwIiBmaWxsPSIjRkY0NjAyIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj5UPC90ZXh0Pgo8L3N2Zz4=">
 <title>FIELDWORK — アタックリスト × アプローチ管理</title>
-<link href="./FIELDWORK — アタックリスト × アプローチ管理_files/css2" rel="stylesheet">
 <style>
 :root {
   --bg: #FFFFFF;
@@ -105,6 +103,7 @@ body { background: var(--bg); color: var(--text); font-family: var(--font-body);
 /* ── STAT CARDS ── */
 .stat-row { display: grid; gap: 12px; margin-bottom: 22px; }
 .stat-row-5 { grid-template-columns: repeat(5, 1fr); }
+.stat-row-3 { grid-template-columns: repeat(3, 1fr); }
 .stat-row-4 { grid-template-columns: repeat(4, 1fr); }
 .stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 15px 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
 .stat-label { font-family: var(--font-mono); font-size: 9px; color: var(--text-mid); letter-spacing: 0.15em; text-transform: uppercase; margin-bottom: 7px; }
@@ -1372,12 +1371,10 @@ tr:hover td { background: rgba(255,70,2,0.03); cursor: pointer; }
 <div class="page" id="page-dash">
   <div class="topbar"><div class="page-title">DASHBOARD</div></div>
   <div class="content">
-    <div class="stat-row stat-row-5">
+    <div class="stat-row stat-row-3">
       <div class="stat-card"><div class="stat-label">収集総数</div><div class="stat-value" id="d-total">0</div></div>
-      <div class="stat-card"><div class="stat-label" style="color:var(--accent)">S+Aランク率</div><div class="stat-value" id="d-sarate" style="color:var(--accent)">0%</div></div>
       <div class="stat-card"><div class="stat-label" style="color:var(--gold)">アポ獲得</div><div class="stat-value" id="d-apo" style="color:var(--gold)">0</div></div>
       <div class="stat-card"><div class="stat-label" style="color:var(--orange)">アプローチ中</div><div class="stat-value" id="d-ongoing" style="color:var(--orange)">0</div></div>
-      <div class="stat-card"><div class="stat-label">平均スコア</div><div class="stat-value" id="d-avgscore">0</div></div>
     </div>
 
     <!-- ★ 活動振り返りセクション ★ -->
@@ -1407,15 +1404,9 @@ tr:hover td { background: rgba(255,70,2,0.03); cursor: pointer; }
       </details>
     </div>
 
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px">
-      <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:20px">
-        <div style="font-family:var(--font-mono);font-size:9px;color:var(--accent);letter-spacing:0.15em;margin-bottom:16px;text-transform:uppercase">// ランク分布</div>
-        <div id="d-rank-chart"></div>
-      </div>
-      <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:20px">
-        <div style="font-family:var(--font-mono);font-size:9px;color:var(--accent);letter-spacing:0.15em;margin-bottom:16px;text-transform:uppercase">// フェーズ別</div>
-        <div id="d-phase-chart"></div>
-      </div>
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:20px">
+      <div style="font-family:var(--font-mono);font-size:9px;color:var(--accent);letter-spacing:0.15em;margin-bottom:16px;text-transform:uppercase">// アプローチフェーズ別 分布</div>
+      <div id="d-phase-chart"></div>
     </div>
   </div>
 </div>
@@ -3407,32 +3398,35 @@ function renderDash() {
   ).length;
   const avg = t ? Math.round(items.reduce((s,x)=>s+(x.score?.total||0),0)/t) : 0;
   document.getElementById('d-total').textContent=t;
-  document.getElementById('d-sarate').textContent=t?Math.round(sa/t*100)+'%':'0%';
   document.getElementById('d-apo').textContent=apo;
   document.getElementById('d-ongoing').textContent=ong;
-  document.getElementById('d-avgscore').textContent=avg;
-  const ranks=['S','A','B','C'];
-  const rcols=['var(--accent)','var(--blue)','var(--gold)','var(--text-dim)'];
-  const rcnts=ranks.map(r=>items.filter(x=>x.score?.rank===r).length);
-  const mr=Math.max(...rcnts,1);
-  document.getElementById('d-rank-chart').innerHTML=ranks.map((r,i)=>`
+  // 新フェーズシステム別の集計
+  const newPhases = [
+    ['not_started', '⚪ 未着手',    '#9CA3AF'],
+    ['tel_first',   '📞 電話①',    '#FF4602'],
+    ['tel_repeat',  '🔄 再電',      '#92400E'],
+    ['visit_ready', '🚀 訪問可',    '#16A34A'],
+    ['visit_done',  '🚶 訪問済',    '#0891B2'],
+    ['letter',      '✉️ 手紙送付',   '#7C3AED'],
+    ['dormant_2w',  '💤 2週休眠',    '#6B7280'],
+    ['dormant_5m',  '❄️ 5ヶ月休眠',  '#3B82F6'],
+    ['meeting_won', '🎯 商談獲得',  '#F59E0B'],
+    ['rejected_final', '❌ 拒否',   '#DC2626'],
+  ];
+  const startedItems = items.filter(x => x.approach && x.approach.started);
+  const notStartedCount = items.length - startedItems.length;
+  const pcnts = newPhases.map(([k]) => {
+    if (k === 'not_started') return notStartedCount;
+    return startedItems.filter(x => x.approach.currentPhase === k).length;
+  });
+  const mp = Math.max(...pcnts, 1);
+  document.getElementById('d-phase-chart').innerHTML = newPhases.map(([k,l,c],i)=>`
     <div class="funnel-row">
-      <div class="funnel-label">${r}</div>
-      <div class="funnel-bar-wrap"><div class="funnel-bar" style="width:${(rcnts[i]/mr)*100}%;background:${rcols[i]};opacity:0.7">
-        ${rcnts[i]>0?`<span class="funnel-num" style="color:white">${rcnts[i]}</span>`:''}
-      </div></div>
-      <span style="font-family:var(--font-mono);font-size:12px;color:${rcols[i]};width:24px">${rcnts[i]}</span>
-    </div>`).join('');
-  const phases=[['visit','直接訪問','var(--accent)'],['tel','テルアポ','var(--blue)'],['letter','直筆手紙','var(--orange)'],['letter_tel','手紙→電話','var(--orange)'],['cooldown','冷却期間','var(--text-dim)'],['apo','アポ獲得','var(--gold)']];
-  const pcnts=phases.map(([k])=>items.filter(x=>x.phase===k).length);
-  const mp=Math.max(...pcnts,1);
-  document.getElementById('d-phase-chart').innerHTML=phases.map(([k,l,c],i)=>`
-    <div class="funnel-row">
-      <div class="funnel-label">${l}</div>
-      <div class="funnel-bar-wrap"><div class="funnel-bar" style="width:${(pcnts[i]/mp)*100}%;background:${c};opacity:0.7">
+      <div class="funnel-label" style="min-width:130px">${l}</div>
+      <div class="funnel-bar-wrap"><div class="funnel-bar" style="width:${(pcnts[i]/mp)*100}%;background:${c};opacity:0.85">
         ${pcnts[i]>0?`<span class="funnel-num" style="color:white">${pcnts[i]}</span>`:''}
       </div></div>
-      <span style="font-family:var(--font-mono);font-size:12px;color:${c};width:24px">${pcnts[i]}</span>
+      <span style="font-family:var(--font-mono);font-size:13px;color:${c};width:36px;font-weight:800;text-align:right">${pcnts[i]}</span>
     </div>`).join('');
   // 活動振り返りも更新
   if (typeof renderActivitySummary === 'function') renderActivitySummary();
@@ -6110,7 +6104,7 @@ async function startAutoCollect() {
   const cbtnS = document.getElementById('col-btn-single'); if (cbtnS) cbtnS.style.display = 'none';
   document.getElementById('col-auto-controls').style.display = 'flex';
   document.getElementById('col-prog').style.display = 'block';
-  document.getElementById('collect-result').style.display = 'block';
+  const cr = document.getElementById('collect-result'); if (cr) cr.style.display = 'block';
 
   const limit = 100; // 固定値
   const total = ranking.length;
@@ -6282,10 +6276,10 @@ async function startCollect() {
 
   document.getElementById('col-prog-fill').style.width = '100%';
   document.getElementById('col-prog-label').textContent = '完了！新規' + added + '件追加 / ' + skipped + '件スキップ';
-  document.getElementById('collect-result').style.display = 'block';
-  document.getElementById('result-added').textContent = added;
-  document.getElementById('result-skipped').textContent = skipped;
-  document.getElementById('result-total').textContent = items.length;
+  const cr2 = document.getElementById('collect-result'); if (cr2) cr2.style.display = 'block';
+  const ra2 = document.getElementById('result-added'); if (ra2) ra2.textContent = added;
+  const rs2 = document.getElementById('result-skipped'); if (rs2) rs2.textContent = skipped;
+  const rt2 = document.getElementById('result-total'); if (rt2) rt2.textContent = items.length;
   document.getElementById('col-think').classList.remove('show');
   btn.disabled = false;
   btn.innerHTML = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg> 収集開始';
@@ -6312,8 +6306,10 @@ function getFilteredItems() {
   const showExcluded = document.getElementById('ls-show-excluded')?.checked || false;
   const showNonBiz = document.getElementById('ls-show-nonbiz')?.checked !== false; // デフォルトtrue
   return items.filter(it => {
-    if (!showExcluded && it.excluded) return false;
-    if (!showNonBiz && it.manualCompanyFlag === 'non_company') return false;
+    // 「対象外も表示」OFF時：手動で営業対象外にした企業（manualCompanyFlag === 'non_company'）と、旧 excluded フラグ両方を非表示
+    if (!showExcluded && (it.manualCompanyFlag === 'non_company' || it.excluded)) return false;
+    // 「非企業も表示」OFF時：自動判定で非企業（isLikelyCompany=false）かつ手動企業扱いされてないもの
+    if (!showNonBiz && !isLikelyCompany(it) && it.manualCompanyFlag !== 'company') return false;
     if (companyTypeFilter === 'company' && !isLikelyCompany(it)) return false;
     if (companyTypeFilter === 'non_company' && isLikelyCompany(it)) return false;
     if (search && !it.company.toLowerCase().includes(search)) return false;
