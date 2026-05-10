@@ -1238,6 +1238,19 @@ tr:hover td { background: rgba(255,70,2,0.03); cursor: pointer; }
     <div class="topbar-sub">アプローチ進行中の企業一覧（新フェーズシステム）</div>
   </div>
   <div class="content">
+    <!-- ★ 活動サマリーBOX（コンパクト版） -->
+    <div style="background:linear-gradient(135deg,#FFF8F3 0%,#FFEEDD 100%);border:2px solid #FFE0D6;border-radius:14px;padding:14px 18px;margin-bottom:14px">
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px">
+        <div style="font-size:14px;font-weight:900;color:#FF4602">📊 あなたの活動</div>
+        <div style="display:flex;gap:4px;margin-left:auto">
+          <button class="ap-period-btn active" data-period="today" onclick="setApPeriod('today')" style="padding:5px 12px;border-radius:8px;border:2px solid #FF4602;background:#FF4602;color:#fff;font-size:11px;font-weight:800;cursor:pointer">今日</button>
+          <button class="ap-period-btn" data-period="week" onclick="setApPeriod('week')" style="padding:5px 12px;border-radius:8px;border:2px solid #E5E7EB;background:#fff;color:#6B7280;font-size:11px;font-weight:700;cursor:pointer">今週</button>
+          <button class="ap-period-btn" data-period="month" onclick="setApPeriod('month')" style="padding:5px 12px;border-radius:8px;border:2px solid #E5E7EB;background:#fff;color:#6B7280;font-size:11px;font-weight:700;cursor:pointer">今月</button>
+        </div>
+      </div>
+      <div id="ap-activity-cards" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(100px,1fr));gap:8px"></div>
+    </div>
+
     <!-- 新フェーズサマリー -->
     <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px">
       <div class="appr-stat" data-phase="" style="background:#FFF3EE;border:2px solid #FFD0BC;border-radius:14px;padding:12px 18px;text-align:center;cursor:pointer;flex:1;min-width:110px" onclick="filterByApprPhase('')">
@@ -1284,8 +1297,24 @@ tr:hover td { background: rgba(255,70,2,0.03); cursor: pointer; }
         <option value="dormant_5m">❄️ 5ヶ月休眠</option>
         <option value="meeting_won">🎯 商談獲得</option>
       </select>
+      <select class="fi" id="ap-activity-period" onchange="renderApproach()" title="期間内に活動した企業だけ表示">
+        <option value="">活動期間：すべて</option>
+        <option value="today">📅 今日活動</option>
+        <option value="week">📆 今週活動</option>
+        <option value="month">🗓 今月活動</option>
+      </select>
+      <select class="fi" id="ap-activity-type" onchange="renderApproach()" title="特定の活動をした企業だけ">
+        <option value="">活動種別：すべて</option>
+        <option value="tel">📞 電話した</option>
+        <option value="visit">🚶 訪問した</option>
+        <option value="letter_sent">✉️ 手紙を送った</option>
+        <option value="meeting">🎯 商談獲得した</option>
+      </select>
       <select class="fi" id="ap-sort" onchange="renderApproach()">
         <option value="recent">直近の行動順</option>
+        <option value="recent_old">直近の行動が古い順</option>
+        <option value="today_active">今日の活動順</option>
+        <option value="week_active">今週の活動順</option>
         <option value="started">開始日が新しい順</option>
         <option value="dormant_close">休眠明け間近順</option>
         <option value="rejects_high">拒否回数多い順</option>
@@ -1342,6 +1371,34 @@ tr:hover td { background: rgba(255,70,2,0.03); cursor: pointer; }
       <div class="stat-card"><div class="stat-label" style="color:var(--orange)">アプローチ中</div><div class="stat-value" id="d-ongoing" style="color:var(--orange)">0</div></div>
       <div class="stat-card"><div class="stat-label">平均スコア</div><div class="stat-value" id="d-avgscore">0</div></div>
     </div>
+
+    <!-- ★ 活動振り返りセクション ★ -->
+    <div style="background:#fff;border:2px solid #FFE0D6;border-radius:16px;padding:22px;margin-bottom:18px;box-shadow:0 4px 16px rgba(255,70,2,0.06)">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;flex-wrap:wrap">
+        <div style="font-size:16px;font-weight:900;color:#FF4602">📊 あなたの活動</div>
+        <div style="display:flex;gap:6px;margin-left:auto;flex-wrap:wrap">
+          <button class="activity-period-btn active" data-period="today" onclick="setActivityPeriod('today')" style="padding:7px 14px;border-radius:10px;border:2px solid #FF4602;background:#FF4602;color:#fff;font-size:12px;font-weight:800;cursor:pointer">今日</button>
+          <button class="activity-period-btn" data-period="week" onclick="setActivityPeriod('week')" style="padding:7px 14px;border-radius:10px;border:2px solid #E5E7EB;background:#fff;color:#6B7280;font-size:12px;font-weight:700;cursor:pointer">今週</button>
+          <button class="activity-period-btn" data-period="month" onclick="setActivityPeriod('month')" style="padding:7px 14px;border-radius:10px;border:2px solid #E5E7EB;background:#fff;color:#6B7280;font-size:12px;font-weight:700;cursor:pointer">今月</button>
+          <button class="activity-period-btn" data-period="custom" onclick="setActivityPeriod('custom')" style="padding:7px 14px;border-radius:10px;border:2px solid #E5E7EB;background:#fff;color:#6B7280;font-size:12px;font-weight:700;cursor:pointer">📅 日付指定</button>
+        </div>
+      </div>
+      <!-- 日付指定UI（custom時のみ表示） -->
+      <div id="activity-custom-range" style="display:none;margin-bottom:12px;padding:10px;background:#F9FAFB;border-radius:10px;display:none;gap:8px;flex-wrap:wrap;align-items:center">
+        <span style="font-size:12px;color:#6B7280;font-weight:700">期間：</span>
+        <input type="date" id="activity-from" onchange="renderActivitySummary()" style="padding:6px 8px;border-radius:6px;border:1px solid #D1D5DB;font-size:12px">
+        <span style="font-size:12px;color:#6B7280">〜</span>
+        <input type="date" id="activity-to" onchange="renderActivitySummary()" style="padding:6px 8px;border-radius:6px;border:1px solid #D1D5DB;font-size:12px">
+      </div>
+      <!-- カウンタカード（5枚） -->
+      <div id="activity-summary-cards" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px"></div>
+      <!-- 活動した企業の一覧（折り畳み） -->
+      <details style="margin-top:14px">
+        <summary style="cursor:pointer;font-size:12px;font-weight:700;color:#6B7280;padding:6px 0;list-style:none">📋 期間内に活動した企業を見る</summary>
+        <div id="activity-detail-list" style="margin-top:10px;max-height:400px;overflow-y:auto;padding:4px"></div>
+      </details>
+    </div>
+
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px">
       <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:20px">
         <div style="font-family:var(--font-mono);font-size:9px;color:var(--accent);letter-spacing:0.15em;margin-bottom:16px;text-transform:uppercase">// ランク分布</div>
@@ -2275,6 +2332,9 @@ async function save() {
   // 収集ページのサマリー・今日リストも更新
   if (typeof renderCollectSummary === 'function') renderCollectSummary();
   if (typeof renderTodayCollect === 'function') renderTodayCollect();
+  // 活動振り返りも更新
+  if (typeof renderActivitySummary === 'function') renderActivitySummary();
+  if (typeof renderApActivityBox === 'function') renderApActivityBox();
 }
 
 // ── NAV ──
@@ -2842,7 +2902,12 @@ function renderApproach() {
   const search = (document.getElementById('ap-search')?.value || '').toLowerCase();
   const phaseF = document.getElementById('ap-phase')?.value || '';
   const sortF = document.getElementById('ap-sort')?.value || 'recent';
+  const periodF = document.getElementById('ap-activity-period')?.value || '';
+  const typeF = document.getElementById('ap-activity-type')?.value || '';
   const today = todayJST();
+
+  // 期間範囲を計算
+  const periodRange = getPeriodRange(periodF);
 
   // 新フェーズシステム：approachが開始済みの企業を抽出
   const allApproaching = items.filter(it => it.approach && it.approach.started);
@@ -2851,10 +2916,29 @@ function renderApproach() {
   let list = allApproaching.filter(it => {
     if (search && !it.company.toLowerCase().includes(search)) return false;
     if (phaseF) {
-      // 「dormant」一括の場合は2w/5m両方を含める
       if (phaseF === 'dormant') {
         if (!['dormant_2w','dormant_5m'].includes(it.approach.currentPhase)) return false;
       } else if (it.approach.currentPhase !== phaseF) return false;
+    }
+    // 活動期間フィルタ
+    if (periodRange) {
+      const hasActivityInRange = (it.approach.history || []).some(h =>
+        h.ts && h.ts >= periodRange.from && h.ts < periodRange.to && (
+          h.action === 'tel' || h.action === 'visit' || h.action === 'letter_sent'
+        )
+      );
+      if (!hasActivityInRange) return false;
+    }
+    // 活動種別フィルタ
+    if (typeF) {
+      const hasType = (it.approach.history || []).some(h => {
+        if (typeF === 'meeting') return h.result === 'meeting';
+        if (typeF === 'tel') return h.action === 'tel';
+        if (typeF === 'visit') return h.action === 'visit';
+        if (typeF === 'letter_sent') return h.action === 'letter_sent';
+        return false;
+      });
+      if (!hasType) return false;
     }
     return true;
   });
@@ -2864,10 +2948,23 @@ function renderApproach() {
     const aA = a.approach, bA = b.approach;
     if (sortF === 'recent')
       return (bA.lastActionAt || bA.startedAt || '').localeCompare(aA.lastActionAt || aA.startedAt || '');
+    if (sortF === 'recent_old')
+      return (aA.lastActionAt || aA.startedAt || '').localeCompare(bA.lastActionAt || bA.startedAt || '');
+    if (sortF === 'today_active') {
+      const todayRange = getPeriodRange('today');
+      const ac = countActivityInRange(aA, todayRange);
+      const bc = countActivityInRange(bA, todayRange);
+      return bc - ac;
+    }
+    if (sortF === 'week_active') {
+      const wkRange = getPeriodRange('week');
+      const ac = countActivityInRange(aA, wkRange);
+      const bc = countActivityInRange(bA, wkRange);
+      return bc - ac;
+    }
     if (sortF === 'started')
       return (bA.startedAt || '').localeCompare(aA.startedAt || '');
     if (sortF === 'dormant_close') {
-      // 休眠明け間近：dormantUntilがあるものを今日に近い順
       const ad = aA.dormantUntil || '9999-99-99';
       const bd = bA.dormantUntil || '9999-99-99';
       return ad.localeCompare(bd);
@@ -2877,6 +2974,9 @@ function renderApproach() {
     if (sortF === 'company') return a.company.localeCompare(b.company);
     return 0;
   });
+
+  // 活動サマリーボックス（このページ用）も更新
+  renderApActivityBox();
 
   // サマリーカード更新
   const counts = {
@@ -2960,6 +3060,204 @@ function filterByApprPhase(phase) {
   if (!sel) return;
   sel.value = phase;
   renderApproach();
+}
+
+// ══════════════════════════════════════════
+// 活動振り返りユーティリティ
+// ══════════════════════════════════════════
+
+// 期間ラベルから { from: ISO, to: ISO } を返す
+function getPeriodRange(period) {
+  if (!period) return null;
+  const now = new Date();
+  const todayStr = todayJST(); // YYYY-MM-DD
+  if (period === 'today') {
+    return { from: todayStr + 'T00:00:00', to: todayStr + 'T23:59:59' };
+  }
+  if (period === 'week') {
+    // 月曜始まり
+    const d = new Date(now);
+    const dow = d.getDay(); // 0=日
+    const offset = (dow === 0) ? 6 : dow - 1;
+    d.setDate(d.getDate() - offset);
+    const from = d.toISOString().slice(0, 10) + 'T00:00:00';
+    const dEnd = new Date(d);
+    dEnd.setDate(dEnd.getDate() + 7);
+    const to = dEnd.toISOString().slice(0, 10) + 'T00:00:00';
+    return { from, to };
+  }
+  if (period === 'month') {
+    const y = now.getFullYear();
+    const m = (now.getMonth() + 1).toString().padStart(2, '0');
+    const lastDay = new Date(y, now.getMonth() + 1, 0).getDate();
+    return {
+      from: y + '-' + m + '-01T00:00:00',
+      to: y + '-' + m + '-' + String(lastDay).padStart(2,'0') + 'T23:59:59',
+    };
+  }
+  if (period === 'custom') {
+    const f = document.getElementById('activity-from')?.value;
+    const t = document.getElementById('activity-to')?.value;
+    if (f && t) return { from: f + 'T00:00:00', to: t + 'T23:59:59' };
+    return null;
+  }
+  return null;
+}
+
+// 期間内の活動件数（電話/訪問/手紙）
+function countActivityInRange(approach, range) {
+  if (!approach || !range) return 0;
+  return (approach.history || []).filter(h =>
+    h.ts && h.ts >= range.from && h.ts <= range.to &&
+    (h.action === 'tel' || h.action === 'visit' || h.action === 'letter_sent')
+  ).length;
+}
+
+// アクション別カウント
+function countActivityByType(approach, range, type) {
+  if (!approach) return 0;
+  return (approach.history || []).filter(h => {
+    if (range && (!h.ts || h.ts < range.from || h.ts > range.to)) return false;
+    if (type === 'tel') return h.action === 'tel';
+    if (type === 'visit') return h.action === 'visit';
+    if (type === 'letter_sent') return h.action === 'letter_sent';
+    if (type === 'meeting') return h.result === 'meeting';
+    return false;
+  }).length;
+}
+
+// 全企業合計の活動件数
+function totalActivityInRange(range, type) {
+  if (!range) return 0;
+  let total = 0;
+  for (const it of items) {
+    if (!it.approach) continue;
+    total += countActivityByType(it.approach, range, type);
+  }
+  return total;
+}
+
+// ══ ダッシュボード用：活動サマリー ══
+let activityCurrentPeriod = 'today';
+
+function setActivityPeriod(p) {
+  activityCurrentPeriod = p;
+  // ボタンの見た目
+  document.querySelectorAll('.activity-period-btn').forEach(b => {
+    if (b.dataset.period === p) {
+      b.style.cssText = 'padding:7px 14px;border-radius:10px;border:2px solid #FF4602;background:#FF4602;color:#fff;font-size:12px;font-weight:800;cursor:pointer';
+    } else {
+      b.style.cssText = 'padding:7px 14px;border-radius:10px;border:2px solid #E5E7EB;background:#fff;color:#6B7280;font-size:12px;font-weight:700;cursor:pointer';
+    }
+  });
+  // カスタム範囲UIの表示切替
+  const customWrap = document.getElementById('activity-custom-range');
+  if (customWrap) {
+    if (p === 'custom') {
+      customWrap.style.display = 'flex';
+      // デフォルトで今日を入れておく
+      const today = todayJST();
+      const fromEl = document.getElementById('activity-from');
+      const toEl = document.getElementById('activity-to');
+      if (fromEl && !fromEl.value) fromEl.value = today;
+      if (toEl && !toEl.value) toEl.value = today;
+    } else {
+      customWrap.style.display = 'none';
+    }
+  }
+  renderActivitySummary();
+}
+
+function renderActivitySummary() {
+  const wrap = document.getElementById('activity-summary-cards');
+  if (!wrap) return;
+  const range = getPeriodRange(activityCurrentPeriod);
+  const cards = [
+    { label: '📞 電話', val: range ? totalActivityInRange(range, 'tel') : 0, color: '#FF4602', bg: '#FFF3EE' },
+    { label: '🚶 訪問', val: range ? totalActivityInRange(range, 'visit') : 0, color: '#0891B2', bg: '#ECFEFF' },
+    { label: '✉️ 手紙', val: range ? totalActivityInRange(range, 'letter_sent') : 0, color: '#7C3AED', bg: '#F5F3FF' },
+    { label: '🎯 商談獲得', val: range ? totalActivityInRange(range, 'meeting') : 0, color: '#16A34A', bg: '#F0FDF4' },
+    { label: '📊 合計活動', val: range ? totalActivityInRange(range, 'tel') + totalActivityInRange(range, 'visit') + totalActivityInRange(range, 'letter_sent') : 0, color: '#6B7280', bg: '#F9FAFB' },
+  ];
+  wrap.innerHTML = cards.map(c =>
+    '<div style="background:' + c.bg + ';border:2px solid ' + c.color + '33;border-radius:12px;padding:16px 12px;text-align:center">' +
+      '<div style="font-size:12px;font-weight:700;color:' + c.color + ';margin-bottom:6px">' + c.label + '</div>' +
+      '<div style="font-size:32px;font-weight:900;color:' + c.color + ';line-height:1">' + c.val + '</div>' +
+      '<div style="font-size:9px;color:' + c.color + ';opacity:0.7;margin-top:4px">件</div>' +
+    '</div>'
+  ).join('');
+
+  // 詳細リスト
+  const detailEl = document.getElementById('activity-detail-list');
+  if (detailEl && range) {
+    const entries = [];
+    for (const it of items) {
+      if (!it.approach || !it.approach.history) continue;
+      for (const h of it.approach.history) {
+        if (!h.ts || h.ts < range.from || h.ts > range.to) continue;
+        if (!['tel','visit','letter_sent'].includes(h.action) && h.result !== 'meeting') continue;
+        entries.push({ company: it.company, ...h });
+      }
+    }
+    entries.sort((a,b) => b.ts.localeCompare(a.ts));
+    if (!entries.length) {
+      detailEl.innerHTML = '<div style="color:#9CA3AF;font-size:12px;padding:14px;text-align:center">この期間の活動はありません</div>';
+    } else {
+      detailEl.innerHTML = entries.slice(0, 100).map(e => {
+        const tsLabel = e.ts.slice(5,16).replace('T',' '); // MM-DD HH:MM
+        let icon = '📞', label = '電話';
+        if (e.action === 'visit') { icon = '🚶'; label = '訪問'; }
+        else if (e.action === 'letter_sent') { icon = '✉️'; label = '手紙送付'; }
+        if (e.result === 'meeting') { icon = '🎯'; label = '商談獲得'; }
+        else if (e.result === 'reached') label += '（つながった）';
+        else if (e.result === 'absent') label += '（不在）';
+        else if (e.result === 'reschedule') label += '（後日）';
+        else if (e.result === 'rejected') label += '（断られ）';
+        return '<div style="padding:8px 12px;background:#fff;border:1px solid #E5E7EB;border-radius:8px;margin-bottom:4px;font-size:12px;display:flex;align-items:center;gap:8px">' +
+          '<span style="font-size:14px">' + icon + '</span>' +
+          '<span style="color:#9CA3AF;font-size:10px;font-family:monospace;min-width:90px">' + tsLabel + '</span>' +
+          '<span style="font-weight:700;color:#374151">' + e.company + '</span>' +
+          '<span style="margin-left:auto;color:#6B7280;font-size:11px">' + label + '</span>' +
+          (e.memo ? '<span style="color:#9CA3AF;font-size:10px;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">「' + e.memo + '」</span>' : '') +
+        '</div>';
+      }).join('') +
+      (entries.length > 100 ? '<div style="text-align:center;font-size:10px;color:#9CA3AF;margin-top:6px">…ほか ' + (entries.length - 100) + ' 件（直近100件のみ表示）</div>' : '');
+    }
+  }
+}
+
+// ══ アプローチ中ページ用：活動サマリーBOX ══
+let apActivityCurrentPeriod = 'today';
+
+function setApPeriod(p) {
+  apActivityCurrentPeriod = p;
+  document.querySelectorAll('.ap-period-btn').forEach(b => {
+    if (b.dataset.period === p) {
+      b.style.cssText = 'padding:5px 12px;border-radius:8px;border:2px solid #FF4602;background:#FF4602;color:#fff;font-size:11px;font-weight:800;cursor:pointer';
+    } else {
+      b.style.cssText = 'padding:5px 12px;border-radius:8px;border:2px solid #E5E7EB;background:#fff;color:#6B7280;font-size:11px;font-weight:700;cursor:pointer';
+    }
+  });
+  renderApActivityBox();
+}
+
+function renderApActivityBox() {
+  const wrap = document.getElementById('ap-activity-cards');
+  if (!wrap) return;
+  const range = getPeriodRange(apActivityCurrentPeriod);
+  const cards = [
+    { label: '📞', sub: '電話', val: range ? totalActivityInRange(range, 'tel') : 0, color: '#FF4602' },
+    { label: '🚶', sub: '訪問', val: range ? totalActivityInRange(range, 'visit') : 0, color: '#0891B2' },
+    { label: '✉️', sub: '手紙', val: range ? totalActivityInRange(range, 'letter_sent') : 0, color: '#7C3AED' },
+    { label: '🎯', sub: '商談獲得', val: range ? totalActivityInRange(range, 'meeting') : 0, color: '#16A34A' },
+  ];
+  wrap.innerHTML = cards.map(c =>
+    '<div style="background:#fff;border:2px solid ' + c.color + '22;border-radius:10px;padding:8px 10px;text-align:center;display:flex;align-items:center;justify-content:center;gap:8px">' +
+      '<div style="font-size:18px">' + c.label + '</div>' +
+      '<div style="font-size:22px;font-weight:900;color:' + c.color + ';line-height:1">' + c.val + '</div>' +
+      '<div style="font-size:10px;color:' + c.color + ';opacity:0.85;font-weight:700">' + c.sub + '</div>' +
+    '</div>'
+  ).join('');
 }
 
 // ── TODAY / ACTION QUEUE ──
@@ -3105,6 +3403,8 @@ function renderDash() {
       </div></div>
       <span style="font-family:var(--font-mono);font-size:12px;color:${c};width:24px">${pcnts[i]}</span>
     </div>`).join('');
+  // 活動振り返りも更新
+  if (typeof renderActivitySummary === 'function') renderActivitySummary();
 }
 
 // ── ADD ──
@@ -7018,6 +7318,9 @@ document.getElementById('today-label').textContent = (() => {
   cleanupOldTodayCollect();
   renderTodayCollect();
   setCollectMode('all');
+  // 活動振り返り初期化
+  renderActivitySummary();
+  renderApActivityBox();
 })();
 </script>
 <div class="toast" id="toast"></div>
