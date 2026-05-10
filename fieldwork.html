@@ -4041,7 +4041,7 @@ function renderApprCompanyDetail(it) {
 // ══════════════════════════════════════════
 
 // 共通の N2/N3 ノード（全商材で使い回し）
-const SCRIPT_COMMON_NODES = {
+let SCRIPT_COMMON_NODES = {
   // N2: N1の分岐
   rejected: {
     title: '🚫 取次を拒否された',
@@ -4114,7 +4114,7 @@ const SCRIPT_COMMON_NODES = {
 };
 
 // 5本の商材スクリプト
-const SCRIPT_TEMPLATES = [
+let SCRIPT_TEMPLATES = [
   {
     id: 'shunen_eizou',
     name: '🎂 周年式典映像',
@@ -4151,6 +4151,206 @@ const SCRIPT_TEMPLATES = [
     n1: 'お世話になっております。**TENOHIRAの石川**と申します。\n突然のお電話失礼します。\n\nホテルやレンタカーの各施設 **230箇所以上** にパンフレットを補充して、観光客様の来客までの最後の1押しをお手伝いしている **「パンフレット良質配布・ポスマネ」** を提供しておりまして、\n{company}様の **販促パンフレットの配布**でもお役に立てればと思いお電話しました。\n\n代表の{person}様はお引き合わせいただけませんでしょうか？\n\n（どうせ断られる）\n\nでは、**販促か広報のご担当者様**にお繋ぎいただけますでしょうか？',
   },
 ];
+
+// ══════════════════════════════════════════
+// スクリプトエディタ：localStorageから編集を読み込んで反映
+// ══════════════════════════════════════════
+const SCRIPT_STORAGE_KEY = 'fw_script_overrides_v1';
+
+// 初期テンプレを保存しておく（リセット用）
+const SCRIPT_TEMPLATES_DEFAULT = JSON.parse(JSON.stringify(SCRIPT_TEMPLATES));
+const SCRIPT_COMMON_NODES_DEFAULT = JSON.parse(JSON.stringify(SCRIPT_COMMON_NODES));
+
+// 起動時に localStorage から編集を読み込んで適用
+function loadScriptOverrides() {
+  try {
+    const raw = localStorage.getItem(SCRIPT_STORAGE_KEY);
+    if (!raw) return;
+    const data = JSON.parse(raw);
+    if (data.templates) {
+      // 各テンプレの n1 だけ上書き（他のフィールドは初期値維持）
+      for (const tpl of SCRIPT_TEMPLATES) {
+        if (data.templates[tpl.id] && typeof data.templates[tpl.id].n1 === 'string') {
+          tpl.n1 = data.templates[tpl.id].n1;
+        }
+      }
+    }
+    if (data.commonNodes) {
+      for (const key in data.commonNodes) {
+        if (SCRIPT_COMMON_NODES[key]) {
+          if (typeof data.commonNodes[key].title === 'string') SCRIPT_COMMON_NODES[key].title = data.commonNodes[key].title;
+          if (typeof data.commonNodes[key].script === 'string') SCRIPT_COMMON_NODES[key].script = data.commonNodes[key].script;
+        }
+      }
+    }
+  } catch(e) { console.warn('script overrides load failed', e); }
+}
+
+// 起動時に1回ロード
+loadScriptOverrides();
+
+// エディタの内容をlocalStorageに保存
+function saveScriptEdits() {
+  const data = { templates: {}, commonNodes: {} };
+  for (const tpl of SCRIPT_TEMPLATES) {
+    const ta = document.getElementById('scr-tpl-' + tpl.id);
+    if (ta) {
+      tpl.n1 = ta.value;
+      data.templates[tpl.id] = { n1: ta.value };
+    }
+  }
+  for (const key in SCRIPT_COMMON_NODES) {
+    const titleEl = document.getElementById('scr-node-title-' + key);
+    const scriptEl = document.getElementById('scr-node-script-' + key);
+    if (scriptEl) {
+      if (titleEl) SCRIPT_COMMON_NODES[key].title = titleEl.value;
+      SCRIPT_COMMON_NODES[key].script = scriptEl.value;
+      data.commonNodes[key] = {
+        title: titleEl ? titleEl.value : SCRIPT_COMMON_NODES[key].title,
+        script: scriptEl.value,
+      };
+    }
+  }
+  try {
+    localStorage.setItem(SCRIPT_STORAGE_KEY, JSON.stringify(data));
+    if (typeof showCopyAnimation === 'function') {
+      showCopyAnimation('💾 保存しました！\nスクリプトに反映されます ✨');
+    } else {
+      toast('保存しました');
+    }
+  } catch(e) {
+    toast('保存失敗: ' + e.message);
+  }
+}
+
+// 全リセット
+function resetAllScripts() {
+  if (!confirm('全てのスクリプトを初期値に戻します。本当によろしいですか？')) return;
+  // メモリ上のテンプレを初期値に
+  for (let i = 0; i < SCRIPT_TEMPLATES.length; i++) {
+    Object.assign(SCRIPT_TEMPLATES[i], SCRIPT_TEMPLATES_DEFAULT[i]);
+  }
+  for (const key in SCRIPT_COMMON_NODES_DEFAULT) {
+    SCRIPT_COMMON_NODES[key] = JSON.parse(JSON.stringify(SCRIPT_COMMON_NODES_DEFAULT[key]));
+  }
+  // localStorageもクリア
+  try { localStorage.removeItem(SCRIPT_STORAGE_KEY); } catch(e) {}
+  // 再描画
+  renderScriptEditor();
+  toast('🔄 全スクリプトを初期値に戻しました');
+}
+
+// 個別ノードのリセット
+function resetScriptNode(type, key) {
+  if (type === 'template') {
+    const def = SCRIPT_TEMPLATES_DEFAULT.find(t => t.id === key);
+    if (def) {
+      const tpl = SCRIPT_TEMPLATES.find(t => t.id === key);
+      if (tpl) tpl.n1 = def.n1;
+      const ta = document.getElementById('scr-tpl-' + key);
+      if (ta) ta.value = def.n1;
+    }
+  } else if (type === 'node') {
+    const def = SCRIPT_COMMON_NODES_DEFAULT[key];
+    if (def && SCRIPT_COMMON_NODES[key]) {
+      SCRIPT_COMMON_NODES[key].title = def.title;
+      SCRIPT_COMMON_NODES[key].script = def.script;
+      const titleEl = document.getElementById('scr-node-title-' + key);
+      const scriptEl = document.getElementById('scr-node-script-' + key);
+      if (titleEl) titleEl.value = def.title;
+      if (scriptEl) scriptEl.value = def.script;
+    }
+  }
+  toast('このセリフを初期値に戻しました（保存はまだです）');
+}
+
+// メインエディタ描画
+function renderScriptEditor() {
+  const list = document.getElementById('script-editor-list');
+  if (!list) return;
+  loadScriptOverrides(); // 最新の編集を反映
+
+  // 共通ノードのグループ分け
+  const nodeGroups = [
+    {
+      label: '🚫 取次を拒否された場合の分岐',
+      keys: ['rejected', 'rejected_got_info', 'rejected_send_doc'],
+      color: '#DC2626',
+    },
+    {
+      label: '👤 担当者に電話が代わった場合の分岐',
+      keys: ['toContact', 'apo_ok', 'send_doc', 'callback_later', 'no_interest'],
+      color: '#3B82F6',
+    },
+    {
+      label: '🏠 担当者が不在だった場合の分岐',
+      keys: ['absent', 'absent_got_info', 'absent_no_info'],
+      color: '#F59E0B',
+    },
+  ];
+
+  let html = '';
+
+  // === セクション①：5本のN1セリフ ===
+  html += '<div style="margin-bottom:24px">';
+  html += '<div style="font-size:14px;font-weight:900;color:#FF4602;margin-bottom:12px;padding-bottom:8px;border-bottom:2px solid #FFE0D6">📞 N1：各商材の最初のセリフ</div>';
+  for (const tpl of SCRIPT_TEMPLATES) {
+    html += '<details style="margin-bottom:10px;background:#fff;border:2px solid ' + tpl.color + '33;border-radius:12px;overflow:hidden">' +
+      '<summary style="cursor:pointer;padding:12px 16px;background:' + tpl.color + '11;font-weight:800;font-size:14px;color:' + tpl.color + ';list-style:none;display:flex;align-items:center;gap:8px">' +
+        '<span>' + tpl.name + '</span>' +
+        '<span style="font-size:10px;color:#9CA3AF;font-weight:600">▶ ' + tpl.target + '</span>' +
+        '<span style="margin-left:auto;font-size:11px;color:' + tpl.color + ';font-weight:700">クリックで編集 ▾</span>' +
+      '</summary>' +
+      '<div style="padding:16px">' +
+        '<div style="font-size:11px;color:#6B7280;margin-bottom:8px">変数：<code style="background:#F3F4F6;padding:1px 6px;border-radius:4px">{company}</code> <code style="background:#F3F4F6;padding:1px 6px;border-radius:4px">{years}</code> <code style="background:#F3F4F6;padding:1px 6px;border-radius:4px">{months}</code> <code style="background:#F3F4F6;padding:1px 6px;border-radius:4px">{person}</code> <code style="background:#F3F4F6;padding:1px 6px;border-radius:4px">{industry}</code> | 太字： <code style="background:#F3F4F6;padding:1px 6px;border-radius:4px">**強調**</code></div>' +
+        '<textarea id="scr-tpl-' + tpl.id + '" style="width:100%;min-height:200px;padding:12px;border:2px solid #E5E7EB;border-radius:10px;font-size:13px;line-height:1.8;font-family:inherit;resize:vertical;outline:none" onfocus="this.style.borderColor=\'' + tpl.color + '\'" onblur="this.style.borderColor=\'#E5E7EB\'">' + escapeHtml(tpl.n1) + '</textarea>' +
+        '<div style="margin-top:8px;text-align:right">' +
+          '<button onclick="resetScriptNode(\'template\',\'' + tpl.id + '\')" style="padding:6px 12px;background:#fff;border:1px solid #E5E7EB;color:#6B7280;border-radius:8px;font-size:11px;cursor:pointer">↺ このセリフを初期値に</button>' +
+        '</div>' +
+      '</div>' +
+    '</details>';
+  }
+  html += '</div>';
+
+  // === セクション②：共通の分岐ノード ===
+  html += '<div style="margin-bottom:24px">';
+  html += '<div style="font-size:14px;font-weight:900;color:#FF4602;margin-bottom:12px;padding-bottom:8px;border-bottom:2px solid #FFE0D6">🌳 共通の分岐セリフ（全商材で使われる）</div>';
+  for (const grp of nodeGroups) {
+    html += '<div style="margin-bottom:14px">';
+    html += '<div style="font-size:12px;font-weight:800;color:' + grp.color + ';margin-bottom:8px;padding-left:6px;border-left:4px solid ' + grp.color + '">' + grp.label + '</div>';
+    for (const key of grp.keys) {
+      const node = SCRIPT_COMMON_NODES[key];
+      if (!node) continue;
+      html += '<details style="margin-bottom:8px;background:#fff;border:2px solid ' + grp.color + '22;border-radius:10px;overflow:hidden">' +
+        '<summary style="cursor:pointer;padding:10px 14px;background:' + grp.color + '08;font-weight:700;font-size:13px;color:#374151;list-style:none;display:flex;align-items:center;gap:8px">' +
+          '<span>' + node.title + '</span>' +
+          '<span style="margin-left:auto;font-size:10px;color:' + grp.color + ';font-weight:700">編集 ▾</span>' +
+        '</summary>' +
+        '<div style="padding:14px">' +
+          '<div style="font-size:11px;color:#6B7280;margin-bottom:6px">タイトル（一覧表示用）</div>' +
+          '<input id="scr-node-title-' + key + '" value="' + escapeHtml(node.title) + '" style="width:100%;padding:8px 12px;border:2px solid #E5E7EB;border-radius:8px;font-size:13px;font-weight:600;outline:none;margin-bottom:10px" onfocus="this.style.borderColor=\'' + grp.color + '\'" onblur="this.style.borderColor=\'#E5E7EB\'">' +
+          '<div style="font-size:11px;color:#6B7280;margin-bottom:6px">セリフ本文</div>' +
+          '<textarea id="scr-node-script-' + key + '" style="width:100%;min-height:120px;padding:12px;border:2px solid #E5E7EB;border-radius:10px;font-size:13px;line-height:1.8;font-family:inherit;resize:vertical;outline:none" onfocus="this.style.borderColor=\'' + grp.color + '\'" onblur="this.style.borderColor=\'#E5E7EB\'">' + escapeHtml(node.script) + '</textarea>' +
+          '<div style="margin-top:8px;text-align:right">' +
+            '<button onclick="resetScriptNode(\'node\',\'' + key + '\')" style="padding:5px 10px;background:#fff;border:1px solid #E5E7EB;color:#6B7280;border-radius:6px;font-size:11px;cursor:pointer">↺ 初期値に戻す</button>' +
+          '</div>' +
+        '</div>' +
+      '</details>';
+    }
+    html += '</div>';
+  }
+  html += '</div>';
+
+  // === セクション③：保存・全リセットボタン ===
+  html += '<div style="display:flex;gap:10px;justify-content:space-between;align-items:center;padding:16px;background:#FAFAFB;border-radius:12px;border:1px solid #E5E7EB">' +
+    '<button onclick="resetAllScripts()" style="padding:10px 16px;background:#fff;border:2px solid #FECACA;color:#DC2626;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer">↺ 全部を初期値に戻す</button>' +
+    '<button onclick="saveScriptEdits()" style="padding:14px 28px;background:linear-gradient(135deg,#FF4602,#FFB347);color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:900;cursor:pointer;font-family:\'Hiragino Maru Gothic ProN\',\'Yu Gothic UI\',sans-serif;box-shadow:0 4px 12px rgba(255,70,2,0.3)">💾 編集を保存</button>' +
+  '</div>';
+
+  list.innerHTML = html;
+}
+
+function saveScriptSettings() { saveScriptEdits(); }
 
 function renderApprScriptSelector(it) {
   const el = document.getElementById('appr-tel-scripts');
@@ -7526,15 +7726,14 @@ document.getElementById('today-label').textContent = (() => {
       </button>
     </div>
   </div>
-  <div class="content" style="max-width:700px">
+  <div class="content" style="max-width:900px">
     <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:16px">
       <div class="fsec" style="margin-top:0">// スクリプト編集</div>
       <div style="font-size:12px;color:var(--text-mid);margin-bottom:16px;line-height:1.8">
-        各ステップのセリフを編集できます。<strong style="color:var(--text)">{company}</strong>・<strong style="color:var(--text)">{years}</strong>・<strong style="color:var(--text)">{months}</strong> は自動で置き換わります。
+        各ステップのセリフを編集できます。<strong style="color:var(--text)">{company}</strong>・<strong style="color:var(--text)">{years}</strong>・<strong style="color:var(--text)">{months}</strong>・<strong style="color:var(--text)">{person}</strong>・<strong style="color:var(--text)">{industry}</strong> は自動で置き換わります。<br>
+        <strong>**強調**</strong> で囲むと太字になります。
       </div>
-      <!-- テンプレート選択 -->
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px" id="script-template-btns"></div>
-      <!-- ノードエディタ -->
+      <!-- ノードエディタ（新仕様：全部ここに収まる） -->
       <div id="script-editor-list"></div>
     </div>
   </div>
