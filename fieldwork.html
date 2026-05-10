@@ -330,9 +330,25 @@ tr:hover td { background: rgba(255,70,2,0.03); cursor: pointer; }
   box-shadow: 0 4px 12px rgba(255,70,2,0.3);
   transform: translateY(-1px);
 }
-.appr-tel-result:hover {
+.appr-tel-result:hover:not(.appr-tel-btn-disabled) {
   border-color: #FFB347 !important;
   background: #FFF3EE !important;
+}
+/* メモ未入力時の結果ボタン無効状態 */
+.appr-tel-result.appr-tel-btn-disabled {
+  opacity: 0.35;
+  cursor: not-allowed !important;
+  filter: grayscale(0.4);
+}
+.appr-tel-result.appr-tel-btn-disabled:hover {
+  transform: none !important;
+}
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-6px); }
+  40% { transform: translateX(6px); }
+  60% { transform: translateX(-4px); }
+  80% { transform: translateX(4px); }
 }
 @keyframes confettiFall {
   0%   { transform: translate(0,0) rotate(0); opacity: 1; }
@@ -2769,7 +2785,7 @@ function renderList() {
           : '<span style="font-size:11px;color:#CCC">未調査</span>') +
       '</td>' +
 
-      // フェーズ（approach優先、なければ既存phase）
+      // フェーズ（approachシステム連動。未開始は必ず「未着手」）
       '<td>' +
         (() => {
           const a = it.approach;
@@ -2786,9 +2802,8 @@ function renderList() {
               dormantInfo +
               (counts.length ? '<div style="font-size:9px;color:#9CA3AF;margin-top:3px">' + counts.join(' / ') + '</div>' : '');
           }
-          return ph
-            ? '<span style="font-size:11px;padding:3px 8px;border-radius:6px;background:var(--accent-dim);color:var(--accent)">' + ph.label + '</span>'
-            : '<span style="font-size:11px;color:#CCC">⚪ 未着手</span>';
+          // アプローチ未開始：必ず「未着手」表示（旧phaseは無視）
+          return '<span style="font-size:11px;padding:3px 8px;border-radius:6px;background:#F3F4F6;color:#9CA3AF;font-weight:600">⚪ 未着手</span>';
         })() +
       '</td>' +
 
@@ -3229,29 +3244,43 @@ function startApproachNew(id, btnEl) {
   if (btnEl) {
     btnEl.classList.add('firing');
     spawnConfetti(btnEl);
-    btnEl.disabled = true;
   }
 
-  // 過去のlogsはDBに残しつつ、approachは新規スタート（仕切り直し）
-  const hadHistory = (it.logs && it.logs.length > 0);
-  const confirmMsg = hadHistory
-    ? '「' + it.company + '」のアプローチを開始します。\n\n過去のアプローチ履歴はDBに保持されますが、\n進捗は仕切り直して0からスタートします。\n\n続けますか？'
-    : '「' + it.company + '」のアプローチを開始します。';
-
-  setTimeout(() => {
-    if (hadHistory && !confirm(confirmMsg)) {
-      if (btnEl) {
-        btnEl.classList.remove('firing');
-        btnEl.disabled = false;
-      }
+  // 過去のlogsがあれば仕切り直し確認のみ（approachはまだ作らない）
+  const hadHistory = (it.logs && it.logs.length > 0) || (it.approach && it.approach.history && it.approach.history.length > 0);
+  if (hadHistory) {
+    const ok = confirm('「' + it.company + '」のアプローチを開始します。\n\n過去のアプローチ履歴はDBに保持されますが、\n進捗は仕切り直して0からスタートします。\n\n続けますか？');
+    if (!ok) {
+      if (btnEl) btnEl.classList.remove('firing');
       return;
     }
-    initApproach(it);
-    save();
-    toast('🚀 アプローチを開始しました！');
-    // すぐ電話アクションモーダルを開く
-    setTimeout(() => openApproachAction(id), 400);
-  }, 500); // エフェクト完了を待つ
+    // 仕切り直しの場合だけ既存approachを破棄
+    if (it.approach) delete it.approach;
+  }
+
+  // ★ initApproachはここでは呼ばない（フェーズはまだ「未着手」のまま）
+  // ★ saveもしない（結果ボタンを押すまでアプローチ中扱いしない）
+  // 電話モーダルを直接開く
+  setTimeout(() => {
+    if (btnEl) btnEl.classList.remove('firing');
+    openTelActionModalDirect(it);
+  }, 600);
+}
+
+// 「未着手」状態の企業を直接電話モーダルに繋ぐ（initApproachを呼ばない）
+function openTelActionModalDirect(it) {
+  curApprId = it.id;
+  // 一時的にダミーapproachを使ってモーダルを開く（保存はしない）
+  const tempApproach = it.approach || {
+    started: false,
+    callCount: 0,
+    visitCount: 0,
+    rejectCount: 0,
+    history: [],
+  };
+  // モーダル描画用のため一時セット
+  it._tempApproach = tempApproach;
+  showTelModal(it, tempApproach);
 }
 
 // 紙吹雪エフェクト
@@ -3301,12 +3330,19 @@ function openApproachAction(id) {
 
 let curApprId = null;
 
-// 電話アクションモーダル
+// 電話アクションモーダル（既存approach持ちの企業向け）
 function openTelActionModal(it) {
+  curApprId = it.id;
+  showTelModal(it, it.approach || { callCount: 0 });
+}
+
+// 電話モーダル本体（共通描画）
+function showTelModal(it, a) {
   const modal = document.getElementById('m-appr-tel') || createTelActionModal();
   document.getElementById('appr-tel-company').textContent = it.company;
   document.getElementById('appr-tel-phone').textContent = it.phone || '電話番号未登録';
-  document.getElementById('appr-tel-callno').textContent = (it.approach.callCount + 1);
+  document.getElementById('appr-tel-callno').textContent = ((a && a.callCount) || 0) + 1;
+
   // 既知情報
   const knownInfo = [];
   if (it.person) knownInfo.push('👤 ' + it.person);
@@ -3314,97 +3350,180 @@ function openTelActionModal(it) {
   if (it.foundingDate) knownInfo.push('🎂 創業 ' + it.foundingDate);
   if (it.website) knownInfo.push('🌐 HP有');
   if (it.instaUrl) knownInfo.push('📷 IG有');
+  if (it.fbUrl) knownInfo.push('📘 FB有');
   document.getElementById('appr-tel-known').innerHTML = knownInfo.length
     ? knownInfo.map(k => '<span style="display:inline-block;font-size:11px;padding:3px 9px;background:#FFF3EE;color:#FF4602;border-radius:6px;margin-right:4px;font-weight:600">' + k + '</span>').join('')
     : '<span style="font-size:11px;color:#9CA3AF">登録情報なし</span>';
 
-  // POINTチェックボックス初期化
-  ['pt-name','pt-talked','pt-issue','pt-vibe'].forEach(pid => {
-    const el = document.getElementById(pid);
-    if (el) el.checked = false;
-  });
-  document.getElementById('pt-web').checked = !!it.website;
-  document.getElementById('pt-insta').checked = !!it.instaUrl;
-  updateVisitScoreDisplay();
+  // 企業詳細展開
+  renderApprCompanyDetail(it);
+  // トークスクリプト選択
+  renderApprScriptSelector(it);
 
   // メモクリア
-  document.getElementById('appr-tel-memo').value = '';
-
-  // 結果ボタンの選択リセット
-  document.querySelectorAll('.appr-tel-result').forEach(b => b.classList.remove('selected'));
-  document.getElementById('appr-tel-result-area').dataset.result = '';
+  const memoEl = document.getElementById('appr-tel-memo');
+  if (memoEl) memoEl.value = '';
+  // 結果ボタンとメモ欄を初期状態（未入力）に
+  updateMemoState();
 
   modal.classList.add('open');
 }
 
-// 電話結果ボタンを選択
-function selectTelResult(btnEl, result) {
-  document.querySelectorAll('.appr-tel-result').forEach(b => b.classList.remove('selected'));
-  btnEl.classList.add('selected');
-  document.getElementById('appr-tel-result-area').dataset.result = result;
-
-  // 「会えた」「商談獲得」以外はPOINTセクション非表示
-  const ptSection = document.getElementById('appr-tel-pt-section');
-  ptSection.style.display = (result === 'reached') ? 'block' : 'none';
+// メモ入力状態に応じてボタンの有効/無効、メモ欄の見た目を切り替え
+function updateMemoState() {
+  const memoEl = document.getElementById('appr-tel-memo');
+  const statusEl = document.getElementById('appr-memo-status');
+  if (!memoEl) return;
+  const filled = memoEl.value.trim().length > 0;
+  // メモ欄の見た目
+  if (filled) {
+    memoEl.style.borderColor = '#86EFAC';
+    memoEl.style.background = '#F0FDF4';
+  } else {
+    memoEl.style.borderColor = '#FCA5A5';
+    memoEl.style.background = '#FFF5F5';
+  }
+  // ステータスバッジ
+  if (statusEl) {
+    if (filled) {
+      statusEl.textContent = '✓ 入力OK';
+      statusEl.style.background = '#DCFCE7';
+      statusEl.style.color = '#166534';
+    } else {
+      statusEl.textContent = '未入力';
+      statusEl.style.background = '#FEE2E2';
+      statusEl.style.color = '#DC2626';
+    }
+  }
+  // 結果ボタンの有効化
+  document.querySelectorAll('.appr-tel-result[data-needs-memo]').forEach(btn => {
+    if (filled) btn.classList.remove('appr-tel-btn-disabled');
+    else btn.classList.add('appr-tel-btn-disabled');
+  });
 }
 
-// POINTスコア表示更新
-function updateVisitScoreDisplay() {
-  const ids = ['pt-name','pt-talked','pt-issue','pt-vibe','pt-web','pt-insta'];
+// 結果ボタン押下時の処理：そのまま記録 or POINT判定（reachedの場合）
+function handleTelResultClick(result) {
+  const it = items.find(x => x.id === curApprId);
+  if (!it) return;
+
+  // メモ必須チェック
+  const memoEl = document.getElementById('appr-tel-memo');
+  if (!memoEl || !memoEl.value.trim()) {
+    toast('✏️ メモを書いてから押してね♪');
+    if (memoEl) {
+      // 赤枠を強調 → フォーカス → 軽い揺れアニメ
+      memoEl.style.borderColor = '#DC2626';
+      memoEl.style.background = '#FEE2E2';
+      memoEl.style.boxShadow = '0 0 0 4px rgba(220,38,38,0.15)';
+      memoEl.focus();
+      memoEl.style.animation = 'shake 0.4s';
+      setTimeout(() => { memoEl.style.animation = ''; memoEl.style.boxShadow = ''; }, 500);
+    }
+    return;
+  }
+
+  if (result === 'reached') {
+    // 「会えた」だけはPOINT判定モーダルを別途表示
+    openVisitJudgeModal(it);
+    return;
+  }
+
+  // それ以外は即記録（自動打刻）
+  saveResultDirectly(it, result);
+}
+
+// POINT判定モーダル（会えたボタン押下時のみ表示）
+function openVisitJudgeModal(it) {
+  let modal = document.getElementById('m-appr-judge');
+  if (!modal) modal = createJudgeModal();
+
+  // 自動チェック項目
+  document.getElementById('judge-pt-web').checked = !!it.website;
+  document.getElementById('judge-pt-insta').checked = !!it.instaUrl;
+  // 手動項目はリセット
+  ['judge-pt-name','judge-pt-talked','judge-pt-issue','judge-pt-vibe'].forEach(pid => {
+    const el = document.getElementById(pid);
+    if (el) el.checked = false;
+  });
+  document.getElementById('judge-company').textContent = it.company;
+  updateJudgeScoreDisplay();
+  modal.classList.add('open');
+}
+
+function updateJudgeScoreDisplay() {
+  const ids = ['judge-pt-name','judge-pt-talked','judge-pt-issue','judge-pt-vibe','judge-pt-web','judge-pt-insta'];
   let score = 0;
   ids.forEach(id => {
     const el = document.getElementById(id);
     if (el && el.checked) score++;
   });
-  const scoreEl = document.getElementById('appr-tel-score');
-  const judgeEl = document.getElementById('appr-tel-judge');
+  const scoreEl = document.getElementById('judge-score');
+  const judgeEl = document.getElementById('judge-result-text');
   if (scoreEl) scoreEl.textContent = score;
   if (judgeEl) {
     if (score >= 4) {
-      judgeEl.innerHTML = '<span style="color:#16A34A;font-weight:900">✅ 飛び込みOK！</span>';
+      judgeEl.innerHTML = '<span style="color:#16A34A;font-weight:900;font-size:16px">🚀 飛び込みOK！</span><div style="font-size:11px;color:#16A34A;margin-top:2px">訪問フェーズに移行します</div>';
       judgeEl.style.background = '#F0FDF4';
+      judgeEl.style.borderColor = '#86EFAC';
     } else {
-      judgeEl.innerHTML = '<span style="color:#F59E0B;font-weight:900">⏸ 飛び込み見送り（2週間休眠）</span>';
+      judgeEl.innerHTML = '<span style="color:#F59E0B;font-weight:900;font-size:16px">⏸ 飛び込み見送り</span><div style="font-size:11px;color:#92400E;margin-top:2px">2週間休眠 → 再電フェーズへ</div>';
       judgeEl.style.background = '#FFFBEB';
+      judgeEl.style.borderColor = '#FCD34D';
     }
   }
 }
 
-// 電話結果を保存
-function saveTelResult() {
+// POINT判定の確定 → 「会えた」結果を保存
+function confirmReachedResult() {
   const it = items.find(x => x.id === curApprId);
   if (!it) return;
-  const resultArea = document.getElementById('appr-tel-result-area');
-  const result = resultArea.dataset.result;
-  if (!result) {
-    toast('結果を選択してください');
-    return;
-  }
-  const memo = document.getElementById('appr-tel-memo').value || '';
   const points = {
-    knowsContactName: document.getElementById('pt-name').checked,
-    talkedToContact:  document.getElementById('pt-talked').checked,
-    hasIssueSignal:   document.getElementById('pt-issue').checked,
-    goodVibe:         document.getElementById('pt-vibe').checked,
-    hasWebsite:       document.getElementById('pt-web').checked,
-    hasInstagram:     document.getElementById('pt-insta').checked,
+    knowsContactName: document.getElementById('judge-pt-name').checked,
+    talkedToContact:  document.getElementById('judge-pt-talked').checked,
+    hasIssueSignal:   document.getElementById('judge-pt-issue').checked,
+    goodVibe:         document.getElementById('judge-pt-vibe').checked,
+    hasWebsite:       document.getElementById('judge-pt-web').checked,
+    hasInstagram:     document.getElementById('judge-pt-insta').checked,
   };
-  const entry = recordTelResult(it, result, { memo, points });
-  save();
-  document.getElementById('m-appr-tel').classList.remove('open');
+  saveResultDirectly(it, 'reached', { points });
+  document.getElementById('m-appr-judge').classList.remove('open');
+}
 
-  // 結果に応じたフィードバックトースト
+// 結果を実際に保存：approach未開始ならここで初めて initApproach を呼ぶ
+function saveResultDirectly(it, result, opts={}) {
+  const memoEl = document.getElementById('appr-tel-memo');
+  const memo = memoEl ? (memoEl.value || '') : '';
+
+  // ★ ここで初めてアプローチ開始（initApproach呼び出し）
+  if (!it.approach || !it.approach.started) {
+    initApproach(it);
+  }
+  // 一時データクリーンアップ
+  delete it._tempApproach;
+
+  const entry = recordTelResult(it, result, { memo, ...opts });
+  save();
+
+  // モーダル閉じる
+  const m = document.getElementById('m-appr-tel');
+  if (m) m.classList.remove('open');
+
+  // フィードバック
   const phaseInfo = APPROACH_PHASE[it.approach.currentPhase];
   if (result === 'reached' && entry.visitScore >= 4) {
-    toast('🚀 飛び込みOK判定！訪問フェーズに移行しました');
+    toast('🚀 飛び込みOK判定！訪問フェーズに移行（自動打刻：' + new Date().toLocaleTimeString('ja-JP', {hour:'2-digit',minute:'2-digit'}) + '）');
   } else if (result === 'meeting') {
     toast('🎯 商談獲得！おめでとうございます！');
   } else if (it.approach.dormantUntil) {
     toast('💤 ' + it.approach.dormantUntil + ' まで休眠（' + phaseInfo.label + '）');
   } else {
-    toast('記録しました：' + phaseInfo.label);
+    toast('📝 記録：' + phaseInfo.label);
   }
 }
+
+// 旧 saveTelResult はキャンセル経由のために残しておく（ボタン経由では呼ばれない）
+function saveTelResult() { /* deprecated: 結果ボタン押下が即記録を担う */ }
 
 // 電話アクションモーダルを動的に生成
 function createTelActionModal() {
@@ -3412,7 +3531,7 @@ function createTelActionModal() {
   div.className = 'modal-backdrop';
   div.id = 'm-appr-tel';
   div.innerHTML = `
-    <div class="modal modal-w-md" style="max-width:580px">
+    <div class="modal modal-w-lg" style="max-width:680px;max-height:92vh;overflow-y:auto">
       <div class="mhead">
         <div>
           <div class="mtitle" style="display:flex;align-items:center;gap:8px">
@@ -3425,75 +3544,252 @@ function createTelActionModal() {
       </div>
       <div class="mbody">
         <!-- 既知情報サマリ -->
-        <div style="margin-bottom:14px;padding:10px 12px;background:#FAFAFB;border-radius:10px">
+        <div style="margin-bottom:12px;padding:10px 12px;background:#FAFAFB;border-radius:10px">
           <div style="font-size:9px;color:#9CA3AF;font-family:var(--font-mono);letter-spacing:0.15em;margin-bottom:6px">// この企業について</div>
           <div id="appr-tel-known" style="display:flex;flex-wrap:wrap;gap:4px"></div>
         </div>
 
-        <!-- 結果選択 -->
-        <div id="appr-tel-result-area" data-result="">
-          <div style="font-size:13px;font-weight:800;color:#374151;margin-bottom:8px">電話の結果は？</div>
-          <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:14px">
-            <button class="appr-tel-result" onclick="selectTelResult(this,'reached')" style="padding:14px;border:2px solid #E5E7EB;background:#fff;border-radius:12px;font-size:13px;font-weight:800;cursor:pointer;transition:all 0.15s">
-              ✅ 会えた・話せた
-            </button>
-            <button class="appr-tel-result" onclick="selectTelResult(this,'absent')" style="padding:14px;border:2px solid #E5E7EB;background:#fff;border-radius:12px;font-size:13px;font-weight:800;cursor:pointer;transition:all 0.15s">
-              🏠 不在・留守電
-            </button>
-            <button class="appr-tel-result" onclick="selectTelResult(this,'reschedule')" style="padding:14px;border:2px solid #E5E7EB;background:#fff;border-radius:12px;font-size:13px;font-weight:800;cursor:pointer;transition:all 0.15s">
-              📅 後日かけ直し
-            </button>
-            <button class="appr-tel-result" onclick="selectTelResult(this,'rejected')" style="padding:14px;border:2px solid #E5E7EB;background:#fff;border-radius:12px;font-size:13px;font-weight:800;cursor:pointer;transition:all 0.15s">
-              ✕ お断り
-            </button>
-            <button class="appr-tel-result" onclick="selectTelResult(this,'meeting')" style="grid-column:1/-1;padding:14px;border:2px solid #16A34A;background:#F0FDF4;color:#16A34A;border-radius:12px;font-size:13px;font-weight:900;cursor:pointer;transition:all 0.15s">
-              🎯 商談獲得！
-            </button>
+        <!-- 企業詳細展開（折りたたみ可能） -->
+        <details style="margin-bottom:12px;padding:10px 14px;background:#fff;border:2px solid #E5E7EB;border-radius:10px">
+          <summary style="cursor:pointer;font-size:13px;font-weight:800;color:#374151;list-style:none;display:flex;align-items:center;gap:6px">
+            <span>📋 企業情報を展開</span>
+            <span style="font-size:11px;color:#9CA3AF;font-weight:500">（住所・代表・SNS等）</span>
+          </summary>
+          <div id="appr-tel-detail" style="margin-top:12px;font-size:12px;line-height:1.8"></div>
+        </details>
+
+        <!-- トークスクリプト選択 -->
+        <div style="margin-bottom:14px;padding:12px 14px;background:#F5F3FF;border:2px solid #DDD6FE;border-radius:10px">
+          <div style="font-size:13px;font-weight:800;color:#7C3AED;margin-bottom:8px;display:flex;align-items:center;gap:6px">
+            🎙️ トークスクリプト
+            <span style="font-size:10px;color:#7C3AED;font-weight:600">（選ぶと別ウィンドウで開く）</span>
           </div>
+          <div id="appr-tel-scripts" style="display:flex;flex-wrap:wrap;gap:6px"></div>
         </div>
 
-        <!-- 飛び込み判定POINT（reachedの時のみ表示） -->
-        <div id="appr-tel-pt-section" style="display:none;margin-bottom:14px;padding:14px;background:#FFFBEB;border:2px solid #FCD34D;border-radius:12px">
-          <div style="font-size:13px;font-weight:800;color:#92400E;margin-bottom:8px">🎯 飛び込み判断POINT</div>
-          <div style="font-size:11px;color:#92400E;margin-bottom:10px">該当するものをチェック（4つ以上で飛び込みOK）</div>
-          <div style="display:grid;gap:6px">
-            <label style="display:flex;align-items:center;gap:8px;padding:6px 10px;background:#fff;border-radius:8px;cursor:pointer;font-size:13px">
-              <input type="checkbox" id="pt-name" onchange="updateVisitScoreDisplay()"> 担当者の名前わかった
-            </label>
-            <label style="display:flex;align-items:center;gap:8px;padding:6px 10px;background:#fff;border-radius:8px;cursor:pointer;font-size:13px">
-              <input type="checkbox" id="pt-talked" onchange="updateVisitScoreDisplay()"> 担当者に代わってもらった
-            </label>
-            <label style="display:flex;align-items:center;gap:8px;padding:6px 10px;background:#fff;border-radius:8px;cursor:pointer;font-size:13px">
-              <input type="checkbox" id="pt-issue" onchange="updateVisitScoreDisplay()"> 課題ありそうな会話だった
-            </label>
-            <label style="display:flex;align-items:center;gap:8px;padding:6px 10px;background:#fff;border-radius:8px;cursor:pointer;font-size:13px">
-              <input type="checkbox" id="pt-vibe" onchange="updateVisitScoreDisplay()"> 会話の雰囲気が良かった
-            </label>
-            <label style="display:flex;align-items:center;gap:8px;padding:6px 10px;background:#F3F4F6;border-radius:8px;cursor:pointer;font-size:13px;color:#6B7280">
-              <input type="checkbox" id="pt-web" onchange="updateVisitScoreDisplay()" disabled> 公式HP（自動）
-            </label>
-            <label style="display:flex;align-items:center;gap:8px;padding:6px 10px;background:#F3F4F6;border-radius:8px;cursor:pointer;font-size:13px;color:#6B7280">
-              <input type="checkbox" id="pt-insta" onchange="updateVisitScoreDisplay()" disabled> Instagram（自動）
-            </label>
+        <!-- メモ（必須） -->
+        <div style="margin-bottom:14px;padding-top:6px;border-top:2px dashed #E5E7EB">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+            <div style="font-size:13px;font-weight:800;color:#FF4602">✏️ メモ書いてから押してね♪</div>
+            <span id="appr-memo-status" style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:6px;background:#FEE2E2;color:#DC2626">未入力</span>
           </div>
-          <div id="appr-tel-judge" style="margin-top:10px;padding:10px;border-radius:8px;text-align:center;font-size:13px;background:#FFFBEB">
-            スコア：<span id="appr-tel-score" style="font-size:20px;font-weight:900">0</span> / 6
-          </div>
+          <textarea id="appr-tel-memo" oninput="updateMemoState()" style="width:100%;min-height:70px;padding:10px 12px;border:2px solid #FCA5A5;border-radius:10px;font-size:13px;outline:none;resize:vertical;font-family:inherit;background:#FFF5F5;transition:all 0.2s" placeholder="✏️ ここに状況を書いてね（例：受付の田中さん対応、社長は午後在席、SNS活用したいとのこと）"></textarea>
+          <div style="font-size:10px;color:#9CA3AF;margin-top:4px">※ 状況がわからなくなるので、何か書いてから結果ボタンを押してね</div>
         </div>
 
-        <!-- メモ -->
-        <div style="margin-bottom:14px">
-          <div style="font-size:13px;font-weight:800;color:#374151;margin-bottom:6px">メモ（雰囲気・反応・気づき）</div>
-          <textarea id="appr-tel-memo" style="width:100%;min-height:80px;padding:10px 12px;border:2px solid #E5E7EB;border-radius:10px;font-size:13px;outline:none;resize:vertical;font-family:inherit" placeholder="（例：受付の田中さん対応、社長は午後在席の予定、SNSは活用したいとのこと）"></textarea>
+        <!-- 結果選択（メモが入ったら有効化） -->
+        <div style="font-size:14px;font-weight:900;color:#374151;margin-bottom:8px">
+          📝 電話の結果は？<span style="font-size:11px;color:#9CA3AF;font-weight:600;margin-left:6px">押した瞬間に自動打刻されます</span>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:12px">
+          <div style="position:relative">
+            <button onclick="handleTelResultClick('reached')" class="appr-tel-result appr-tel-btn-disabled" data-needs-memo="1" style="width:100%;padding:16px;border:2px solid #E5E7EB;background:#fff;border-radius:12px;font-size:14px;font-weight:800;cursor:pointer;transition:all 0.15s">
+              🤩 担当者につながった
+            </button>
+            <div style="font-size:10px;color:#7C3AED;font-weight:700;text-align:center;margin-top:4px;background:#F5F3FF;padding:3px 6px;border-radius:6px">💡 押すと飛び込み判定チェックが開くよ〜！</div>
+          </div>
+          <button onclick="handleTelResultClick('absent')" class="appr-tel-result appr-tel-btn-disabled" data-needs-memo="1" style="padding:16px;border:2px solid #E5E7EB;background:#fff;border-radius:12px;font-size:14px;font-weight:800;cursor:pointer;transition:all 0.15s;align-self:start">
+            🏠 不在・留守電
+          </button>
+          <button onclick="handleTelResultClick('reschedule')" class="appr-tel-result appr-tel-btn-disabled" data-needs-memo="1" style="padding:16px;border:2px solid #E5E7EB;background:#fff;border-radius:12px;font-size:14px;font-weight:800;cursor:pointer;transition:all 0.15s;align-self:start">
+            📅 後日かけ直し
+          </button>
+          <button onclick="handleTelResultClick('rejected')" class="appr-tel-result appr-tel-btn-disabled" data-needs-memo="1" style="padding:16px;border:2px solid #FCA5A5;background:#FFF5F5;color:#DC2626;border-radius:12px;font-size:14px;font-weight:800;cursor:pointer;transition:all 0.15s;align-self:start">
+            ✕ お断り
+          </button>
+          <button onclick="handleTelResultClick('meeting')" class="appr-tel-result appr-tel-btn-disabled" data-needs-memo="1" style="grid-column:1/-1;padding:16px;border:2px solid #16A34A;background:#F0FDF4;color:#16A34A;border-radius:12px;font-size:14px;font-weight:900;cursor:pointer;transition:all 0.15s">
+            🎯 商談獲得！
+          </button>
         </div>
       </div>
-      <div class="mfoot">
-        <button class="btn btn-ghost" onclick="cm('m-appr-tel')">キャンセル</button>
-        <button class="btn btn-orange" onclick="saveTelResult()" style="font-weight:900;font-size:14px">📝 結果を記録（自動打刻）</button>
+      <div class="mfoot" style="justify-content:flex-end">
+        <button class="btn btn-ghost" onclick="cm('m-appr-tel')">閉じる（記録しない）</button>
       </div>
     </div>`;
   document.body.appendChild(div);
   return div;
+}
+
+// POINT判定モーダル動的生成
+function createJudgeModal() {
+  const div = document.createElement('div');
+  div.className = 'modal-backdrop';
+  div.id = 'm-appr-judge';
+  div.innerHTML = `
+    <div class="modal modal-w-md" style="max-width:520px">
+      <div class="mhead">
+        <div>
+          <div class="mtitle">🎯 飛び込み判断POINT</div>
+          <div style="font-size:13px;color:#666;margin-top:4px" id="judge-company"></div>
+        </div>
+        <button class="mclose" onclick="cm('m-appr-judge')">✕</button>
+      </div>
+      <div class="mbody">
+        <div style="font-size:12px;color:#92400E;margin-bottom:12px;padding:10px;background:#FFFBEB;border-radius:8px">
+          担当者につながった段階で当てはまる項目をチェックしてください。<br>
+          <strong>4つ以上で飛び込みOK判定</strong>です。
+        </div>
+        <div style="display:grid;gap:6px;margin-bottom:14px">
+          <label style="display:flex;align-items:center;gap:10px;padding:10px 14px;background:#fff;border:2px solid #E5E7EB;border-radius:10px;cursor:pointer;font-size:14px;font-weight:600">
+            <input type="checkbox" id="judge-pt-name" onchange="updateJudgeScoreDisplay()" style="width:18px;height:18px"> 担当者の名前わかった
+          </label>
+          <label style="display:flex;align-items:center;gap:10px;padding:10px 14px;background:#fff;border:2px solid #E5E7EB;border-radius:10px;cursor:pointer;font-size:14px;font-weight:600">
+            <input type="checkbox" id="judge-pt-talked" onchange="updateJudgeScoreDisplay()" style="width:18px;height:18px"> 担当者に代わってもらった
+          </label>
+          <label style="display:flex;align-items:center;gap:10px;padding:10px 14px;background:#fff;border:2px solid #E5E7EB;border-radius:10px;cursor:pointer;font-size:14px;font-weight:600">
+            <input type="checkbox" id="judge-pt-issue" onchange="updateJudgeScoreDisplay()" style="width:18px;height:18px"> 課題ありそうな会話だった
+          </label>
+          <label style="display:flex;align-items:center;gap:10px;padding:10px 14px;background:#fff;border:2px solid #E5E7EB;border-radius:10px;cursor:pointer;font-size:14px;font-weight:600">
+            <input type="checkbox" id="judge-pt-vibe" onchange="updateJudgeScoreDisplay()" style="width:18px;height:18px"> 会話の雰囲気が良かった
+          </label>
+          <label style="display:flex;align-items:center;gap:10px;padding:10px 14px;background:#F3F4F6;border:2px solid #E5E7EB;border-radius:10px;cursor:not-allowed;font-size:14px;font-weight:600;color:#6B7280">
+            <input type="checkbox" id="judge-pt-web" onchange="updateJudgeScoreDisplay()" disabled style="width:18px;height:18px"> 🌐 公式HP（自動）
+          </label>
+          <label style="display:flex;align-items:center;gap:10px;padding:10px 14px;background:#F3F4F6;border:2px solid #E5E7EB;border-radius:10px;cursor:not-allowed;font-size:14px;font-weight:600;color:#6B7280">
+            <input type="checkbox" id="judge-pt-insta" onchange="updateJudgeScoreDisplay()" disabled style="width:18px;height:18px"> 📷 Instagram（自動）
+          </label>
+        </div>
+        <div id="judge-result-text" style="padding:14px;border-radius:10px;text-align:center;border:2px solid #FCD34D;background:#FFFBEB;margin-bottom:8px"></div>
+        <div style="text-align:center;font-size:13px;color:#6B7280">
+          スコア：<span id="judge-score" style="font-size:24px;font-weight:900;color:#FF4602">0</span> / 6
+        </div>
+      </div>
+      <div class="mfoot" style="justify-content:flex-end;gap:8px">
+        <button class="btn btn-ghost" onclick="cm('m-appr-judge')">戻る</button>
+        <button class="btn btn-orange" onclick="confirmReachedResult()" style="font-weight:900">✓ 確定して記録（自動打刻）</button>
+      </div>
+    </div>`;
+  document.body.appendChild(div);
+  return div;
+}
+
+// 企業詳細展開ビュー
+function renderApprCompanyDetail(it) {
+  const el = document.getElementById('appr-tel-detail');
+  if (!el) return;
+  const rows = [];
+  if (it.addr) rows.push(['🏠 住所', it.addr]);
+  if (it.area) rows.push(['📍 エリア', it.area]);
+  if (it.industry) rows.push(['🏭 業種', it.industry]);
+  if (it.person) rows.push(['👤 代表者', it.person]);
+  if (it.foundingDate) rows.push(['🎂 創業', it.foundingDate + (it.anniversaryMonth ? '（' + it.anniversaryMonth + '月創業）' : '')]);
+  if (it.employeeCount) rows.push(['👥 従業員数', it.employeeCount]);
+  if (it.revenue) rows.push(['💰 推定月商', it.revenue]);
+  if (it.email) rows.push(['📧 メール', it.email]);
+  if (it.website) rows.push(['🌐 公式HP', '<a href="' + it.website + '" target="_blank" style="color:#3B82F6">' + it.website + '</a>']);
+  if (it.instaUrl) rows.push(['📷 Instagram', '<a href="' + it.instaUrl + '" target="_blank" style="color:#E91E63">プロフィールを開く</a>']);
+  if (it.fbUrl) rows.push(['📘 Facebook', '<a href="' + it.fbUrl + '" target="_blank" style="color:#1877F2">ページを開く</a>']);
+  if (it.tiktokUrl) rows.push(['🎵 TikTok', '<a href="' + it.tiktokUrl + '" target="_blank" style="color:#000">プロフィールを開く</a>']);
+  if (it.researchNotes) rows.push(['📝 備考', it.researchNotes]);
+
+  if (!rows.length) {
+    el.innerHTML = '<div style="color:#9CA3AF;font-size:12px">登録情報なし。Geminiで情報拡張してから電話するのも手。</div>';
+    return;
+  }
+  el.innerHTML = '<table style="width:100%;border-collapse:collapse">' +
+    rows.map(([k, v]) =>
+      '<tr><td style="padding:4px 8px;width:100px;font-weight:700;color:#6B7280;font-size:11px;vertical-align:top">' + k + '</td>' +
+      '<td style="padding:4px 8px;color:#374151;word-break:break-all">' + v + '</td></tr>'
+    ).join('') +
+    '</table>';
+}
+
+// トークスクリプト選択ボタン群を描画
+function renderApprScriptSelector(it) {
+  const el = document.getElementById('appr-tel-scripts');
+  if (!el) return;
+  // localStorageから保存済みスクリプトを取得（既存システムを参照）
+  let scripts = [];
+  try {
+    const saved = localStorage.getItem('scriptTemplates');
+    if (saved) scripts = JSON.parse(saved);
+  } catch(e) {}
+
+  // デフォルトスクリプト（ストレージにない場合）
+  if (!scripts.length) {
+    scripts = [
+      { id: 'default_anniv', name: '🎂 周年アプローチ', context: '創業記念月の企業向け' },
+      { id: 'default_growth', name: '📈 成長企業アプローチ', context: '求人掲載・SNS活発な企業向け' },
+      { id: 'default_general', name: '💼 一般企業アプローチ', context: '汎用スクリプト' },
+    ];
+  }
+
+  el.innerHTML = scripts.map(s =>
+    '<button onclick="openScriptWindow(\'' + s.id + '\',' + it.id + ')" style="padding:8px 12px;background:#fff;border:2px solid #C4B5FD;color:#7C3AED;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;transition:all 0.15s" onmouseover="this.style.background=\'#7C3AED\';this.style.color=\'#fff\'" onmouseout="this.style.background=\'#fff\';this.style.color=\'#7C3AED\'">' +
+      (s.name || s.id) +
+    '</button>'
+  ).join('') + '<button onclick="goPage(\'settings\')" style="padding:8px 10px;background:transparent;border:1px dashed #C4B5FD;color:#7C3AED;border-radius:8px;font-size:11px;cursor:pointer;font-weight:600">＋ 編集</button>';
+}
+
+// スクリプトを別ウィンドウで開く
+function openScriptWindow(scriptId, companyId) {
+  const it = items.find(x => x.id === companyId);
+  if (!it) return;
+  // スクリプト本文取得
+  let scripts = [];
+  try {
+    const saved = localStorage.getItem('scriptTemplates');
+    if (saved) scripts = JSON.parse(saved);
+  } catch(e) {}
+  let script = scripts.find(s => s.id === scriptId);
+
+  // デフォルト本文
+  const defaultScripts = {
+    default_anniv: {
+      name: '🎂 周年アプローチ',
+      content: 'お世話になっております、〇〇社の〇〇と申します。\n\n貴社は今年で {years} 周年を迎えられるとのこと、おめでとうございます！\n\n実は周年タイミングで広告制作のご相談を多くいただいておりまして、よろしければ少しお時間いただけませんか？\n\n■ 提案内容\n・周年記念キャンペーン動画\n・SNS連動プロモーション\n・採用強化\n\nまずは10分のお打ち合わせからでも！'
+    },
+    default_growth: {
+      name: '📈 成長企業アプローチ',
+      content: 'お世話になっております、〇〇社の〇〇と申します。\n\n貴社のSNS発信や求人掲載を拝見し、勢いがあるなと感じご連絡しました。\n\n■ お話しできること\n・採用動画／PR動画の制作\n・SNS運用代行\n・Web集客支援\n\n10分ほどお打ち合わせのお時間いただけませんか？'
+    },
+    default_general: {
+      name: '💼 一般企業アプローチ',
+      content: 'お世話になっております、〇〇社の〇〇と申します。\n\n本日は{company}様の広告・販促のお手伝いができればと思いご連絡しました。\n\n■ ご提案できる領域\n・動画制作（CM・採用・PR）\n・SNS運用\n・Webサイト制作\n\nまずは情報交換のお時間を10分ほどいただけないでしょうか？'
+    }
+  };
+
+  if (!script) script = defaultScripts[scriptId] || { name: 'スクリプト', content: '（スクリプト本文を設定してください）' };
+
+  // テンプレ変数を置換
+  const today = new Date();
+  const foundingYear = it.foundingDate ? parseInt(it.foundingDate.slice(0,4)) : null;
+  const years = foundingYear ? today.getFullYear() - foundingYear : '？';
+  let content = (script.content || '')
+    .replace(/{company}/g, it.company)
+    .replace(/{years}/g, years)
+    .replace(/{months}/g, it.anniversaryMonth || '？')
+    .replace(/{person}/g, it.person || 'ご担当者');
+
+  // 別ウィンドウで開く
+  const w = window.open('', 'script_' + companyId, 'width=540,height=720,scrollbars=yes,resizable=yes');
+  if (!w) {
+    toast('ポップアップがブロックされました。ブラウザ設定で許可してください');
+    return;
+  }
+  w.document.write(`
+    <!DOCTYPE html><html><head><meta charset="UTF-8"><title>${script.name} - ${it.company}</title>
+    <style>
+      body { font-family: 'Hiragino Sans', sans-serif; padding: 20px; line-height: 1.8; background: #FFF8F3; margin: 0; }
+      .header { background: linear-gradient(135deg, #FF4602, #FF6B35); color: #fff; padding: 16px 20px; margin: -20px -20px 16px; border-radius: 0 0 16px 16px; }
+      .h-title { font-size: 18px; font-weight: 900; margin: 0 0 4px; }
+      .h-sub { font-size: 13px; opacity: 0.9; }
+      .phone { background: #fff; border: 2px solid #FFD0BC; padding: 12px 16px; border-radius: 12px; margin-bottom: 16px; text-align:center; }
+      .phone-num { font-size: 22px; font-weight: 900; color: #FF4602; font-family: monospace; }
+      .script { background: #fff; padding: 20px; border-radius: 14px; box-shadow: 0 4px 12px rgba(0,0,0,0.06); white-space: pre-wrap; font-size: 15px; line-height: 1.9; color: #333; border-left: 6px solid #FF4602; }
+      .footer { margin-top: 16px; padding: 12px; text-align: center; color: #999; font-size: 11px; }
+    </style></head><body>
+    <div class="header">
+      <div class="h-title">${script.name}</div>
+      <div class="h-sub">${it.company}</div>
+    </div>
+    ${it.phone ? `<div class="phone"><div class="phone-num">📞 ${it.phone}</div></div>` : ''}
+    <div class="script">${content.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</div>
+    <div class="footer">FIELDWORK · 結果はメインウィンドウで記録してください</div>
+    </body></html>
+  `);
+  w.document.close();
+  toast('🎙️ ' + script.name + ' を別ウィンドウで開きました');
 }
 
 // 訪問アクションモーダル（プレースホルダー：シンプル実装）
