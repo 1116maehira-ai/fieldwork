@@ -253,6 +253,57 @@ tr:hover td { background: rgba(255,70,2,0.03); cursor: pointer; }
   background: #FFFFFF;
   border-color: #D1D5DB;
 }
+/* ── ページネーション ── */
+.pg-btn {
+  background: #fff;
+  border: 2px solid #E5E7EB;
+  border-radius: 10px;
+  padding: 8px 14px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #555;
+  cursor: pointer;
+  transition: all 0.15s;
+  font-family: inherit;
+}
+.pg-btn:hover:not(:disabled) {
+  border-color: #FF4602;
+  color: #FF4602;
+  background: #FFF3EE;
+}
+.pg-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.pg-num {
+  background: #fff;
+  border: 2px solid #E5E7EB;
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #555;
+  cursor: pointer;
+  min-width: 38px;
+  text-align: center;
+  transition: all 0.15s;
+}
+.pg-num:hover {
+  border-color: #FF4602;
+  color: #FF4602;
+}
+.pg-num.active {
+  background: linear-gradient(135deg, #FF4602, #FF6B35);
+  color: #fff;
+  border-color: #FF4602;
+  box-shadow: 0 4px 10px rgba(255,70,2,0.25);
+}
+.pg-ellipsis {
+  padding: 8px 6px;
+  color: #999;
+  font-weight: 700;
+}
+
 .fsec { font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--accent); margin: 18px 0 10px; padding-bottom: 5px; border-bottom: 1px solid rgba(255,70,2,0.15); }
 
 /* ── アプローチ開始ボタン用エフェクト ── */
@@ -788,6 +839,9 @@ tr:hover td { background: rgba(255,70,2,0.03); cursor: pointer; }
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
         手動追加
       </button>
+      <button class="btn btn-ghost btn-sm" onclick="bulkRestoreCorporations()" style="background:#F0FDF4;border-color:#86EFAC;color:#16A34A" title="株式会社・有限会社などの法人で営業対象外設定されているものを一括解除">
+        ✓ 法人を一括解除
+      </button>
     </div>
   </div>
   <div class="content">
@@ -828,8 +882,8 @@ tr:hover td { background: rgba(255,70,2,0.03); cursor: pointer; }
 
     <!-- フィルター -->
     <div style="background:#fff;border-radius:16px;padding:16px 20px;margin-bottom:16px;border:2px solid #F3F4F6;display:flex;flex-wrap:wrap;gap:10px;align-items:center">
-      <input style="flex:1;min-width:160px;padding:10px 14px;border-radius:12px;border:2px solid #E5E7EB;font-size:14px;font-weight:600;color:#333;outline:none" type="text" id="ls-search" placeholder="🔍 会社名で検索..." oninput="renderList()">
-      <select style="padding:10px 12px;border-radius:12px;border:2px solid #E5E7EB;font-size:13px;font-weight:600;color:#555;background:#fff;outline:none" id="ls-industry" onchange="renderList()">
+      <input style="flex:1;min-width:160px;padding:10px 14px;border-radius:12px;border:2px solid #E5E7EB;font-size:14px;font-weight:600;color:#333;outline:none" type="text" id="ls-search" placeholder="🔍 会社名で検索..." oninput="renderListResetPage()">
+      <select style="padding:10px 12px;border-radius:12px;border:2px solid #E5E7EB;font-size:13px;font-weight:600;color:#555;background:#fff;outline:none" id="ls-industry" onchange="renderListResetPage()">
         <option value="">🏭 全業種</option>
         <option>不動産・建設</option><option>医療・クリニック・介護</option>
         <option>飲食・食品</option><option>美容・エステ</option>
@@ -838,39 +892,39 @@ tr:hover td { background: rgba(255,70,2,0.03); cursor: pointer; }
         <option>広告代理店</option><option>WEB制作会社</option>
         <option>コンサルティング会社</option><option>営業代行会社</option><option>その他</option>
       </select>
-      <select style="padding:10px 12px;border-radius:12px;border:2px solid #E5E7EB;font-size:13px;font-weight:600;color:#555;background:#fff;outline:none" id="ls-ap" onchange="renderList()">
+      <select style="padding:10px 12px;border-radius:12px;border:2px solid #E5E7EB;font-size:13px;font-weight:600;color:#555;background:#fff;outline:none" id="ls-ap" onchange="renderListResetPage()">
         <option value="">📌 全ステータス</option>
         <option value="none">未着手</option>
         <option value="ongoing">アプローチ中</option>
         <option value="apo">アポ獲得</option>
       </select>
-      <select style="padding:10px 12px;border-radius:12px;border:2px solid #E5E7EB;font-size:13px;font-weight:600;color:#555;background:#fff;outline:none" id="ls-research" onchange="renderList()">
+      <select style="padding:10px 12px;border-radius:12px;border:2px solid #E5E7EB;font-size:13px;font-weight:600;color:#555;background:#fff;outline:none" id="ls-research" onchange="renderListResetPage()">
         <option value="">✨ 拡張状況</option>
         <option value="not_enriched">🌱 未拡張のみ（収集だけ）</option>
         <option value="enriched">✨ 拡張済みのみ（Gemini等で追加）</option>
       </select>
-      <select style="padding:10px 12px;border-radius:12px;border:2px solid #E5E7EB;font-size:13px;font-weight:600;color:#555;background:#fff;outline:none" id="ls-sns" onchange="renderList()">
+      <select style="padding:10px 12px;border-radius:12px;border:2px solid #E5E7EB;font-size:13px;font-weight:600;color:#555;background:#fff;outline:none" id="ls-sns" onchange="renderListResetPage()">
         <option value="">📱 SNS状況</option>
         <option value="has_sns">SNSあり</option>
         <option value="no_sns">SNSなし</option>
       </select>
-      <select style="padding:10px 12px;border-radius:12px;border:2px solid #E5E7EB;font-size:13px;font-weight:600;color:#555;background:#fff;outline:none" id="ls-job" onchange="renderList()">
+      <select style="padding:10px 12px;border-radius:12px;border:2px solid #E5E7EB;font-size:13px;font-weight:600;color:#555;background:#fff;outline:none" id="ls-job" onchange="renderListResetPage()">
         <option value="">💼 求人状況</option>
         <option value="has_job">求人あり</option>
         <option value="no_job">求人なし</option>
       </select>
-      <select style="padding:10px 12px;border-radius:12px;border:2px solid #E5E7EB;font-size:13px;font-weight:600;color:#555;background:#fff;outline:none" id="ls-pref" onchange="updateAreaOptions();renderList()">
+      <select style="padding:10px 12px;border-radius:12px;border:2px solid #E5E7EB;font-size:13px;font-weight:600;color:#555;background:#fff;outline:none" id="ls-pref" onchange="updateAreaOptions();renderListResetPage()">
         <option value="">📍 全都道府県</option>
       </select>
-      <select style="padding:10px 12px;border-radius:12px;border:2px solid #E5E7EB;font-size:13px;font-weight:600;color:#555;background:#fff;outline:none" id="ls-area" onchange="renderList()">
+      <select style="padding:10px 12px;border-radius:12px;border:2px solid #E5E7EB;font-size:13px;font-weight:600;color:#555;background:#fff;outline:none" id="ls-area" onchange="renderListResetPage()">
         <option value="">🏙 全エリア</option>
       </select>
-      <select style="padding:10px 12px;border-radius:12px;border:2px solid #E5E7EB;font-size:13px;font-weight:600;color:#555;background:#fff;outline:none" id="ls-company-type" onchange="renderList()">
+      <select style="padding:10px 12px;border-radius:12px;border:2px solid #E5E7EB;font-size:13px;font-weight:600;color:#555;background:#fff;outline:none" id="ls-company-type" onchange="renderListResetPage()">
         <option value="">🏢 企業/非企業</option>
         <option value="company">企業のみ</option>
         <option value="non_company">非企業のみ</option>
       </select>
-      <select style="padding:10px 12px;border-radius:12px;border:2px solid #E5E7EB;font-size:13px;font-weight:600;color:#555;background:#fff;outline:none" id="ls-period" onchange="renderList()">
+      <select style="padding:10px 12px;border-radius:12px;border:2px solid #E5E7EB;font-size:13px;font-weight:600;color:#555;background:#fff;outline:none" id="ls-period" onchange="renderListResetPage()">
         <option value="">📅 期間（全期間）</option>
         <optgroup label="── 収集日（最初にリスト追加された日）──">
           <option value="collected_today">📥 今日 収集</option>
@@ -886,7 +940,7 @@ tr:hover td { background: rgba(255,70,2,0.03); cursor: pointer; }
           <option value="never_enriched">⏳ 未拡張のみ</option>
         </optgroup>
       </select>
-      <select style="padding:10px 12px;border-radius:12px;border:2px solid #E5E7EB;font-size:13px;font-weight:600;color:#555;background:#fff;outline:none" id="ls-sort-mode" onchange="renderList()">
+      <select style="padding:10px 12px;border-radius:12px;border:2px solid #E5E7EB;font-size:13px;font-weight:600;color:#555;background:#fff;outline:none" id="ls-sort-mode" onchange="renderListResetPage()">
         <optgroup label="── 収集日（リスト追加日）──">
           <option value="createdAt_desc">📥 収集日：新しい→古い</option>
           <option value="createdAt_asc">📥 収集日：古い→新しい</option>
@@ -905,17 +959,31 @@ tr:hover td { background: rgba(255,70,2,0.03); cursor: pointer; }
           <option value="area">📍 エリア順</option>
         </optgroup>
       </select>
-      <label style="display:flex;align-items:center;gap:6px;font-size:13px;font-weight:600;color:#888;cursor:pointer">
-        <input type="checkbox" id="ls-show-excluded" onchange="renderList()"> 除外も表示
+      <label style="display:flex;align-items:center;gap:6px;font-size:13px;font-weight:600;color:#888;cursor:pointer" title="🚫営業対象外（手動で対象外にした企業）も表示">
+        <input type="checkbox" id="ls-show-nonbiz" onchange="renderListResetPage()" checked> 🚫対象外も表示
+      </label>
+      <label style="display:flex;align-items:center;gap:6px;font-size:13px;font-weight:600;color:#888;cursor:pointer" title="見込みなし（過去に「お断り」等で除外した企業）も表示">
+        <input type="checkbox" id="ls-show-excluded" onchange="renderListResetPage()"> 見込みなしも表示
       </label>
     </div>
 
-    <!-- 件数表示 -->
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;padding:0 4px">
-      <div style="font-size:15px;font-weight:800;color:#333">
-        <span id="ls-filtered-count" style="font-size:24px;color:#FF4602;font-weight:900">0</span> 件表示中
+    <!-- 件数表示・ページネーション制御 -->
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;padding:0 4px;flex-wrap:wrap;gap:10px">
+      <div style="font-size:15px;font-weight:800;color:#333;display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+        <div>
+          <span id="ls-filtered-count" style="font-size:24px;color:#FF4602;font-weight:900">0</span> 件表示中
+        </div>
+        <div id="ls-page-info" style="font-size:13px;color:#666;font-weight:600"></div>
       </div>
-      <div style="font-size:12px;color:#999">タップで詳細を見る</div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <span style="font-size:12px;color:#888;font-weight:600">表示件数</span>
+        <select id="ls-pagesize" onchange="setPageSize(this.value)" style="padding:6px 10px;border-radius:8px;border:2px solid #E5E7EB;font-size:13px;font-weight:700;color:#555;background:#fff;outline:none">
+          <option value="50">50件</option>
+          <option value="100">100件</option>
+          <option value="200">200件</option>
+          <option value="all">すべて</option>
+        </select>
+      </div>
     </div>
 
     <!-- テーブル -->
@@ -940,6 +1008,15 @@ tr:hover td { background: rgba(255,70,2,0.03); cursor: pointer; }
         <div style="font-size:16px;font-weight:700;color:#999">条件に合う会社が見つかりません</div>
         <div style="font-size:13px;color:#CCC;margin-top:6px">フィルタを変えてみてください</div>
       </div>
+    </div>
+
+    <!-- ページネーション -->
+    <div id="ls-pagination" style="display:none;align-items:center;justify-content:center;gap:8px;margin-top:20px;flex-wrap:wrap">
+      <button id="ls-pg-first" onclick="goToPage(1)" class="pg-btn" title="最初のページ">« 最初</button>
+      <button id="ls-pg-prev" onclick="goToPage('prev')" class="pg-btn">‹ 前の50件</button>
+      <div id="ls-pg-numbers" style="display:flex;gap:4px;align-items:center"></div>
+      <button id="ls-pg-next" onclick="goToPage('next')" class="pg-btn">次の50件 ›</button>
+      <button id="ls-pg-last" onclick="goToPage('last')" class="pg-btn" title="最後のページ">最後 »</button>
     </div>
 
   </div>
@@ -2231,9 +2308,18 @@ function updateBadges() {
   const t = todayJST();
   const set = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
   set('nb-list', items.length);
-  set('nb-ap', items.filter(x=>['visit','tel','letter'].includes(x.phase)).length);
+  // アプローチ中：新フェーズシステムで approach.started === true かつ未完了の企業のみ
+  set('nb-ap', items.filter(x =>
+    x.approach && x.approach.started &&
+    x.approach.currentPhase !== 'meeting_won' &&
+    x.approach.currentPhase !== 'rejected_final'
+  ).length);
   set('nb-today', items.filter(x=>x.nextDate && x.nextDate<=t).length);
-  set('nb-apo', items.filter(x=>x.phase==='apo').length);
+  // アポ獲得（商談獲得）：新システム or 旧 phase==='apo' 両対応
+  set('nb-apo', items.filter(x =>
+    (x.approach && x.approach.currentPhase === 'meeting_won') ||
+    x.phase === 'apo'
+  ).length);
   set('nb-notice', (notices||[]).length);
 }
 
@@ -2372,6 +2458,83 @@ function toggleSig(el, sig) {
 
 function sortTable(k) { sortKey===k ? sortDir*=-1 : (sortKey=k, sortDir=-1); renderList(); }
 
+// ══ ページネーション state & 制御 ══
+let listCurrentPage = 1;
+let listPageSize = (typeof localStorage !== 'undefined' && localStorage.getItem('listPageSize')) || '50';
+
+// フィルタ変更時：ページを1にリセットしてから再描画
+function renderListResetPage() {
+  listCurrentPage = 1;
+  renderList();
+}
+
+function setPageSize(size) {
+  listPageSize = size;
+  listCurrentPage = 1;
+  try { localStorage.setItem('listPageSize', size); } catch(e) {}
+  renderList();
+}
+
+function goToPage(target) {
+  const filteredLen = parseInt(document.getElementById('ls-filtered-count')?.textContent || '0');
+  const pageSize = listPageSize === 'all' ? filteredLen : parseInt(listPageSize) || 50;
+  const totalPages = Math.max(1, Math.ceil(filteredLen / pageSize));
+  if (target === 'prev') listCurrentPage = Math.max(1, listCurrentPage - 1);
+  else if (target === 'next') listCurrentPage = Math.min(totalPages, listCurrentPage + 1);
+  else if (target === 'last') listCurrentPage = totalPages;
+  else listCurrentPage = parseInt(target) || 1;
+  renderList();
+  // 上にスクロール
+  const tbl = document.querySelector('#page-list .content');
+  if (tbl) tbl.scrollIntoView({ behavior:'smooth', block:'start' });
+}
+
+function renderPagination(totalPages) {
+  const pgEl = document.getElementById('ls-pagination');
+  if (!pgEl) return;
+  if (totalPages <= 1 || listPageSize === 'all') {
+    pgEl.style.display = 'none';
+    return;
+  }
+  pgEl.style.display = 'flex';
+
+  // 前後ボタンの活性化
+  const prev = document.getElementById('ls-pg-prev');
+  const next = document.getElementById('ls-pg-next');
+  const first = document.getElementById('ls-pg-first');
+  const last = document.getElementById('ls-pg-last');
+  if (prev) prev.disabled = listCurrentPage <= 1;
+  if (first) first.disabled = listCurrentPage <= 1;
+  if (next) next.disabled = listCurrentPage >= totalPages;
+  if (last) last.disabled = listCurrentPage >= totalPages;
+
+  // ページ番号ボタン（最大7個表示、現在ページ前後で省略）
+  const numEl = document.getElementById('ls-pg-numbers');
+  if (numEl) {
+    const pages = generatePageNumbers(listCurrentPage, totalPages);
+    numEl.innerHTML = pages.map(p => {
+      if (p === '...') return '<span class="pg-ellipsis">…</span>';
+      return '<button class="pg-num' + (p === listCurrentPage ? ' active' : '') + '" onclick="goToPage(' + p + ')">' + p + '</button>';
+    }).join('');
+  }
+}
+
+// ページ番号配列を生成（[1, 2, ..., 5, 6, 7, ..., 12]みたいな）
+function generatePageNumbers(current, total) {
+  if (total <= 7) {
+    return Array.from({length: total}, (_, i) => i + 1);
+  }
+  const pages = [];
+  pages.push(1);
+  if (current > 3) pages.push('...');
+  const start = Math.max(2, current - 1);
+  const end = Math.min(total - 1, current + 1);
+  for (let i = start; i <= end; i++) pages.push(i);
+  if (current < total - 2) pages.push('...');
+  pages.push(total);
+  return pages;
+}
+
 function renderList() {
   const search = (document.getElementById('ls-search')?.value || '').toLowerCase();
   const ind = document.getElementById('ls-industry')?.value || '';
@@ -2472,8 +2635,37 @@ function renderList() {
   set('ls-noncompany', all.filter(x=>!isLikelyCompany(x)).length);
   set('ls-filtered-count', list.length);
 
-  if (!list.length) { tbody.innerHTML=''; empty.style.display='block'; return; }
+  if (!list.length) {
+    tbody.innerHTML='';
+    empty.style.display='block';
+    const pgEl = document.getElementById('ls-pagination');
+    if (pgEl) pgEl.style.display='none';
+    const pgInfoEl = document.getElementById('ls-page-info');
+    if (pgInfoEl) pgInfoEl.textContent = '';
+    return;
+  }
   empty.style.display='none';
+
+  // ── ページネーション処理 ──
+  const pageSize = listPageSize === 'all' ? list.length : parseInt(listPageSize) || 50;
+  const totalPages = Math.max(1, Math.ceil(list.length / pageSize));
+  // ページ番号の妥当性チェック（フィルタが変わって件数が減ったときの対策）
+  if (listCurrentPage > totalPages) listCurrentPage = totalPages;
+  if (listCurrentPage < 1) listCurrentPage = 1;
+  const startIdx = (listCurrentPage - 1) * pageSize;
+  const endIdx = Math.min(startIdx + pageSize, list.length);
+  const pageList = list.slice(startIdx, endIdx);
+  // 件数情報表示
+  const pgInfoEl = document.getElementById('ls-page-info');
+  if (pgInfoEl) {
+    if (listPageSize === 'all' || list.length <= pageSize) {
+      pgInfoEl.textContent = '';
+    } else {
+      pgInfoEl.innerHTML = '（ <strong>' + (startIdx+1) + '〜' + endIdx + '</strong> 件目 / 全 ' + list.length + ' 件）';
+    }
+  }
+  // ページネーションUI更新
+  renderPagination(totalPages);
 
   const SIGCLS = {noad:'sd-noad',hire:'sd-hire',wsns:'sd-wsns',comp:'sd-comp',rev:'sd-rev'};
   const SIGLBL = {noad:'広告未出稿',hire:'求人中',wsns:'SNS弱',comp:'競合契約',rev:'Gレビュー多'};
@@ -2494,7 +2686,8 @@ function renderList() {
     return badges.length ? `<div class="url-badges">${badges.join('')}</div>` : '';
   };
 
-  tbody.innerHTML = list.map((it, idx) => {
+  tbody.innerHTML = pageList.map((it, idx) => {
+    const globalIdx = startIdx + idx; // 通し番号用
     const ph = PHASE[it.phase];
     const overdue = it.nextDate && it.nextDate < today;
 
@@ -2525,18 +2718,27 @@ function renderList() {
     return '<tr onclick="openDetail(' + it.id + ')" style="' + (it.excluded ? 'opacity:0.4' : '') + '">' +
 
       // 番号
-      '<td style="padding:12px 8px 12px 16px;font-size:13px;font-weight:700;color:#CCC;text-align:center">' + (idx+1) + '</td>' +
+      '<td style="padding:12px 8px 12px 16px;font-size:13px;font-weight:700;color:#CCC;text-align:center">' + (globalIdx+1) + '</td>' +
 
       // 会社名・HP
       '<td>' +
         '<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">' +
-          '<div style="font-weight:700;font-size:13px;color:#222">' + it.company + '</div>' +
-          (!isLikelyCompany(it) ? '<span title="自動判定：非企業（行政施設・自然地形・地名）" style="font-size:9px;font-weight:800;padding:2px 6px;border-radius:6px;background:#FEF3C7;color:#92400E;border:1px solid #FCD34D">🏞 非企業</span>' : '') +
-          (it.manualCompanyFlag ? '<span title="手動上書き中" style="font-size:9px;font-weight:800;padding:2px 6px;border-radius:6px;background:#E0E7FF;color:#3730A3;border:1px solid #C7D2FE">✋手動</span>' : '') +
+          '<div style="font-weight:700;font-size:13px;color:' + (it.manualCompanyFlag === 'non_company' ? '#9CA3AF' : '#222') + ';' + (it.manualCompanyFlag === 'non_company' ? 'text-decoration:line-through;' : '') + '">' + it.company + '</div>' +
+          // 状態バッジ（自動判定の非企業）
+          (!isLikelyCompany(it) && it.manualCompanyFlag !== 'non_company' ? '<span title="自動判定：非企業（行政施設・自然地形・地名）" style="font-size:9px;font-weight:800;padding:2px 6px;border-radius:6px;background:#FEF3C7;color:#92400E;border:1px solid #FCD34D">🏞 非企業</span>' : '') +
+          // 状態バッジ（手動で営業対象外にされた企業）
+          (it.manualCompanyFlag === 'non_company'
+            ? '<span title="あなたが営業対象外に設定しました" style="font-size:10px;font-weight:800;padding:3px 8px;border-radius:6px;background:#FEE2E2;color:#991B1B;border:1px solid #FCA5A5">🚫 営業対象外</span>' +
+              '<button onclick="event.stopPropagation();toggleCompanyFlag(' + it.id + ',null)" title="営業対象に戻す" style="background:#fff;border:1px solid #86EFAC;color:#16A34A;border-radius:6px;cursor:pointer;font-size:10px;padding:3px 8px;font-weight:700">✓ 営業対象に戻す</button>'
+            : '') +
+          // 状態バッジ（手動で企業として扱う）
+          (it.manualCompanyFlag === 'company'
+            ? '<span title="手動で企業として扱う設定" style="font-size:9px;font-weight:800;padding:2px 6px;border-radius:6px;background:#E0E7FF;color:#3730A3;border:1px solid #C7D2FE">✋ 手動企業扱い</span>'
+            : '') +
           (isRecentlyUpdated(it) ? '<span title="' + (it.lastUpdatedAt||'') + ' に情報拡張" style="font-size:9px;font-weight:800;padding:2px 6px;border-radius:6px;background:#DCFCE7;color:#166534;border:1px solid #86EFAC">✨ 拡張</span>' : '') +
-          // ワンクリック除外（瞬時非企業化）
-          (isLikelyCompany(it) && it.manualCompanyFlag !== 'non_company'
-            ? '<button onclick="event.stopPropagation();quickExcludeAsNonCompany(' + it.id + ',this)" title="ワンクリックで非企業として除外" style="background:#FEF3C7;border:1px solid #FCD34D;color:#92400E;border-radius:6px;cursor:pointer;font-size:10px;padding:2px 6px;font-weight:700">🚫 営業対象外</button>'
+          // ワンクリック営業対象外（営業対象企業のみ表示）
+          (isLikelyCompany(it) && !it.manualCompanyFlag
+            ? '<button onclick="event.stopPropagation();quickExcludeAsNonCompany(' + it.id + ',this)" title="ワンクリックで非企業として除外" style="background:#FEF3C7;border:1px solid #FCD34D;color:#92400E;border-radius:6px;cursor:pointer;font-size:10px;padding:2px 6px;font-weight:700;opacity:0.6" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0.6">🚫 対象外にする</button>'
             : '') +
           '<button onclick="event.stopPropagation();showCompanyFlagMenu(event,' + it.id + ')" title="企業/非企業の手動設定" style="background:transparent;border:none;cursor:pointer;font-size:14px;padding:2px 4px;color:#9CA3AF">⚙</button>' +
         '</div>' +
@@ -2844,8 +3046,17 @@ function renderApo() {
 function renderDash() {
   const t = items.length;
   const sa = items.filter(x=>['S','A'].includes(x.score?.rank)).length;
-  const apo = items.filter(x=>x.phase==='apo').length;
-  const ong = items.filter(x=>['visit','tel','letter','letter_tel','cooldown'].includes(x.phase)).length;
+  // アポ獲得：新システム or 旧
+  const apo = items.filter(x =>
+    (x.approach && x.approach.currentPhase === 'meeting_won') ||
+    x.phase === 'apo'
+  ).length;
+  // アプローチ中：新システムで開始済かつ未完了
+  const ong = items.filter(x =>
+    x.approach && x.approach.started &&
+    x.approach.currentPhase !== 'meeting_won' &&
+    x.approach.currentPhase !== 'rejected_final'
+  ).length;
   const avg = t ? Math.round(items.reduce((s,x)=>s+(x.score?.total||0),0)/t) : 0;
   document.getElementById('d-total').textContent=t;
   document.getElementById('d-sarate').textContent=t?Math.round(sa/t*100)+'%':'0%';
@@ -4699,8 +4910,10 @@ function getFilteredItems() {
   const researchFilter = document.getElementById('ls-research')?.value || '';
   const companyTypeFilter = document.getElementById('ls-company-type')?.value || '';
   const showExcluded = document.getElementById('ls-show-excluded')?.checked || false;
+  const showNonBiz = document.getElementById('ls-show-nonbiz')?.checked !== false; // デフォルトtrue
   return items.filter(it => {
     if (!showExcluded && it.excluded) return false;
+    if (!showNonBiz && it.manualCompanyFlag === 'non_company') return false;
     if (companyTypeFilter === 'company' && !isLikelyCompany(it)) return false;
     if (companyTypeFilter === 'non_company' && isLikelyCompany(it)) return false;
     if (search && !it.company.toLowerCase().includes(search)) return false;
@@ -4955,10 +5168,63 @@ function editWebsite(id) {
   if (selId === id) openDetail(id);
 }
 
+// ══ 確実に法人とわかるか（厳格判定） ══
+// 「株式会社」「有限会社」など明示的な法人格がある場合のみtrue
+function isDefinitelyCorporation(it) {
+  const name = (it.company || '').trim();
+  // 確実な法人格表記
+  const STRICT_CORP = [
+    '株式会社','有限会社','合同会社','合資会社','合名会社',
+    '一般社団法人','公益社団法人','一般財団法人','公益財団法人',
+    '医療法人','学校法人','宗教法人','社会福祉法人','特定非営利活動法人','NPO法人',
+    '(株)','(有)','㈱','㈲',
+    'Inc.','Co., Ltd.','Co.,Ltd.','Ltd.','LLC','LLP','Corporation'
+  ];
+  for (const kw of STRICT_CORP) {
+    if (name.includes(kw)) return true;
+  }
+  return false;
+}
+
+// ══ 誤って営業対象外にした「確実な法人」を一括解除 ══
+function bulkRestoreCorporations() {
+  const targets = items.filter(it =>
+    it.manualCompanyFlag === 'non_company' && isDefinitelyCorporation(it)
+  );
+  if (!targets.length) {
+    toast('対象外設定された法人はありませんでした');
+    return;
+  }
+  const sample = targets.slice(0, 5).map(it => '・' + it.company).join('\n');
+  const more = targets.length > 5 ? '\n…ほか ' + (targets.length - 5) + '社' : '';
+  if (!confirm(
+    targets.length + '社の法人（株式会社・有限会社など）が営業対象外設定されています。\n' +
+    '一括で営業対象に戻しますか？\n\n' +
+    sample + more
+  )) return;
+  targets.forEach(it => {
+    delete it.manualCompanyFlag;
+  });
+  save();
+  toast('✓ ' + targets.length + '社を営業対象に戻しました');
+}
+
 // ══ ワンクリックで非企業として除外（営業対象外フラグ） ══
 function quickExcludeAsNonCompany(id, btnEl) {
   const it = items.find(x => x.id === id);
   if (!it) return;
+  // 確認スキップ設定の確認
+  const skipConfirm = localStorage.getItem('skipExcludeConfirm') === '1';
+  if (!skipConfirm) {
+    const ok = confirm('「' + it.company + '」を営業対象外にしますか？\n\n' +
+      'いつでも解除できます（赤い 🚫営業対象外 ラベルの横に「✓ 営業対象に戻す」ボタンが出ます）。\n\n' +
+      'OK = 対象外にする\nキャンセル = やめる');
+    if (!ok) return;
+    // 1度OKを出した後は次回から確認をスキップ
+    if (confirm('💡 今後この確認をスキップしますか？\n（誤タップしても、いつでも「✓ 営業対象に戻す」ボタンで取り消せます）')) {
+      localStorage.setItem('skipExcludeConfirm', '1');
+    }
+  }
   it.manualCompanyFlag = 'non_company';
   // 視覚的フィードバック：ボタンを一瞬光らせる
   if (btnEl) {
@@ -4968,8 +5234,7 @@ function quickExcludeAsNonCompany(id, btnEl) {
     btnEl.textContent = '✓ 除外しました';
   }
   saveItems_compat();
-  toast('「' + it.company + '」を営業対象外にしました');
-  // 0.3秒後にリスト再描画（フィードバック後）
+  toast('「' + it.company + '」を営業対象外にしました（解除可能）');
   setTimeout(() => renderList(), 300);
 }
 
@@ -5738,6 +6003,9 @@ document.getElementById('today-label').textContent = (() => {
   } catch(e) {}
   updateBadges();
   updatePrefOptions();
+  // ページネーション初期値をselectに反映
+  const psSel = document.getElementById('ls-pagesize');
+  if (psSel) psSel.value = listPageSize;
   renderList();
   renderApproach();
   renderToday();
