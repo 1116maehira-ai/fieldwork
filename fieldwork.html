@@ -6473,6 +6473,17 @@ function isLikelyCompany(it) {
     if (!/(HOTEL|RESORT|HOTELS|CAFE|RESTAURANT|INN|VILLA|SUITES|PLAZA)/i.test(name)) return false;
   }
 
+  // 6) 建物名そのまま（「ビル」「マンション」「アパート」のみ等）→ 非企業
+  // ただし「○○ビル」「○○マンション」のように地名・固有名詞が前にあるものは判定保留（運営会社として残す）
+  const PURE_BUILDING_NAMES = ['ビル','マンション','アパート','ハイツ','コーポ','テラス','レジデンス','ハウス','タワー','プラザ'];
+  if (PURE_BUILDING_NAMES.includes(name)) return false;
+
+  // 7) 名前が極端に短い（1〜2文字で記号や一般名詞のみ）→ 非企業の可能性高
+  if (name.length <= 2 && !/[株式会社|有限会社|合同会社|（株）|（有）]/.test(name)) {
+    // ただし2文字でも明らかな企業略称（NTT, JTB, JR等の英大文字）は許可
+    if (!/^[A-Z]{2,}$/.test(name)) return false;
+  }
+
   // それ以外は企業/施設運営者ありとみなす（取りこぼし防止）
   return true;
 }
