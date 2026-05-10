@@ -220,11 +220,39 @@ tr:hover td { background: rgba(255,70,2,0.03); cursor: pointer; }
 .finput, .fsel, .ftextarea {
   background: var(--surface2); border: 1px solid var(--border2); border-radius: 7px;
   padding: 9px 12px; color: var(--text); font-family: var(--font-body); font-size: 13px;
-  outline: none; transition: border-color 0.15s; width: 100%;
+  outline: none; transition: border-color 0.15s, background 0.15s; width: 100%;
 }
 .finput:focus, .fsel:focus, .ftextarea:focus { border-color: var(--orange); outline: none; box-shadow: 0 0 0 2px rgba(255,70,2,0.1); }
 .ftextarea { resize: vertical; min-height: 70px; }
 .fsel option { background: var(--surface2); }
+/* ── 超薄いプレースホルダー（未入力＝ダミーである事を視覚的に伝える）── */
+.finput::placeholder, .ftextarea::placeholder {
+  color: #E5E7EB !important;
+  opacity: 1;
+  font-style: italic;
+  font-weight: 400;
+}
+/* webkit用 */
+.finput::-webkit-input-placeholder, .ftextarea::-webkit-input-placeholder {
+  color: #E5E7EB !important;
+  font-style: italic;
+}
+.finput::-moz-placeholder, .ftextarea::-moz-placeholder {
+  color: #E5E7EB !important;
+  font-style: italic;
+  opacity: 1;
+}
+/* 空欄のフィールドを薄く識別（左に細い点線） */
+.finput.is-empty, .ftextarea.is-empty {
+  background: #FAFAFB;
+  border-style: dashed;
+  border-color: #E5E7EB;
+}
+/* 入力済みのフィールドは背景白＋濃い枠で「埋まっている」とわかる */
+.finput.is-filled, .ftextarea.is-filled {
+  background: #FFFFFF;
+  border-color: #D1D5DB;
+}
 .fsec { font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--accent); margin: 18px 0 10px; padding-bottom: 5px; border-bottom: 1px solid rgba(255,70,2,0.15); }
 
 /* ── APPROACH TYPE TABS ── */
@@ -2890,46 +2918,52 @@ function openDetail(id) {
   document.getElementById('dt-letter').innerHTML=letterTemplate(it);
   document.getElementById('dt-info').innerHTML=`
     <div style="margin-bottom:16px">
-      <div style="font-family:var(--font-mono);font-size:9px;color:var(--accent);letter-spacing:0.15em;margin-bottom:10px">// 編集可能フィールド</div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+        <div style="font-family:var(--font-mono);font-size:9px;color:var(--accent);letter-spacing:0.15em">// 編集可能フィールド</div>
+        <div style="display:flex;gap:10px;font-size:10px;color:var(--text-dim)">
+          <span style="display:inline-flex;align-items:center;gap:4px"><span style="display:inline-block;width:10px;height:10px;background:#FFFFFF;border:1px solid #D1D5DB;border-radius:2px"></span>入力済み</span>
+          <span style="display:inline-flex;align-items:center;gap:4px"><span style="display:inline-block;width:10px;height:10px;background:#FAFAFB;border:1px dashed #E5E7EB;border-radius:2px"></span>未入力</span>
+        </div>
+      </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
         <div class="fl">
           <label class="flabel">代表者名</label>
-          <input class="finput" id="edit-person" value="${it.person||''}" placeholder="山田 太郎">
+          <input class="finput ${it.person?'is-filled':'is-empty'}" id="edit-person" value="${it.person||''}" placeholder="（例：未入力 — 例 山田太郎）">
         </div>
         <div class="fl">
           <label class="flabel">電話番号</label>
-          <input class="finput" id="edit-phone" value="${it.phone||''}" placeholder="098-000-0000">
+          <input class="finput ${it.phone?'is-filled':'is-empty'}" id="edit-phone" value="${it.phone||''}" placeholder="（例：未入力 — 例 098-000-0000）">
         </div>
         <div class="fl">
           <label class="flabel">創業年月日</label>
-          <input class="finput" id="edit-founding" value="${it.foundingDate||''}" placeholder="2005-06-01">
+          <input class="finput ${it.foundingDate?'is-filled':'is-empty'}" id="edit-founding" value="${it.foundingDate||''}" placeholder="（例：未入力 — 例 2005-06-01）">
         </div>
         <div class="fl">
           <label class="flabel">創業記念月</label>
-          <select class="fsel" id="edit-anniversary">
-            <option value="">不明</option>
+          <select class="fsel ${it.anniversaryMonth?'is-filled':'is-empty'}" id="edit-anniversary">
+            <option value="">— 未入力 —</option>
             ${[1,2,3,4,5,6,7,8,9,10,11,12].map(m=>`<option value="${m}" ${it.anniversaryMonth==m?'selected':''}>${m}月</option>`).join('')}
           </select>
         </div>
         <div class="fl">
           <label class="flabel">Instagram URL</label>
-          <input class="finput" id="edit-insta" value="${it.instaUrl||''}" placeholder="https://www.instagram.com/...">
+          <input class="finput ${it.instaUrl?'is-filled':'is-empty'}" id="edit-insta" value="${it.instaUrl||''}" placeholder="（例：未入力 — IGアカウントURL）">
         </div>
         <div class="fl">
           <label class="flabel">Facebook URL</label>
-          <input class="finput" id="edit-fb" value="${it.fbUrl||''}" placeholder="https://www.facebook.com/...">
+          <input class="finput ${it.fbUrl?'is-filled':'is-empty'}" id="edit-fb" value="${it.fbUrl||''}" placeholder="（例：未入力 — FBページURL）">
         </div>
         <div class="fl">
           <label class="flabel">TikTok URL</label>
-          <input class="finput" id="edit-tiktok" value="${it.tiktokUrl||''}" placeholder="https://www.tiktok.com/@...">
+          <input class="finput ${it.tiktokUrl?'is-filled':'is-empty'}" id="edit-tiktok" value="${it.tiktokUrl||''}" placeholder="（例：未入力 — TikTokアカウントURL）">
         </div>
         <div class="fl">
           <label class="flabel">求人URL</label>
-          <input class="finput" id="edit-job" value="${it.jobUrl||''}" placeholder="https://...">
+          <input class="finput ${it.jobUrl?'is-filled':'is-empty'}" id="edit-job" value="${it.jobUrl||''}" placeholder="（例：未入力 — 求人ページURL）">
         </div>
         <div class="fl" style="grid-column:1/-1">
           <label class="flabel">備考・提案メモ</label>
-          <textarea class="ftextarea" id="edit-notes" placeholder="提案の切り口・気づきなど...">${it.researchNotes||''}</textarea>
+          <textarea class="ftextarea ${it.researchNotes?'is-filled':'is-empty'}" id="edit-notes" placeholder="（例：未入力 — 提案の切り口、気づきメモなど自由記入）">${it.researchNotes||''}</textarea>
         </div>
       </div>
       <div style="margin-top:12px;display:flex;justify-content:flex-end">
@@ -3034,6 +3068,7 @@ function switchDtab(el,id) {
   document.querySelectorAll('.dtab').forEach(t=>t.classList.remove('on')); el.classList.add('on');
   ['dt-tl','dt-letter','dt-info','dt-gemini'].forEach(i=>{ document.getElementById(i).style.display=i===id?'block':'none'; });
   if (id === 'dt-gemini') renderGeminiTab();
+  if (id === 'dt-info') setTimeout(() => attachFieldFillListeners(), 0);
 }
 
 // ══ Gemini入力タブ ══
@@ -3137,12 +3172,10 @@ function parseAndApplyGemini() {
     const coIdx = headers.indexOf('company_name');
     if (coIdx >= 0) {
       const name = (cols[coIdx] || '').replace(/^"|"$/g,'').trim();
-      // 会社名が含まれていればOK（完全一致でなくても）
       if (name && (name.includes(it.company.slice(0,4)) || it.company.includes(name.slice(0,4)))) {
         dataRow = cols;
         break;
       }
-      // 先頭行をデフォルトとして使う
       if (i === 1) dataRow = cols;
     }
   }
@@ -3155,86 +3188,79 @@ function parseAndApplyGemini() {
     return v === 'N/A' || v === 'n/a' ? '' : v;
   };
 
-  const applied = {};
+  // 上書きポリシー：空フィールドのみ埋める／備考は長い方を採用
+  const changes = []; // [{label, before, after, action: 'fill'|'expand'|'kept'}]
 
-  const ceo = get('ceo_name');
-  if (ceo) { it.person = ceo; applied['代表者名'] = ceo; }
+  const fillIfEmpty = (label, currentVal, newVal, setter) => {
+    const cur = (currentVal == null ? '' : currentVal).toString().trim();
+    const nw = (newVal || '').toString().trim();
+    if (!nw) return;
+    if (!cur) {
+      setter(nw);
+      changes.push({ label, before: '', after: nw, action: 'fill' });
+    } else if (cur !== nw) {
+      changes.push({ label, before: cur, after: nw, action: 'kept' });
+    }
+  };
 
-  const email = get('email');
-  if (email) { it.email = email; applied['メール'] = email; }
+  fillIfEmpty('代表者名', it.person, get('ceo_name'), v => { it.person = v; });
+  fillIfEmpty('メール', it.email, get('email'), v => { it.email = v; });
+  fillIfEmpty('電話番号', it.phone, get('phone').replace(/\s/g,''), v => { it.phone = v; });
+  fillIfEmpty('創業年月日', it.foundingDate, get('founding_date'), v => { it.foundingDate = v; });
 
-  const phone = get('phone');
-  if (phone) { it.phone = phone.replace(/\s/g,''); applied['電話番号'] = it.phone; }
-
-  const founding = get('founding_date');
-  if (founding) { it.foundingDate = founding; applied['創業年月日'] = founding; }
-
+  // 創業月：直接の値 or 創業日から自動算出
   const annivMonth = get('anniversary_month');
   if (annivMonth) {
-    it.anniversaryMonth = parseInt(annivMonth);
-    applied['創業記念月'] = it.anniversaryMonth + '月';
-  } else if (founding) {
-    const m = founding.match(/\d{4}-(\d{2})/);
-    if (m) { it.anniversaryMonth = parseInt(m[1]); applied['創業記念月(自動)'] = it.anniversaryMonth + '月'; }
+    fillIfEmpty('創業記念月', it.anniversaryMonth, annivMonth, v => { it.anniversaryMonth = parseInt(v); });
+  } else if (get('founding_date')) {
+    const m = get('founding_date').match(/\d{4}-(\d{2})/);
+    if (m) fillIfEmpty('創業記念月(自動)', it.anniversaryMonth, m[1], v => { it.anniversaryMonth = parseInt(v); });
   }
 
-  const monthsUntil = get('months_until_anniversary');
-  if (monthsUntil && monthsUntil !== 'N/A') { it.monthsUntilAnniversary = parseInt(monthsUntil); applied['周年まで'] = monthsUntil + 'ヶ月'; }
-
-  const nextYears = get('next_anniversary_years');
-  if (nextYears && nextYears !== 'N/A') { it.nextAnniversaryYears = parseInt(nextYears); applied['次の周年'] = nextYears + '周年'; }
-
-  const insta = get('instagram_url');
-  if (insta) { it.instaUrl = insta; applied['Instagram'] = insta; }
-
-  const fb = get('facebook_url');
-  if (fb) { it.fbUrl = fb; applied['Facebook'] = fb; }
-
-  const xurl = get('x_url');
-  if (xurl) { it.xUrl = xurl; applied['X'] = xurl; }
-
-  const tiktok = get('tiktok_url');
-  if (tiktok) { it.tiktokUrl = tiktok; applied['TikTok'] = tiktok; }
-
-  const indeed = get('indeed_url');
-  if (indeed) {
-    it.indeedUrl = indeed;
+  fillIfEmpty('Instagram', it.instaUrl, get('instagram_url'), v => { it.instaUrl = v; });
+  fillIfEmpty('Facebook', it.fbUrl, get('facebook_url'), v => { it.fbUrl = v; });
+  fillIfEmpty('X', it.xUrl, get('x_url'), v => { it.xUrl = v; });
+  fillIfEmpty('TikTok', it.tiktokUrl, get('tiktok_url'), v => { it.tiktokUrl = v; });
+  fillIfEmpty('Indeed', it.indeedUrl, get('indeed_url'), v => {
+    it.indeedUrl = v;
     if (!(it.signals||[]).includes('hire')) it.signals = [...(it.signals||[]), 'hire'];
-    applied['Indeed'] = indeed;
-  }
+  });
+  fillIfEmpty('ジョブアンテナ', it.jobAntennaUrl, get('job_antenna_url'), v => { it.jobAntennaUrl = v; });
+  fillIfEmpty('アグレ', it.agreUrl, get('agre_url'), v => { it.agreUrl = v; });
+  fillIfEmpty('マイナビ', it.mynaviExists, get('mynavi_exists'), v => { it.mynaviExists = v; });
+  fillIfEmpty('年商', it.revenue, get('revenue'), v => { it.revenue = v; });
+  fillIfEmpty('従業員数', it.employeeCount, get('employees'), v => { it.employeeCount = v; });
 
-  const jobAntenna = get('job_antenna_url');
-  if (jobAntenna) { it.jobAntennaUrl = jobAntenna; applied['ジョブアンテナ'] = jobAntenna; }
-
-  const agre = get('agre_url');
-  if (agre) { it.agreUrl = agre; applied['アグレ'] = agre; }
-
-  const mynavi = get('mynavi_exists');
-  if (mynavi) { it.mynaviExists = mynavi; applied['マイナビ'] = mynavi; }
-
-  const revenue = get('revenue');
-  if (revenue) { it.revenue = revenue; applied['年商'] = revenue; }
-
-  const employees = get('employees');
-  if (employees) { it.employeeCount = employees; applied['従業員数'] = employees; }
-
-  const notes = get('notes');
-  if (notes) { it.researchNotes = notes; applied['備考'] = notes; }
-
-  // ★ 公式HP（website_url）取込：既存値がない場合のみ上書き
+  // 公式HP
   const webUrl = get('website_url') || get('official_website') || get('hp_url') || get('homepage_url');
-  if (webUrl) {
-    if (!it.website) {
-      it.website = webUrl;
-      applied['公式HP'] = webUrl;
-    } else if (it.website !== webUrl) {
-      // 既存と違うURLならメモだけ残す（上書きはしない）
-      applied['公式HP（既存維持）'] = it.website + ' / 提案値: ' + webUrl;
+  fillIfEmpty('公式HP', it.website, webUrl, v => { it.website = v; });
+
+  // 備考：文字数が多い方を採用（Geminiが20%以上長ければ上書き）
+  const newNotes = get('notes');
+  if (newNotes) {
+    const cur = (it.researchNotes || '').trim();
+    const nw = newNotes.trim();
+    if (!cur) {
+      it.researchNotes = nw;
+      changes.push({ label: '備考', before: '', after: nw, action: 'fill' });
+    } else if (nw.length > cur.length * 1.2) {
+      it.researchNotes = nw;
+      changes.push({ label: '備考', before: cur, after: nw, action: 'expand' });
+    } else if (cur !== nw) {
+      changes.push({ label: '備考', before: cur, after: nw, action: 'kept' });
     }
   }
 
-  // ★ 更新日時を記録（「✨更新」バッジ表示のため）
-  if (Object.keys(applied).length > 0) {
+  // 周年計算系（情報フィールドなので空チェック不要）
+  const monthsUntil = get('months_until_anniversary');
+  if (monthsUntil && !isNaN(parseInt(monthsUntil))) it.monthsUntilAnniversary = parseInt(monthsUntil);
+  const nextYears = get('next_anniversary_years');
+  if (nextYears && !isNaN(parseInt(nextYears))) it.nextAnniversaryYears = parseInt(nextYears);
+
+  const filled = changes.filter(c => c.action === 'fill' || c.action === 'expand');
+  const kept = changes.filter(c => c.action === 'kept');
+
+  if (filled.length > 0) {
     it.lastUpdatedAt = nowJSTISO();
     it.researchStatus = 'done';
   }
@@ -3242,22 +3268,44 @@ function parseAndApplyGemini() {
   it.score = calcScore(it);
   save();
 
-  const keys = Object.keys(applied);
   const resultEl = document.getElementById('gemini-result');
   if (resultEl) {
     resultEl.style.display = 'block';
-    resultEl.innerHTML = keys.length > 0
-      ? '<div style="padding:12px 14px;background:var(--green-dim);border:1px solid rgba(22,163,74,0.2);border-radius:8px">' +
-        '<div style="font-size:12px;font-weight:600;color:var(--green);margin-bottom:6px">✓ ' + keys.length + '項目を読み込みました</div>' +
-        '<div style="font-size:11px;color:var(--text-mid)">' + keys.map(k => k + '：' + applied[k]).join('<br>') + '</div>' +
-        '</div>'
-      : '<div style="padding:12px 14px;background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.2);border-radius:8px;font-size:12px;color:var(--red)">読み込める情報がありませんでした。CSVのフォーマットを確認してください。</div>';
+    if (filled.length > 0 || kept.length > 0) {
+      const fillRows = filled.map(c =>
+        '<tr>' +
+          '<td style="padding:5px 10px;font-weight:700;color:#374151;font-size:11px;width:90px">' + c.label + '</td>' +
+          '<td style="padding:5px 10px;color:#9CA3AF;text-decoration:line-through;font-size:10px;max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + (c.before || '（空）') + '</td>' +
+          '<td style="padding:5px 6px;color:#10B981;font-weight:700;text-align:center;font-size:14px">→</td>' +
+          '<td style="padding:5px 10px;color:#065F46;font-weight:700;background:#ECFDF5;border-radius:4px;font-size:11px;word-break:break-all">' +
+            (c.action === 'expand' ? '<span style="font-size:9px;color:#10B981;margin-right:4px">✏️拡張</span>' : '') +
+            escapeHtml(c.after.length > 100 ? c.after.slice(0,100) + '…' : c.after) +
+          '</td>' +
+        '</tr>'
+      ).join('');
+      const keptRows = kept.map(c =>
+        '<tr><td colspan="4" style="padding:3px 10px;color:#9CA3AF;font-size:10px">' +
+          '<strong>' + c.label + '</strong>：既存値を維持（提案値: ' + escapeHtml(c.after.length > 50 ? c.after.slice(0,50)+'…' : c.after) + '）' +
+        '</td></tr>'
+      ).join('');
+
+      resultEl.innerHTML =
+        '<div style="padding:14px 16px;background:linear-gradient(135deg,#ECFDF5 0%,#F0FDF4 100%);border:2px solid ' + (filled.length > 0 ? '#86EFAC' : '#FCD34D') + ';border-radius:10px">' +
+          (filled.length > 0
+            ? '<div style="font-size:14px;font-weight:900;color:#065F46;margin-bottom:6px">✨ <strong style="font-size:18px">' + filled.length + '</strong>項目を新たに埋めました</div>'
+            : '<div style="font-size:13px;font-weight:700;color:#92400E;margin-bottom:4px">情報の追加はありませんでした</div>') +
+          (kept.length > 0 ? '<div style="font-size:11px;color:#9CA3AF;margin-bottom:8px">既存値を維持: ' + kept.length + '件</div>' : '') +
+          (fillRows ? '<table style="width:100%;border-collapse:collapse;margin-top:6px;background:#fff;border-radius:6px;overflow:hidden">' + fillRows + '</table>' : '') +
+          (keptRows ? '<table style="width:100%;border-collapse:collapse;margin-top:6px">' + keptRows + '</table>' : '') +
+        '</div>';
+    } else {
+      resultEl.innerHTML = '<div style="padding:12px 14px;background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.2);border-radius:8px;font-size:12px;color:var(--red)">読み込める情報がありませんでした。CSVのフォーマットを確認してください。</div>';
+    }
   }
-  if (keys.length > 0) {
-    toast(keys.length + '項目を保存しました！');
+  if (filled.length > 0) {
+    toast('✨ ' + filled.length + '項目を新たに埋めました！');
     // 基本情報タブも更新
     openDetail(selId);
-    // Geminiタブに戻る
     setTimeout(() => {
       document.querySelectorAll('.dtab').forEach(t => t.classList.remove('on'));
       const tabs = document.querySelectorAll('.dtab');
@@ -3268,6 +3316,8 @@ function parseAndApplyGemini() {
       });
       renderGeminiTab();
     }, 300);
+  } else if (kept.length > 0) {
+    toast('既存値が優先されました（' + kept.length + '件の提案値あり）');
   }
 }
 
@@ -3348,6 +3398,25 @@ function excludeCompany(itemId) {
   save();
   renderList();
   toast(it.excluded ? '除外しました' : '除外を解除しました');
+}
+
+// ══ 編集フィールドの空/埋まり状態を視覚化（CSV取込のダミー文言と区別するため）══
+function updateFieldFillState(el) {
+  if (!el) return;
+  const filled = (el.value || '').trim().length > 0;
+  el.classList.toggle('is-filled', filled);
+  el.classList.toggle('is-empty', !filled);
+}
+function attachFieldFillListeners() {
+  const fields = ['edit-person','edit-phone','edit-founding','edit-anniversary',
+    'edit-insta','edit-fb','edit-tiktok','edit-job','edit-notes'];
+  fields.forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    const handler = () => updateFieldFillState(el);
+    el.addEventListener('input', handler);
+    el.addEventListener('change', handler);
+  });
 }
 
 function saveDetailEdit() {
@@ -4154,46 +4223,155 @@ function processCsvFile(file) {
         return val === 'N/A' ? '' : val;
       };
       let changed = false;
-      const itemFields = [];
-      if (get('founding_date'))    { item.foundingDate = get('founding_date'); changed=true; itemFields.push('創業日'); }
-      if (get('anniversary_month')){ item.anniversaryMonth = get('anniversary_month'); changed=true; itemFields.push('創業月'); }
-      if (get('instagram_url'))    { item.instaUrl = get('instagram_url'); changed=true; itemFields.push('IG'); }
-      if (get('facebook_url'))     { item.fbUrl = get('facebook_url'); changed=true; itemFields.push('FB'); }
-      if (get('tiktok_url'))       { item.tiktokUrl = get('tiktok_url'); changed=true; itemFields.push('TikTok'); }
-      if (get('job_posting_url'))  { item.jobUrl = get('job_posting_url'); changed=true; itemFields.push('求人'); }
-      if (get('ceo_name'))         { item.ceoName = get('ceo_name'); item.person = item.person || get('ceo_name'); changed=true; itemFields.push('代表者'); }
-      if (get('employee_count'))   { item.employeeCount = get('employee_count'); changed=true; itemFields.push('従業員数'); }
-      if (get('notes'))            { item.researchNotes = get('notes'); changed=true; itemFields.push('備考'); }
-      // 公式HP（website_url）：既存値がない場合のみ上書き
-      if (get('website_url') && !item.website) {
-        item.website = get('website_url');
-        changed = true;
-        itemFields.push('公式HP');
+      const fieldChanges = []; // [{key, label, before, after, action}]
+
+      // === 上書きポリシーに従ってフィールドを更新 ===
+      // 1) 空フィールドのみ埋める：URL系・基本情報
+      const fillIfEmpty = (key, label, currentVal, newVal, setter) => {
+        const cur = (currentVal || '').toString().trim();
+        const nw = (newVal || '').toString().trim();
+        if (!nw) return;
+        if (!cur) {
+          setter(nw);
+          changed = true;
+          fieldChanges.push({ label, before: '', after: nw, action: 'fill' });
+        } else if (cur !== nw) {
+          // 既存と違う値：保護のため変更しないが、提案値として記録
+          fieldChanges.push({ label, before: cur, after: nw, action: 'kept' });
+        }
+      };
+
+      fillIfEmpty('founding_date', '創業日', item.foundingDate, get('founding_date'),
+        v => { item.foundingDate = v; });
+      fillIfEmpty('anniversary_month', '創業月', item.anniversaryMonth, get('anniversary_month'),
+        v => { item.anniversaryMonth = v; });
+      fillIfEmpty('website_url', '公式HP', item.website, get('website_url'),
+        v => { item.website = v; });
+      fillIfEmpty('instagram_url', 'Instagram', item.instaUrl, get('instagram_url'),
+        v => { item.instaUrl = v; });
+      fillIfEmpty('facebook_url', 'Facebook', item.fbUrl, get('facebook_url'),
+        v => { item.fbUrl = v; });
+      fillIfEmpty('tiktok_url', 'TikTok', item.tiktokUrl, get('tiktok_url'),
+        v => { item.tiktokUrl = v; });
+      fillIfEmpty('job_posting_url', '求人URL', item.jobUrl, get('job_posting_url'),
+        v => { item.jobUrl = v; });
+      fillIfEmpty('ceo_name', '代表者', item.person, get('ceo_name'),
+        v => { item.person = v; item.ceoName = v; });
+      fillIfEmpty('employee_count', '従業員数', item.employeeCount, get('employee_count'),
+        v => { item.employeeCount = v; });
+
+      // 2) 備考：文字数が多い方を採用（Geminiの濃いテキストを優先）
+      const newNotes = get('notes');
+      if (newNotes) {
+        const cur = (item.researchNotes || '').trim();
+        const nw = newNotes.trim();
+        if (!cur) {
+          item.researchNotes = nw;
+          changed = true;
+          fieldChanges.push({ label: '備考', before: '', after: nw, action: 'fill' });
+        } else if (nw.length > cur.length * 1.2) {
+          // Gemini側が20%以上長いなら上書き
+          item.researchNotes = nw;
+          changed = true;
+          fieldChanges.push({ label: '備考', before: cur, after: nw, action: 'expand' });
+        } else if (cur !== nw) {
+          fieldChanges.push({ label: '備考', before: cur, after: nw, action: 'kept' });
+        }
       }
+
       if (changed) {
         item.lastUpdatedAt = nowJSTISO();
         item.researchStatus = 'done';
-        updatedFields.push({ name: item.company, fields: itemFields });
+      }
+      // 変化のあった企業のみ記録（fillまたはexpandが1つでもあれば）
+      const filledCount = fieldChanges.filter(c => c.action === 'fill' || c.action === 'expand').length;
+      const keptCount = fieldChanges.filter(c => c.action === 'kept').length;
+      if (filledCount > 0 || keptCount > 0) {
+        updatedFields.push({
+          name: item.company,
+          id: item.id,
+          changes: fieldChanges,
+          filledCount,
+          keptCount,
+        });
       }
       if (item.jobUrl && !(item.signals||[]).includes('hire')) item.signals = [...(item.signals||[]), 'hire'];
       item.score = calcScore(item);
       merged++;
     });
     save();
+
+    // === Before/After差分ビュー ===
+    const totalFilled = updatedFields.reduce((s,u) => s + u.filledCount, 0);
+    const totalKept = updatedFields.reduce((s,u) => s + u.keptCount, 0);
+    const expandedCompanies = updatedFields.filter(u => u.filledCount > 0).length;
+
     const prev = document.getElementById('csv-preview');
     if (prev) {
       prev.style.display = 'block';
-      const updatedHtml = updatedFields.length
-        ? '<details style="margin-top:8px"><summary style="cursor:pointer;font-size:11px;color:var(--green);font-weight:700">📝 更新詳細を見る（' + updatedFields.length + '社）</summary>' +
-          '<div style="max-height:240px;overflow-y:auto;margin-top:6px;padding:8px;background:#fff;border-radius:6px;font-size:11px;line-height:1.7">' +
-          updatedFields.map(u => '<div><strong>' + u.name + '</strong>: ' + u.fields.join('・') + '</div>').join('') +
+      // 拡張された企業ごとのBefore→After
+      const detailHtml = updatedFields.length
+        ? '<details style="margin-top:10px" open><summary style="cursor:pointer;font-size:12px;color:var(--green);font-weight:800;padding:6px 0">📝 詳細（' + updatedFields.length + '社の差分を見る）</summary>' +
+          '<div style="max-height:380px;overflow-y:auto;margin-top:8px;padding:10px;background:#fff;border-radius:8px;font-size:11px">' +
+          updatedFields.map(u => {
+            const fillRows = u.changes.filter(c => c.action === 'fill' || c.action === 'expand').map(c =>
+              '<tr>' +
+                '<td style="padding:4px 8px;font-weight:700;color:#374151;width:80px">' + c.label + '</td>' +
+                '<td style="padding:4px 8px;color:#9CA3AF;text-decoration:line-through;font-size:10px;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + (c.before || '（空）') + '</td>' +
+                '<td style="padding:4px 8px;color:#10B981;font-weight:600;width:14px;text-align:center">→</td>' +
+                '<td style="padding:4px 8px;color:#065F46;font-weight:700;background:#ECFDF5;border-radius:4px;max-width:200px;word-break:break-all">' + (c.action === 'expand' ? '<span style="font-size:9px;color:#10B981;margin-right:4px">✏️拡張</span>' : '') + escapeHtml(c.after.length > 80 ? c.after.slice(0,80) + '…' : c.after) + '</td>' +
+              '</tr>'
+            ).join('');
+            const keptRows = u.changes.filter(c => c.action === 'kept').map(c =>
+              '<tr>' +
+                '<td style="padding:3px 8px;font-weight:600;color:#9CA3AF;width:80px;font-size:10px">' + c.label + '</td>' +
+                '<td colspan="3" style="padding:3px 8px;color:#9CA3AF;font-size:10px">既存値を維持（提案値: ' + escapeHtml(c.after.length > 50 ? c.after.slice(0,50)+'…' : c.after) + '）</td>' +
+              '</tr>'
+            ).join('');
+            return '<div style="margin-bottom:14px;padding:8px 10px;background:#F9FAFB;border-radius:6px;border-left:3px solid ' + (u.filledCount > 0 ? '#10B981' : '#D1D5DB') + '">' +
+              '<div style="font-weight:800;font-size:12px;margin-bottom:4px;color:#111827">' +
+                u.name +
+                (u.filledCount > 0 ? ' <span style="font-size:10px;color:#065F46;background:#D1FAE5;padding:2px 8px;border-radius:8px;margin-left:6px">+' + u.filledCount + '項目拡張</span>' : '') +
+              '</div>' +
+              (fillRows ? '<table style="width:100%;border-collapse:collapse">' + fillRows + '</table>' : '') +
+              (keptRows ? '<table style="width:100%;border-collapse:collapse;margin-top:4px;border-top:1px dashed #E5E7EB;padding-top:4px">' + keptRows + '</table>' : '') +
+            '</div>';
+          }).join('') +
           '</div></details>'
         : '';
-      prev.innerHTML = '<div style="padding:12px 14px;background:var(--green-dim);border:1px solid rgba(22,163,74,0.2);border-radius:8px;font-size:12px"><strong style="color:var(--green)">✓ マージ完了</strong><div style="margin-top:4px;color:var(--text-mid)">更新: <strong>' + merged + '件</strong> ／ 未マッチ: <strong>' + notFound + '件</strong></div>' + updatedHtml + '</div>';
+
+      // メインのサマリ
+      const mainStat = totalFilled > 0
+        ? '<div style="font-size:18px;font-weight:900;color:#065F46;margin-bottom:4px">✨ ' + expandedCompanies + '社の情報を拡張しました</div>' +
+          '<div style="font-size:13px;color:#047857;font-weight:600">合計 <strong style="font-size:20px;color:#10B981">+' + totalFilled + '</strong> フィールドが新たに埋まりました' +
+          (totalKept > 0 ? '<span style="color:#9CA3AF;font-weight:500;margin-left:10px">／ ' + totalKept + '件は既存値を保護</span>' : '') +
+          '</div>'
+        : '<div style="font-size:14px;font-weight:700;color:#92400E">情報の追加はありませんでした</div>' +
+          '<div style="font-size:12px;color:#B45309;margin-top:4px">既存データが既に埋まっているか、Geminiが新規情報を返していません' +
+          (totalKept > 0 ? '（既存と異なる提案値が ' + totalKept + ' 件ありました）' : '') + '</div>';
+
+      prev.innerHTML =
+        '<div style="padding:14px 16px;background:linear-gradient(135deg,#ECFDF5 0%,#F0FDF4 100%);border:2px solid ' + (totalFilled > 0 ? '#86EFAC' : '#FCD34D') + ';border-radius:12px">' +
+          mainStat +
+          '<div style="margin-top:8px;display:flex;gap:14px;font-size:11px;color:#374151">' +
+            '<span>📥 取込: <strong>' + merged + '社</strong></span>' +
+            (notFound > 0 ? '<span style="color:#B91C1C">❓ 未マッチ: <strong>' + notFound + '社</strong></span>' : '') +
+          '</div>' +
+          detailHtml +
+        '</div>';
     }
-    toast('Gemini結果をマージしました！' + merged + '件更新');
+    if (totalFilled > 0) {
+      toast('✨ ' + expandedCompanies + '社の情報を拡張しました（+' + totalFilled + 'フィールド）');
+    } else {
+      toast('取込完了：新規情報はありませんでした');
+    }
   };
   reader.readAsText(file, 'UTF-8');
+}
+
+// HTMLエスケープ（差分ビュー用）
+function escapeHtml(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
 function parseCSVLine(line) {
