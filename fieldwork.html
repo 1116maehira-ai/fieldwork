@@ -975,11 +975,11 @@ tr:hover td { background: rgba(255,70,2,0.03); cursor: pointer; }
           <option value="area">📍 エリア順</option>
         </optgroup>
       </select>
-      <label style="display:flex;align-items:center;gap:6px;font-size:13px;font-weight:600;color:#888;cursor:pointer" title="🚫営業対象外（手動で対象外にした企業）も表示">
-        <input type="checkbox" id="ls-show-nonbiz" onchange="renderListResetPage()" checked> 🚫対象外も表示
+      <label style="display:flex;align-items:center;gap:6px;font-size:13px;font-weight:600;color:#888;cursor:pointer" title="🚫営業対象外（手動で「対象外にする」を押した企業）も表示">
+        <input type="checkbox" id="ls-show-excluded" onchange="renderListResetPage()"> 🚫対象外も表示
       </label>
-      <label style="display:flex;align-items:center;gap:6px;font-size:13px;font-weight:600;color:#888;cursor:pointer" title="見込みなし（過去に「お断り」等で除外した企業）も表示">
-        <input type="checkbox" id="ls-show-excluded" onchange="renderListResetPage()"> 見込みなしも表示
+      <label style="display:flex;align-items:center;gap:6px;font-size:13px;font-weight:600;color:#888;cursor:pointer" title="非企業判定された施設（公園・ビーチなど）も表示">
+        <input type="checkbox" id="ls-show-nonbiz" onchange="renderListResetPage()" checked> 🏞 非企業も表示
       </label>
     </div>
 
@@ -1242,11 +1242,19 @@ tr:hover td { background: rgba(255,70,2,0.03); cursor: pointer; }
     <div style="background:linear-gradient(135deg,#FFF8F3 0%,#FFEEDD 100%);border:2px solid #FFE0D6;border-radius:14px;padding:14px 18px;margin-bottom:14px">
       <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px">
         <div style="font-size:14px;font-weight:900;color:#FF4602">📊 あなたの活動</div>
-        <div style="display:flex;gap:4px;margin-left:auto">
+        <div style="display:flex;gap:4px;margin-left:auto;flex-wrap:wrap">
           <button class="ap-period-btn active" data-period="today" onclick="setApPeriod('today')" style="padding:5px 12px;border-radius:8px;border:2px solid #FF4602;background:#FF4602;color:#fff;font-size:11px;font-weight:800;cursor:pointer">今日</button>
           <button class="ap-period-btn" data-period="week" onclick="setApPeriod('week')" style="padding:5px 12px;border-radius:8px;border:2px solid #E5E7EB;background:#fff;color:#6B7280;font-size:11px;font-weight:700;cursor:pointer">今週</button>
           <button class="ap-period-btn" data-period="month" onclick="setApPeriod('month')" style="padding:5px 12px;border-radius:8px;border:2px solid #E5E7EB;background:#fff;color:#6B7280;font-size:11px;font-weight:700;cursor:pointer">今月</button>
+          <button class="ap-period-btn" data-period="custom" onclick="setApPeriod('custom')" style="padding:5px 12px;border-radius:8px;border:2px solid #E5E7EB;background:#fff;color:#6B7280;font-size:11px;font-weight:700;cursor:pointer">📅 日付指定</button>
         </div>
+      </div>
+      <!-- 日付指定UI（custom時のみ表示） -->
+      <div id="ap-custom-range" style="display:none;margin-bottom:10px;padding:8px 10px;background:rgba(255,255,255,0.7);border-radius:8px;gap:6px;flex-wrap:wrap;align-items:center">
+        <span style="font-size:11px;color:#6B7280;font-weight:700">期間：</span>
+        <input type="date" id="ap-activity-from" onchange="renderApActivityBox()" style="padding:4px 6px;border-radius:6px;border:1px solid #D1D5DB;font-size:11px">
+        <span style="font-size:11px;color:#6B7280">〜</span>
+        <input type="date" id="ap-activity-to" onchange="renderApActivityBox()" style="padding:4px 6px;border-radius:6px;border:1px solid #D1D5DB;font-size:11px">
       </div>
       <div id="ap-activity-cards" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(100px,1fr));gap:8px"></div>
     </div>
@@ -3237,13 +3245,37 @@ function setApPeriod(p) {
       b.style.cssText = 'padding:5px 12px;border-radius:8px;border:2px solid #E5E7EB;background:#fff;color:#6B7280;font-size:11px;font-weight:700;cursor:pointer';
     }
   });
+  // カスタム範囲UIの表示切替
+  const customWrap = document.getElementById('ap-custom-range');
+  if (customWrap) {
+    if (p === 'custom') {
+      customWrap.style.display = 'flex';
+      // デフォルトで今日を入れる
+      const today = todayJST();
+      const fromEl = document.getElementById('ap-activity-from');
+      const toEl = document.getElementById('ap-activity-to');
+      if (fromEl && !fromEl.value) fromEl.value = today;
+      if (toEl && !toEl.value) toEl.value = today;
+    } else {
+      customWrap.style.display = 'none';
+    }
+  }
   renderApActivityBox();
 }
 
 function renderApActivityBox() {
   const wrap = document.getElementById('ap-activity-cards');
   if (!wrap) return;
-  const range = getPeriodRange(apActivityCurrentPeriod);
+  // customの場合はap側のinputを見る
+  let range;
+  if (apActivityCurrentPeriod === 'custom') {
+    const f = document.getElementById('ap-activity-from')?.value;
+    const t = document.getElementById('ap-activity-to')?.value;
+    if (f && t) range = { from: f + 'T00:00:00', to: t + 'T23:59:59' };
+    else range = null;
+  } else {
+    range = getPeriodRange(apActivityCurrentPeriod);
+  }
   const cards = [
     { label: '📞', sub: '電話', val: range ? totalActivityInRange(range, 'tel') : 0, color: '#FF4602' },
     { label: '🚶', sub: '訪問', val: range ? totalActivityInRange(range, 'visit') : 0, color: '#0891B2' },
@@ -4842,12 +4874,10 @@ function openDetail(id) {
             <span style="font-size:22px">📞</span>
             <span style="font-size:26px;font-weight:900;color:#FF4602;font-family:'SF Mono','Menlo',monospace;letter-spacing:0.05em">${it.phone}</span>
           </a>
-          ${sc?`<div style="display:inline-flex;align-items:center;gap:8px;background:#fff;border:2px solid ${sc.total>=75?'#FF4602':sc.total>=55?'#3B82F6':sc.total>=35?'#F59E0B':'#9CA3AF'};border-radius:12px;padding:8px 14px"><span style="font-size:11px;color:#6B7280;font-weight:700">SCORE</span><span style="font-size:20px;font-weight:900;color:${sc.total>=75?'#FF4602':sc.total>=55?'#3B82F6':sc.total>=35?'#F59E0B':'#9CA3AF'}">${sc.total}</span><span style="font-size:14px;font-weight:800;color:${sc.total>=75?'#FF4602':sc.total>=55?'#3B82F6':sc.total>=35?'#F59E0B':'#9CA3AF'}">${sc.rank}ランク</span></div>`:''}
         </div>
       ` : `
         <div style="margin-bottom:14px">
           <span style="background:#fff;border:2px solid #E5E7EB;border-radius:12px;padding:8px 16px;color:#9CA3AF;font-size:14px;font-weight:700">📞 電話番号未登録</span>
-          ${sc?`<span style="display:inline-flex;align-items:center;gap:8px;background:#fff;border:2px solid ${sc.total>=75?'#FF4602':sc.total>=55?'#3B82F6':sc.total>=35?'#F59E0B':'#9CA3AF'};border-radius:12px;padding:8px 14px;margin-left:10px"><span style="font-size:11px;color:#6B7280;font-weight:700">SCORE</span><span style="font-size:20px;font-weight:900;color:${sc.total>=75?'#FF4602':sc.total>=55?'#3B82F6':sc.total>=35?'#F59E0B':'#9CA3AF'}">${sc.total}</span><span style="font-size:14px;font-weight:800;color:${sc.total>=75?'#FF4602':sc.total>=55?'#3B82F6':sc.total>=35?'#F59E0B':'#9CA3AF'}">${sc.rank}ランク</span></span>`:''}
         </div>
       `}
 
