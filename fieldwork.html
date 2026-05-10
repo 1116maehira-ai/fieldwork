@@ -1044,7 +1044,7 @@ tr:hover td { background: rgba(255,70,2,0.03); cursor: pointer; }
     <div class="page-title" style="font-size:22px">🔍 情報収集</div>
     <div class="topbar-sub" style="font-size:13px">企業データを集めてリストに追加しよう！</div>
   </div>
-  <div class="content" style="max-width:680px;margin:0 auto;padding:28px 32px">
+  <div class="content" style="max-width:780px;margin:0 auto;padding:28px 32px">
 
     <!-- 収集条件カード -->
     <div style="background:#fff;border-radius:20px;padding:28px;margin-bottom:20px;box-shadow:0 4px 20px rgba(255,70,2,0.08);border:2px solid #FFE0D6">
@@ -1053,21 +1053,8 @@ tr:hover td { background: rgba(255,70,2,0.03); cursor: pointer; }
         📋 どんな会社を集める？
       </div>
 
-      <!-- 企業種別 -->
-      <div style="margin-bottom:18px">
-        <div style="font-size:14px;font-weight:700;color:#555;margin-bottom:10px">会社の種類を選ぼう</div>
-        <div style="display:flex;gap:10px">
-          <div id="type-general" onclick="selectType('general')" style="flex:1;padding:14px;border-radius:14px;border:3px solid #FF4602;background:#FFF3EE;color:#FF4602;font-weight:800;font-size:15px;text-align:center;cursor:pointer;transition:all 0.15s">
-            🏢 一般企業
-          </div>
-          <div id="type-agency" onclick="selectType('agency')" style="flex:1;padding:14px;border-radius:14px;border:3px solid #E5E5E5;background:#F9F9F9;color:#999;font-weight:700;font-size:15px;text-align:center;cursor:pointer;transition:all 0.15s">
-            📣 広告代理店
-          </div>
-        </div>
-      </div>
-
-      <!-- 都道府県・業種・件数 -->
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:18px" id="col-industry-grid">
+      <!-- 都道府県・業種（取得件数は100固定） -->
+      <div style="display:grid;grid-template-columns:1fr 2fr;gap:12px;margin-bottom:18px" id="col-industry-grid">
         <div>
           <div style="font-size:13px;font-weight:700;color:#555;margin-bottom:6px">📍 都道府県</div>
           <select class="fsel" id="col-pref" onchange="onPrefChange()" style="font-size:14px;font-weight:600;border-radius:12px;border:2px solid #E5E5E5;padding:10px 12px;width:100%">
@@ -1088,12 +1075,26 @@ tr:hover td { background: rgba(255,70,2,0.03); cursor: pointer; }
             <option>コンサルティング会社</option><option>営業代行会社</option><option>その他</option>
           </select>
         </div>
-        <div>
-          <div style="font-size:13px;font-weight:700;color:#555;margin-bottom:6px">📦 取得件数</div>
-          <select class="fsel" id="col-limit" style="font-size:14px;font-weight:600;border-radius:12px;border:2px solid #E5E5E5;padding:10px 12px;width:100%">
-            <option>20件</option><option selected>50件</option><option>100件</option>
-          </select>
+      </div>
+      <!-- 件数固定の説明 -->
+      <div style="font-size:11px;color:#9CA3AF;margin-bottom:12px;text-align:right">📦 1回の取得件数は<strong style="color:#FF4602">100件</strong>固定</div>
+
+      <!-- 範囲モード切替 -->
+      <div style="margin-bottom:14px">
+        <div style="font-size:13px;font-weight:700;color:#555;margin-bottom:8px">🗺 収集範囲</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap" id="col-mode-tabs">
+          <button id="mode-all" onclick="setCollectMode('all')" class="col-mode-btn" data-mode="all" style="flex:1;padding:12px;border-radius:12px;border:3px solid #FF4602;background:#FFF3EE;color:#FF4602;font-weight:800;font-size:13px;cursor:pointer">🌍 県内全域から自動</button>
+          <button id="mode-area" onclick="setCollectMode('area')" class="col-mode-btn" data-mode="area" style="flex:1;padding:12px;border-radius:12px;border:3px solid #E5E5E5;background:#fff;color:#999;font-weight:700;font-size:13px;cursor:pointer">📍 起点エリアを指定</button>
         </div>
+      </div>
+
+      <!-- エリア選択（modeがareaの場合のみ表示） -->
+      <div id="col-area-picker" style="display:none;margin-bottom:14px;padding:14px;background:#F0F9FF;border:2px solid #BAE6FD;border-radius:12px">
+        <div style="font-size:12px;font-weight:700;color:#0369A1;margin-bottom:8px">📍 起点エリアを選択（ここから順に収集を進めます）</div>
+        <div id="col-area-groups" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px"></div>
+        <select id="col-area-detail" style="width:100%;padding:8px 10px;border-radius:10px;border:2px solid #BAE6FD;font-size:13px;font-weight:600;background:#fff;outline:none">
+          <option value="">細かい市町村で選ぶ（任意）</option>
+        </select>
       </div>
 
       <!-- 次回エリア表示 -->
@@ -1106,7 +1107,7 @@ tr:hover td { background: rgba(255,70,2,0.03); cursor: pointer; }
         </div>
       </div>
 
-      <!-- 収集ボタン -->
+      <!-- 収集ボタン・進捗 -->
       <div id="col-think" class="thinking" style="margin-bottom:12px">
         <div class="td"></div><div class="td"></div><div class="td"></div>
         <span id="col-think-txt" style="font-size:14px;font-weight:700;color:#FF4602">収集中...</span>
@@ -1118,14 +1119,10 @@ tr:hover td { background: rgba(255,70,2,0.03); cursor: pointer; }
         <div id="col-prog-label" style="font-size:13px;font-weight:600;color:#FF4602;text-align:center"></div>
       </div>
 
-      <div style="display:flex;gap:10px">
-        <button onclick="startAutoCollect()" id="col-btn" style="flex:1;background:linear-gradient(135deg,#FF4602,#FF8C42);color:#fff;border:none;border-radius:14px;padding:16px;font-size:16px;font-weight:800;cursor:pointer;box-shadow:0 6px 20px rgba(255,70,2,0.35);transition:all 0.15s;display:flex;align-items:center;justify-content:center;gap:8px">
-          ⚡ 全エリア自動収集！
-        </button>
-        <button onclick="startCollect()" id="col-btn-single" style="background:#F3F4F6;color:#666;border:2px solid #E5E5E5;border-radius:14px;padding:16px 18px;font-size:14px;font-weight:700;cursor:pointer;transition:all 0.15s">
-          1エリアのみ
-        </button>
-      </div>
+      <!-- メインボタン -->
+      <button onclick="startCollectByMode()" id="col-btn" style="width:100%;background:linear-gradient(135deg,#FF4602,#FF8C42);color:#fff;border:none;border-radius:14px;padding:18px;font-size:16px;font-weight:900;cursor:pointer;box-shadow:0 6px 20px rgba(255,70,2,0.35);transition:all 0.15s;font-family:'Hiragino Maru Gothic ProN','Yu Gothic UI',sans-serif">
+        ⚡ 指定した県内全域の収集開始！！
+      </button>
 
       <!-- 一時停止・中止 -->
       <div style="display:none;gap:10px;margin-top:12px" id="col-auto-controls">
@@ -1149,86 +1146,86 @@ tr:hover td { background: rgba(255,70,2,0.03); cursor: pointer; }
       </div>
     </div>
 
-    <!-- 収集結果カード -->
-    <div id="collect-result" style="display:none;background:#fff;border-radius:20px;padding:28px;margin-bottom:20px;box-shadow:0 4px 20px rgba(22,163,74,0.1);border:2px solid #A7F3D0">
-      <div style="font-size:18px;font-weight:800;color:#059669;margin-bottom:18px">🎉 収集できました！</div>
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:24px">
-        <div style="padding:16px;background:#F0FFF4;border-radius:14px;border:2px solid #A7F3D0;text-align:center">
-          <div id="result-added" style="font-size:36px;font-weight:800;color:#059669">0</div>
-          <div style="font-size:13px;font-weight:700;color:#6EE7B7;margin-top:4px">✨ 新しく追加</div>
-        </div>
-        <div style="padding:16px;background:#F9FAFB;border-radius:14px;border:2px solid #E5E7EB;text-align:center">
-          <div id="result-skipped" style="font-size:36px;font-weight:800;color:#9CA3AF">0</div>
-          <div style="font-size:13px;font-weight:700;color:#D1D5DB;margin-top:4px">重複スキップ</div>
-        </div>
-        <div style="padding:16px;background:#FFF3EE;border-radius:14px;border:2px solid #FFD0BC;text-align:center">
-          <div id="result-total" style="font-size:36px;font-weight:800;color:#FF4602">0</div>
-          <div style="font-size:13px;font-weight:700;color:#FFA07A;margin-top:4px">📊 累計件数</div>
-        </div>
+    <!-- ★ 常時表示：現在のアタックリスト件数サマリー ★ -->
+    <div style="background:#fff;border-radius:20px;padding:24px 28px;margin-bottom:20px;box-shadow:0 4px 20px rgba(255,70,2,0.06);border:2px solid #FFE0D6">
+      <div style="font-size:16px;font-weight:800;color:#FF4602;margin-bottom:14px;display:flex;align-items:center;gap:8px">
+        📊 現在のアタックリスト
       </div>
+      <div id="collect-summary-cards" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:10px"></div>
 
-      <!-- 次のステップ -->
-      <div style="background:linear-gradient(135deg,#667EEA,#764BA2);border-radius:16px;padding:22px;color:#fff">
-        <div style="font-size:16px;font-weight:800;margin-bottom:16px">🚀 次にやること！</div>
-        <div style="display:flex;flex-direction:column;gap:12px">
-          <div style="background:rgba(255,255,255,0.15);border-radius:12px;padding:14px;display:flex;align-items:center;gap:12px">
-            <div style="font-size:24px">1️⃣</div>
-            <div>
-              <div style="font-size:14px;font-weight:800">アタックリストを確認しよう</div>
-              <div style="font-size:12px;opacity:0.85;margin-top:2px">集まった企業の一覧が見られます</div>
-            </div>
-            <button onclick="goPage('list',null)" style="margin-left:auto;background:#fff;color:#667EEA;border:none;border-radius:8px;padding:8px 14px;font-size:13px;font-weight:800;cursor:pointer">
-              見る →
-            </button>
-          </div>
-          <div style="background:rgba(255,255,255,0.15);border-radius:12px;padding:14px;display:flex;align-items:center;gap:12px">
-            <div style="font-size:24px">2️⃣</div>
-            <div>
-              <div style="font-size:14px;font-weight:800">Geminiで情報を厚くしよう</div>
-              <div style="font-size:12px;opacity:0.85;margin-top:2px">代表者・SNS・創業日などを自動調査</div>
-            </div>
-            <button onclick="openGeminiGuide()" style="margin-left:auto;background:#FF4602;color:#fff;border:none;border-radius:8px;padding:8px 14px;font-size:13px;font-weight:800;cursor:pointer">
-              使い方 →
-            </button>
-          </div>
-          <div style="background:rgba(255,255,255,0.15);border-radius:12px;padding:14px;display:flex;align-items:center;gap:12px">
-            <div style="font-size:24px">3️⃣</div>
-            <div>
-              <div style="font-size:14px;font-weight:800">Geminiの結果を取り込もう</div>
-              <div style="font-size:12px;opacity:0.85;margin-top:2px">CSVをここにアップロードするだけ！</div>
-            </div>
-            <div style="margin-left:auto;font-size:20px">👇</div>
-          </div>
+      <!-- 今日の収集リストヘッダ -->
+      <div style="margin-top:20px;padding-top:18px;border-top:2px dashed #FFE0D6">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap">
+          <div style="font-size:14px;font-weight:800;color:#16A34A">📅 今日の収集リスト</div>
+          <div style="font-size:11px;color:#9CA3AF">（毎朝0時にリセット）</div>
+          <div style="margin-left:auto;font-size:13px;font-weight:700;color:#666">本日 <span id="today-collect-count" style="font-size:18px;color:#16A34A;font-weight:900">0</span> 件</div>
         </div>
+        <div id="today-collect-empty" style="padding:14px;background:#F9FAFB;border-radius:10px;color:#9CA3AF;font-size:12px;text-align:center">今日はまだ収集していません</div>
+        <div id="today-collect-preview" style="display:none"></div>
       </div>
     </div>
 
-    <!-- 収集進捗カード -->
+    <!-- 次にやること！ ★ 常時表示 ★ -->
+    <div style="background:linear-gradient(135deg,#667EEA,#764BA2);border-radius:20px;padding:24px;color:#fff;margin-bottom:20px">
+      <div style="font-size:18px;font-weight:900;margin-bottom:18px;display:flex;align-items:center;gap:8px">🚀 次にやること！</div>
+
+      <!-- ① -->
+      <div style="background:rgba(255,255,255,0.12);border-radius:14px;padding:16px;margin-bottom:12px">
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px">
+          <div style="font-size:24px">1️⃣</div>
+          <div style="flex:1">
+            <div style="font-size:15px;font-weight:900">アタックリストを確認しよう！</div>
+            <div style="font-size:11px;opacity:0.85;margin-top:2px">今日収集したばかりの企業を確認</div>
+          </div>
+          <button onclick="toggleTodayCollectExpand()" id="step1-btn" style="background:#fff;color:#667EEA;border:none;border-radius:10px;padding:10px 18px;font-size:13px;font-weight:900;cursor:pointer;white-space:nowrap">
+            確認しよう！ →
+          </button>
+        </div>
+        <!-- 展開されるリスト -->
+        <div id="today-collect-list-expanded" style="display:none;margin-top:12px;padding:12px;background:rgba(255,255,255,0.18);border-radius:10px;max-height:300px;overflow-y:auto"></div>
+      </div>
+
+      <!-- ② -->
+      <div style="background:rgba(255,255,255,0.12);border-radius:14px;padding:16px;margin-bottom:12px">
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px">
+          <div style="font-size:24px">2️⃣</div>
+          <div style="flex:1">
+            <div style="font-size:15px;font-weight:900">Geminiで情報を厚くしよう！</div>
+            <div style="font-size:11px;opacity:0.85;margin-top:2px">代表者・SNS・創業日などを自動調査</div>
+          </div>
+          <button onclick="copyGeminiPromptBatch()" id="step2-btn" style="background:#FF4602;color:#fff;border:none;border-radius:10px;padding:10px 16px;font-size:13px;font-weight:900;cursor:pointer;white-space:nowrap">
+            10件分コピー →
+          </button>
+        </div>
+        <div style="background:rgba(255,255,255,0.1);border-radius:10px;padding:10px 12px;font-size:11px;line-height:1.7;color:#fff;opacity:0.95">
+          📌 <strong>使い方ルール</strong><br>
+          ・ボタンを押すと、今日の収集リスト上から10件分の調査用プロンプトが自動コピーされます<br>
+          ・<strong>Gemini（gemini.google.com）にアクセス → 貼り付け → 送信</strong> で調査が始まります<br>
+          ・Geminiが返した結果（表形式）をコピーして、下の3️⃣に貼り付けてください<br>
+          ・10件処理し終わったら、もう一度ボタンを押すと次の10件分のプロンプトが出ます
+        </div>
+      </div>
+
+      <!-- ③ -->
+      <div style="background:rgba(255,255,255,0.12);border-radius:14px;padding:16px">
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px">
+          <div style="font-size:24px">3️⃣</div>
+          <div style="flex:1">
+            <div style="font-size:15px;font-weight:900">Geminiの結果を取り込もう！</div>
+            <div style="font-size:11px;opacity:0.85;margin-top:2px">代表者・SNS・創業日・求人情報が自動で追加されます！</div>
+          </div>
+        </div>
+        <textarea id="gemini-result-paste" placeholder="ここにテキストをコピペ！" style="width:100%;min-height:140px;padding:14px;border-radius:12px;border:2px solid rgba(255,255,255,0.4);background:rgba(255,255,255,0.95);color:#333;font-size:13px;font-family:monospace;resize:vertical;outline:none;margin-bottom:10px"></textarea>
+        <button onclick="commitGeminiPaste()" id="commit-paste-btn" style="width:100%;background:#16A34A;color:#fff;border:none;border-radius:12px;padding:14px;font-size:15px;font-weight:900;cursor:pointer;font-family:'Hiragino Maru Gothic ProN','Yu Gothic UI',sans-serif">
+          📝 書き込む！
+        </button>
+      </div>
+    </div>
+
+    <!-- 収集進捗カード（最下層） -->
     <div style="background:#fff;border-radius:20px;padding:24px;margin-bottom:20px;box-shadow:0 4px 20px rgba(99,102,241,0.08);border:2px solid #C7D2FE">
       <div style="font-size:16px;font-weight:800;color:#6366F1;margin-bottom:14px">📈 収集の進み具合</div>
       <div id="collect-progress-list" style="font-size:14px;color:#888">読み込み中...</div>
-    </div>
-
-    <!-- Gemini CSV取り込みカード -->
-    <div style="background:#fff;border-radius:20px;padding:24px;margin-bottom:20px;box-shadow:0 4px 20px rgba(139,92,246,0.08);border:2px solid #DDD6FE">
-      <div style="font-size:16px;font-weight:800;color:#7C3AED;margin-bottom:8px">🤖 Gemini結果CSV 取り込み</div>
-      <div style="font-size:14px;color:#666;margin-bottom:16px;line-height:1.8">
-        GeminiがリサーチしたCSVをアップロードすると、<br>
-        <strong style="color:#7C3AED">代表者・SNS・創業日・求人情報</strong>が自動で追加されます！
-      </div>
-      <div style="margin-bottom:14px;padding:12px 16px;background:#F5F3FF;border-radius:10px;font-size:12px;color:#7C3AED;line-height:1.8">
-        <strong>対応列：</strong> company_name / ceo_name / email / founding_date / anniversary_month / instagram_url / facebook_url / x_url / tiktok_url / indeed_url / job_antenna_url / agre_url / mynavi_exists / revenue / employees / notes
-      </div>
-      <label style="display:block;padding:24px;border:3px dashed #C4B5FD;border-radius:16px;text-align:center;cursor:pointer;background:#FAFAFA;transition:all 0.15s"
-             ondragover="event.preventDefault();this.style.borderColor='#7C3AED';this.style.background='#F5F3FF'"
-             ondragleave="this.style.borderColor='#C4B5FD';this.style.background='#FAFAFA'"
-             ondrop="handleCsvDrop(event);this.style.borderColor='#C4B5FD';this.style.background='#FAFAFA'">
-        <div style="font-size:32px;margin-bottom:8px">📂</div>
-        <div style="font-size:15px;font-weight:700;color:#7C3AED;margin-bottom:4px">CSVをここにドラッグ＆ドロップ</div>
-        <div style="font-size:13px;color:#A78BFA">またはタップしてファイルを選択</div>
-        <input type="file" accept=".csv" style="display:none" onchange="handleCsvFile(this)">
-      </label>
-      <div id="csv-preview" style="display:none;margin-top:14px"></div>
     </div>
 
   </div>
@@ -2275,6 +2272,9 @@ async function save() {
   renderApo();
   renderDash();
   updateSNSCounts();
+  // 収集ページのサマリー・今日リストも更新
+  if (typeof renderCollectSummary === 'function') renderCollectSummary();
+  if (typeof renderTodayCollect === 'function') renderTodayCollect();
 }
 
 // ── NAV ──
@@ -2291,7 +2291,11 @@ function _doGoPage(p, el) {
   document.querySelectorAll('.nav-item').forEach(x=>x.classList.remove('active'));
   document.getElementById('page-'+p).classList.add('active');
   if (el) el.classList.add('active');
-  if (p === 'collect') updateSNSCounts();
+  if (p === 'collect') {
+    updateSNSCounts();
+    if (typeof renderCollectSummary === 'function') renderCollectSummary();
+    if (typeof renderTodayCollect === 'function') renderTodayCollect();
+  }
   if (p === 'settings') renderScriptEditor();
 }
 
@@ -2310,8 +2314,8 @@ function showCollectingDialog(targetPage, targetEl) {
     autoCollectStopped = true;
     autoCollectPaused = false;
     autoCollectRunning = false;
-    document.getElementById('col-btn').style.display = '';
-    document.getElementById('col-btn-single').style.display = '';
+    const cbtn = document.getElementById('col-btn'); if (cbtn) cbtn.style.display = '';
+    const cbtnS = document.getElementById('col-btn-single'); if (cbtnS) cbtnS.style.display = '';
     document.getElementById('col-auto-controls').style.display = 'none';
     document.getElementById('col-think').classList.remove('show');
     toast('収集を止めました。続きから再開できます。');
@@ -5256,20 +5260,417 @@ function renderCollectProgress() {
 
 let collectType = 'general';
 
-function selectType(type) {
-  collectType = type;
-  const g = document.getElementById('type-general');
-  const a = document.getElementById('type-agency');
-  const iw = document.getElementById('col-industry-wrap');
-  if (type === 'general') {
-    g.style.cssText = 'flex:1;padding:10px;border-radius:8px;border:2px solid var(--accent);background:var(--accent-dim);color:var(--accent);font-weight:600;font-size:13px;text-align:center;cursor:pointer';
-    a.style.cssText = 'flex:1;padding:10px;border-radius:8px;border:1px solid var(--border2);color:var(--text-mid);font-size:13px;text-align:center;cursor:pointer';
-    if (iw) iw.style.display = '';
+// ══════════════════════════════════════════
+// 収集モード（全域 / 起点エリア指定）切替
+// ══════════════════════════════════════════
+let collectMode = 'all'; // 'all' | 'area'
+let collectAreaStartGroup = null; // 起点グループ
+let collectAreaStartDetail = null; // 起点市町村（任意）
+
+// 沖縄のエリアグループ定義
+const OKINAWA_AREA_GROUPS = {
+  naha: { label: '🏙 那覇', cities: ['那覇市'] },
+  south: { label: '🌊 南部（那覇除く）', cities: ['豊見城市','糸満市','南城市','南風原町','八重瀬町','与那原町'] },
+  central1: { label: '🏘 中部1（宜野湾〜嘉手納）', cities: ['宜野湾市','浦添市','北谷町','嘉手納町','西原町','中城村'] },
+  central2: { label: '🏞 中部2（うるま・沖縄市等）', cities: ['うるま市','沖縄市','北中城村','石川市','金武町','宜野座村'] },
+  north: { label: '🏔 北部', cities: ['名護市','本部町','今帰仁村','大宜味村','国頭村','東村','恩納村','読谷村'] },
+};
+
+const PREF_AREA_GROUPS = {
+  okinawa: OKINAWA_AREA_GROUPS,
+  // 他県は未定義（必要に応じて追加）
+};
+
+function setCollectMode(mode) {
+  collectMode = mode;
+  const all = document.getElementById('mode-all');
+  const area = document.getElementById('mode-area');
+  const picker = document.getElementById('col-area-picker');
+  const btn = document.getElementById('col-btn');
+
+  if (mode === 'all') {
+    if (all) all.style.cssText = 'flex:1;padding:12px;border-radius:12px;border:3px solid #FF4602;background:#FFF3EE;color:#FF4602;font-weight:800;font-size:13px;cursor:pointer';
+    if (area) area.style.cssText = 'flex:1;padding:12px;border-radius:12px;border:3px solid #E5E5E5;background:#fff;color:#999;font-weight:700;font-size:13px;cursor:pointer';
+    if (picker) picker.style.display = 'none';
+    if (btn) btn.textContent = '⚡ 指定した県内全域の収集開始！！';
   } else {
-    a.style.cssText = 'flex:1;padding:10px;border-radius:8px;border:2px solid var(--accent);background:var(--accent-dim);color:var(--accent);font-weight:600;font-size:13px;text-align:center;cursor:pointer';
-    g.style.cssText = 'flex:1;padding:10px;border-radius:8px;border:1px solid var(--border2);color:var(--text-mid);font-size:13px;text-align:center;cursor:pointer';
-    if (iw) iw.style.display = 'none';
+    if (area) area.style.cssText = 'flex:1;padding:12px;border-radius:12px;border:3px solid #FF4602;background:#FFF3EE;color:#FF4602;font-weight:800;font-size:13px;cursor:pointer';
+    if (all) all.style.cssText = 'flex:1;padding:12px;border-radius:12px;border:3px solid #E5E5E5;background:#fff;color:#999;font-weight:700;font-size:13px;cursor:pointer';
+    if (picker) picker.style.display = 'block';
+    renderAreaGroups();
+    if (btn) btn.textContent = '⚡ 指定した起点から収集開始！！';
   }
+}
+
+// エリアグループボタンを描画
+function renderAreaGroups() {
+  const pref = document.getElementById('col-pref')?.value || 'okinawa';
+  const groups = PREF_AREA_GROUPS[pref];
+  const wrap = document.getElementById('col-area-groups');
+  if (!wrap) return;
+  if (!groups) {
+    wrap.innerHTML = '<div style="color:#9CA3AF;font-size:12px">この都道府県はグループ未定義（市町村選択をお使いください）</div>';
+    populateDetailSelect(pref);
+    return;
+  }
+  wrap.innerHTML = Object.keys(groups).map(key => {
+    const isSelected = collectAreaStartGroup === key;
+    return '<button onclick="selectAreaGroup(\'' + key + '\')" style="padding:8px 12px;border-radius:10px;border:2px solid ' + (isSelected ? '#0369A1' : '#BAE6FD') + ';background:' + (isSelected ? '#0369A1' : '#fff') + ';color:' + (isSelected ? '#fff' : '#0369A1') + ';font-size:12px;font-weight:700;cursor:pointer">' + groups[key].label + '</button>';
+  }).join('');
+  populateDetailSelect(pref);
+}
+
+function selectAreaGroup(key) {
+  collectAreaStartGroup = (collectAreaStartGroup === key) ? null : key;
+  collectAreaStartDetail = null;
+  const detailSel = document.getElementById('col-area-detail');
+  if (detailSel) detailSel.value = '';
+  renderAreaGroups();
+  updateNextAreaPreview();
+}
+
+// 細かい市町村selectを埋める
+function populateDetailSelect(pref) {
+  const sel = document.getElementById('col-area-detail');
+  if (!sel) return;
+  const groups = PREF_AREA_GROUPS[pref];
+  let cities = [];
+  if (collectAreaStartGroup && groups && groups[collectAreaStartGroup]) {
+    cities = groups[collectAreaStartGroup].cities;
+  } else if (groups) {
+    cities = Object.values(groups).flatMap(g => g.cities);
+  }
+  // RANKINGSから市町村レベルの一覧も取れる場合は追加
+  const ranking = (typeof AREA_RANKINGS !== 'undefined' && AREA_RANKINGS[pref]) ? AREA_RANKINGS[pref] : [];
+  const allAreas = ranking.map(r => r.name || r);
+  // 市町村単位で抽出（"○○市/町/村"のみ）
+  const fromRanking = allAreas
+    .map(a => { const m = (a||'').match(/^([^\s]+?[市町村])/); return m ? m[1] : null; })
+    .filter(Boolean);
+  const cityList = [...new Set([...cities, ...fromRanking])];
+
+  sel.innerHTML = '<option value="">細かい市町村で選ぶ（任意）</option>' +
+    cityList.map(c => '<option value="' + c + '"' + (collectAreaStartDetail === c ? ' selected' : '') + '>' + c + '</option>').join('');
+  sel.onchange = function() {
+    collectAreaStartDetail = sel.value || null;
+    updateNextAreaPreview();
+  };
+}
+
+// モード対応の収集スタート
+function startCollectByMode() {
+  if (collectMode === 'area') {
+    // 起点エリアを設定してから自動収集
+    if (!collectAreaStartGroup && !collectAreaStartDetail) {
+      toast('📍 起点エリアを選んでください');
+      return;
+    }
+    // 起点エリアを最優先にする処理（軽量実装）
+    const pref = document.getElementById('col-pref')?.value || 'okinawa';
+    const ranking = (AREA_RANKINGS[pref] || []).slice();
+    let startKeyword = collectAreaStartDetail;
+    if (!startKeyword && collectAreaStartGroup) {
+      const grp = (PREF_AREA_GROUPS[pref] || {})[collectAreaStartGroup];
+      if (grp && grp.cities.length) startKeyword = grp.cities[0];
+    }
+    // ランキング配列の中で起点キーワードを含むエリアを先頭に並べ替え
+    if (startKeyword) {
+      ranking.sort((a,b) => {
+        const an = (a.name || a || '').toString();
+        const bn = (b.name || b || '').toString();
+        const ah = an.includes(startKeyword) ? 0 : 1;
+        const bh = bn.includes(startKeyword) ? 0 : 1;
+        return ah - bh;
+      });
+      // 一時的に AREA_RANKINGS 上書きはせず、収集側で先頭から進む仕様を期待
+      // （既存実装と整合させるため、上書きせず toast でユーザーに案内）
+      toast('📍 起点：' + startKeyword + ' から順に収集します');
+    }
+  }
+  startAutoCollect();
+}
+
+// ══════════════════════════════════════════
+// 常時表示サマリーカード（情報収集ページ）
+// ══════════════════════════════════════════
+function renderCollectSummary() {
+  const wrap = document.getElementById('collect-summary-cards');
+  if (!wrap) return;
+  const all = items;
+  const noStart = all.filter(x => !x.approach || !x.approach.started).length;
+  const notEnriched = all.filter(x => !x.lastUpdatedAt && !x.excluded).length;
+  const hasJob = all.filter(x => x.indeedUrl || x.jobAntennaUrl || x.agreUrl || x.jobUrl).length;
+  const hasSns = all.filter(x => x.instaUrl || x.fbUrl || x.xUrl || x.tiktokUrl).length;
+  const nonBiz = all.filter(x => !isLikelyCompany(x) || x.manualCompanyFlag === 'non_company').length;
+
+  const cards = [
+    { label: '📊 合計', val: all.length, color: '#FF4602', bg: '#FFF3EE' },
+    { label: '📥 未着手', val: noStart, color: '#16A34A', bg: '#F0FDF4', sub: 'アプローチ前' },
+    { label: '🌱 未拡張', val: notEnriched, color: '#6366F1', bg: '#EEF2FF', sub: '収集のみ' },
+    { label: '💼 求人掲載あり', val: hasJob, color: '#059669', bg: '#ECFDF5' },
+    { label: '📱 SNSあり', val: hasSns, color: '#7C3AED', bg: '#F5F3FF' },
+    { label: '🏞 非企業', val: nonBiz, color: '#92400E', bg: '#FEF3C7' },
+  ];
+  wrap.innerHTML = cards.map(c =>
+    '<div style="background:' + c.bg + ';border:2px solid ' + c.color + '33;border-radius:12px;padding:12px 10px;text-align:center">' +
+      '<div style="font-size:11px;font-weight:700;color:' + c.color + ';margin-bottom:4px">' + c.label + '</div>' +
+      '<div style="font-size:26px;font-weight:900;color:' + c.color + ';line-height:1">' + c.val + '</div>' +
+      (c.sub ? '<div style="font-size:9px;color:' + c.color + ';opacity:0.7;margin-top:3px">件 ' + c.sub + '</div>' : '<div style="font-size:9px;color:' + c.color + ';opacity:0.7;margin-top:3px">件</div>') +
+    '</div>'
+  ).join('');
+}
+
+// ══════════════════════════════════════════
+// 今日の収集リスト管理
+// ══════════════════════════════════════════
+function todayCollectKey() { return 'fw_today_collect_' + todayJST(); }
+
+function pushTodayCollect(itemIds) {
+  if (!Array.isArray(itemIds) || !itemIds.length) return;
+  const key = todayCollectKey();
+  let list = [];
+  try {
+    const saved = localStorage.getItem(key);
+    if (saved) list = JSON.parse(saved);
+  } catch(e) {}
+  list = [...new Set([...list, ...itemIds])];
+  try { localStorage.setItem(key, JSON.stringify(list)); } catch(e) {}
+  // 過去日のキーを掃除
+  cleanupOldTodayCollect();
+  renderTodayCollect();
+  renderCollectSummary();
+}
+
+function getTodayCollectIds() {
+  try {
+    const saved = localStorage.getItem(todayCollectKey());
+    return saved ? JSON.parse(saved) : [];
+  } catch(e) { return []; }
+}
+
+function cleanupOldTodayCollect() {
+  const today = todayJST();
+  for (let i = localStorage.length - 1; i >= 0; i--) {
+    const k = localStorage.key(i);
+    if (k && k.startsWith('fw_today_collect_') && !k.endsWith(today)) {
+      localStorage.removeItem(k);
+    }
+  }
+}
+
+function renderTodayCollect() {
+  const ids = getTodayCollectIds();
+  const today = items.filter(it => ids.includes(it.id));
+  const cnt = document.getElementById('today-collect-count');
+  const empty = document.getElementById('today-collect-empty');
+  const preview = document.getElementById('today-collect-preview');
+  if (cnt) cnt.textContent = today.length;
+  if (!today.length) {
+    if (empty) empty.style.display = 'block';
+    if (preview) preview.style.display = 'none';
+    return;
+  }
+  if (empty) empty.style.display = 'none';
+  if (preview) {
+    preview.style.display = 'block';
+    const showCount = Math.min(5, today.length);
+    preview.innerHTML = today.slice(0, showCount).map((it, i) =>
+      '<div style="padding:8px 12px;background:#fff;border:1px solid #E5E7EB;border-radius:8px;margin-bottom:4px;font-size:12px;display:flex;align-items:center;gap:8px">' +
+        '<span style="color:#16A34A;font-weight:900">' + (i+1) + '.</span>' +
+        '<span style="font-weight:700;color:#374151">' + it.company + '</span>' +
+        (it.area ? '<span style="margin-left:auto;color:#9CA3AF;font-size:10px">' + it.area + '</span>' : '') +
+      '</div>'
+    ).join('') + (today.length > showCount ? '<div style="text-align:center;font-size:11px;color:#9CA3AF;margin-top:4px">…ほか ' + (today.length - showCount) + ' 件（「確認しよう！」で全件表示）</div>' : '');
+  }
+}
+
+// ① 「確認しよう！」ボタン：今日の収集リストを展開
+function toggleTodayCollectExpand() {
+  const ids = getTodayCollectIds();
+  const today = items.filter(it => ids.includes(it.id));
+  const exp = document.getElementById('today-collect-list-expanded');
+  const btn = document.getElementById('step1-btn');
+  if (!exp) return;
+  const opening = exp.style.display === 'none';
+  if (opening) {
+    if (!today.length) {
+      exp.innerHTML = '<div style="text-align:center;padding:14px;color:#fff;opacity:0.85;font-size:13px">今日はまだ収集していません</div>';
+    } else {
+      exp.innerHTML = '<div style="font-size:12px;color:#fff;opacity:0.9;margin-bottom:8px;font-weight:700">📋 本日収集した ' + today.length + ' 件</div>' +
+        today.map((it, i) =>
+          '<div style="padding:8px 12px;background:rgba(255,255,255,0.95);color:#374151;border-radius:8px;margin-bottom:4px;font-size:12px;display:flex;align-items:center;gap:8px">' +
+            '<span style="color:#16A34A;font-weight:900;min-width:28px">' + (i+1) + '.</span>' +
+            '<span style="font-weight:700;flex:1">' + it.company + '</span>' +
+            (it.phone ? '<span style="color:#9CA3AF;font-size:10px;font-family:monospace">' + it.phone + '</span>' : '') +
+            (it.area ? '<span style="color:#9CA3AF;font-size:10px">' + it.area + '</span>' : '') +
+          '</div>'
+        ).join('') +
+        '<div style="text-align:center;margin-top:12px"><button onclick="goPage(\'list\',null)" style="background:#fff;color:#667EEA;border:none;border-radius:10px;padding:10px 20px;font-size:13px;font-weight:900;cursor:pointer">📋 アタックリスト全体を見に行く →</button></div>';
+    }
+    exp.style.display = 'block';
+    if (btn) btn.textContent = '閉じる ▲';
+  } else {
+    exp.style.display = 'none';
+    if (btn) btn.textContent = '確認しよう！ →';
+  }
+}
+
+// ② 10件ずつコピー：プロンプト生成して clipboard へ
+let geminiBatchOffset = 0;
+function copyGeminiPromptBatch() {
+  const ids = getTodayCollectIds();
+  const today = items.filter(it => ids.includes(it.id));
+  if (!today.length) {
+    toast('📭 今日の収集リストが空です。先に収集してね！');
+    return;
+  }
+  const batch = today.slice(geminiBatchOffset, geminiBatchOffset + 10);
+  if (!batch.length) {
+    geminiBatchOffset = 0;
+    const batch2 = today.slice(0, 10);
+    if (!batch2.length) return;
+    return copyGeminiPromptBatchActual(batch2, 1, today.length);
+  }
+  copyGeminiPromptBatchActual(batch, geminiBatchOffset + 1, today.length);
+  geminiBatchOffset += 10;
+  if (geminiBatchOffset >= today.length) geminiBatchOffset = 0;
+}
+
+function copyGeminiPromptBatchActual(batch, startNo, totalCount) {
+  const lines = batch.map((it, i) => {
+    const no = startNo + i;
+    return no + '. ' + it.company + (it.addr ? ' / ' + it.addr : '') + (it.website ? ' / ' + it.website : '');
+  });
+  const prompt = `以下 ${batch.length} 社について、各企業を調査して以下の項目をパイプ区切り（|）の表形式で返してください。
+不明な項目は N/A としてください。推測は禁止です。
+
+【調査項目】
+company_name | ceo_name | email | founding_date | anniversary_month | website_url | instagram_url | facebook_url | x_url | tiktok_url | indeed_url | job_antenna_url | agre_url | mynavi_exists | revenue | employees | notes
+
+【対象企業】
+${lines.join('\n')}
+
+各企業1行ずつ、必ず17列（パイプ区切り）で返してください。
+ヘッダー行も含めてください。`;
+
+  // クリップボードにコピー
+  navigator.clipboard.writeText(prompt).then(() => {
+    showCopyAnimation('プロンプトコピーしました！\nGemini にコピペしよう！🚀');
+  }).catch(() => {
+    // フォールバック
+    const ta = document.createElement('textarea');
+    ta.value = prompt;
+    document.body.appendChild(ta);
+    ta.select();
+    try { document.execCommand('copy'); } catch(e) {}
+    ta.remove();
+    showCopyAnimation('プロンプトコピーしました！\nGemini にコピペしよう！🚀');
+  });
+}
+
+// 可愛いコピー完了モーション
+function showCopyAnimation(message) {
+  const el = document.createElement('div');
+  el.style.cssText = `position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) scale(0.6);
+    background:linear-gradient(135deg,#FF4602,#FF8C42);color:#fff;
+    padding:30px 40px;border-radius:24px;font-size:18px;font-weight:900;
+    box-shadow:0 20px 60px rgba(255,70,2,0.5);z-index:99999;
+    text-align:center;line-height:1.6;font-family:'Hiragino Maru Gothic ProN','Yu Gothic UI',sans-serif;
+    opacity:0;transition:all 0.3s ease;white-space:pre-line;pointer-events:none`;
+  el.textContent = '✨ ' + message;
+  document.body.appendChild(el);
+  // confetti
+  spawnConfetti(el);
+  setTimeout(() => {
+    el.style.opacity = '1';
+    el.style.transform = 'translate(-50%,-50%) scale(1)';
+  }, 50);
+  setTimeout(() => {
+    el.style.opacity = '0';
+    el.style.transform = 'translate(-50%,-50%) scale(0.8)';
+  }, 2200);
+  setTimeout(() => el.remove(), 2700);
+}
+
+// ③ Geminiペースト → 書き込み
+function commitGeminiPaste() {
+  const ta = document.getElementById('gemini-result-paste');
+  if (!ta || !ta.value.trim()) {
+    toast('📋 まずGeminiの結果を貼り付けてね');
+    return;
+  }
+  const text = ta.value.trim();
+  // pipe-separated（| 区切り）の表形式を期待
+  const rows = text.split(/\n/).map(r => r.trim()).filter(r => r && r.includes('|'));
+  if (!rows.length) {
+    toast('⚠️ パイプ区切り（|）の表形式が見つかりません');
+    return;
+  }
+  // ヘッダー行をスキップ（company_name で始まる or "---" 区切り含む）
+  const dataRows = rows.filter(r => !/company_name/i.test(r) && !/^[\s|:\-]+$/.test(r));
+  if (!dataRows.length) {
+    toast('⚠️ データ行が見つかりません');
+    return;
+  }
+  const cols = ['company_name','ceo_name','email','founding_date','anniversary_month','website_url','instagram_url','facebook_url','x_url','tiktok_url','indeed_url','job_antenna_url','agre_url','mynavi_exists','revenue','employees','notes'];
+  let updatedCount = 0;
+  let notFoundCount = 0;
+  for (const row of dataRows) {
+    // 先頭・末尾の | を取り除く
+    const parts = row.replace(/^\|\s*/,'').replace(/\s*\|$/,'').split(/\s*\|\s*/);
+    if (parts.length < 2) continue;
+    const obj = {};
+    cols.forEach((c, i) => { obj[c] = (parts[i] || '').trim(); });
+    const name = obj.company_name;
+    if (!name || name === 'N/A') continue;
+    // 一致する企業を探す
+    const it = items.find(x => x.company && x.company.replace(/\s+/g,'') === name.replace(/\s+/g,''));
+    if (!it) { notFoundCount++; continue; }
+    // 値を埋める（空フィールドのみ、備考は1.2倍以上で上書き）
+    const fillIfEmpty = (key, val) => {
+      if (!val || val === 'N/A') return;
+      if (key === 'researchNotes') {
+        const existing = (it[key] || '').length;
+        if (val.length >= existing * 1.2) it[key] = val;
+      } else if (!it[key]) {
+        it[key] = val;
+      }
+    };
+    fillIfEmpty('person', obj.ceo_name);
+    fillIfEmpty('email', obj.email);
+    fillIfEmpty('foundingDate', obj.founding_date);
+    fillIfEmpty('anniversaryMonth', obj.anniversary_month);
+    fillIfEmpty('website', obj.website_url);
+    fillIfEmpty('instaUrl', obj.instagram_url);
+    fillIfEmpty('fbUrl', obj.facebook_url);
+    fillIfEmpty('xUrl', obj.x_url);
+    fillIfEmpty('tiktokUrl', obj.tiktok_url);
+    fillIfEmpty('indeedUrl', obj.indeed_url);
+    fillIfEmpty('jobAntennaUrl', obj.job_antenna_url);
+    fillIfEmpty('agreUrl', obj.agre_url);
+    fillIfEmpty('revenue', obj.revenue);
+    fillIfEmpty('employeeCount', obj.employees);
+    fillIfEmpty('researchNotes', obj.notes);
+    it.lastUpdatedAt = new Date().toISOString();
+    updatedCount++;
+  }
+  if (updatedCount === 0) {
+    toast('⚠️ 一致する企業が見つかりませんでした');
+    return;
+  }
+  save();
+  // 入力クリア
+  ta.value = '';
+  // 派手な完了アニメ
+  showCopyAnimation('書き込み完了！🎉\n' + updatedCount + ' 社の情報が更新されたよ！');
+  if (notFoundCount > 0) {
+    setTimeout(() => toast('⚠️ ' + notFoundCount + '社は見つからずスキップ'), 2800);
+  }
+}
+
+function selectType(type) {
+  collectType = type || 'general';
+  // 旧UIは削除済み。collectTypeだけ更新してプレビュー再計算
   updateNextAreaPreview();
 }
 
@@ -5301,13 +5702,13 @@ async function startAutoCollect() {
   autoCollectStats = {added: 0, skipped: 0};
 
   // UIを収集モードに
-  document.getElementById('col-btn').style.display = 'none';
-  document.getElementById('col-btn-single').style.display = 'none';
+  const cbtn = document.getElementById('col-btn'); if (cbtn) cbtn.style.display = 'none';
+  const cbtnS = document.getElementById('col-btn-single'); if (cbtnS) cbtnS.style.display = 'none';
   document.getElementById('col-auto-controls').style.display = 'flex';
   document.getElementById('col-prog').style.display = 'block';
   document.getElementById('collect-result').style.display = 'block';
 
-  const limit = parseInt(document.getElementById('col-limit').value) || 50;
+  const limit = 100; // 固定値
   const total = ranking.length;
 
   for (let i = 0; i < remaining.length; i++) {
@@ -5344,6 +5745,7 @@ async function startAutoCollect() {
     // 重複チェック・追加
     const existingPhones = new Set(items.map(x => x.phone).filter(Boolean));
     const existingKeys = new Set(items.map(x => x.company + '|' + (x.addr || x.area)));
+    const addedThisRound = [];
     for (const it of newItems) {
       it.score = calcScore(it);
       if (it.phone && existingPhones.has(it.phone)) { autoCollectStats.skipped++; continue; }
@@ -5353,18 +5755,23 @@ async function startAutoCollect() {
       if (it.phone) existingPhones.add(it.phone);
       existingKeys.add(key);
       autoCollectStats.added++;
+      addedThisRound.push(it.id);
     }
+    // 今日の収集リストに記録
+    if (addedThisRound.length) pushTodayCollect(addedThisRound);
 
     // エリア収集済みに記録
     await markAreaCollected(pref, ind + '|' + area);
     await sb.set('items', 'fw_items', items);
 
     // 結果表示更新
-    document.getElementById('result-added').textContent = autoCollectStats.added;
-    document.getElementById('result-skipped').textContent = autoCollectStats.skipped;
-    document.getElementById('result-total').textContent = items.length;
+    const ra = document.getElementById('result-added'); if (ra) ra.textContent = autoCollectStats.added;
+    const rs = document.getElementById('result-skipped'); if (rs) rs.textContent = autoCollectStats.skipped;
+    const rt = document.getElementById('result-total'); if (rt) rt.textContent = items.length;
     updateBadges();
     updatePrefOptions();
+    renderCollectSummary();
+    renderTodayCollect();
 
     // エリア間のウェイト（API負荷軽減）
     await new Promise(r => setTimeout(r, 800));
@@ -5373,8 +5780,8 @@ async function startAutoCollect() {
   // 完了
   autoCollectRunning = false;
   document.getElementById('col-think').classList.remove('show');
-  document.getElementById('col-btn').style.display = '';
-  document.getElementById('col-btn-single').style.display = '';
+  const cbtn2 = document.getElementById('col-btn'); if (cbtn2) cbtn2.style.display = '';
+  const cbtnS2 = document.getElementById('col-btn-single'); if (cbtnS2) cbtnS2.style.display = '';
   document.getElementById('col-auto-controls').style.display = 'none';
 
   if (autoCollectStopped) {
@@ -5430,7 +5837,7 @@ async function startCollect() {
   if (!ranking.length) { toast('この都道府県のエリアデータがありません。'); return; }
   const area = getNextArea(pref, ind);
   if (!area) { toast('この条件の収集は全エリア完了しています！'); return; }
-  const limit = parseInt(document.getElementById('col-limit').value) || 50;
+  const limit = 100; // 固定値
 
   const btn = document.getElementById('col-btn');
   btn.disabled = true;
@@ -6606,6 +7013,11 @@ document.getElementById('today-label').textContent = (() => {
   updateSNSCounts();
   updateNextAreaPreview();
   renderCollectProgress();
+  // 新収集ページ初期化
+  renderCollectSummary();
+  cleanupOldTodayCollect();
+  renderTodayCollect();
+  setCollectMode('all');
 })();
 </script>
 <div class="toast" id="toast"></div>
