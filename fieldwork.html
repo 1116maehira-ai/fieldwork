@@ -5763,26 +5763,32 @@ function startCollectByMode() {
       toast('📍 起点エリアを選んでください');
       return;
     }
-    // 起点エリアを最優先にする処理（軽量実装）
     const pref = document.getElementById('col-pref')?.value || 'okinawa';
-    const ranking = (AREA_RANKINGS[pref] || []).slice();
+    const orig = (AREA_RANKINGS[pref] || []).slice();
+    if (!orig.length) { startAutoCollect(); return; }
+
     let startKeyword = collectAreaStartDetail;
     if (!startKeyword && collectAreaStartGroup) {
       const grp = (PREF_AREA_GROUPS[pref] || {})[collectAreaStartGroup];
       if (grp && grp.cities.length) startKeyword = grp.cities[0];
     }
-    // ランキング配列の中で起点キーワードを含むエリアを先頭に並べ替え
+
     if (startKeyword) {
-      ranking.sort((a,b) => {
-        const an = (a.name || a || '').toString();
-        const bn = (b.name || b || '').toString();
-        const ah = an.includes(startKeyword) ? 0 : 1;
-        const bh = bn.includes(startKeyword) ? 0 : 1;
-        return ah - bh;
-      });
-      // 一時的に AREA_RANKINGS 上書きはせず、収集側で先頭から進む仕様を期待
-      // （既存実装と整合させるため、上書きせず toast でユーザーに案内）
-      toast('📍 起点：' + startKeyword + ' から順に収集します');
+      // 起点キーワードを含むエリアを先頭にし、それ以外は元順を保つ
+      const matches = [];
+      const others = [];
+      for (const a of orig) {
+        const name = (typeof a === 'string' ? a : (a.name || ''));
+        if (name.includes(startKeyword)) matches.push(a);
+        else others.push(a);
+      }
+      if (matches.length) {
+        // AREA_RANKINGS本体を上書き → startAutoCollectがこれを読む
+        AREA_RANKINGS[pref] = [...matches, ...others];
+        toast('📍 起点：' + startKeyword + ' から順に収集します（' + matches.length + 'エリアを優先）');
+      } else {
+        toast('⚠️ 「' + startKeyword + '」を含むエリアがランキングに見つかりません。通常順で進めます');
+      }
     }
   }
   startAutoCollect();
