@@ -255,6 +255,43 @@ tr:hover td { background: rgba(255,70,2,0.03); cursor: pointer; }
 }
 .fsec { font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--accent); margin: 18px 0 10px; padding-bottom: 5px; border-bottom: 1px solid rgba(255,70,2,0.15); }
 
+/* ── アプローチ開始ボタン用エフェクト ── */
+.approach-go-btn:hover {
+  transform: translateY(-2px) scale(1.05);
+  box-shadow: 0 8px 20px rgba(255,70,2,0.45) !important;
+}
+.approach-go-btn:active {
+  transform: translateY(0) scale(0.98);
+}
+@keyframes approachStartPulse {
+  0%   { transform: scale(1); box-shadow: 0 6px 16px rgba(255,70,2,0.35); }
+  30%  { transform: scale(1.25) rotate(-3deg); box-shadow: 0 12px 30px rgba(255,70,2,0.6), 0 0 40px rgba(255,180,71,0.5); }
+  60%  { transform: scale(1.1) rotate(2deg); box-shadow: 0 10px 24px rgba(255,70,2,0.5), 0 0 30px rgba(255,180,71,0.4); }
+  100% { transform: scale(1); box-shadow: 0 6px 16px rgba(255,70,2,0.35); }
+}
+.approach-go-btn.firing {
+  animation: approachStartPulse 0.6s ease-out;
+}
+.appr-tel-result.selected {
+  background: #FF4602 !important;
+  color: #fff !important;
+  border-color: #FF4602 !important;
+  box-shadow: 0 4px 12px rgba(255,70,2,0.3);
+  transform: translateY(-1px);
+}
+.appr-tel-result:hover {
+  border-color: #FFB347 !important;
+  background: #FFF3EE !important;
+}
+@keyframes confettiFall {
+  0%   { transform: translate(0,0) rotate(0); opacity: 1; }
+  100% { transform: translate(var(--dx),120px) rotate(720deg); opacity: 0; }
+}
+.confetti-piece {
+  position: fixed; width: 10px; height: 10px; pointer-events: none; z-index: 9999;
+  animation: confettiFall 1s ease-out forwards;
+}
+
 /* ── APPROACH TYPE TABS ── */
 .ap-tabs { display: flex; background: var(--surface2); border: 1px solid var(--border2); border-radius: 8px; overflow: hidden; margin-bottom: 16px; }
 .apt { flex: 1; padding: 9px 6px; text-align: center; font-size: 12px; color: var(--text-mid); cursor: pointer; border-right: 1px solid var(--border2); transition: all 0.15s; }
@@ -1108,32 +1145,73 @@ tr:hover td { background: rgba(255,70,2,0.03); cursor: pointer; }
 <div class="page" id="page-approach">
   <div class="topbar">
     <div class="page-title">APPROACH</div>
-    <div class="topbar-sub">アプローチ進行中の企業一覧</div>
+    <div class="topbar-sub">アプローチ進行中の企業一覧（新フェーズシステム）</div>
   </div>
   <div class="content">
-    <div class="stat-row stat-row-4">
-      <div class="stat-card"><div class="stat-label" style="color:var(--accent)">直接訪問</div><div class="stat-value" id="ap-v" style="color:var(--accent)">0</div></div>
-      <div class="stat-card"><div class="stat-label" style="color:var(--blue)">テルアポ</div><div class="stat-value" id="ap-t" style="color:var(--blue)">0</div></div>
-      <div class="stat-card"><div class="stat-label" style="color:var(--orange)">直筆手紙</div><div class="stat-value" id="ap-l" style="color:var(--orange)">0</div></div>
-      <div class="stat-card"><div class="stat-label" style="color:var(--gold)">合計</div><div class="stat-value" id="ap-total" style="color:var(--gold)">0</div></div>
+    <!-- 新フェーズサマリー -->
+    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px">
+      <div class="appr-stat" data-phase="" style="background:#FFF3EE;border:2px solid #FFD0BC;border-radius:14px;padding:12px 18px;text-align:center;cursor:pointer;flex:1;min-width:110px" onclick="filterByApprPhase('')">
+        <div style="font-size:11px;font-weight:700;color:#FF4602">📊 全件</div>
+        <div id="ap-sum-all" style="font-size:28px;font-weight:900;color:#FF4602;line-height:1">0</div>
+      </div>
+      <div class="appr-stat" data-phase="tel_first" style="background:#FFF3EE;border:2px solid #FFD0BC;border-radius:14px;padding:12px 18px;text-align:center;cursor:pointer;flex:1;min-width:110px" onclick="filterByApprPhase('tel_first')">
+        <div style="font-size:11px;font-weight:700;color:#FF4602">📞 電話①</div>
+        <div id="ap-sum-tel1" style="font-size:28px;font-weight:900;color:#FF4602;line-height:1">0</div>
+      </div>
+      <div class="appr-stat" data-phase="tel_repeat" style="background:#FFFBEB;border:2px solid #FCD34D;border-radius:14px;padding:12px 18px;text-align:center;cursor:pointer;flex:1;min-width:110px" onclick="filterByApprPhase('tel_repeat')">
+        <div style="font-size:11px;font-weight:700;color:#92400E">🔄 再電</div>
+        <div id="ap-sum-telr" style="font-size:28px;font-weight:900;color:#92400E;line-height:1">0</div>
+      </div>
+      <div class="appr-stat" data-phase="visit_ready" style="background:#ECFDF5;border:2px solid #86EFAC;border-radius:14px;padding:12px 18px;text-align:center;cursor:pointer;flex:1;min-width:110px" onclick="filterByApprPhase('visit_ready')">
+        <div style="font-size:11px;font-weight:700;color:#059669">🚀 訪問可</div>
+        <div id="ap-sum-vr" style="font-size:28px;font-weight:900;color:#059669;line-height:1">0</div>
+      </div>
+      <div class="appr-stat" data-phase="letter" style="background:#F5F3FF;border:2px solid #C4B5FD;border-radius:14px;padding:12px 18px;text-align:center;cursor:pointer;flex:1;min-width:110px" onclick="filterByApprPhase('letter')">
+        <div style="font-size:11px;font-weight:700;color:#7C3AED">✉️ 手紙</div>
+        <div id="ap-sum-letter" style="font-size:28px;font-weight:900;color:#7C3AED;line-height:1">0</div>
+      </div>
+      <div class="appr-stat" data-phase="dormant" style="background:#EEF2FF;border:2px solid #C7D2FE;border-radius:14px;padding:12px 18px;text-align:center;cursor:pointer;flex:1;min-width:110px" onclick="filterByApprPhase('dormant')">
+        <div style="font-size:11px;font-weight:700;color:#6366F1">💤 休眠中</div>
+        <div id="ap-sum-dormant" style="font-size:28px;font-weight:900;color:#6366F1;line-height:1">0</div>
+      </div>
+      <div class="appr-stat" data-phase="meeting_won" style="background:#F0FDF4;border:2px solid #16A34A;border-radius:14px;padding:12px 18px;text-align:center;cursor:pointer;flex:1;min-width:110px" onclick="filterByApprPhase('meeting_won')">
+        <div style="font-size:11px;font-weight:700;color:#16A34A">🎯 商談獲得</div>
+        <div id="ap-sum-won" style="font-size:28px;font-weight:900;color:#16A34A;line-height:1">0</div>
+      </div>
     </div>
+
     <div class="filter-bar">
       <input class="fi fi-wide" type="text" id="ap-search" placeholder="会社名で検索..." oninput="renderApproach()">
       <select class="fi" id="ap-phase" onchange="renderApproach()">
         <option value="">全フェーズ</option>
-        <option value="visit">直接訪問</option><option value="tel">テルアポ</option><option value="letter">直筆手紙</option>
+        <option value="tel_first">📞 電話①</option>
+        <option value="tel_repeat">🔄 再電</option>
+        <option value="visit_ready">🚀 訪問可</option>
+        <option value="visit_done">🚶 訪問済</option>
+        <option value="letter">✉️ 手紙送付</option>
+        <option value="dormant">💤 休眠中（全て）</option>
+        <option value="dormant_2w">💤 2週休眠</option>
+        <option value="dormant_5m">❄️ 5ヶ月休眠</option>
+        <option value="meeting_won">🎯 商談獲得</option>
+      </select>
+      <select class="fi" id="ap-sort" onchange="renderApproach()">
+        <option value="recent">直近の行動順</option>
+        <option value="started">開始日が新しい順</option>
+        <option value="dormant_close">休眠明け間近順</option>
+        <option value="rejects_high">拒否回数多い順</option>
+        <option value="company">会社名順</option>
       </select>
     </div>
     <div class="table-wrap">
       <table>
         <thead><tr>
-          <th>会社名</th><th>フェーズ</th><th>業種・エリア</th><th>アプローチ履歴</th><th>次回予定</th><th></th>
+          <th>会社名</th><th>フェーズ</th><th>業種・エリア</th><th>履歴</th><th>次のアクション</th><th></th>
         </tr></thead>
         <tbody id="ap-tbody"></tbody>
       </table>
       <div class="empty" id="ap-empty" style="display:none">
         <div class="empty-ico"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"></path><path d="m3.5 11.5 3 3"></path><path d="M12 6l5 5"></path><path d="m6 13 3-3"></path><path d="m13 6-2 2-3.5 3.5"></path><path d="m21 3-5.23 5.23"></path><path d="m15 9 3-3 3-3-3 3"></path></svg></div>
-        <div>アプローチ中の企業がありません<br>アタックリストから「アプローチ開始」してください</div>
+        <div>アプローチ中の企業がありません<br>アタックリストから「🚀 開始」してください</div>
       </div>
     </div>
   </div>
@@ -1719,6 +1797,305 @@ const PHASE = {
   apo:          { label:'アポ獲得',     icon:`<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>`, pbcls:'pb-apo'    },
 };
 
+// ══════════════════════════════════════════
+// 新アプローチフェーズシステム（approach）
+// 既存のphase/logsとは別系統で動作。共存可能。
+// ══════════════════════════════════════════
+const APPROACH_PHASE = {
+  not_started: {
+    label: '未着手',
+    color: '#9CA3AF',
+    bg: '#F3F4F6',
+    description: 'まだアプローチを開始していない',
+    icon: '⚪',
+  },
+  tel_first: {
+    label: '電話①',
+    color: '#FF4602',
+    bg: '#FFF3EE',
+    description: '初回電話アプローチ中',
+    icon: '📞',
+  },
+  tel_repeat: {
+    label: '再電',
+    color: '#F59E0B',
+    bg: '#FFFBEB',
+    description: '電話再アプローチ中（休眠明け含む）',
+    icon: '🔄',
+  },
+  visit_ready: {
+    label: '訪問可',
+    color: '#059669',
+    bg: '#ECFDF5',
+    description: '飛び込みOK判定（POINT4以上）',
+    icon: '🚀',
+  },
+  visit_done: {
+    label: '訪問済',
+    color: '#0891B2',
+    bg: '#ECFEFF',
+    description: '飛び込み訪問実施済み',
+    icon: '🚶',
+  },
+  letter: {
+    label: '手紙送付',
+    color: '#7C3AED',
+    bg: '#F5F3FF',
+    description: '直筆手紙送付済（6週間後に再電）',
+    icon: '✉️',
+  },
+  dormant_2w: {
+    label: '休眠2週',
+    color: '#6366F1',
+    bg: '#EEF2FF',
+    description: '2週間休眠中（不在/後日）',
+    icon: '💤',
+  },
+  dormant_5m: {
+    label: '休眠5ヶ月',
+    color: '#DC2626',
+    bg: '#FEF2F2',
+    description: '5ヶ月休眠中（拒否4回累積）',
+    icon: '❄️',
+  },
+  meeting_won: {
+    label: '商談獲得',
+    color: '#16A34A',
+    bg: '#F0FDF4',
+    description: 'ゴール！',
+    icon: '🎯',
+  },
+  rejected_final: {
+    label: '完全拒否',
+    color: '#7F1D1D',
+    bg: '#FEE2E2',
+    description: '完全に断られた',
+    icon: '🛑',
+  },
+};
+
+// アプローチデータの初期化（既存企業に「アプローチ開始する」操作）
+function initApproach(it, opts={}) {
+  // 過去のlogsはDBに保持、approachは新規作成（仕切り直し）
+  it.approach = {
+    started: true,
+    startedAt: new Date().toISOString(),
+    currentPhase: 'tel_first',
+    callCount: 0,
+    visitCount: 0,
+    rejectCount: 0,
+    letterSentAt: null,
+    dormantUntil: null,
+    dormantReason: null,
+    history: [],
+    lastResult: null,
+    lastActionAt: null,
+  };
+  if (opts.firstAction) it.approach.history.push(opts.firstAction);
+  return it.approach;
+}
+
+// 休眠から自動復帰（ページ表示のたびに呼ぶ）
+function checkDormantRecovery(it) {
+  const a = it.approach;
+  if (!a || !a.dormantUntil) return false;
+  const today = todayJST();
+  if (today >= a.dormantUntil) {
+    const prevPhase = a.currentPhase;
+    a.currentPhase = 'tel_repeat'; // 休眠明けは必ず再電フェーズ
+    a.history.push({
+      ts: new Date().toISOString(),
+      action: 'dormant_recovered',
+      from: prevPhase,
+      to: 'tel_repeat',
+      memo: '休眠期間が終了しました（自動復帰）',
+    });
+    a.dormantUntil = null;
+    a.dormantReason = null;
+    return true;
+  }
+  return false;
+}
+
+// 全企業の休眠を一括チェック（save時などに）
+function recoverAllDormant() {
+  let recovered = 0;
+  for (const it of items) {
+    if (checkDormantRecovery(it)) recovered++;
+  }
+  return recovered;
+}
+
+// アプローチ記録：電話結果を反映
+// result: 'reached'(会えた) | 'absent'(不在) | 'reschedule'(後日) | 'rejected'(お断り) | 'meeting'(商談獲得)
+function recordTelResult(it, result, opts={}) {
+  if (!it.approach) initApproach(it);
+  const a = it.approach;
+  a.callCount++;
+  a.lastResult = result;
+  a.lastActionAt = new Date().toISOString();
+
+  const entry = {
+    ts: a.lastActionAt,
+    action: 'tel',
+    result,
+    phase: a.currentPhase,
+    callNo: a.callCount,
+    memo: opts.memo || '',
+    points: opts.points || null,
+  };
+
+  if (result === 'reached') {
+    // 会えた → 飛び込み判定
+    const score = calcVisitScore(it, opts.points);
+    entry.visitScore = score;
+    if (score >= 4) {
+      a.currentPhase = 'visit_ready';
+      entry.nextPhase = 'visit_ready';
+    } else {
+      // 3点以下：2週間休眠
+      a.currentPhase = 'dormant_2w';
+      a.dormantUntil = addDaysJST(14);
+      a.dormantReason = 'cooldown_2w';
+      entry.nextPhase = 'dormant_2w';
+      entry.dormantUntil = a.dormantUntil;
+    }
+  } else if (result === 'absent' || result === 'reschedule') {
+    // 不在・後日：2週間休眠
+    a.currentPhase = 'dormant_2w';
+    a.dormantUntil = result === 'reschedule' && opts.rescheduleDate
+      ? opts.rescheduleDate
+      : addDaysJST(14);
+    a.dormantReason = result === 'reschedule' ? 'reschedule' : 'cooldown_2w';
+    entry.nextPhase = 'dormant_2w';
+    entry.dormantUntil = a.dormantUntil;
+  } else if (result === 'rejected') {
+    a.rejectCount++;
+    if (a.rejectCount >= 4) {
+      // 4回拒否で5ヶ月休眠
+      a.currentPhase = 'dormant_5m';
+      a.dormantUntil = addDaysJST(150);
+      a.dormantReason = 'rejected_4times_5m';
+    } else {
+      a.currentPhase = 'dormant_2w';
+      a.dormantUntil = addDaysJST(14);
+      a.dormantReason = 'cooldown_2w';
+    }
+    entry.nextPhase = a.currentPhase;
+    entry.rejectCount = a.rejectCount;
+    entry.dormantUntil = a.dormantUntil;
+  } else if (result === 'meeting') {
+    a.currentPhase = 'meeting_won';
+    entry.nextPhase = 'meeting_won';
+  }
+
+  a.history.push(entry);
+  return entry;
+}
+
+// 訪問結果記録
+function recordVisitResult(it, result, opts={}) {
+  if (!it.approach) initApproach(it);
+  const a = it.approach;
+  a.visitCount++;
+  a.lastResult = result;
+  a.lastActionAt = new Date().toISOString();
+  const entry = {
+    ts: a.lastActionAt,
+    action: 'visit',
+    result,
+    phase: a.currentPhase,
+    visitNo: a.visitCount,
+    memo: opts.memo || '',
+  };
+  if (result === 'meeting') {
+    a.currentPhase = 'meeting_won';
+    entry.nextPhase = 'meeting_won';
+  } else if (result === 'reached') {
+    // 会えたが商談に至らず → 再電フェーズに戻す
+    a.currentPhase = 'tel_repeat';
+    a.dormantUntil = addDaysJST(14);
+    a.dormantReason = 'cooldown_2w';
+    entry.nextPhase = 'dormant_2w';
+  } else if (result === 'absent') {
+    // 不在 → 直筆手紙へ
+    a.currentPhase = 'letter';
+    a.letterSentAt = null; // 手紙はまだ送ってない、これから準備
+    entry.nextPhase = 'letter';
+  } else if (result === 'rejected') {
+    a.rejectCount++;
+    a.currentPhase = a.rejectCount >= 4 ? 'dormant_5m' : 'dormant_2w';
+    a.dormantUntil = addDaysJST(a.rejectCount >= 4 ? 150 : 14);
+    a.dormantReason = a.rejectCount >= 4 ? 'rejected_4times_5m' : 'cooldown_2w';
+    entry.nextPhase = a.currentPhase;
+    entry.rejectCount = a.rejectCount;
+  }
+  a.history.push(entry);
+  return entry;
+}
+
+// 直筆手紙送付の記録（送ったボタン押下時）
+function recordLetterSent(it) {
+  if (!it.approach) initApproach(it);
+  const a = it.approach;
+  a.letterSentAt = new Date().toISOString();
+  a.lastActionAt = a.letterSentAt;
+  // 6週間（42日）後に再電フェーズに自動復帰
+  a.dormantUntil = addDaysJST(42);
+  a.dormantReason = 'letter_followup_6w';
+  a.currentPhase = 'dormant_2w'; // 表示上は休眠扱い、復帰後はtel_repeatに
+  a.history.push({
+    ts: a.letterSentAt,
+    action: 'letter_sent',
+    phase: 'letter',
+    nextPhase: 'dormant_2w',
+    dormantUntil: a.dormantUntil,
+    memo: '直筆手紙を送付。6週間後に再電フェーズに復帰。',
+  });
+}
+
+// 飛び込みPOINT計算
+function calcVisitScore(it, points) {
+  if (!points) return 0;
+  let score = 0;
+  if (points.knowsContactName) score++;
+  if (points.talkedToContact) score++;
+  if (points.hasIssueSignal) score++;
+  if (points.goodVibe) score++;
+  // WEBとIGは自動取得
+  if (it.website) score++;
+  if (it.instaUrl) score++;
+  return score;
+}
+
+// JST日付加算
+function addDaysJST(days) {
+  const d = new Date();
+  d.setDate(d.getDate() + days);
+  // JST日付文字列
+  const jst = new Date(d.getTime() + 9*60*60*1000);
+  return jst.toISOString().slice(0, 10);
+}
+
+// アプローチ進行度（メインの数値1つ：0=未着手、100=商談獲得）
+function approachProgress(it) {
+  const a = it.approach;
+  if (!a || !a.started) return 0;
+  const map = {
+    not_started: 0,
+    tel_first: 15,
+    tel_repeat: 25,
+    dormant_2w: 30,
+    visit_ready: 50,
+    visit_done: 60,
+    letter: 70,
+    dormant_5m: 10,  // 5ヶ月休眠は実質振り出し近く
+    meeting_won: 100,
+    rejected_final: 0,
+  };
+  return map[a.currentPhase] ?? 0;
+}
+
 const SRCMAP = { gmap:'src-gmap', tdb:'src-tdb', ind:'src-ind', sns:'src-sns', man:'src-man' };
 const SRCLBL = { gmap:'G-MAP', tdb:'TDB', ind:'INDEED', sns:'SNS', man:'MANUAL' };
 
@@ -1791,7 +2168,12 @@ function checkAutoPhase(it) {
 }
 
 async function save() {
+  // 休眠期限が来た企業を自動復帰させる
+  const recovered = recoverAllDormant();
   try { await sb.set('items', 'fw_items', items); } catch(e) {}
+  if (recovered > 0) {
+    toast('💤 ' + recovered + '社が休眠から復帰しました（再電フェーズに移行）');
+  }
   updateBadges();
   updatePrefOptions();
   renderList();
@@ -2185,14 +2567,48 @@ function renderList() {
           : '<span style="font-size:11px;color:#CCC">未調査</span>') +
       '</td>' +
 
-      // フェーズ
+      // フェーズ（approach優先、なければ既存phase）
       '<td>' +
-        (ph ? '<span style="font-size:11px;padding:3px 8px;border-radius:6px;background:var(--accent-dim);color:var(--accent)">' + ph.label + '</span>' : '<span style="font-size:11px;color:#CCC">未着手</span>') +
+        (() => {
+          const a = it.approach;
+          if (a && a.started) {
+            const p = APPROACH_PHASE[a.currentPhase] || APPROACH_PHASE.not_started;
+            const dormantInfo = a.dormantUntil
+              ? '<div style="font-size:9px;color:' + p.color + ';margin-top:3px;font-weight:600">~ ' + a.dormantUntil + '</div>'
+              : '';
+            const counts = [];
+            if (a.callCount > 0) counts.push('📞' + a.callCount);
+            if (a.visitCount > 0) counts.push('🚶' + a.visitCount);
+            if (a.rejectCount > 0) counts.push('🛑' + a.rejectCount);
+            return '<span style="font-size:11px;padding:3px 8px;border-radius:6px;background:' + p.bg + ';color:' + p.color + ';font-weight:700">' + p.icon + ' ' + p.label + '</span>' +
+              dormantInfo +
+              (counts.length ? '<div style="font-size:9px;color:#9CA3AF;margin-top:3px">' + counts.join(' / ') + '</div>' : '');
+          }
+          return ph
+            ? '<span style="font-size:11px;padding:3px 8px;border-radius:6px;background:var(--accent-dim);color:var(--accent)">' + ph.label + '</span>'
+            : '<span style="font-size:11px;color:#CCC">⚪ 未着手</span>';
+        })() +
       '</td>' +
 
-      // アクション
+      // アクション：開始ボタン（大きく・丸ゴシック）
       '<td>' +
-        '<button onclick="event.stopPropagation();startApproach(' + it.id + ')" style="background:var(--accent);color:#fff;border:none;border-radius:6px;padding:6px 10px;font-size:11px;font-weight:700;cursor:pointer">開始</button>' +
+        (() => {
+          const a = it.approach;
+          // 商談獲得済 → 完了マーク
+          if (a && a.currentPhase === 'meeting_won') {
+            return '<div style="background:#16A34A;color:#fff;padding:8px 12px;border-radius:10px;font-size:12px;font-weight:800;text-align:center">🎯 完了</div>';
+          }
+          // 休眠中 → 再開ボタン（無効）
+          if (a && a.dormantUntil && todayJST() < a.dormantUntil) {
+            return '<div style="background:#F3F4F6;color:#6B7280;padding:8px 12px;border-radius:10px;font-size:11px;font-weight:700;text-align:center;line-height:1.3">💤 休眠中<br><span style="font-size:9px">' + a.dormantUntil + '~</span></div>';
+          }
+          // 開始済み → アプローチ実行ボタン（オレンジ）
+          if (a && a.started) {
+            return '<button onclick="event.stopPropagation();openApproachAction(' + it.id + ')" class="approach-go-btn" style="background:linear-gradient(135deg,#FF4602,#FF6B35);color:#fff;border:none;border-radius:14px;padding:12px 18px;font-size:14px;font-weight:900;cursor:pointer;font-family:\'Hiragino Maru Gothic ProN\',\'Yu Gothic UI\',sans-serif;box-shadow:0 4px 12px rgba(255,70,2,0.3);transition:all 0.2s">▶ 続ける</button>';
+          }
+          // 未着手 → 開始ボタン（大きく華やか）
+          return '<button onclick="event.stopPropagation();startApproachNew(' + it.id + ',this)" class="approach-go-btn" style="background:linear-gradient(135deg,#FF4602,#FFB347);color:#fff;border:none;border-radius:16px;padding:14px 22px;font-size:16px;font-weight:900;cursor:pointer;font-family:\'Hiragino Maru Gothic ProN\',\'Yu Gothic UI\',sans-serif;box-shadow:0 6px 16px rgba(255,70,2,0.35);transition:all 0.2s;letter-spacing:0.05em">🚀 開始</button>';
+        })() +
       '</td>' +
 
     '</tr>';
@@ -2202,50 +2618,127 @@ function renderList() {
 
 // ── RENDER APPROACH ──
 function renderApproach() {
-  const search = document.getElementById('ap-search').value.toLowerCase();
-  const phase = document.getElementById('ap-phase').value;
-  const list = items.filter(it => {
-    if (!['visit','tel','letter'].includes(it.phase)) return false;
+  const search = (document.getElementById('ap-search')?.value || '').toLowerCase();
+  const phaseF = document.getElementById('ap-phase')?.value || '';
+  const sortF = document.getElementById('ap-sort')?.value || 'recent';
+  const today = todayJST();
+
+  // 新フェーズシステム：approachが開始済みの企業を抽出
+  const allApproaching = items.filter(it => it.approach && it.approach.started);
+
+  // フィルタ
+  let list = allApproaching.filter(it => {
     if (search && !it.company.toLowerCase().includes(search)) return false;
-    if (phase && it.phase !== phase) return false;
+    if (phaseF) {
+      // 「dormant」一括の場合は2w/5m両方を含める
+      if (phaseF === 'dormant') {
+        if (!['dormant_2w','dormant_5m'].includes(it.approach.currentPhase)) return false;
+      } else if (it.approach.currentPhase !== phaseF) return false;
+    }
     return true;
   });
 
-  document.getElementById('ap-v').textContent = items.filter(x=>x.phase==='visit').length;
-  document.getElementById('ap-t').textContent = items.filter(x=>x.phase==='tel').length;
-  document.getElementById('ap-l').textContent = items.filter(x=>x.phase==='letter').length;
-  document.getElementById('ap-total').textContent = list.length;
+  // ソート
+  list.sort((a, b) => {
+    const aA = a.approach, bA = b.approach;
+    if (sortF === 'recent')
+      return (bA.lastActionAt || bA.startedAt || '').localeCompare(aA.lastActionAt || aA.startedAt || '');
+    if (sortF === 'started')
+      return (bA.startedAt || '').localeCompare(aA.startedAt || '');
+    if (sortF === 'dormant_close') {
+      // 休眠明け間近：dormantUntilがあるものを今日に近い順
+      const ad = aA.dormantUntil || '9999-99-99';
+      const bd = bA.dormantUntil || '9999-99-99';
+      return ad.localeCompare(bd);
+    }
+    if (sortF === 'rejects_high')
+      return (bA.rejectCount || 0) - (aA.rejectCount || 0);
+    if (sortF === 'company') return a.company.localeCompare(b.company);
+    return 0;
+  });
+
+  // サマリーカード更新
+  const counts = {
+    all: allApproaching.length,
+    tel_first: allApproaching.filter(x => x.approach.currentPhase === 'tel_first').length,
+    tel_repeat: allApproaching.filter(x => x.approach.currentPhase === 'tel_repeat').length,
+    visit_ready: allApproaching.filter(x => x.approach.currentPhase === 'visit_ready').length,
+    letter: allApproaching.filter(x => x.approach.currentPhase === 'letter').length,
+    dormant: allApproaching.filter(x => ['dormant_2w','dormant_5m'].includes(x.approach.currentPhase)).length,
+    won: allApproaching.filter(x => x.approach.currentPhase === 'meeting_won').length,
+  };
+  const setIf = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+  setIf('ap-sum-all', counts.all);
+  setIf('ap-sum-tel1', counts.tel_first);
+  setIf('ap-sum-telr', counts.tel_repeat);
+  setIf('ap-sum-vr', counts.visit_ready);
+  setIf('ap-sum-letter', counts.letter);
+  setIf('ap-sum-dormant', counts.dormant);
+  setIf('ap-sum-won', counts.won);
+  // 旧サマリ用 (互換)
+  setIf('ap-v', counts.visit_ready);
+  setIf('ap-t', counts.tel_first + counts.tel_repeat);
+  setIf('ap-l', counts.letter);
+  setIf('ap-total', counts.all);
 
   const tbody = document.getElementById('ap-tbody');
   const empty = document.getElementById('ap-empty');
-  if (!list.length) { tbody.innerHTML=''; empty.style.display='block'; return; }
-  empty.style.display='none';
+  if (!tbody) return;
+  if (!list.length) { tbody.innerHTML = ''; if (empty) empty.style.display = 'block'; return; }
+  if (empty) empty.style.display = 'none';
 
-  const today = todayJST();
-  tbody.innerHTML = list.map((it, idx) => {
-    const ph = PHASE[it.phase];
-    const an = checkAutoPhase(it);
-    const overdue = it.nextDate && it.nextDate<today;
-    const trailDots = (it.logs||[]).slice(-8).map(l=>{
-      let c='apd-ng';
-      if(l.result==='アポ獲得') c='apd-ok';
-      else if(['会えた','出た','後日折返し','送付済み','反応あり'].includes(l.result)) c='apd-mid';
-      else if(l.type==='letter') c='apd-let';
-      return `<div class="ap-dot ${c}" title="${l.date} ${l.result}"></div>`;
+  tbody.innerHTML = list.map(it => {
+    const a = it.approach;
+    const p = APPROACH_PHASE[a.currentPhase] || APPROACH_PHASE.not_started;
+    const isDormantNow = a.dormantUntil && today < a.dormantUntil;
+    const dormantDaysLeft = a.dormantUntil
+      ? Math.max(0, Math.ceil((new Date(a.dormantUntil) - new Date(today)) / (1000*60*60*24)))
+      : 0;
+
+    // 履歴ドット（直近8件）
+    const trailDots = (a.history || []).slice(-8).map(h => {
+      let c = '#9CA3AF', t = h.action;
+      if (h.result === 'meeting') c = '#16A34A';
+      else if (h.result === 'reached') c = '#3B82F6';
+      else if (h.result === 'rejected') c = '#DC2626';
+      else if (h.result === 'absent' || h.result === 'reschedule') c = '#F59E0B';
+      else if (h.action === 'letter_sent') c = '#7C3AED';
+      else if (h.action === 'dormant_recovered') c = '#86EFAC';
+      return '<div title="' + (h.ts||'').slice(0,16).replace('T',' ') + ' / ' + (h.result || h.action) + '" style="width:7px;height:7px;border-radius:50%;background:' + c + '"></div>';
     }).join('');
-    return `
-      <tr onclick="openDetail(${it.id})">
-        <td><div class="co-name">${it.company}</div><div class="co-sub">${it.person||'—'} · ${it.area}</div></td>
-        <td>
-          <span class="pb ${ph?.pbcls||''}">${ph?.icon} ${ph?.label}</span>
-          ${an?`<div style="margin-top:3px"><span class="auto-alert">! ${PHASE[an]?.label}へ移行推奨</span></div>`:''}
-        </td>
-        <td><div style="font-size:12px">${it.industry}</div><div style="font-size:10px;color:var(--text-mid)">${it.area}</div></td>
-        <td><div class="ap-trail">${trailDots}</div><div class="ap-count">${(it.logs||[]).length}回</div></td>
-        <td style="font-size:12px;color:${overdue?'var(--red)':'var(--text-mid)'}">${it.nextDate||(overdue?'期日超過':'未設定')}</td>
-        <td><button class="btn btn-orange btn-xs" onclick="event.stopPropagation();openAp(${it.id})">+記録</button></td>
-      </tr>`;
+
+    // 次のアクション
+    let nextActionHtml = '';
+    if (a.currentPhase === 'meeting_won') {
+      nextActionHtml = '<div style="background:#16A34A;color:#fff;padding:6px 10px;border-radius:8px;font-size:11px;font-weight:800;text-align:center">🎯 完了</div>';
+    } else if (isDormantNow) {
+      nextActionHtml = '<div style="font-size:11px;color:#6366F1;font-weight:700">💤 残 ' + dormantDaysLeft + '日</div>' +
+        '<div style="font-size:9px;color:#9CA3AF">~' + a.dormantUntil + '</div>';
+    } else {
+      nextActionHtml = '<button class="btn btn-orange btn-xs" onclick="event.stopPropagation();openApproachAction(' + it.id + ')" style="font-weight:800;font-size:11px;font-family:\'Hiragino Maru Gothic ProN\',sans-serif">▶ ' + (p.label) + '</button>';
+    }
+
+    return '<tr onclick="openDetail(' + it.id + ')">' +
+      '<td><div class="co-name">' + it.company + '</div><div class="co-sub">' + (it.person || '—') + ' · ' + (it.area || '') + '</div></td>' +
+      '<td>' +
+        '<span style="display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:8px;background:' + p.bg + ';color:' + p.color + ';font-size:11px;font-weight:800">' + p.icon + ' ' + p.label + '</span>' +
+        (a.rejectCount > 0 ? '<div style="font-size:10px;color:#DC2626;margin-top:3px;font-weight:700">🛑 拒否' + a.rejectCount + '回</div>' : '') +
+      '</td>' +
+      '<td><div style="font-size:12px">' + (it.industry || '—') + '</div><div style="font-size:10px;color:var(--text-mid)">' + (it.area || '') + '</div></td>' +
+      '<td><div style="display:flex;gap:3px;align-items:center;flex-wrap:wrap">' + trailDots + '</div>' +
+        '<div style="font-size:10px;color:var(--text-mid);margin-top:3px">📞' + a.callCount + ' / 🚶' + a.visitCount + '</div></td>' +
+      '<td>' + nextActionHtml + '</td>' +
+      '<td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openDetail(' + it.id + ')">詳細</button></td>' +
+      '</tr>';
   }).join('');
+}
+
+// サマリーカードからのフィルタ切替
+function filterByApprPhase(phase) {
+  const sel = document.getElementById('ap-phase');
+  if (!sel) return;
+  sel.value = phase;
+  renderApproach();
 }
 
 // ── TODAY / ACTION QUEUE ──
@@ -2511,6 +3004,312 @@ let curAptType = 'visit';
 let curSelectedResult = '';
 
 function startApproach(id) { openAp(id); }
+
+// ══════════════════════════════════════════
+// 新アプローチシステム：開始フロー
+// ══════════════════════════════════════════
+
+// 開始ボタン押下：エフェクト発動 → 確認 → アプローチ初期化 → アクションモーダル
+function startApproachNew(id, btnEl) {
+  const it = items.find(x => x.id === id);
+  if (!it) return;
+
+  // 視覚エフェクト
+  if (btnEl) {
+    btnEl.classList.add('firing');
+    spawnConfetti(btnEl);
+    btnEl.disabled = true;
+  }
+
+  // 過去のlogsはDBに残しつつ、approachは新規スタート（仕切り直し）
+  const hadHistory = (it.logs && it.logs.length > 0);
+  const confirmMsg = hadHistory
+    ? '「' + it.company + '」のアプローチを開始します。\n\n過去のアプローチ履歴はDBに保持されますが、\n進捗は仕切り直して0からスタートします。\n\n続けますか？'
+    : '「' + it.company + '」のアプローチを開始します。';
+
+  setTimeout(() => {
+    if (hadHistory && !confirm(confirmMsg)) {
+      if (btnEl) {
+        btnEl.classList.remove('firing');
+        btnEl.disabled = false;
+      }
+      return;
+    }
+    initApproach(it);
+    save();
+    toast('🚀 アプローチを開始しました！');
+    // すぐ電話アクションモーダルを開く
+    setTimeout(() => openApproachAction(id), 400);
+  }, 500); // エフェクト完了を待つ
+}
+
+// 紙吹雪エフェクト
+function spawnConfetti(targetEl) {
+  const rect = targetEl.getBoundingClientRect();
+  const cx = rect.left + rect.width / 2;
+  const cy = rect.top + rect.height / 2;
+  const colors = ['#FF4602','#FFB347','#FFE066','#7CDD9F','#5BB6FF','#C77DFF'];
+  for (let i = 0; i < 18; i++) {
+    const piece = document.createElement('div');
+    piece.className = 'confetti-piece';
+    piece.style.left = cx + 'px';
+    piece.style.top = cy + 'px';
+    piece.style.background = colors[i % colors.length];
+    piece.style.borderRadius = (i % 3 === 0) ? '50%' : '2px';
+    const dx = (Math.random() - 0.5) * 200;
+    piece.style.setProperty('--dx', dx + 'px');
+    piece.style.animationDelay = (Math.random() * 0.15) + 's';
+    document.body.appendChild(piece);
+    setTimeout(() => piece.remove(), 1300);
+  }
+}
+
+// アプローチアクション統合モーダル：現在のフェーズに応じた画面を出す
+function openApproachAction(id) {
+  const it = items.find(x => x.id === id);
+  if (!it) return;
+  if (!it.approach || !it.approach.started) {
+    initApproach(it);
+  }
+  curApprId = id;
+  // フェーズに応じてどのアクションを表示するか分岐
+  const phase = it.approach.currentPhase;
+  if (phase === 'tel_first' || phase === 'tel_repeat') {
+    openTelActionModal(it);
+  } else if (phase === 'visit_ready' || phase === 'visit_done') {
+    openVisitActionModal(it);
+  } else if (phase === 'letter') {
+    openLetterActionModal(it);
+  } else if (phase === 'meeting_won') {
+    toast('🎯 商談獲得済みです！');
+  } else {
+    // dormant等：とりあえず電話モーダル
+    openTelActionModal(it);
+  }
+}
+
+let curApprId = null;
+
+// 電話アクションモーダル
+function openTelActionModal(it) {
+  const modal = document.getElementById('m-appr-tel') || createTelActionModal();
+  document.getElementById('appr-tel-company').textContent = it.company;
+  document.getElementById('appr-tel-phone').textContent = it.phone || '電話番号未登録';
+  document.getElementById('appr-tel-callno').textContent = (it.approach.callCount + 1);
+  // 既知情報
+  const knownInfo = [];
+  if (it.person) knownInfo.push('👤 ' + it.person);
+  if (it.industry) knownInfo.push('🏭 ' + it.industry);
+  if (it.foundingDate) knownInfo.push('🎂 創業 ' + it.foundingDate);
+  if (it.website) knownInfo.push('🌐 HP有');
+  if (it.instaUrl) knownInfo.push('📷 IG有');
+  document.getElementById('appr-tel-known').innerHTML = knownInfo.length
+    ? knownInfo.map(k => '<span style="display:inline-block;font-size:11px;padding:3px 9px;background:#FFF3EE;color:#FF4602;border-radius:6px;margin-right:4px;font-weight:600">' + k + '</span>').join('')
+    : '<span style="font-size:11px;color:#9CA3AF">登録情報なし</span>';
+
+  // POINTチェックボックス初期化
+  ['pt-name','pt-talked','pt-issue','pt-vibe'].forEach(pid => {
+    const el = document.getElementById(pid);
+    if (el) el.checked = false;
+  });
+  document.getElementById('pt-web').checked = !!it.website;
+  document.getElementById('pt-insta').checked = !!it.instaUrl;
+  updateVisitScoreDisplay();
+
+  // メモクリア
+  document.getElementById('appr-tel-memo').value = '';
+
+  // 結果ボタンの選択リセット
+  document.querySelectorAll('.appr-tel-result').forEach(b => b.classList.remove('selected'));
+  document.getElementById('appr-tel-result-area').dataset.result = '';
+
+  modal.classList.add('open');
+}
+
+// 電話結果ボタンを選択
+function selectTelResult(btnEl, result) {
+  document.querySelectorAll('.appr-tel-result').forEach(b => b.classList.remove('selected'));
+  btnEl.classList.add('selected');
+  document.getElementById('appr-tel-result-area').dataset.result = result;
+
+  // 「会えた」「商談獲得」以外はPOINTセクション非表示
+  const ptSection = document.getElementById('appr-tel-pt-section');
+  ptSection.style.display = (result === 'reached') ? 'block' : 'none';
+}
+
+// POINTスコア表示更新
+function updateVisitScoreDisplay() {
+  const ids = ['pt-name','pt-talked','pt-issue','pt-vibe','pt-web','pt-insta'];
+  let score = 0;
+  ids.forEach(id => {
+    const el = document.getElementById(id);
+    if (el && el.checked) score++;
+  });
+  const scoreEl = document.getElementById('appr-tel-score');
+  const judgeEl = document.getElementById('appr-tel-judge');
+  if (scoreEl) scoreEl.textContent = score;
+  if (judgeEl) {
+    if (score >= 4) {
+      judgeEl.innerHTML = '<span style="color:#16A34A;font-weight:900">✅ 飛び込みOK！</span>';
+      judgeEl.style.background = '#F0FDF4';
+    } else {
+      judgeEl.innerHTML = '<span style="color:#F59E0B;font-weight:900">⏸ 飛び込み見送り（2週間休眠）</span>';
+      judgeEl.style.background = '#FFFBEB';
+    }
+  }
+}
+
+// 電話結果を保存
+function saveTelResult() {
+  const it = items.find(x => x.id === curApprId);
+  if (!it) return;
+  const resultArea = document.getElementById('appr-tel-result-area');
+  const result = resultArea.dataset.result;
+  if (!result) {
+    toast('結果を選択してください');
+    return;
+  }
+  const memo = document.getElementById('appr-tel-memo').value || '';
+  const points = {
+    knowsContactName: document.getElementById('pt-name').checked,
+    talkedToContact:  document.getElementById('pt-talked').checked,
+    hasIssueSignal:   document.getElementById('pt-issue').checked,
+    goodVibe:         document.getElementById('pt-vibe').checked,
+    hasWebsite:       document.getElementById('pt-web').checked,
+    hasInstagram:     document.getElementById('pt-insta').checked,
+  };
+  const entry = recordTelResult(it, result, { memo, points });
+  save();
+  document.getElementById('m-appr-tel').classList.remove('open');
+
+  // 結果に応じたフィードバックトースト
+  const phaseInfo = APPROACH_PHASE[it.approach.currentPhase];
+  if (result === 'reached' && entry.visitScore >= 4) {
+    toast('🚀 飛び込みOK判定！訪問フェーズに移行しました');
+  } else if (result === 'meeting') {
+    toast('🎯 商談獲得！おめでとうございます！');
+  } else if (it.approach.dormantUntil) {
+    toast('💤 ' + it.approach.dormantUntil + ' まで休眠（' + phaseInfo.label + '）');
+  } else {
+    toast('記録しました：' + phaseInfo.label);
+  }
+}
+
+// 電話アクションモーダルを動的に生成
+function createTelActionModal() {
+  const div = document.createElement('div');
+  div.className = 'modal-backdrop';
+  div.id = 'm-appr-tel';
+  div.innerHTML = `
+    <div class="modal modal-w-md" style="max-width:580px">
+      <div class="mhead">
+        <div>
+          <div class="mtitle" style="display:flex;align-items:center;gap:8px">
+            📞 電話アプローチ <span style="font-size:11px;background:#FF4602;color:#fff;padding:2px 8px;border-radius:8px">第<span id="appr-tel-callno">1</span>回</span>
+          </div>
+          <div style="font-size:13px;color:#666;margin-top:4px;font-weight:700" id="appr-tel-company"></div>
+          <div style="font-size:14px;color:#FF4602;margin-top:3px;font-weight:800;font-family:var(--font-mono)" id="appr-tel-phone"></div>
+        </div>
+        <button class="mclose" onclick="cm('m-appr-tel')">✕</button>
+      </div>
+      <div class="mbody">
+        <!-- 既知情報サマリ -->
+        <div style="margin-bottom:14px;padding:10px 12px;background:#FAFAFB;border-radius:10px">
+          <div style="font-size:9px;color:#9CA3AF;font-family:var(--font-mono);letter-spacing:0.15em;margin-bottom:6px">// この企業について</div>
+          <div id="appr-tel-known" style="display:flex;flex-wrap:wrap;gap:4px"></div>
+        </div>
+
+        <!-- 結果選択 -->
+        <div id="appr-tel-result-area" data-result="">
+          <div style="font-size:13px;font-weight:800;color:#374151;margin-bottom:8px">電話の結果は？</div>
+          <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:14px">
+            <button class="appr-tel-result" onclick="selectTelResult(this,'reached')" style="padding:14px;border:2px solid #E5E7EB;background:#fff;border-radius:12px;font-size:13px;font-weight:800;cursor:pointer;transition:all 0.15s">
+              ✅ 会えた・話せた
+            </button>
+            <button class="appr-tel-result" onclick="selectTelResult(this,'absent')" style="padding:14px;border:2px solid #E5E7EB;background:#fff;border-radius:12px;font-size:13px;font-weight:800;cursor:pointer;transition:all 0.15s">
+              🏠 不在・留守電
+            </button>
+            <button class="appr-tel-result" onclick="selectTelResult(this,'reschedule')" style="padding:14px;border:2px solid #E5E7EB;background:#fff;border-radius:12px;font-size:13px;font-weight:800;cursor:pointer;transition:all 0.15s">
+              📅 後日かけ直し
+            </button>
+            <button class="appr-tel-result" onclick="selectTelResult(this,'rejected')" style="padding:14px;border:2px solid #E5E7EB;background:#fff;border-radius:12px;font-size:13px;font-weight:800;cursor:pointer;transition:all 0.15s">
+              ✕ お断り
+            </button>
+            <button class="appr-tel-result" onclick="selectTelResult(this,'meeting')" style="grid-column:1/-1;padding:14px;border:2px solid #16A34A;background:#F0FDF4;color:#16A34A;border-radius:12px;font-size:13px;font-weight:900;cursor:pointer;transition:all 0.15s">
+              🎯 商談獲得！
+            </button>
+          </div>
+        </div>
+
+        <!-- 飛び込み判定POINT（reachedの時のみ表示） -->
+        <div id="appr-tel-pt-section" style="display:none;margin-bottom:14px;padding:14px;background:#FFFBEB;border:2px solid #FCD34D;border-radius:12px">
+          <div style="font-size:13px;font-weight:800;color:#92400E;margin-bottom:8px">🎯 飛び込み判断POINT</div>
+          <div style="font-size:11px;color:#92400E;margin-bottom:10px">該当するものをチェック（4つ以上で飛び込みOK）</div>
+          <div style="display:grid;gap:6px">
+            <label style="display:flex;align-items:center;gap:8px;padding:6px 10px;background:#fff;border-radius:8px;cursor:pointer;font-size:13px">
+              <input type="checkbox" id="pt-name" onchange="updateVisitScoreDisplay()"> 担当者の名前わかった
+            </label>
+            <label style="display:flex;align-items:center;gap:8px;padding:6px 10px;background:#fff;border-radius:8px;cursor:pointer;font-size:13px">
+              <input type="checkbox" id="pt-talked" onchange="updateVisitScoreDisplay()"> 担当者に代わってもらった
+            </label>
+            <label style="display:flex;align-items:center;gap:8px;padding:6px 10px;background:#fff;border-radius:8px;cursor:pointer;font-size:13px">
+              <input type="checkbox" id="pt-issue" onchange="updateVisitScoreDisplay()"> 課題ありそうな会話だった
+            </label>
+            <label style="display:flex;align-items:center;gap:8px;padding:6px 10px;background:#fff;border-radius:8px;cursor:pointer;font-size:13px">
+              <input type="checkbox" id="pt-vibe" onchange="updateVisitScoreDisplay()"> 会話の雰囲気が良かった
+            </label>
+            <label style="display:flex;align-items:center;gap:8px;padding:6px 10px;background:#F3F4F6;border-radius:8px;cursor:pointer;font-size:13px;color:#6B7280">
+              <input type="checkbox" id="pt-web" onchange="updateVisitScoreDisplay()" disabled> 公式HP（自動）
+            </label>
+            <label style="display:flex;align-items:center;gap:8px;padding:6px 10px;background:#F3F4F6;border-radius:8px;cursor:pointer;font-size:13px;color:#6B7280">
+              <input type="checkbox" id="pt-insta" onchange="updateVisitScoreDisplay()" disabled> Instagram（自動）
+            </label>
+          </div>
+          <div id="appr-tel-judge" style="margin-top:10px;padding:10px;border-radius:8px;text-align:center;font-size:13px;background:#FFFBEB">
+            スコア：<span id="appr-tel-score" style="font-size:20px;font-weight:900">0</span> / 6
+          </div>
+        </div>
+
+        <!-- メモ -->
+        <div style="margin-bottom:14px">
+          <div style="font-size:13px;font-weight:800;color:#374151;margin-bottom:6px">メモ（雰囲気・反応・気づき）</div>
+          <textarea id="appr-tel-memo" style="width:100%;min-height:80px;padding:10px 12px;border:2px solid #E5E7EB;border-radius:10px;font-size:13px;outline:none;resize:vertical;font-family:inherit" placeholder="（例：受付の田中さん対応、社長は午後在席の予定、SNSは活用したいとのこと）"></textarea>
+        </div>
+      </div>
+      <div class="mfoot">
+        <button class="btn btn-ghost" onclick="cm('m-appr-tel')">キャンセル</button>
+        <button class="btn btn-orange" onclick="saveTelResult()" style="font-weight:900;font-size:14px">📝 結果を記録（自動打刻）</button>
+      </div>
+    </div>`;
+  document.body.appendChild(div);
+  return div;
+}
+
+// 訪問アクションモーダル（プレースホルダー：シンプル実装）
+function openVisitActionModal(it) {
+  const result = prompt(
+    '飛び込み訪問の結果を記録します：\n\n' +
+    'reached = 会えた\n' +
+    'meeting = 商談獲得\n' +
+    'absent = 不在 → 直筆手紙へ\n' +
+    'rejected = お断り\n\n' +
+    '結果を入力（reached/meeting/absent/rejected）:'
+  );
+  if (!result) return;
+  const memo = prompt('メモ（任意）:') || '';
+  recordVisitResult(it, result, { memo });
+  save();
+  toast('訪問結果を記録しました');
+}
+
+// 直筆手紙アクションモーダル（プレースホルダー）
+function openLetterActionModal(it) {
+  if (confirm('「' + it.company + '」に直筆手紙を送付しますか？\n\n送付すると、6週間後に再電フェーズに自動復帰します。')) {
+    recordLetterSent(it);
+    save();
+    toast('✉️ 直筆手紙を送付済として記録。6週間後に再電フェーズに復帰します。');
+  }
+}
 
 function openAp(id) {
   curApId = id;
