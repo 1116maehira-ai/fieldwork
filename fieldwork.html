@@ -5786,6 +5786,7 @@ function renderGeminiTab() {
     '・各値は必ずダブルクォートで囲む',
     '・不明な項目はN/A（空白不可）',
     '・URLはhttps://から始まる完全形式で',
+    '・URLは生の文字列のみ。Markdownリンク記法 [text](url) は絶対に使わない。検索結果の参照リンクで包まない',
     '・months_until_anniversaryとnext_anniversary_yearsはfounding_dateから自動計算すること',
   ].join('\n');
 
@@ -6082,6 +6083,7 @@ function startResearchMode() {
     '・各値は必ずダブルクォートで囲む',
     '・不明はN/A（空白不可）',
     '・URLはhttps://から始まる完全形式で',
+    '・URLは生の文字列のみ。Markdownリンク記法 [text](url) は絶対に使わない。検索結果の参照リンクで包まない',
     '',
     '【対象企業 ' + batch.length + '社】',
     companyList,
