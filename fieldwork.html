@@ -5594,8 +5594,39 @@ function openDetail(id) {
           <input class="finput ${it.tiktokUrl?'is-filled':'is-empty'}" id="edit-tiktok" value="${it.tiktokUrl||''}" placeholder="（例：未入力 — TikTokアカウントURL）">
         </div>
         <div class="fl">
-          <label class="flabel">求人URL</label>
-          <input class="finput ${it.jobUrl?'is-filled':'is-empty'}" id="edit-job" value="${it.jobUrl||''}" placeholder="（例：未入力 — 求人ページURL）">
+          <label class="flabel">X (Twitter) URL</label>
+          <input class="finput ${it.xUrl?'is-filled':'is-empty'}" id="edit-x" value="${it.xUrl||''}" placeholder="（例：未入力 — Xアカウントの完全なURL）">
+        </div>
+        <div class="fl" style="grid-column:1/-1">
+          <label class="flabel">公式HP URL</label>
+          <input class="finput ${it.website?'is-filled':'is-empty'}" id="edit-website" value="${it.website||''}" placeholder="（例：未入力 — https://example.com）">
+        </div>
+        <div class="fl">
+          <label class="flabel">求人サイトURL（自社採用ページ）</label>
+          <input class="finput ${it.jobUrl?'is-filled':'is-empty'}" id="edit-job" value="${it.jobUrl||''}" placeholder="（例：未入力 — 自社採用ページURL）">
+        </div>
+        <div class="fl">
+          <label class="flabel">Indeed URL</label>
+          <input class="finput ${it.indeedUrl?'is-filled':'is-empty'}" id="edit-indeed" value="${it.indeedUrl||''}" placeholder="（例：未入力 — Indeed掲載URL）">
+        </div>
+        <div class="fl">
+          <label class="flabel">ジョブアンテナ URL</label>
+          <input class="finput ${it.jobAntennaUrl?'is-filled':'is-empty'}" id="edit-jobantenna" value="${it.jobAntennaUrl||''}" placeholder="（例：未入力 — ジョブアンテナ掲載URL）">
+        </div>
+        <div class="fl">
+          <label class="flabel">アグレ URL</label>
+          <input class="finput ${it.agreUrl?'is-filled':'is-empty'}" id="edit-agre" value="${it.agreUrl||''}" placeholder="（例：未入力 — アグレ掲載URL）">
+        </div>
+        <div class="fl">
+          <label class="flabel">推定月商</label>
+          <select class="fsel ${it.revenue?'is-filled':'is-empty'}" id="edit-revenue">
+            <option value="">— 未入力 —</option>
+            ${['〜1000万','1000万〜3000万','3000万〜1億','1億以上'].map(r=>`<option value="${r}" ${it.revenue==r?'selected':''}>${r}</option>`).join('')}
+          </select>
+        </div>
+        <div class="fl">
+          <label class="flabel">従業員数</label>
+          <input class="finput ${it.employeeCount?'is-filled':'is-empty'}" id="edit-employees" value="${it.employeeCount||''}" placeholder="（例：未入力 — 例 12名 / 不明）">
         </div>
         <div class="fl" style="grid-column:1/-1">
           <label class="flabel">備考・提案メモ</label>
@@ -6086,35 +6117,51 @@ function saveDetailEdit() {
   const it = items.find(x => x.id === selId);
   if (!it) return;
 
-  const person   = document.getElementById('edit-person')?.value.trim();
-  const phone    = document.getElementById('edit-phone')?.value.trim();
-  const founding = document.getElementById('edit-founding')?.value.trim();
-  const anniv    = document.getElementById('edit-anniversary')?.value;
-  const insta    = document.getElementById('edit-insta')?.value.trim();
-  const fb       = document.getElementById('edit-fb')?.value.trim();
-  const tiktok   = document.getElementById('edit-tiktok')?.value.trim();
-  const job      = document.getElementById('edit-job')?.value.trim();
-  const notes    = document.getElementById('edit-notes')?.value.trim();
+  const person      = document.getElementById('edit-person')?.value.trim();
+  const phone       = document.getElementById('edit-phone')?.value.trim();
+  const founding    = document.getElementById('edit-founding')?.value.trim();
+  const anniv       = document.getElementById('edit-anniversary')?.value;
+  const insta       = document.getElementById('edit-insta')?.value.trim();
+  const fb          = document.getElementById('edit-fb')?.value.trim();
+  const tiktok      = document.getElementById('edit-tiktok')?.value.trim();
+  const x           = document.getElementById('edit-x')?.value.trim();
+  const website     = document.getElementById('edit-website')?.value.trim();
+  const job         = document.getElementById('edit-job')?.value.trim();
+  const indeed      = document.getElementById('edit-indeed')?.value.trim();
+  const jobantenna  = document.getElementById('edit-jobantenna')?.value.trim();
+  const agre        = document.getElementById('edit-agre')?.value.trim();
+  const revenue     = document.getElementById('edit-revenue')?.value;
+  const employees   = document.getElementById('edit-employees')?.value.trim();
+  const notes       = document.getElementById('edit-notes')?.value.trim();
 
-  if (person   !== undefined) it.person = person;
-  if (phone    !== undefined) it.phone = phone;
-  if (founding !== undefined) it.foundingDate = founding;
-  if (anniv    !== undefined) it.anniversaryMonth = anniv;
-  if (insta    !== undefined) it.instaUrl = insta;
-  if (fb       !== undefined) it.fbUrl = fb;
-  if (tiktok   !== undefined) it.tiktokUrl = tiktok;
-  if (job      !== undefined) {
+  if (person      !== undefined) it.person = person;
+  if (phone       !== undefined) it.phone = phone;
+  if (founding    !== undefined) it.foundingDate = founding;
+  if (anniv       !== undefined) it.anniversaryMonth = anniv;
+  if (insta       !== undefined) it.instaUrl = insta;
+  if (fb          !== undefined) it.fbUrl = fb;
+  if (tiktok      !== undefined) it.tiktokUrl = tiktok;
+  if (x           !== undefined) it.xUrl = x;
+  if (website     !== undefined) it.website = website;
+  if (job !== undefined) {
     it.jobUrl = job;
     if (job && !(it.signals||[]).includes('hire')) {
       it.signals = [...(it.signals||[]), 'hire'];
     }
   }
-  if (notes !== undefined) it.researchNotes = notes;
+  if (indeed      !== undefined) it.indeedUrl = indeed;
+  if (jobantenna  !== undefined) it.jobAntennaUrl = jobantenna;
+  if (agre        !== undefined) it.agreUrl = agre;
+  if (revenue     !== undefined) it.revenue = revenue;
+  if (employees   !== undefined) it.employeeCount = employees;
+  if (notes       !== undefined) it.researchNotes = notes;
+
+  // 統一ルール：有意義項目が入っていれば拡張済みフラグを更新
+  maybeMarkEnriched(it);
 
   it.score = calcScore(it);
   save();
   toast('保存しました！');
-  // 詳細画面を再描画
   openDetail(selId);
 }
 
