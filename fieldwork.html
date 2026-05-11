@@ -1232,67 +1232,69 @@ tr:hover td { background: rgba(255,70,2,0.03); cursor: pointer; }
 
 <!-- ═══ PAGE: アプローチ中 ═══ -->
 <div class="page" id="page-approach">
-  <div class="topbar">
-    <div class="page-title">APPROACH</div>
-    <div class="topbar-sub">アプローチ進行中の企業一覧（新フェーズシステム）</div>
+  <div class="topbar" style="font-family:'Hiragino Maru Gothic ProN','Yu Gothic UI',sans-serif">
+    <div class="page-title" style="font-size:26px;font-weight:900;color:#EA580C;letter-spacing:0.05em">🍊 アプローチ中</div>
+    <div class="topbar-sub" style="font-size:14px;color:#92400E;font-weight:700">進行中の企業をビタミン色で元気に管理！</div>
   </div>
   <div class="content">
-    <!-- ★ 活動サマリーBOX（コンパクト版） -->
-    <div style="background:linear-gradient(135deg,#FFF8F3 0%,#FFEEDD 100%);border:2px solid #FFE0D6;border-radius:14px;padding:14px 18px;margin-bottom:14px">
-      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px">
-        <div style="font-size:14px;font-weight:900;color:#FF4602">📊 あなたの活動</div>
-        <div style="display:flex;gap:4px;margin-left:auto;flex-wrap:wrap">
-          <button class="ap-period-btn active" data-period="today" onclick="setApPeriod('today')" style="padding:5px 12px;border-radius:8px;border:2px solid #FF4602;background:#FF4602;color:#fff;font-size:11px;font-weight:800;cursor:pointer">今日</button>
-          <button class="ap-period-btn" data-period="week" onclick="setApPeriod('week')" style="padding:5px 12px;border-radius:8px;border:2px solid #E5E7EB;background:#fff;color:#6B7280;font-size:11px;font-weight:700;cursor:pointer">今週</button>
-          <button class="ap-period-btn" data-period="month" onclick="setApPeriod('month')" style="padding:5px 12px;border-radius:8px;border:2px solid #E5E7EB;background:#fff;color:#6B7280;font-size:11px;font-weight:700;cursor:pointer">今月</button>
-          <button class="ap-period-btn" data-period="custom" onclick="setApPeriod('custom')" style="padding:5px 12px;border-radius:8px;border:2px solid #E5E7EB;background:#fff;color:#6B7280;font-size:11px;font-weight:700;cursor:pointer">📅 日付指定</button>
+    <!-- ★ 活動サマリーBOX（ビタミン版） -->
+    <div style="background:linear-gradient(135deg,#FFFBEB 0%,#FEF3C7 100%);border:3px solid #FCD34D;border-radius:18px;padding:18px 22px;margin-bottom:16px;font-family:'Hiragino Maru Gothic ProN','Yu Gothic UI',sans-serif;box-shadow:0 4px 14px rgba(252,211,77,0.2)">
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px">
+        <div style="font-size:18px;font-weight:900;color:#D97706;display:flex;align-items:center;gap:6px">
+          <span style="font-size:24px">📊</span>あなたの活動
+        </div>
+        <div style="display:flex;gap:6px;margin-left:auto;flex-wrap:wrap">
+          <button class="ap-period-btn active" data-period="today" onclick="setApPeriod('today')" style="padding:8px 16px;border-radius:12px;border:2px solid #F59E0B;background:#F59E0B;color:#fff;font-size:13px;font-weight:900;cursor:pointer;font-family:inherit">今日</button>
+          <button class="ap-period-btn" data-period="week" onclick="setApPeriod('week')" style="padding:8px 16px;border-radius:12px;border:2px solid #FCD34D;background:#fff;color:#92400E;font-size:13px;font-weight:800;cursor:pointer;font-family:inherit">今週</button>
+          <button class="ap-period-btn" data-period="month" onclick="setApPeriod('month')" style="padding:8px 16px;border-radius:12px;border:2px solid #FCD34D;background:#fff;color:#92400E;font-size:13px;font-weight:800;cursor:pointer;font-family:inherit">今月</button>
+          <button class="ap-period-btn" data-period="custom" onclick="setApPeriod('custom')" style="padding:8px 16px;border-radius:12px;border:2px solid #FCD34D;background:#fff;color:#92400E;font-size:13px;font-weight:800;cursor:pointer;font-family:inherit">📅 日付指定</button>
         </div>
       </div>
       <!-- 日付指定UI（custom時のみ表示） -->
-      <div id="ap-custom-range" style="display:none;margin-bottom:10px;padding:8px 10px;background:rgba(255,255,255,0.7);border-radius:8px;gap:6px;flex-wrap:wrap;align-items:center">
-        <span style="font-size:11px;color:#6B7280;font-weight:700">期間：</span>
-        <input type="date" id="ap-activity-from" onchange="renderApActivityBox()" style="padding:4px 6px;border-radius:6px;border:1px solid #D1D5DB;font-size:11px">
-        <span style="font-size:11px;color:#6B7280">〜</span>
-        <input type="date" id="ap-activity-to" onchange="renderApActivityBox()" style="padding:4px 6px;border-radius:6px;border:1px solid #D1D5DB;font-size:11px">
+      <div id="ap-custom-range" style="display:none;margin-bottom:12px;padding:10px 14px;background:rgba(255,255,255,0.8);border-radius:12px;gap:8px;flex-wrap:wrap;align-items:center">
+        <span style="font-size:13px;color:#92400E;font-weight:800">期間：</span>
+        <input type="date" id="ap-activity-from" onchange="renderApActivityBox()" style="padding:6px 10px;border-radius:8px;border:2px solid #FCD34D;font-size:13px;font-family:inherit">
+        <span style="font-size:13px;color:#92400E;font-weight:700">〜</span>
+        <input type="date" id="ap-activity-to" onchange="renderApActivityBox()" style="padding:6px 10px;border-radius:8px;border:2px solid #FCD34D;font-size:13px;font-family:inherit">
       </div>
-      <div id="ap-activity-cards" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(100px,1fr));gap:8px"></div>
+      <div id="ap-activity-cards" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px"></div>
     </div>
 
-    <!-- 新フェーズサマリー -->
-    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px">
-      <div class="appr-stat" data-phase="" style="background:#FFF3EE;border:2px solid #FFD0BC;border-radius:14px;padding:12px 18px;text-align:center;cursor:pointer;flex:1;min-width:110px" onclick="filterByApprPhase('')">
-        <div style="font-size:11px;font-weight:700;color:#FF4602">📊 全件</div>
-        <div id="ap-sum-all" style="font-size:28px;font-weight:900;color:#FF4602;line-height:1">0</div>
+    <!-- 新フェーズサマリー（ビタミンカラー版）-->
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;margin-bottom:18px;font-family:'Hiragino Maru Gothic ProN','Yu Gothic UI',sans-serif">
+      <div class="appr-stat" data-phase="" style="background:linear-gradient(135deg,#FFEDD5,#FED7AA);border:3px solid #FB923C;border-radius:18px;padding:14px;text-align:center;cursor:pointer;transition:all 0.15s;box-shadow:0 4px 10px rgba(251,146,60,0.15)" onclick="filterByApprPhase('')" onmouseover="this.style.transform='translateY(-2px) scale(1.02)'" onmouseout="this.style.transform='translateY(0) scale(1)'">
+        <div style="font-size:13px;font-weight:900;color:#EA580C;margin-bottom:6px">📊 ぜんぶ</div>
+        <div id="ap-sum-all" style="font-size:36px;font-weight:900;color:#EA580C;line-height:1;letter-spacing:-0.02em">0</div>
       </div>
-      <div class="appr-stat" data-phase="tel_first" style="background:#FFF3EE;border:2px solid #FFD0BC;border-radius:14px;padding:12px 18px;text-align:center;cursor:pointer;flex:1;min-width:110px" onclick="filterByApprPhase('tel_first')">
-        <div style="font-size:11px;font-weight:700;color:#FF4602">📞 電話①</div>
-        <div id="ap-sum-tel1" style="font-size:28px;font-weight:900;color:#FF4602;line-height:1">0</div>
+      <div class="appr-stat" data-phase="tel_first" style="background:linear-gradient(135deg,#FEF3C7,#FDE68A);border:3px solid #F59E0B;border-radius:18px;padding:14px;text-align:center;cursor:pointer;transition:all 0.15s;box-shadow:0 4px 10px rgba(245,158,11,0.15)" onclick="filterByApprPhase('tel_first')" onmouseover="this.style.transform='translateY(-2px) scale(1.02)'" onmouseout="this.style.transform='translateY(0) scale(1)'">
+        <div style="font-size:13px;font-weight:900;color:#D97706;margin-bottom:6px">📞 電話①</div>
+        <div id="ap-sum-tel1" style="font-size:36px;font-weight:900;color:#D97706;line-height:1;letter-spacing:-0.02em">0</div>
       </div>
-      <div class="appr-stat" data-phase="tel_repeat" style="background:#FFFBEB;border:2px solid #FCD34D;border-radius:14px;padding:12px 18px;text-align:center;cursor:pointer;flex:1;min-width:110px" onclick="filterByApprPhase('tel_repeat')">
-        <div style="font-size:11px;font-weight:700;color:#92400E">🔄 再電</div>
-        <div id="ap-sum-telr" style="font-size:28px;font-weight:900;color:#92400E;line-height:1">0</div>
+      <div class="appr-stat" data-phase="tel_repeat" style="background:linear-gradient(135deg,#FED7AA,#FDBA74);border:3px solid #FB923C;border-radius:18px;padding:14px;text-align:center;cursor:pointer;transition:all 0.15s;box-shadow:0 4px 10px rgba(251,146,60,0.15)" onclick="filterByApprPhase('tel_repeat')" onmouseover="this.style.transform='translateY(-2px) scale(1.02)'" onmouseout="this.style.transform='translateY(0) scale(1)'">
+        <div style="font-size:13px;font-weight:900;color:#C2410C;margin-bottom:6px">🔄 再電</div>
+        <div id="ap-sum-telr" style="font-size:36px;font-weight:900;color:#C2410C;line-height:1;letter-spacing:-0.02em">0</div>
       </div>
-      <div class="appr-stat" data-phase="visit_ready" style="background:#ECFDF5;border:2px solid #86EFAC;border-radius:14px;padding:12px 18px;text-align:center;cursor:pointer;flex:1;min-width:110px" onclick="filterByApprPhase('visit_ready')">
-        <div style="font-size:11px;font-weight:700;color:#059669">🚀 訪問可</div>
-        <div id="ap-sum-vr" style="font-size:28px;font-weight:900;color:#059669;line-height:1">0</div>
+      <div class="appr-stat" data-phase="visit_ready" style="background:linear-gradient(135deg,#D1FAE5,#A7F3D0);border:3px solid #34D399;border-radius:18px;padding:14px;text-align:center;cursor:pointer;transition:all 0.15s;box-shadow:0 4px 10px rgba(52,211,153,0.15)" onclick="filterByApprPhase('visit_ready')" onmouseover="this.style.transform='translateY(-2px) scale(1.02)'" onmouseout="this.style.transform='translateY(0) scale(1)'">
+        <div style="font-size:13px;font-weight:900;color:#059669;margin-bottom:6px">🚀 訪問可</div>
+        <div id="ap-sum-vr" style="font-size:36px;font-weight:900;color:#059669;line-height:1;letter-spacing:-0.02em">0</div>
       </div>
-      <div class="appr-stat" data-phase="letter" style="background:#F5F3FF;border:2px solid #C4B5FD;border-radius:14px;padding:12px 18px;text-align:center;cursor:pointer;flex:1;min-width:110px" onclick="filterByApprPhase('letter')">
-        <div style="font-size:11px;font-weight:700;color:#7C3AED">✉️ 手紙</div>
-        <div id="ap-sum-letter" style="font-size:28px;font-weight:900;color:#7C3AED;line-height:1">0</div>
+      <div class="appr-stat" data-phase="letter" style="background:linear-gradient(135deg,#EDE9FE,#DDD6FE);border:3px solid #A78BFA;border-radius:18px;padding:14px;text-align:center;cursor:pointer;transition:all 0.15s;box-shadow:0 4px 10px rgba(167,139,250,0.15)" onclick="filterByApprPhase('letter')" onmouseover="this.style.transform='translateY(-2px) scale(1.02)'" onmouseout="this.style.transform='translateY(0) scale(1)'">
+        <div style="font-size:13px;font-weight:900;color:#7C3AED;margin-bottom:6px">✉️ 手紙</div>
+        <div id="ap-sum-letter" style="font-size:36px;font-weight:900;color:#7C3AED;line-height:1;letter-spacing:-0.02em">0</div>
       </div>
-      <div class="appr-stat" data-phase="dormant" style="background:#EEF2FF;border:2px solid #C7D2FE;border-radius:14px;padding:12px 18px;text-align:center;cursor:pointer;flex:1;min-width:110px" onclick="filterByApprPhase('dormant')">
-        <div style="font-size:11px;font-weight:700;color:#6366F1">💤 休眠中</div>
-        <div id="ap-sum-dormant" style="font-size:28px;font-weight:900;color:#6366F1;line-height:1">0</div>
+      <div class="appr-stat" data-phase="dormant" style="background:linear-gradient(135deg,#E0E7FF,#C7D2FE);border:3px solid #818CF8;border-radius:18px;padding:14px;text-align:center;cursor:pointer;transition:all 0.15s;box-shadow:0 4px 10px rgba(129,140,248,0.15)" onclick="filterByApprPhase('dormant')" onmouseover="this.style.transform='translateY(-2px) scale(1.02)'" onmouseout="this.style.transform='translateY(0) scale(1)'">
+        <div style="font-size:13px;font-weight:900;color:#4F46E5;margin-bottom:6px">💤 休眠中</div>
+        <div id="ap-sum-dormant" style="font-size:36px;font-weight:900;color:#4F46E5;line-height:1;letter-spacing:-0.02em">0</div>
       </div>
-      <div class="appr-stat" data-phase="meeting_won" style="background:#F0FDF4;border:2px solid #16A34A;border-radius:14px;padding:12px 18px;text-align:center;cursor:pointer;flex:1;min-width:110px" onclick="filterByApprPhase('meeting_won')">
-        <div style="font-size:11px;font-weight:700;color:#16A34A">🎯 商談獲得</div>
-        <div id="ap-sum-won" style="font-size:28px;font-weight:900;color:#16A34A;line-height:1">0</div>
+      <div class="appr-stat" data-phase="meeting_won" style="background:linear-gradient(135deg,#FCE7F3,#FBCFE8);border:3px solid #F472B6;border-radius:18px;padding:14px;text-align:center;cursor:pointer;transition:all 0.15s;box-shadow:0 4px 10px rgba(244,114,182,0.2)" onclick="filterByApprPhase('meeting_won')" onmouseover="this.style.transform='translateY(-2px) scale(1.02)'" onmouseout="this.style.transform='translateY(0) scale(1)'">
+        <div style="font-size:13px;font-weight:900;color:#BE185D;margin-bottom:6px">🎯 アポ獲得</div>
+        <div id="ap-sum-won" style="font-size:36px;font-weight:900;color:#BE185D;line-height:1;letter-spacing:-0.02em">0</div>
       </div>
     </div>
 
-    <div class="filter-bar">
-      <input class="fi fi-wide" type="text" id="ap-search" placeholder="会社名で検索..." oninput="renderApproach()">
-      <select class="fi" id="ap-phase" onchange="renderApproach()">
+    <div class="filter-bar" style="font-family:'Hiragino Maru Gothic ProN','Yu Gothic UI',sans-serif;gap:10px;margin-bottom:18px">
+      <input class="fi fi-wide" type="text" id="ap-search" placeholder="🔍 会社名で検索..." oninput="renderApproach()" style="font-family:inherit;font-size:14px;font-weight:600;border:2px solid #FCD34D;border-radius:12px;padding:10px 14px">
+      <select class="fi" id="ap-phase" onchange="renderApproach()" style="font-family:inherit;font-size:14px;font-weight:700;border:2px solid #FCD34D;border-radius:12px;padding:10px 14px;background:#fff">
         <option value="">全フェーズ</option>
         <option value="tel_first">📞 電話①</option>
         <option value="tel_repeat">🔄 再電</option>
@@ -1304,20 +1306,20 @@ tr:hover td { background: rgba(255,70,2,0.03); cursor: pointer; }
         <option value="dormant_5m">❄️ 5ヶ月休眠</option>
         <option value="meeting_won">🎯 商談獲得</option>
       </select>
-      <select class="fi" id="ap-activity-period" onchange="renderApproach()" title="期間内に活動した企業だけ表示">
+      <select class="fi" id="ap-activity-period" onchange="renderApproach()" title="期間内に活動した企業だけ表示" style="font-family:inherit;font-size:14px;font-weight:700;border:2px solid #FCD34D;border-radius:12px;padding:10px 14px;background:#fff">
         <option value="">活動期間：すべて</option>
         <option value="today">📅 今日活動</option>
         <option value="week">📆 今週活動</option>
         <option value="month">🗓 今月活動</option>
       </select>
-      <select class="fi" id="ap-activity-type" onchange="renderApproach()" title="特定の活動をした企業だけ">
+      <select class="fi" id="ap-activity-type" onchange="renderApproach()" title="特定の活動をした企業だけ" style="font-family:inherit;font-size:14px;font-weight:700;border:2px solid #FCD34D;border-radius:12px;padding:10px 14px;background:#fff">
         <option value="">活動種別：すべて</option>
         <option value="tel">📞 電話した</option>
         <option value="visit">🚶 訪問した</option>
         <option value="letter_sent">✉️ 手紙を送った</option>
         <option value="meeting">🎯 商談獲得した</option>
       </select>
-      <select class="fi" id="ap-sort" onchange="renderApproach()">
+      <select class="fi" id="ap-sort" onchange="renderApproach()" style="font-family:inherit;font-size:14px;font-weight:700;border:2px solid #FCD34D;border-radius:12px;padding:10px 14px;background:#fff">
         <option value="recent">直近の行動順</option>
         <option value="recent_old">直近の行動が古い順</option>
         <option value="today_active">今日の活動順</option>
@@ -1328,18 +1330,11 @@ tr:hover td { background: rgba(255,70,2,0.03); cursor: pointer; }
         <option value="company">会社名順</option>
       </select>
     </div>
-    <div class="table-wrap">
-      <table>
-        <thead><tr>
-          <th>会社名</th><th>フェーズ</th><th>業種・エリア</th><th>履歴</th><th>次のアクション</th><th></th>
-        </tr></thead>
-        <tbody id="ap-tbody"></tbody>
-      </table>
-      <div class="empty" id="ap-empty" style="display:none">
+    <div id="ap-cards-wrap"></div>
+    <div class="empty" id="ap-empty" style="display:none;font-family:'Hiragino Maru Gothic ProN','Yu Gothic UI',sans-serif;padding:60px 20px;text-align:center">
         <div class="empty-ico"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"></path><path d="m3.5 11.5 3 3"></path><path d="M12 6l5 5"></path><path d="m6 13 3-3"></path><path d="m13 6-2 2-3.5 3.5"></path><path d="m21 3-5.23 5.23"></path><path d="m15 9 3-3 3-3-3 3"></path></svg></div>
         <div>アプローチ中の企業がありません<br>アタックリストから「🚀 開始」してください</div>
       </div>
-    </div>
   </div>
 </div>
 
@@ -3027,13 +3022,14 @@ function renderApproach() {
   setIf('ap-l', counts.letter);
   setIf('ap-total', counts.all);
 
-  const tbody = document.getElementById('ap-tbody');
+  const tbody = document.getElementById('ap-cards-wrap');
   const empty = document.getElementById('ap-empty');
   if (!tbody) return;
   if (!list.length) { tbody.innerHTML = ''; if (empty) empty.style.display = 'block'; return; }
   if (empty) empty.style.display = 'none';
 
-  tbody.innerHTML = list.map(it => {
+  tbody.innerHTML = '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:16px;font-family:\'Hiragino Maru Gothic ProN\',\'Yu Gothic UI\',sans-serif">' +
+    list.map(it => {
     const a = it.approach;
     const p = APPROACH_PHASE[a.currentPhase] || APPROACH_PHASE.not_started;
     const isDormantNow = a.dormantUntil && today < a.dormantUntil;
@@ -3041,62 +3037,101 @@ function renderApproach() {
       ? Math.max(0, Math.ceil((new Date(a.dormantUntil) - new Date(today)) / (1000*60*60*24)))
       : 0;
 
-    // 履歴ドット（直近8件）
-    const trailDots = (a.history || []).slice(-8).map(h => {
-      let c = '#9CA3AF', t = h.action;
-      if (h.result === 'meeting') c = '#16A34A';
-      else if (h.result === 'reached') c = '#3B82F6';
-      else if (h.result === 'rejected') c = '#DC2626';
-      else if (h.result === 'absent' || h.result === 'reschedule') c = '#F59E0B';
-      else if (h.action === 'letter_sent') c = '#7C3AED';
-      else if (h.action === 'dormant_recovered') c = '#86EFAC';
-      return '<div title="' + (h.ts||'').slice(0,16).replace('T',' ') + ' / ' + (h.result || h.action) + '" style="width:7px;height:7px;border-radius:50%;background:' + c + '"></div>';
+    // フェーズに応じたビタミンカラー
+    const phaseColors = {
+      tel_first:   { bg:'#FFF7E6', border:'#FBBF24', accent:'#D97706', emoji:'📞' },
+      tel_repeat:  { bg:'#FEF3C7', border:'#F59E0B', accent:'#92400E', emoji:'🔄' },
+      visit_ready: { bg:'#ECFDF5', border:'#34D399', accent:'#059669', emoji:'🚀' },
+      visit_done:  { bg:'#CFFAFE', border:'#22D3EE', accent:'#0E7490', emoji:'🚶' },
+      letter:      { bg:'#F3E8FF', border:'#A78BFA', accent:'#6D28D9', emoji:'✉️' },
+      dormant_2w:  { bg:'#E0E7FF', border:'#818CF8', accent:'#4338CA', emoji:'💤' },
+      dormant_5m:  { bg:'#DBEAFE', border:'#60A5FA', accent:'#1D4ED8', emoji:'❄️' },
+      meeting_won: { bg:'#FCE7F3', border:'#F472B6', accent:'#BE185D', emoji:'🎯' },
+      rejected_final: { bg:'#FEE2E2', border:'#FCA5A5', accent:'#B91C1C', emoji:'❌' },
+      not_started: { bg:'#F3F4F6', border:'#D1D5DB', accent:'#6B7280', emoji:'⚪' },
+    };
+    const c = phaseColors[a.currentPhase] || phaseColors.not_started;
+
+    // 履歴ドット（直近10件、可愛く大きく）
+    const trailDots = (a.history || []).slice(-10).map(h => {
+      let color = '#9CA3AF', icon = '·';
+      if (h.result === 'meeting') { color = '#16A34A'; icon = '🎯'; }
+      else if (h.result === 'reached' || h.result === 'reached_card') { color = '#06B6D4'; icon = '💌'; }
+      else if (h.result === 'rejected' || h.result === 'rejected_retel') { color = '#DC2626'; icon = '🚪'; }
+      else if (h.result === 'rejected_letter') { color = '#DC2626'; icon = '✉️'; }
+      else if (h.result === 'absent') { color = '#F59E0B'; icon = '🏠'; }
+      else if (h.result === 'reschedule') { color = '#F59E0B'; icon = '📅'; }
+      else if (h.action === 'letter_sent') { color = '#7C3AED'; icon = '✉️'; }
+      else if (h.action === 'dormant_recovered') { color = '#22C55E'; icon = '⏰'; }
+      else if (h.action === 'tel') { color = '#FF4602'; icon = '📞'; }
+      else if (h.action === 'visit') { color = '#0891B2'; icon = '🚶'; }
+      const labelMap = {
+        meeting:'アポ獲得', reached:'つながった', reached_card:'名刺交換',
+        rejected:'お断り', rejected_retel:'門前払い→再電', rejected_letter:'門前払い→手紙',
+        absent:'不在', reschedule:'後日', letter_sent:'手紙送付', dormant_recovered:'休眠復帰'
+      };
+      const tooltipDate = (h.ts||'').slice(0,10);
+      const tooltipResult = labelMap[h.result || h.action] || (h.result || h.action);
+      return '<div title="' + tooltipDate + ' / ' + tooltipResult + '" style="width:24px;height:24px;border-radius:50%;background:' + color + '22;border:2px solid ' + color + ';display:flex;align-items:center;justify-content:center;font-size:11px">' + icon + '</div>';
     }).join('');
 
-    // 次のアクション
+    // 次のアクションUI
     let nextActionHtml = '';
     if (a.currentPhase === 'meeting_won') {
-      nextActionHtml = '<div style="background:#16A34A;color:#fff;padding:6px 10px;border-radius:8px;font-size:11px;font-weight:800;text-align:center">🎯 完了</div>';
+      nextActionHtml = '<div style="background:linear-gradient(135deg,#F472B6,#EC4899);color:#fff;padding:16px;border-radius:14px;font-size:16px;font-weight:900;text-align:center;letter-spacing:0.05em;box-shadow:0 4px 12px rgba(236,72,153,0.3)">🎯 商談獲得！</div>';
     } else if (isDormantNow) {
-      // 休眠理由に応じて「何日後に何をする」を表示
-      let actionVerb = '再電'; // デフォルト
+      let actionVerb = '再電';
       let actionIcon = '📞';
-      if (a.dormantReason === 'letter_followup_6w') {
-        actionVerb = '手紙フォロー電話';
-        actionIcon = '📞';
-      } else if (a.dormantReason === 'rejected_4times_5m') {
-        actionVerb = '再電（拒否多4回）';
-        actionIcon = '🔄';
-      }
+      if (a.dormantReason === 'letter_followup_6w') { actionVerb = '手紙フォロー電話'; actionIcon = '📞'; }
+      else if (a.dormantReason === 'rejected_4times_5m') { actionVerb = '再電（拒否多4回）'; actionIcon = '🔄'; }
       const isToday = dormantDaysLeft === 0;
       const mainLabel = isToday
-        ? '今日 ' + actionIcon + ' ' + actionVerb + '！'
-        : actionIcon + ' ' + dormantDaysLeft + '日後に' + actionVerb;
-      const bgColor = isToday ? '#FEE2E2' : '#EEF2FF';
-      const textColor = isToday ? '#DC2626' : '#6366F1';
-      const borderColor = isToday ? '#FCA5A5' : '#C7D2FE';
+        ? '<span style="font-size:22px">今日</span> ' + actionIcon + ' ' + actionVerb + '！'
+        : actionIcon + ' <span style="font-size:24px;font-weight:900">' + dormantDaysLeft + '</span><span style="font-size:13px">日後に</span>' + actionVerb;
+      const bgGrad = isToday ? 'linear-gradient(135deg,#FCA5A5,#F87171)' : 'linear-gradient(135deg,#FED7AA,#FCD34D)';
+      const textColor = isToday ? '#fff' : '#92400E';
       nextActionHtml =
-        '<div style="background:' + bgColor + ';border:1.5px solid ' + borderColor + ';border-radius:8px;padding:6px 10px;text-align:center">' +
-          '<div style="font-size:12px;color:' + textColor + ';font-weight:800;line-height:1.3">' + mainLabel + '</div>' +
-          '<div style="font-size:9px;color:#9CA3AF;margin-top:2px">予定日: ' + (a.dormantUntil || '—') + '</div>' +
+        '<div style="background:' + bgGrad + ';border-radius:14px;padding:14px;text-align:center;box-shadow:0 4px 12px rgba(0,0,0,0.08)">' +
+          '<div style="font-size:15px;color:' + textColor + ';font-weight:900;line-height:1.3">' + mainLabel + '</div>' +
+          '<div style="font-size:10px;color:' + textColor + ';opacity:0.85;margin-top:4px;font-weight:700">予定: ' + (a.dormantUntil || '—') + '</div>' +
         '</div>';
     } else {
-      nextActionHtml = '<button class="btn btn-orange btn-xs" onclick="event.stopPropagation();openApproachAction(' + it.id + ')" style="font-weight:800;font-size:11px;font-family:\'Hiragino Maru Gothic ProN\',sans-serif">▶ ' + (p.label) + '</button>';
+      nextActionHtml = '<button onclick="event.stopPropagation();openApproachAction(' + it.id + ')" style="width:100%;background:linear-gradient(135deg,#FF4602,#FFB347);color:#fff;border:none;border-radius:14px;padding:16px;font-size:17px;font-weight:900;cursor:pointer;font-family:\'Hiragino Maru Gothic ProN\',\'Yu Gothic UI\',sans-serif;box-shadow:0 4px 14px rgba(255,70,2,0.3);letter-spacing:0.05em;transition:all 0.15s" onmouseover="this.style.transform=\'translateY(-2px)\';this.style.boxShadow=\'0 8px 20px rgba(255,70,2,0.4)\'" onmouseout="this.style.transform=\'translateY(0)\';this.style.boxShadow=\'0 4px 14px rgba(255,70,2,0.3)\'">▶ ' + p.label + 'する</button>';
     }
 
-    return '<tr onclick="openDetail(' + it.id + ')">' +
-      '<td><div class="co-name">' + it.company + '</div><div class="co-sub">' + (it.person || '—') + ' · ' + (it.area || '') + '</div></td>' +
-      '<td>' +
-        '<span style="display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:8px;background:' + p.bg + ';color:' + p.color + ';font-size:11px;font-weight:800">' + p.icon + ' ' + p.label + '</span>' +
-        (a.rejectCount > 0 ? '<div style="font-size:10px;color:#DC2626;margin-top:3px;font-weight:700">🛑 拒否' + a.rejectCount + '回</div>' : '') +
-      '</td>' +
-      '<td><div style="font-size:12px">' + (it.industry || '—') + '</div><div style="font-size:10px;color:var(--text-mid)">' + (it.area || '') + '</div></td>' +
-      '<td><div style="display:flex;gap:3px;align-items:center;flex-wrap:wrap">' + trailDots + '</div>' +
-        '<div style="font-size:10px;color:var(--text-mid);margin-top:3px">📞' + a.callCount + ' / 🚶' + a.visitCount + '</div></td>' +
-      '<td>' + nextActionHtml + '</td>' +
-      '<td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openDetail(' + it.id + ')">詳細</button></td>' +
-      '</tr>';
-  }).join('');
+    return '<div onclick="openDetail(' + it.id + ')" style="background:' + c.bg + ';border:3px solid ' + c.border + ';border-radius:20px;padding:20px;cursor:pointer;transition:all 0.15s;display:flex;flex-direction:column;gap:14px" onmouseover="this.style.transform=\'translateY(-3px)\';this.style.boxShadow=\'0 10px 24px rgba(0,0,0,0.1)\'" onmouseout="this.style.transform=\'translateY(0)\';this.style.boxShadow=\'none\'">' +
+      // フェーズバッジ（でかい）
+      '<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap">' +
+        '<div style="background:' + c.border + ';color:#fff;padding:8px 16px;border-radius:14px;font-size:16px;font-weight:900;display:inline-flex;align-items:center;gap:6px;letter-spacing:0.04em">' +
+          '<span style="font-size:22px">' + c.emoji + '</span>' +
+          '<span>' + p.label + '</span>' +
+        '</div>' +
+        (a.rejectCount > 0 ? '<div style="background:#fff;border:2px solid #FCA5A5;color:#DC2626;padding:4px 12px;border-radius:10px;font-size:13px;font-weight:900">🛑 拒否' + a.rejectCount + '</div>' : '') +
+      '</div>' +
+      // 会社名（大）
+      '<div>' +
+        '<div style="font-size:22px;font-weight:900;color:#1F2937;line-height:1.3;letter-spacing:0.02em;word-break:break-all">' + escapeHtml(it.company) + '</div>' +
+        '<div style="font-size:13px;color:#6B7280;font-weight:700;margin-top:4px">' +
+          (it.person ? '👤 ' + escapeHtml(it.person) + ' · ' : '') +
+          (it.industry ? '🏭 ' + escapeHtml(it.industry) + ' · ' : '') +
+          (it.area ? '📍 ' + escapeHtml(it.area) : '') +
+        '</div>' +
+      '</div>' +
+      // 履歴行
+      '<div style="background:rgba(255,255,255,0.6);border-radius:12px;padding:10px 14px">' +
+        '<div style="font-size:11px;color:' + c.accent + ';font-weight:800;margin-bottom:6px;display:flex;align-items:center;gap:6px">' +
+          '<span>📋 これまでの履歴</span>' +
+          '<span style="margin-left:auto;background:#fff;padding:2px 10px;border-radius:8px;font-size:12px;color:#FF4602;font-weight:900">📞 ' + a.callCount + '</span>' +
+          '<span style="background:#fff;padding:2px 10px;border-radius:8px;font-size:12px;color:#0891B2;font-weight:900">🚶 ' + a.visitCount + '</span>' +
+        '</div>' +
+        '<div style="display:flex;gap:6px;flex-wrap:wrap;min-height:24px">' +
+          (trailDots || '<div style="font-size:11px;color:#9CA3AF;font-weight:700">まだ履歴がありません</div>') +
+        '</div>' +
+      '</div>' +
+      // 次のアクション
+      '<div>' + nextActionHtml + '</div>' +
+    '</div>';
+  }).join('') + '</div>';
 }
 
 // サマリーカードからのフィルタ切替
@@ -3315,16 +3350,16 @@ function renderApActivityBox() {
     range = getPeriodRange(apActivityCurrentPeriod);
   }
   const cards = [
-    { label: '📞', sub: '電話', val: range ? totalActivityInRange(range, 'tel') : 0, color: '#FF4602' },
-    { label: '🚶', sub: '訪問', val: range ? totalActivityInRange(range, 'visit') : 0, color: '#0891B2' },
-    { label: '✉️', sub: '手紙', val: range ? totalActivityInRange(range, 'letter_sent') : 0, color: '#7C3AED' },
-    { label: '🎯', sub: '商談獲得', val: range ? totalActivityInRange(range, 'meeting') : 0, color: '#16A34A' },
+    { label: '📞', sub: '電話', val: range ? totalActivityInRange(range, 'tel') : 0, bg: 'linear-gradient(135deg,#FED7AA,#FDBA74)', color: '#C2410C', border: '#FB923C' },
+    { label: '🚶', sub: '訪問', val: range ? totalActivityInRange(range, 'visit') : 0, bg: 'linear-gradient(135deg,#CFFAFE,#A5F3FC)', color: '#0E7490', border: '#22D3EE' },
+    { label: '✉️', sub: '手紙', val: range ? totalActivityInRange(range, 'letter_sent') : 0, bg: 'linear-gradient(135deg,#EDE9FE,#DDD6FE)', color: '#6D28D9', border: '#A78BFA' },
+    { label: '🎯', sub: 'アポ獲得', val: range ? totalActivityInRange(range, 'meeting') : 0, bg: 'linear-gradient(135deg,#FCE7F3,#FBCFE8)', color: '#BE185D', border: '#F472B6' },
   ];
   wrap.innerHTML = cards.map(c =>
-    '<div style="background:#fff;border:2px solid ' + c.color + '22;border-radius:10px;padding:8px 10px;text-align:center;display:flex;align-items:center;justify-content:center;gap:8px">' +
-      '<div style="font-size:18px">' + c.label + '</div>' +
-      '<div style="font-size:22px;font-weight:900;color:' + c.color + ';line-height:1">' + c.val + '</div>' +
-      '<div style="font-size:10px;color:' + c.color + ';opacity:0.85;font-weight:700">' + c.sub + '</div>' +
+    '<div style="background:' + c.bg + ';border:3px solid ' + c.border + ';border-radius:14px;padding:12px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:4px;box-shadow:0 4px 10px rgba(0,0,0,0.04);font-family:\'Hiragino Maru Gothic ProN\',\'Yu Gothic UI\',sans-serif">' +
+      '<div style="font-size:28px;line-height:1">' + c.label + '</div>' +
+      '<div style="font-size:32px;font-weight:900;color:' + c.color + ';line-height:1;letter-spacing:-0.02em">' + c.val + '</div>' +
+      '<div style="font-size:12px;color:' + c.color + ';font-weight:800">' + c.sub + '</div>' +
     '</div>'
   ).join('');
 }
