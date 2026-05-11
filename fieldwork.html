@@ -2681,12 +2681,16 @@ function renderList() {
   const apf = document.getElementById('ls-ap')?.value || '';
   const showExcluded = document.getElementById('ls-show-excluded')?.checked || false;
   const showNonBiz = document.getElementById('ls-show-nonbiz')?.checked !== false;
+  const researchFilter = document.getElementById('ls-research')?.value || '';
 
   let list = items.filter(it => {
     // 「対象外も表示」OFF時：手動で営業対象外にした企業 + 旧 excluded フラグを非表示
     if (!showExcluded && (it.manualCompanyFlag === 'non_company' || it.excluded)) return false;
     // 「非企業も表示」OFF時：自動判定で非企業 かつ 手動企業扱いされてないものを非表示
     if (!showNonBiz && !isLikelyCompany(it) && it.manualCompanyFlag !== 'company') return false;
+    // 拡張状況フィルタ：統一ルール（isEnriched）で判定
+    if (researchFilter === 'not_enriched' && isEnriched(it)) return false;
+    if (researchFilter === 'enriched' && !isEnriched(it)) return false;
     if (search && !it.company.toLowerCase().includes(search)) return false;
     if (ind && it.industry !== ind) return false;
     if (rank && it.score?.rank !== rank) return false;
@@ -2910,7 +2914,8 @@ function renderList() {
       '<td>' +
         (it.foundingDate
           ? '<div style="font-size:12px;color:#333;font-weight:700">' + it.foundingDate + '</div>' +
-            (it.anniversaryMonth ? '<div style="font-size:10px;color:#FF4602;font-weight:700;margin-top:2px">🎂 ' + it.anniversaryMonth + '月創業</div>' : '')
+            (it.anniversaryMonth ? '<div style="font-size:10px;color:#FF4602;font-weight:700;margin-top:2px">🎂 ' + it.anniversaryMonth + '月創業</div>' : '') +
+            anniversaryBadge(it)
           : '<span style="font-size:11px;color:#CCC">未調査</span>') +
       '</td>' +
 
