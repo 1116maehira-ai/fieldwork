@@ -724,6 +724,45 @@ tr:hover td { background: rgba(255,70,2,0.03); cursor: pointer; }
   .schip { font-size: 10px; padding: 3px 9px; }
 }
 
+/* ══ 日報レポート ══ */
+.rep-section { margin-bottom: 18px; }
+.rep-section-title {
+  font-size: 14px; font-weight: 900; padding: 8px 12px;
+  border-left: 4px solid; border-radius: 0 8px 8px 0;
+  background: rgba(0,0,0,0.02); margin-bottom: 10px;
+  font-family: 'Hiragino Maru Gothic ProN','Yu Gothic UI',sans-serif;
+}
+.rep-row {
+  display: grid; grid-template-columns: 60px 1fr auto; gap: 10px;
+  padding: 8px 12px; border-bottom: 1px solid #F3F4F6;
+  font-size: 12px; align-items: center;
+  font-family: 'Hiragino Maru Gothic ProN','Yu Gothic UI',sans-serif;
+}
+.rep-row.rep-highlight { background: #FFF1F5; border-radius: 8px; border-bottom-color: #FBCFE8; }
+.rep-time { font-weight: 800; color: #6B7280; font-family: 'JetBrains Mono', monospace; font-size: 11px; }
+.rep-co { font-weight: 800; color: #1F2937; }
+.rep-result { font-weight: 700; font-size: 11px; color: #4B5563; }
+.rep-memo {
+  grid-column: 2 / -1; font-size: 11px; color: #6B7280;
+  background: #F9FAFB; padding: 6px 10px; border-radius: 6px;
+  margin-top: 4px; line-height: 1.5; font-weight: 600;
+}
+.rep-sub { font-size: 11px; color: #6B7280; font-weight: 700; }
+.rep-empty { padding: 12px; color: #9CA3AF; font-size: 12px; font-style: italic; text-align: center; }
+
+/* ══ 印刷時（PDF保存）：日報部分だけ表示 ══ */
+@media print {
+  body.print-daily-report > *:not(.modal-backdrop) { display: none !important; }
+  body.print-daily-report .modal-backdrop { position: static; background: #fff; backdrop-filter: none; display: block !important; padding: 0; }
+  body.print-daily-report .modal { max-width: 100% !important; max-height: none !important; border-radius: 0 !important; box-shadow: none !important; overflow: visible !important; }
+  body.print-daily-report .mhead { background: #fff !important; border-bottom: 2px solid #EA580C !important; }
+  body.print-daily-report .mclose { display: none !important; }
+  body.print-daily-report .no-print { display: none !important; }
+  body.print-daily-report .rep-row { break-inside: avoid; }
+  body.print-daily-report .rep-section { break-inside: avoid-page; }
+  @page { margin: 12mm; size: A4; }
+}
+
 </style>
 </head>
 <body>
@@ -1364,7 +1403,10 @@ tr:hover td { background: rgba(255,70,2,0.03); cursor: pointer; }
 
 <!-- ═══ PAGE: ダッシュボード ═══ -->
 <div class="page" id="page-dash">
-  <div class="topbar"><div class="page-title">DASHBOARD</div></div>
+  <div class="topbar" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px">
+    <div class="page-title">DASHBOARD</div>
+    <button onclick="openDailyReport()" style="background:linear-gradient(135deg,#FF4602,#FFB347);color:#fff;border:none;border-radius:12px;padding:10px 20px;font-size:13px;font-weight:900;cursor:pointer;font-family:'Hiragino Maru Gothic ProN','Yu Gothic UI',sans-serif;box-shadow:0 4px 12px rgba(255,70,2,0.3);transition:all 0.15s" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(0)'">📋 今日の日報を見る</button>
+  </div>
   <div class="content">
     <div class="stat-row stat-row-3">
       <div class="stat-card"><div class="stat-label">収集総数</div><div class="stat-value" id="d-total">0</div></div>
@@ -7521,6 +7563,250 @@ function processCsvFile(file) {
     }
   };
   reader.readAsText(file, 'UTF-8');
+}
+
+// ══════════════════════════════════════════
+// 日報出力（今日の活動レポート）
+// ══════════════════════════════════════════
+function openDailyReport() {
+  const today = todayJST();
+  const todayLabel = formatDateJp(today);
+  const range = { from: today + 'T00:00:00', to: today + 'T23:59:59' };
+
+  // 拡張：lastUpdatedAtが今日の企業（有意義に拡張済み）
+  const enrichedToday = items.filter(it =>
+    isEnriched(it) &&
+    (it.lastUpdatedAt || '').slice(0, 10) === today
+  ).sort((a, b) => (a.lastUpdatedAt || '').localeCompare(b.lastUpdatedAt || ''));
+
+  // 全活動エントリー（電話・訪問・手紙）
+  const allEntries = [];
+  for (const it of items) {
+    if (!it.approach || !it.approach.history) continue;
+    for (const h of it.approach.history) {
+      if (!h.ts || h.ts < range.from || h.ts > range.to) continue;
+      allEntries.push({ company: it.company, person: it.person, ...h });
+    }
+  }
+  allEntries.sort((a, b) => a.ts.localeCompare(b.ts));
+
+  const telEntries = allEntries.filter(e => e.action === 'tel');
+  const visitEntries = allEntries.filter(e => e.action === 'visit');
+  const letterEntries = allEntries.filter(e => e.action === 'letter_sent');
+  const meetingEntries = allEntries.filter(e => e.result === 'meeting');
+
+  const resultMap = {
+    reached: '🤩 担当者につながった', absent: '🏠 不在', reschedule: '📅 後日折り返し',
+    rejected: '🚫 お断り', meeting: '🎯 アポ獲得！', reached_card: '💌 名刺交換のみ',
+    rejected_retel: '🚪 門前払い→再電', rejected_letter: '🚪 門前払い→手紙',
+  };
+
+  const existing = document.getElementById('m-daily-report');
+  if (existing) existing.remove();
+
+  const fmtTime = (ts) => (ts || '').slice(11, 16);
+
+  const enrichedHtml = enrichedToday.length
+    ? enrichedToday.map(it => {
+        const time = (it.lastUpdatedAt || '').slice(11, 16);
+        const fields = [];
+        if (it.person) fields.push('代表者:' + it.person);
+        if (it.website) fields.push('HP');
+        if (it.instaUrl || it.fbUrl || it.xUrl || it.tiktokUrl) fields.push('SNS');
+        if (it.indeedUrl || it.jobAntennaUrl || it.agreUrl || it.jobUrl) fields.push('求人');
+        return '<div class="rep-row"><span class="rep-time">' + time + '</span><span class="rep-co">' + escapeHtml(it.company) + '</span><span class="rep-sub">' + fields.join(' / ') + '</span></div>';
+      }).join('')
+    : '<div class="rep-empty">今日の拡張はまだありません</div>';
+
+  const renderEntries = (entries, iconLabel) => entries.length
+    ? entries.map(e => {
+        const memoStr = e.memo ? '<div class="rep-memo">「' + escapeHtml(e.memo) + '」</div>' : '';
+        const result = resultMap[e.result] || e.result || '';
+        let suffix = '';
+        if (e.callNo) suffix = ' #' + e.callNo + '回目';
+        if (e.visitNo) suffix = ' #' + e.visitNo + '回目';
+        return '<div class="rep-row"><span class="rep-time">' + fmtTime(e.ts) + '</span><span class="rep-co">' + escapeHtml(e.company) + suffix + '</span><span class="rep-result">' + result + '</span>' + memoStr + '</div>';
+      }).join('')
+    : '<div class="rep-empty">今日の' + iconLabel + 'はまだありません</div>';
+
+  const totalActions = telEntries.length + visitEntries.length + letterEntries.length;
+
+  const div = document.createElement('div');
+  div.className = 'modal-backdrop open';
+  div.id = 'm-daily-report';
+  div.innerHTML = `
+    <div class="modal" style="max-width:780px;max-height:92vh;overflow-y:auto;border-radius:18px;font-family:'Hiragino Maru Gothic ProN','Yu Gothic UI',sans-serif">
+      <div class="mhead" style="background:linear-gradient(135deg,#FFF8F3 0%,#FFEEDD 100%);border-bottom:2px solid #FFD0BC">
+        <div>
+          <div class="mtitle" style="font-size:20px;font-weight:900;color:#EA580C">📋 今日の日報</div>
+          <div style="font-size:13px;color:#92400E;font-weight:700;margin-top:2px">${todayLabel}</div>
+        </div>
+        <button class="mclose" onclick="cm('m-daily-report')">✕</button>
+      </div>
+      <div class="mbody" id="daily-report-body">
+
+        <div class="no-print" style="display:flex;gap:10px;margin-bottom:18px;flex-wrap:wrap">
+          <button onclick="printDailyReport()" style="flex:1;background:linear-gradient(135deg,#FF4602,#FFB347);color:#fff;border:none;border-radius:12px;padding:12px;font-size:14px;font-weight:900;cursor:pointer;font-family:inherit;box-shadow:0 4px 12px rgba(255,70,2,0.25)">🖨 PDFで保存／印刷</button>
+          <button onclick="copyDailyReportText()" style="flex:1;background:#fff;color:#0E7490;border:2px solid #22D3EE;border-radius:12px;padding:12px;font-size:14px;font-weight:800;cursor:pointer;font-family:inherit">📋 テキストでコピー</button>
+        </div>
+
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(100px,1fr));gap:8px;margin-bottom:18px">
+          <div style="background:#F0FDF4;border:2px solid #86EFAC;border-radius:10px;padding:10px;text-align:center">
+            <div style="font-size:11px;color:#059669;font-weight:800;margin-bottom:2px">✨ 拡張</div>
+            <div style="font-size:24px;font-weight:900;color:#059669;line-height:1">${enrichedToday.length}</div>
+          </div>
+          <div style="background:#FFF7E6;border:2px solid #FB923C;border-radius:10px;padding:10px;text-align:center">
+            <div style="font-size:11px;color:#C2410C;font-weight:800;margin-bottom:2px">📞 電話</div>
+            <div style="font-size:24px;font-weight:900;color:#C2410C;line-height:1">${telEntries.length}</div>
+          </div>
+          <div style="background:#CFFAFE;border:2px solid #22D3EE;border-radius:10px;padding:10px;text-align:center">
+            <div style="font-size:11px;color:#0E7490;font-weight:800;margin-bottom:2px">🚶 訪問</div>
+            <div style="font-size:24px;font-weight:900;color:#0E7490;line-height:1">${visitEntries.length}</div>
+          </div>
+          <div style="background:#EDE9FE;border:2px solid #A78BFA;border-radius:10px;padding:10px;text-align:center">
+            <div style="font-size:11px;color:#6D28D9;font-weight:800;margin-bottom:2px">✉️ 手紙</div>
+            <div style="font-size:24px;font-weight:900;color:#6D28D9;line-height:1">${letterEntries.length}</div>
+          </div>
+          <div style="background:#FCE7F3;border:2px solid #F472B6;border-radius:10px;padding:10px;text-align:center">
+            <div style="font-size:11px;color:#BE185D;font-weight:800;margin-bottom:2px">🎯 アポ獲得</div>
+            <div style="font-size:24px;font-weight:900;color:#BE185D;line-height:1">${meetingEntries.length}</div>
+          </div>
+        </div>
+
+        <div class="rep-section">
+          <div class="rep-section-title" style="color:#059669;border-color:#86EFAC">✨ 情報拡張：${enrichedToday.length}社</div>
+          ${enrichedHtml}
+        </div>
+
+        <div class="rep-section">
+          <div class="rep-section-title" style="color:#C2410C;border-color:#FB923C">📞 電話：${telEntries.length}件</div>
+          ${renderEntries(telEntries, '電話')}
+        </div>
+
+        <div class="rep-section">
+          <div class="rep-section-title" style="color:#0E7490;border-color:#22D3EE">🚶 訪問：${visitEntries.length}件</div>
+          ${renderEntries(visitEntries, '訪問')}
+        </div>
+
+        <div class="rep-section">
+          <div class="rep-section-title" style="color:#6D28D9;border-color:#A78BFA">✉️ 手紙送付：${letterEntries.length}件</div>
+          ${renderEntries(letterEntries, '手紙送付')}
+        </div>
+
+        <div class="rep-section">
+          <div class="rep-section-title" style="color:#BE185D;border-color:#F472B6">🎯 今日の成果（アポ獲得）：${meetingEntries.length}件</div>
+          ${meetingEntries.length
+            ? meetingEntries.map(e => '<div class="rep-row rep-highlight"><span class="rep-time">' + fmtTime(e.ts) + '</span><span class="rep-co">' + escapeHtml(e.company) + '</span><span class="rep-result">🎯 アポ獲得！</span>' + (e.memo ? '<div class="rep-memo">「' + escapeHtml(e.memo) + '」</div>' : '') + '</div>').join('')
+            : '<div class="rep-empty">今日のアポ獲得はまだありません。明日がんばろう♪</div>'
+          }
+        </div>
+
+        <div style="margin-top:24px;padding:14px;background:#FFF7E6;border-radius:10px;text-align:center;font-size:12px;color:#92400E;font-weight:700">
+          総アクション数：<strong style="font-size:18px;color:#EA580C">${totalActions}</strong>件 | 拡張：${enrichedToday.length}社 | 成果：${meetingEntries.length}件アポ獲得
+        </div>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(div);
+}
+
+function printDailyReport() {
+  document.body.classList.add('print-daily-report');
+  setTimeout(() => {
+    window.print();
+    setTimeout(() => document.body.classList.remove('print-daily-report'), 1000);
+  }, 100);
+}
+
+function copyDailyReportText() {
+  const today = todayJST();
+  const todayLabel = formatDateJp(today);
+  const range = { from: today + 'T00:00:00', to: today + 'T23:59:59' };
+
+  const enrichedToday = items.filter(it =>
+    isEnriched(it) && (it.lastUpdatedAt || '').slice(0, 10) === today
+  ).sort((a, b) => (a.lastUpdatedAt || '').localeCompare(b.lastUpdatedAt || ''));
+
+  const allEntries = [];
+  for (const it of items) {
+    if (!it.approach || !it.approach.history) continue;
+    for (const h of it.approach.history) {
+      if (!h.ts || h.ts < range.from || h.ts > range.to) continue;
+      allEntries.push({ company: it.company, ...h });
+    }
+  }
+  allEntries.sort((a, b) => a.ts.localeCompare(b.ts));
+
+  const resultMap = {
+    reached: '担当者につながった', absent: '不在', reschedule: '後日折り返し',
+    rejected: 'お断り', meeting: 'アポ獲得！', reached_card: '名刺交換のみ',
+    rejected_retel: '門前払い→再電', rejected_letter: '門前払い→手紙',
+  };
+  const fmtTime = (ts) => (ts || '').slice(11, 16);
+
+  let txt = '📋 ' + todayLabel + ' の活動レポート\n';
+  txt += '════════════════════════\n\n';
+
+  txt += '✨ 情報拡張：' + enrichedToday.length + '社\n';
+  if (enrichedToday.length) {
+    for (const it of enrichedToday) {
+      const fields = [];
+      if (it.person) fields.push('代表者:' + it.person);
+      if (it.website) fields.push('HP');
+      if (it.instaUrl || it.fbUrl) fields.push('SNS');
+      if (it.indeedUrl || it.jobAntennaUrl || it.agreUrl) fields.push('求人');
+      txt += '  ' + (it.lastUpdatedAt||'').slice(11,16) + '  ' + it.company + ' → ' + fields.join(' / ') + '\n';
+    }
+  } else txt += '  （なし）\n';
+
+  const sections = [
+    { label: '📞 電話', filter: e => e.action === 'tel' },
+    { label: '🚶 訪問', filter: e => e.action === 'visit' },
+    { label: '✉️ 手紙送付', filter: e => e.action === 'letter_sent' },
+  ];
+  for (const sec of sections) {
+    const list = allEntries.filter(sec.filter);
+    txt += '\n' + sec.label + '：' + list.length + '件\n';
+    if (!list.length) txt += '  （なし）\n';
+    for (const e of list) {
+      txt += '  ' + fmtTime(e.ts) + '  ' + e.company;
+      if (e.callNo) txt += ' #' + e.callNo + '回目';
+      if (e.visitNo) txt += ' #' + e.visitNo + '回目';
+      const r = resultMap[e.result] || e.result || '';
+      if (r) txt += ' - ' + r;
+      txt += '\n';
+      if (e.memo) txt += '       「' + e.memo + '」\n';
+    }
+  }
+
+  const meetings = allEntries.filter(e => e.result === 'meeting');
+  txt += '\n🎯 今日の成果（アポ獲得）：' + meetings.length + '件\n';
+  if (!meetings.length) txt += '  （明日がんばろう）\n';
+  for (const e of meetings) {
+    txt += '  ' + fmtTime(e.ts) + '  ' + e.company + ' → アポ獲得！\n';
+    if (e.memo) txt += '       「' + e.memo + '」\n';
+  }
+
+  navigator.clipboard.writeText(txt).then(() => {
+    if (typeof showCopyAnimation === 'function') {
+      showCopyAnimation('📋 日報をコピーしました！\nLINEやSlackに貼り付けてね✨');
+    } else { toast('日報をコピーしました'); }
+  }).catch(() => {
+    const ta = document.createElement('textarea');
+    ta.value = txt;
+    document.body.appendChild(ta);
+    ta.select();
+    try { document.execCommand('copy'); } catch(e) {}
+    ta.remove();
+    toast('コピーしました');
+  });
+}
+
+function formatDateJp(yyyymmdd) {
+  if (!yyyymmdd) return '';
+  const d = new Date(yyyymmdd + 'T00:00:00+09:00');
+  const days = ['日','月','火','水','木','金','土'];
+  return d.getFullYear() + '年' + (d.getMonth()+1) + '月' + d.getDate() + '日 (' + days[d.getDay()] + ')';
 }
 
 // HTMLエスケープ（差分ビュー用）
