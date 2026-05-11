@@ -1233,8 +1233,8 @@ tr:hover td { background: rgba(255,70,2,0.03); cursor: pointer; }
 <!-- ═══ PAGE: アプローチ中 ═══ -->
 <div class="page" id="page-approach">
   <div class="topbar" style="font-family:'Hiragino Maru Gothic ProN','Yu Gothic UI',sans-serif">
-    <div class="page-title" style="font-size:26px;font-weight:900;color:#EA580C;letter-spacing:0.05em">🍊 アプローチ中</div>
-    <div class="topbar-sub" style="font-size:14px;color:#92400E;font-weight:700">進行中の企業をビタミン色で元気に管理！</div>
+    <div class="page-title" style="font-size:20px;font-weight:900;color:#EA580C;letter-spacing:0.05em">🍊 アプローチ中</div>
+    <div class="topbar-sub" style="font-size:12px;color:#92400E;font-weight:700">進行中の企業をビタミン色でPOPに管理！</div>
   </div>
   <div class="content">
     <!-- ★ 活動サマリーBOX（ビタミン版） -->
@@ -1260,35 +1260,35 @@ tr:hover td { background: rgba(255,70,2,0.03); cursor: pointer; }
       <div id="ap-activity-cards" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px"></div>
     </div>
 
-    <!-- 新フェーズサマリー（ビタミンカラー版）-->
-    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;margin-bottom:18px;font-family:'Hiragino Maru Gothic ProN','Yu Gothic UI',sans-serif">
-      <div class="appr-stat" data-phase="" style="background:linear-gradient(135deg,#FFEDD5,#FED7AA);border:3px solid #FB923C;border-radius:18px;padding:14px;text-align:center;cursor:pointer;transition:all 0.15s;box-shadow:0 4px 10px rgba(251,146,60,0.15)" onclick="filterByApprPhase('')" onmouseover="this.style.transform='translateY(-2px) scale(1.02)'" onmouseout="this.style.transform='translateY(0) scale(1)'">
-        <div style="font-size:13px;font-weight:900;color:#EA580C;margin-bottom:6px">📊 ぜんぶ</div>
-        <div id="ap-sum-all" style="font-size:36px;font-weight:900;color:#EA580C;line-height:1;letter-spacing:-0.02em">0</div>
+    <!-- 新フェーズサマリー（ビタミンカラー版・コンパクト）-->
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(95px,1fr));gap:8px;margin-bottom:14px;font-family:'Hiragino Maru Gothic ProN','Yu Gothic UI',sans-serif">
+      <div class="appr-stat" data-phase="" style="background:linear-gradient(135deg,#FFEDD5,#FED7AA);border:2px solid #FB923C;border-radius:12px;padding:8px;text-align:center;cursor:pointer;transition:all 0.15s" onclick="filterByApprPhase('')" onmouseover="this.style.transform='translateY(-1px)'" onmouseout="this.style.transform='translateY(0)'">
+        <div style="font-size:11px;font-weight:800;color:#EA580C;margin-bottom:2px">📊 ぜんぶ</div>
+        <div id="ap-sum-all" style="font-size:22px;font-weight:900;color:#EA580C;line-height:1">0</div>
       </div>
-      <div class="appr-stat" data-phase="tel_first" style="background:linear-gradient(135deg,#FEF3C7,#FDE68A);border:3px solid #F59E0B;border-radius:18px;padding:14px;text-align:center;cursor:pointer;transition:all 0.15s;box-shadow:0 4px 10px rgba(245,158,11,0.15)" onclick="filterByApprPhase('tel_first')" onmouseover="this.style.transform='translateY(-2px) scale(1.02)'" onmouseout="this.style.transform='translateY(0) scale(1)'">
-        <div style="font-size:13px;font-weight:900;color:#D97706;margin-bottom:6px">📞 電話①</div>
-        <div id="ap-sum-tel1" style="font-size:36px;font-weight:900;color:#D97706;line-height:1;letter-spacing:-0.02em">0</div>
+      <div class="appr-stat" data-phase="tel_first" style="background:linear-gradient(135deg,#FEF3C7,#FDE68A);border:2px solid #F59E0B;border-radius:12px;padding:8px;text-align:center;cursor:pointer;transition:all 0.15s" onclick="filterByApprPhase('tel_first')" onmouseover="this.style.transform='translateY(-1px)'" onmouseout="this.style.transform='translateY(0)'">
+        <div style="font-size:11px;font-weight:800;color:#D97706;margin-bottom:2px">📞 電話①</div>
+        <div id="ap-sum-tel1" style="font-size:22px;font-weight:900;color:#D97706;line-height:1">0</div>
       </div>
-      <div class="appr-stat" data-phase="tel_repeat" style="background:linear-gradient(135deg,#FED7AA,#FDBA74);border:3px solid #FB923C;border-radius:18px;padding:14px;text-align:center;cursor:pointer;transition:all 0.15s;box-shadow:0 4px 10px rgba(251,146,60,0.15)" onclick="filterByApprPhase('tel_repeat')" onmouseover="this.style.transform='translateY(-2px) scale(1.02)'" onmouseout="this.style.transform='translateY(0) scale(1)'">
-        <div style="font-size:13px;font-weight:900;color:#C2410C;margin-bottom:6px">🔄 再電</div>
-        <div id="ap-sum-telr" style="font-size:36px;font-weight:900;color:#C2410C;line-height:1;letter-spacing:-0.02em">0</div>
+      <div class="appr-stat" data-phase="tel_repeat" style="background:linear-gradient(135deg,#FED7AA,#FDBA74);border:2px solid #FB923C;border-radius:12px;padding:8px;text-align:center;cursor:pointer;transition:all 0.15s" onclick="filterByApprPhase('tel_repeat')" onmouseover="this.style.transform='translateY(-1px)'" onmouseout="this.style.transform='translateY(0)'">
+        <div style="font-size:11px;font-weight:800;color:#C2410C;margin-bottom:2px">🔄 再電</div>
+        <div id="ap-sum-telr" style="font-size:22px;font-weight:900;color:#C2410C;line-height:1">0</div>
       </div>
-      <div class="appr-stat" data-phase="visit_ready" style="background:linear-gradient(135deg,#D1FAE5,#A7F3D0);border:3px solid #34D399;border-radius:18px;padding:14px;text-align:center;cursor:pointer;transition:all 0.15s;box-shadow:0 4px 10px rgba(52,211,153,0.15)" onclick="filterByApprPhase('visit_ready')" onmouseover="this.style.transform='translateY(-2px) scale(1.02)'" onmouseout="this.style.transform='translateY(0) scale(1)'">
-        <div style="font-size:13px;font-weight:900;color:#059669;margin-bottom:6px">🚀 訪問可</div>
-        <div id="ap-sum-vr" style="font-size:36px;font-weight:900;color:#059669;line-height:1;letter-spacing:-0.02em">0</div>
+      <div class="appr-stat" data-phase="visit_ready" style="background:linear-gradient(135deg,#D1FAE5,#A7F3D0);border:2px solid #34D399;border-radius:12px;padding:8px;text-align:center;cursor:pointer;transition:all 0.15s" onclick="filterByApprPhase('visit_ready')" onmouseover="this.style.transform='translateY(-1px)'" onmouseout="this.style.transform='translateY(0)'">
+        <div style="font-size:11px;font-weight:800;color:#059669;margin-bottom:2px">🚀 訪問可</div>
+        <div id="ap-sum-vr" style="font-size:22px;font-weight:900;color:#059669;line-height:1">0</div>
       </div>
-      <div class="appr-stat" data-phase="letter" style="background:linear-gradient(135deg,#EDE9FE,#DDD6FE);border:3px solid #A78BFA;border-radius:18px;padding:14px;text-align:center;cursor:pointer;transition:all 0.15s;box-shadow:0 4px 10px rgba(167,139,250,0.15)" onclick="filterByApprPhase('letter')" onmouseover="this.style.transform='translateY(-2px) scale(1.02)'" onmouseout="this.style.transform='translateY(0) scale(1)'">
-        <div style="font-size:13px;font-weight:900;color:#7C3AED;margin-bottom:6px">✉️ 手紙</div>
-        <div id="ap-sum-letter" style="font-size:36px;font-weight:900;color:#7C3AED;line-height:1;letter-spacing:-0.02em">0</div>
+      <div class="appr-stat" data-phase="letter" style="background:linear-gradient(135deg,#EDE9FE,#DDD6FE);border:2px solid #A78BFA;border-radius:12px;padding:8px;text-align:center;cursor:pointer;transition:all 0.15s" onclick="filterByApprPhase('letter')" onmouseover="this.style.transform='translateY(-1px)'" onmouseout="this.style.transform='translateY(0)'">
+        <div style="font-size:11px;font-weight:800;color:#7C3AED;margin-bottom:2px">✉️ 手紙</div>
+        <div id="ap-sum-letter" style="font-size:22px;font-weight:900;color:#7C3AED;line-height:1">0</div>
       </div>
-      <div class="appr-stat" data-phase="dormant" style="background:linear-gradient(135deg,#E0E7FF,#C7D2FE);border:3px solid #818CF8;border-radius:18px;padding:14px;text-align:center;cursor:pointer;transition:all 0.15s;box-shadow:0 4px 10px rgba(129,140,248,0.15)" onclick="filterByApprPhase('dormant')" onmouseover="this.style.transform='translateY(-2px) scale(1.02)'" onmouseout="this.style.transform='translateY(0) scale(1)'">
-        <div style="font-size:13px;font-weight:900;color:#4F46E5;margin-bottom:6px">💤 休眠中</div>
-        <div id="ap-sum-dormant" style="font-size:36px;font-weight:900;color:#4F46E5;line-height:1;letter-spacing:-0.02em">0</div>
+      <div class="appr-stat" data-phase="dormant" style="background:linear-gradient(135deg,#E0E7FF,#C7D2FE);border:2px solid #818CF8;border-radius:12px;padding:8px;text-align:center;cursor:pointer;transition:all 0.15s" onclick="filterByApprPhase('dormant')" onmouseover="this.style.transform='translateY(-1px)'" onmouseout="this.style.transform='translateY(0)'">
+        <div style="font-size:11px;font-weight:800;color:#4F46E5;margin-bottom:2px">💤 休眠中</div>
+        <div id="ap-sum-dormant" style="font-size:22px;font-weight:900;color:#4F46E5;line-height:1">0</div>
       </div>
-      <div class="appr-stat" data-phase="meeting_won" style="background:linear-gradient(135deg,#FCE7F3,#FBCFE8);border:3px solid #F472B6;border-radius:18px;padding:14px;text-align:center;cursor:pointer;transition:all 0.15s;box-shadow:0 4px 10px rgba(244,114,182,0.2)" onclick="filterByApprPhase('meeting_won')" onmouseover="this.style.transform='translateY(-2px) scale(1.02)'" onmouseout="this.style.transform='translateY(0) scale(1)'">
-        <div style="font-size:13px;font-weight:900;color:#BE185D;margin-bottom:6px">🎯 アポ獲得</div>
-        <div id="ap-sum-won" style="font-size:36px;font-weight:900;color:#BE185D;line-height:1;letter-spacing:-0.02em">0</div>
+      <div class="appr-stat" data-phase="meeting_won" style="background:linear-gradient(135deg,#FCE7F3,#FBCFE8);border:2px solid #F472B6;border-radius:12px;padding:8px;text-align:center;cursor:pointer;transition:all 0.15s" onclick="filterByApprPhase('meeting_won')" onmouseover="this.style.transform='translateY(-1px)'" onmouseout="this.style.transform='translateY(0)'">
+        <div style="font-size:11px;font-weight:800;color:#BE185D;margin-bottom:2px">🎯 アポ獲得</div>
+        <div id="ap-sum-won" style="font-size:22px;font-weight:900;color:#BE185D;line-height:1">0</div>
       </div>
     </div>
 
@@ -3073,7 +3073,7 @@ function renderApproach() {
   if (!list.length) { tbody.innerHTML = ''; if (empty) empty.style.display = 'block'; return; }
   if (empty) empty.style.display = 'none';
 
-  tbody.innerHTML = '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:16px;font-family:\'Hiragino Maru Gothic ProN\',\'Yu Gothic UI\',sans-serif">' +
+  tbody.innerHTML = '<div style="display:flex;flex-direction:column;gap:8px;font-family:\'Hiragino Maru Gothic ProN\',\'Yu Gothic UI\',sans-serif">' +
     list.map(it => {
     const a = it.approach;
     const p = APPROACH_PHASE[a.currentPhase] || APPROACH_PHASE.not_started;
@@ -3082,23 +3082,23 @@ function renderApproach() {
       ? Math.max(0, Math.ceil((new Date(a.dormantUntil) - new Date(today)) / (1000*60*60*24)))
       : 0;
 
-    // フェーズに応じたビタミンカラー
+    // フェーズに応じたビタミンカラー（アクセント用）
     const phaseColors = {
-      tel_first:   { bg:'#FFF7E6', border:'#FBBF24', accent:'#D97706', emoji:'📞' },
-      tel_repeat:  { bg:'#FEF3C7', border:'#F59E0B', accent:'#92400E', emoji:'🔄' },
-      visit_ready: { bg:'#ECFDF5', border:'#34D399', accent:'#059669', emoji:'🚀' },
-      visit_done:  { bg:'#CFFAFE', border:'#22D3EE', accent:'#0E7490', emoji:'🚶' },
-      letter:      { bg:'#F3E8FF', border:'#A78BFA', accent:'#6D28D9', emoji:'✉️' },
-      dormant_2w:  { bg:'#E0E7FF', border:'#818CF8', accent:'#4338CA', emoji:'💤' },
-      dormant_5m:  { bg:'#DBEAFE', border:'#60A5FA', accent:'#1D4ED8', emoji:'❄️' },
-      meeting_won: { bg:'#FCE7F3', border:'#F472B6', accent:'#BE185D', emoji:'🎯' },
-      rejected_final: { bg:'#FEE2E2', border:'#FCA5A5', accent:'#B91C1C', emoji:'❌' },
-      not_started: { bg:'#F3F4F6', border:'#D1D5DB', accent:'#6B7280', emoji:'⚪' },
+      tel_first:   { border:'#FBBF24', accent:'#D97706', emoji:'📞' },
+      tel_repeat:  { border:'#FB923C', accent:'#C2410C', emoji:'🔄' },
+      visit_ready: { border:'#34D399', accent:'#059669', emoji:'🚀' },
+      visit_done:  { border:'#22D3EE', accent:'#0E7490', emoji:'🚶' },
+      letter:      { border:'#A78BFA', accent:'#7C3AED', emoji:'✉️' },
+      dormant_2w:  { border:'#818CF8', accent:'#4F46E5', emoji:'💤' },
+      dormant_5m:  { border:'#60A5FA', accent:'#2563EB', emoji:'❄️' },
+      meeting_won: { border:'#F472B6', accent:'#BE185D', emoji:'🎯' },
+      rejected_final: { border:'#FCA5A5', accent:'#B91C1C', emoji:'❌' },
+      not_started: { border:'#D1D5DB', accent:'#6B7280', emoji:'⚪' },
     };
     const c = phaseColors[a.currentPhase] || phaseColors.not_started;
 
-    // 履歴ドット（直近10件、可愛く大きく）
-    const trailDots = (a.history || []).slice(-10).map(h => {
+    // 履歴ドット（直近6件、小さめ）
+    const trailDots = (a.history || []).slice(-6).map(h => {
       let color = '#9CA3AF', icon = '·';
       if (h.result === 'meeting') { color = '#16A34A'; icon = '🎯'; }
       else if (h.result === 'reached' || h.result === 'reached_card') { color = '#06B6D4'; icon = '💌'; }
@@ -3117,63 +3117,57 @@ function renderApproach() {
       };
       const tooltipDate = (h.ts||'').slice(0,10);
       const tooltipResult = labelMap[h.result || h.action] || (h.result || h.action);
-      return '<div title="' + tooltipDate + ' / ' + tooltipResult + '" style="width:24px;height:24px;border-radius:50%;background:' + color + '22;border:2px solid ' + color + ';display:flex;align-items:center;justify-content:center;font-size:11px">' + icon + '</div>';
+      return '<span title="' + tooltipDate + ' / ' + tooltipResult + '" style="display:inline-block;width:16px;height:16px;border-radius:50%;background:' + color + '22;border:1.5px solid ' + color + ';font-size:8px;line-height:14px;text-align:center">' + icon + '</span>';
     }).join('');
 
-    // 次のアクションUI
+    // 次のアクション（コンパクト）
     let nextActionHtml = '';
     if (a.currentPhase === 'meeting_won') {
-      nextActionHtml = '<div style="background:linear-gradient(135deg,#F472B6,#EC4899);color:#fff;padding:16px;border-radius:14px;font-size:16px;font-weight:900;text-align:center;letter-spacing:0.05em;box-shadow:0 4px 12px rgba(236,72,153,0.3)">🎯 商談獲得！</div>';
+      nextActionHtml = '<div style="background:#F472B6;color:#fff;padding:6px 12px;border-radius:8px;font-size:12px;font-weight:900;white-space:nowrap">🎯 商談獲得</div>';
     } else if (isDormantNow) {
       let actionVerb = '再電';
       let actionIcon = '📞';
       if (a.dormantReason === 'letter_followup_6w') { actionVerb = '手紙フォロー電話'; actionIcon = '📞'; }
-      else if (a.dormantReason === 'rejected_4times_5m') { actionVerb = '再電（拒否多4回）'; actionIcon = '🔄'; }
+      else if (a.dormantReason === 'rejected_4times_5m') { actionVerb = '再電'; actionIcon = '🔄'; }
       const isToday = dormantDaysLeft === 0;
-      const mainLabel = isToday
-        ? '<span style="font-size:22px">今日</span> ' + actionIcon + ' ' + actionVerb + '！'
-        : actionIcon + ' <span style="font-size:24px;font-weight:900">' + dormantDaysLeft + '</span><span style="font-size:13px">日後に</span>' + actionVerb;
-      const bgGrad = isToday ? 'linear-gradient(135deg,#FCA5A5,#F87171)' : 'linear-gradient(135deg,#FED7AA,#FCD34D)';
+      const bg = isToday ? '#FCA5A5' : '#FED7AA';
       const textColor = isToday ? '#fff' : '#92400E';
-      nextActionHtml =
-        '<div style="background:' + bgGrad + ';border-radius:14px;padding:14px;text-align:center;box-shadow:0 4px 12px rgba(0,0,0,0.08)">' +
-          '<div style="font-size:15px;color:' + textColor + ';font-weight:900;line-height:1.3">' + mainLabel + '</div>' +
-          '<div style="font-size:10px;color:' + textColor + ';opacity:0.85;margin-top:4px;font-weight:700">予定: ' + (a.dormantUntil || '—') + '</div>' +
-        '</div>';
+      const label = isToday
+        ? '今日 ' + actionIcon + ' ' + actionVerb + '！'
+        : actionIcon + ' ' + dormantDaysLeft + '日後に' + actionVerb;
+      nextActionHtml = '<div style="background:' + bg + ';color:' + textColor + ';padding:6px 12px;border-radius:8px;font-size:12px;font-weight:800;white-space:nowrap">' + label + '</div>';
     } else {
-      nextActionHtml = '<button onclick="event.stopPropagation();openApproachAction(' + it.id + ')" style="width:100%;background:linear-gradient(135deg,#FF4602,#FFB347);color:#fff;border:none;border-radius:14px;padding:16px;font-size:17px;font-weight:900;cursor:pointer;font-family:\'Hiragino Maru Gothic ProN\',\'Yu Gothic UI\',sans-serif;box-shadow:0 4px 14px rgba(255,70,2,0.3);letter-spacing:0.05em;transition:all 0.15s" onmouseover="this.style.transform=\'translateY(-2px)\';this.style.boxShadow=\'0 8px 20px rgba(255,70,2,0.4)\'" onmouseout="this.style.transform=\'translateY(0)\';this.style.boxShadow=\'0 4px 14px rgba(255,70,2,0.3)\'">▶ ' + p.label + 'する</button>';
+      nextActionHtml = '<button onclick="event.stopPropagation();openApproachAction(' + it.id + ')" style="background:linear-gradient(135deg,#FF4602,#FFB347);color:#fff;border:none;border-radius:10px;padding:8px 16px;font-size:13px;font-weight:900;cursor:pointer;font-family:inherit;white-space:nowrap;box-shadow:0 2px 6px rgba(255,70,2,0.25)">▶ ' + p.label + '</button>';
     }
 
-    return '<div onclick="openDetail(' + it.id + ')" style="background:' + c.bg + ';border:3px solid ' + c.border + ';border-radius:20px;padding:20px;cursor:pointer;transition:all 0.15s;display:flex;flex-direction:column;gap:14px" onmouseover="this.style.transform=\'translateY(-3px)\';this.style.boxShadow=\'0 10px 24px rgba(0,0,0,0.1)\'" onmouseout="this.style.transform=\'translateY(0)\';this.style.boxShadow=\'none\'">' +
-      // フェーズバッジ（でかい）
-      '<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap">' +
-        '<div style="background:' + c.border + ';color:#fff;padding:8px 16px;border-radius:14px;font-size:16px;font-weight:900;display:inline-flex;align-items:center;gap:6px;letter-spacing:0.04em">' +
-          '<span style="font-size:22px">' + c.emoji + '</span>' +
-          '<span>' + p.label + '</span>' +
-        '</div>' +
-        (a.rejectCount > 0 ? '<div style="background:#fff;border:2px solid #FCA5A5;color:#DC2626;padding:4px 12px;border-radius:10px;font-size:13px;font-weight:900">🛑 拒否' + a.rejectCount + '</div>' : '') +
-      '</div>' +
-      // 会社名（大）
-      '<div>' +
-        '<div style="font-size:22px;font-weight:900;color:#1F2937;line-height:1.3;letter-spacing:0.02em;word-break:break-all">' + escapeHtml(it.company) + '</div>' +
-        '<div style="font-size:13px;color:#6B7280;font-weight:700;margin-top:4px">' +
-          (it.person ? '👤 ' + escapeHtml(it.person) + ' · ' : '') +
-          (it.industry ? '🏭 ' + escapeHtml(it.industry) + ' · ' : '') +
-          (it.area ? '📍 ' + escapeHtml(it.area) : '') +
+    // フェーズバッジ（コンパクト）
+    const phaseBadge = '<span style="display:inline-flex;align-items:center;gap:4px;background:' + c.border + ';color:#fff;padding:3px 10px;border-radius:8px;font-size:11px;font-weight:800;white-space:nowrap">' +
+      '<span>' + c.emoji + '</span><span>' + p.label + '</span>' +
+    '</span>';
+
+    return '<div onclick="openDetail(' + it.id + ')" style="background:#fff;border-left:4px solid ' + c.border + ';border-top:1px solid #F3F4F6;border-right:1px solid #F3F4F6;border-bottom:1px solid #F3F4F6;border-radius:10px;padding:10px 14px;cursor:pointer;transition:all 0.15s;display:flex;align-items:center;gap:12px;flex-wrap:wrap" onmouseover="this.style.transform=\'translateX(2px)\';this.style.boxShadow=\'0 2px 8px rgba(0,0,0,0.06)\'" onmouseout="this.style.transform=\'translateX(0)\';this.style.boxShadow=\'none\'">' +
+      // 左：会社名 + サブ情報（縦並び）
+      '<div style="flex:1;min-width:180px">' +
+        '<div style="font-size:14px;font-weight:800;color:#1F2937;line-height:1.3;word-break:break-all">' + escapeHtml(it.company) + '</div>' +
+        '<div style="font-size:10px;color:#6B7280;font-weight:600;margin-top:2px">' +
+          (it.industry ? escapeHtml(it.industry) : '') +
+          (it.industry && it.area ? ' · ' : '') +
+          (it.area ? escapeHtml(it.area) : '') +
+          (it.person ? ' · 👤' + escapeHtml(it.person) : '') +
         '</div>' +
       '</div>' +
-      // 履歴行
-      '<div style="background:rgba(255,255,255,0.6);border-radius:12px;padding:10px 14px">' +
-        '<div style="font-size:11px;color:' + c.accent + ';font-weight:800;margin-bottom:6px;display:flex;align-items:center;gap:6px">' +
-          '<span>📋 これまでの履歴</span>' +
-          '<span style="margin-left:auto;background:#fff;padding:2px 10px;border-radius:8px;font-size:12px;color:#FF4602;font-weight:900">📞 ' + a.callCount + '</span>' +
-          '<span style="background:#fff;padding:2px 10px;border-radius:8px;font-size:12px;color:#0891B2;font-weight:900">🚶 ' + a.visitCount + '</span>' +
-        '</div>' +
-        '<div style="display:flex;gap:6px;flex-wrap:wrap;min-height:24px">' +
-          (trailDots || '<div style="font-size:11px;color:#9CA3AF;font-weight:700">まだ履歴がありません</div>') +
-        '</div>' +
+      // 中央：フェーズバッジ + 拒否
+      '<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">' +
+        phaseBadge +
+        (a.rejectCount > 0 ? '<span style="background:#FEE2E2;color:#DC2626;padding:2px 8px;border-radius:6px;font-size:10px;font-weight:800">🛑 拒否' + a.rejectCount + '</span>' : '') +
       '</div>' +
-      // 次のアクション
+      // 履歴ドット + 件数（コンパクト）
+      '<div style="display:flex;align-items:center;gap:4px;min-width:120px">' +
+        '<span style="font-size:10px;color:#FF4602;font-weight:800">📞' + a.callCount + '</span>' +
+        '<span style="font-size:10px;color:#0891B2;font-weight:800">🚶' + a.visitCount + '</span>' +
+        (trailDots ? '<span style="display:inline-flex;gap:2px;margin-left:4px">' + trailDots + '</span>' : '') +
+      '</div>' +
+      // 右：次のアクション
       '<div>' + nextActionHtml + '</div>' +
     '</div>';
   }).join('') + '</div>';
@@ -3401,10 +3395,10 @@ function renderApActivityBox() {
     { label: '🎯', sub: 'アポ獲得', val: range ? totalActivityInRange(range, 'meeting') : 0, bg: 'linear-gradient(135deg,#FCE7F3,#FBCFE8)', color: '#BE185D', border: '#F472B6' },
   ];
   wrap.innerHTML = cards.map(c =>
-    '<div style="background:' + c.bg + ';border:3px solid ' + c.border + ';border-radius:14px;padding:12px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:4px;box-shadow:0 4px 10px rgba(0,0,0,0.04);font-family:\'Hiragino Maru Gothic ProN\',\'Yu Gothic UI\',sans-serif">' +
-      '<div style="font-size:28px;line-height:1">' + c.label + '</div>' +
-      '<div style="font-size:32px;font-weight:900;color:' + c.color + ';line-height:1;letter-spacing:-0.02em">' + c.val + '</div>' +
-      '<div style="font-size:12px;color:' + c.color + ';font-weight:800">' + c.sub + '</div>' +
+    '<div style="background:' + c.bg + ';border:2px solid ' + c.border + ';border-radius:10px;padding:8px 12px;display:flex;align-items:center;justify-content:center;gap:8px;font-family:\'Hiragino Maru Gothic ProN\',\'Yu Gothic UI\',sans-serif">' +
+      '<span style="font-size:18px;line-height:1">' + c.label + '</span>' +
+      '<span style="font-size:22px;font-weight:900;color:' + c.color + ';line-height:1">' + c.val + '</span>' +
+      '<span style="font-size:11px;color:' + c.color + ';font-weight:800">' + c.sub + '</span>' +
     '</div>'
   ).join('');
 }
