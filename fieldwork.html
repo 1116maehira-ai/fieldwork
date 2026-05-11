@@ -1405,7 +1405,7 @@ tr:hover td { background: rgba(255,70,2,0.03); cursor: pointer; }
 <div class="page" id="page-dash">
   <div class="topbar" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px">
     <div class="page-title">DASHBOARD</div>
-    <button onclick="openDailyReport()" style="background:linear-gradient(135deg,#FF4602,#FFB347);color:#fff;border:none;border-radius:12px;padding:10px 20px;font-size:13px;font-weight:900;cursor:pointer;font-family:'Hiragino Maru Gothic ProN','Yu Gothic UI',sans-serif;box-shadow:0 4px 12px rgba(255,70,2,0.3);transition:all 0.15s" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(0)'">📋 今日の日報を見る</button>
+    <button onclick="openDailyReport()" style="background:linear-gradient(135deg,#FF4602,#FFB347);color:#fff;border:none;border-radius:12px;padding:10px 20px;font-size:13px;font-weight:900;cursor:pointer;font-family:'Hiragino Maru Gothic ProN','Yu Gothic UI',sans-serif;box-shadow:0 4px 12px rgba(255,70,2,0.3);transition:all 0.15s" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(0)'">🔥 明日の戦略を練る、今日のデータ</button>
   </div>
   <div class="content">
     <div class="stat-row stat-row-3">
@@ -7685,8 +7685,8 @@ function openDailyReport() {
     <div class="modal" style="max-width:780px;max-height:92vh;overflow-y:auto;border-radius:18px;font-family:'Hiragino Maru Gothic ProN','Yu Gothic UI',sans-serif">
       <div class="mhead" style="background:linear-gradient(135deg,#FFF8F3 0%,#FFEEDD 100%);border-bottom:2px solid #FFD0BC">
         <div>
-          <div class="mtitle" style="font-size:20px;font-weight:900;color:#EA580C">📋 今日の日報</div>
-          <div style="font-size:13px;color:#92400E;font-weight:700;margin-top:2px">${todayLabel}</div>
+          <div class="mtitle" style="font-size:20px;font-weight:900;color:#EA580C">🔥 明日の戦略を練る、今日のデータ</div>
+          <div style="font-size:13px;color:#92400E;font-weight:700;margin-top:2px">${todayLabel} の活動を振り返って、次の一手を考えよう ✨</div>
         </div>
         <button class="mclose" onclick="cm('m-daily-report')">✕</button>
       </div>
