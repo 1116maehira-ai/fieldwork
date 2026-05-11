@@ -3806,6 +3806,15 @@ function showTelModal(it, a) {
   if (it.person) knownInfo.push('👤 ' + it.person);
   if (it.industry) knownInfo.push('🏭 ' + it.industry);
   if (it.foundingDate) knownInfo.push('🎂 創業 ' + it.foundingDate);
+  // 周年情報（次の周年まであと何ヶ月）
+  const anniv = (typeof calcAnniversary === 'function') ? calcAnniversary(it) : null;
+  if (anniv) {
+    if (anniv.monthsUntil === 0) {
+      knownInfo.push('🎉 今月' + anniv.nextYears + '周年！');
+    } else {
+      knownInfo.push('⭐ ' + anniv.nextYears + '周年まであと' + anniv.monthsUntil + 'ヶ月');
+    }
+  }
   if (it.website) knownInfo.push('🌐 HP有');
   if (it.instaUrl) knownInfo.push('📷 IG有');
   if (it.fbUrl) knownInfo.push('📘 FB有');
