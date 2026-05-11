@@ -2298,6 +2298,51 @@ function getNextPhaseInfo(it) {
   return null;
 }
 
+// ══════════════════════════════════════════
+// 「拡張済み」の判定 ── 統一ルール
+// 代表者名・公式HP・SNS（Insta/FB/X/TikTok）・求人URL系（求人/Indeed/JobAntenna/Agre）
+// のいずれか1個以上が「実値」として入っていれば拡張済みとみなす
+// ══════════════════════════════════════════
+const ENRICHMENT_FIELDS = [
+  'person',       // 代表者名
+  'website',      // 公式HP
+  'instaUrl',     // Instagram
+  'fbUrl',        // Facebook
+  'xUrl',         // X (Twitter)
+  'tiktokUrl',    // TikTok
+  'jobUrl',       // 求人
+  'indeedUrl',    // Indeed
+  'jobAntennaUrl',// ジョブアンテナ
+  'agreUrl',      // アグレ
+];
+
+function hasMeaningfulValue(v) {
+  if (v === null || v === undefined) return false;
+  const s = String(v).trim();
+  if (!s) return false;
+  if (s === 'N/A' || s === 'n/a' || s === '不明' || s === '—' || s === '-') return false;
+  return true;
+}
+
+// 企業が「有意義に拡張されているか」をチェック
+function isEnriched(it) {
+  if (!it) return false;
+  for (const f of ENRICHMENT_FIELDS) {
+    if (hasMeaningfulValue(it[f])) return true;
+  }
+  return false;
+}
+
+// 拡張時刻の更新は isEnriched() が true の時のみ
+function maybeMarkEnriched(it) {
+  if (isEnriched(it)) {
+    it.lastUpdatedAt = nowJSTISO();
+    it.researchStatus = 'done';
+    return true;
+  }
+  return false;
+}
+
 function calcScore(it) {
   const m = MARGIN[it.industry] || 20;
   const rv = {'〜1000万':10,'1000万〜3000万':18,'3000万〜1億':28,'1億以上':38};
@@ -2682,17 +2727,17 @@ function renderList() {
       const limit = daysAgo(30);
       list = list.filter(it => (it.createdAt||'').slice(0,10) >= limit);
     }
-    // 拡張日（lastUpdatedAt）系
-    else if (periodF === 'enriched_today') list = list.filter(it => (it.lastUpdatedAt||'').slice(0,10) === todayStr);
+    // 拡張日（lastUpdatedAt）系 ※ isEnriched()=true の企業だけが拡張済み扱い
+    else if (periodF === 'enriched_today') list = list.filter(it => isEnriched(it) && (it.lastUpdatedAt||'').slice(0,10) === todayStr);
     else if (periodF === 'enriched_week') {
       const limit = daysAgo(7);
-      list = list.filter(it => (it.lastUpdatedAt||'').slice(0,10) >= limit);
+      list = list.filter(it => isEnriched(it) && (it.lastUpdatedAt||'').slice(0,10) >= limit);
     } else if (periodF === 'enriched_month') {
       const limit = daysAgo(30);
-      list = list.filter(it => (it.lastUpdatedAt||'').slice(0,10) >= limit);
+      list = list.filter(it => isEnriched(it) && (it.lastUpdatedAt||'').slice(0,10) >= limit);
     }
-    // 未拡張：lastUpdatedAtが空 = まだGemini取込やCSV反映がない
-    else if (periodF === 'never_enriched') list = list.filter(it => !it.lastUpdatedAt);
+    // 未拡張：isEnriched() で false（有意義項目が全く埋まっていない）
+    else if (periodF === 'never_enriched') list = list.filter(it => !isEnriched(it));
   }
 
   // ソート
@@ -2729,7 +2774,7 @@ function renderList() {
   const set = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
   set('ls-total', all.length);
   set('ls-new', all.filter(x=>!(x.logs||[]).length && !x.excluded).length);
-  set('ls-unresearched', all.filter(x=>!x.excluded && !x.lastUpdatedAt).length);
+  set('ls-unresearched', all.filter(x=>!x.excluded && !isEnriched(x)).length);
   set('ls-hire', all.filter(x=>x.indeedUrl||x.jobAntennaUrl||x.agreUrl).length);
   set('ls-sns-count', all.filter(x=>x.instaUrl||x.fbUrl||x.xUrl||x.tiktokUrl).length);
   set('ls-noncompany', all.filter(x=>!isLikelyCompany(x)).length);
@@ -5827,8 +5872,8 @@ function parseAndApplyGemini(btnEl) {
   const kept = changes.filter(c => c.action === 'kept');
 
   if (filled.length > 0) {
-    it.lastUpdatedAt = nowJSTISO();
-    it.researchStatus = 'done';
+    // 統一ルール：有意義な項目が1つでも実値で入っているかチェック
+    maybeMarkEnriched(it);
   }
 
   it.score = calcScore(it);
@@ -5902,7 +5947,7 @@ function openGeminiGuide() {
 // ══ Geminiリサーチモード ══
 function startResearchMode() {
   // 未拡張の企業（まだGeminiで情報追加されてない企業）を上から30件
-  const candidates = getFilteredItems().filter(it => !it.excluded && !it.lastUpdatedAt);
+  const candidates = getFilteredItems().filter(it => !it.excluded && !isEnriched(it));
   if (!candidates.length) { toast('未拡張の企業がありません！（全社すでに情報拡張済み）'); return; }
   const batch = candidates.slice(0, 30);
 
@@ -6339,21 +6384,21 @@ function renderCollectSummary() {
   if (!wrap) return;
   const all = items;
   const noStart = all.filter(x => !x.approach || !x.approach.started).length;
-  const notEnriched = all.filter(x => !x.lastUpdatedAt && !x.excluded).length;
+  const notEnriched = all.filter(x => !isEnriched(x) && !x.excluded).length;
   const hasJob = all.filter(x => x.indeedUrl || x.jobAntennaUrl || x.agreUrl || x.jobUrl).length;
   const hasSns = all.filter(x => x.instaUrl || x.fbUrl || x.xUrl || x.tiktokUrl).length;
   const nonBiz = all.filter(x => !isLikelyCompany(x) || x.manualCompanyFlag === 'non_company').length;
 
   const cards = [
-    { label: '📊 合計', val: all.length, color: '#FF4602', bg: '#FFF3EE' },
-    { label: '📥 未着手', val: noStart, color: '#16A34A', bg: '#F0FDF4', sub: 'アプローチ前' },
-    { label: '🌱 未拡張', val: notEnriched, color: '#6366F1', bg: '#EEF2FF', sub: '収集のみ' },
-    { label: '💼 求人掲載あり', val: hasJob, color: '#059669', bg: '#ECFDF5' },
-    { label: '📱 SNSあり', val: hasSns, color: '#7C3AED', bg: '#F5F3FF' },
-    { label: '🏞 非企業', val: nonBiz, color: '#92400E', bg: '#FEF3C7' },
+    { label: '📊 合計', val: all.length, color: '#FF4602', bg: '#FFF3EE', tooltip: '収集された企業の総数' },
+    { label: '📥 未着手', val: noStart, color: '#16A34A', bg: '#F0FDF4', sub: 'アプローチ前', tooltip: 'まだアプローチを開始していない企業' },
+    { label: '🌱 未拡張', val: notEnriched, color: '#6366F1', bg: '#EEF2FF', sub: '収集のみ', tooltip: '代表者名・HP・SNS・求人URL、どれも入ってない企業（Geminiで調べる必要あり）' },
+    { label: '💼 求人掲載あり', val: hasJob, color: '#059669', bg: '#ECFDF5', tooltip: 'Indeed/求人サイト等のURLが登録済' },
+    { label: '📱 SNSあり', val: hasSns, color: '#7C3AED', bg: '#F5F3FF', tooltip: 'Instagram/Facebook/X/TikTokのURLが登録済' },
+    { label: '🏞 非企業', val: nonBiz, color: '#92400E', bg: '#FEF3C7', tooltip: '会社ではないと判定された施設・建物' },
   ];
   wrap.innerHTML = cards.map(c =>
-    '<div style="background:' + c.bg + ';border:2px solid ' + c.color + '33;border-radius:12px;padding:12px 10px;text-align:center">' +
+    '<div title="' + c.tooltip + '" style="background:' + c.bg + ';border:2px solid ' + c.color + '33;border-radius:12px;padding:12px 10px;text-align:center;cursor:help">' +
       '<div style="font-size:11px;font-weight:700;color:' + c.color + ';margin-bottom:4px">' + c.label + '</div>' +
       '<div style="font-size:26px;font-weight:900;color:' + c.color + ';line-height:1">' + c.val + '</div>' +
       (c.sub ? '<div style="font-size:9px;color:' + c.color + ';opacity:0.7;margin-top:3px">件 ' + c.sub + '</div>' : '<div style="font-size:9px;color:' + c.color + ';opacity:0.7;margin-top:3px">件</div>') +
@@ -6592,8 +6637,8 @@ function commitGeminiPaste() {
     fillIfEmpty('revenue', obj.revenue);
     fillIfEmpty('employeeCount', obj.employees);
     fillIfEmpty('researchNotes', obj.notes);
-    it.lastUpdatedAt = new Date().toISOString();
-    updatedCount++;
+    // 統一ルール：有意義項目（代表者名・HP・SNS・求人）が実値で1つでも入ってる場合のみ拡張
+    if (maybeMarkEnriched(it)) updatedCount++;
   }
   if (updatedCount === 0) {
     toast('⚠️ 一致する企業が見つかりませんでした');
@@ -6867,8 +6912,8 @@ function getFilteredItems() {
     if (jobFilter === 'no_job' && it.jobUrl) return false;
     if (prefFilter && getPrefFromArea(it.area || it.addr || '') !== prefFilter) return false;
     if (areaFilter && !(it.area || '').includes(areaFilter)) return false;
-    if (researchFilter === 'not_enriched' && it.lastUpdatedAt) return false;
-    if (researchFilter === 'enriched' && !it.lastUpdatedAt) return false;
+    if (researchFilter === 'not_enriched' && isEnriched(it)) return false;
+    if (researchFilter === 'enriched' && !isEnriched(it)) return false;
     return true;
   });
 }
@@ -6876,6 +6921,8 @@ function getFilteredItems() {
 // ══ 直近24時間以内に情報更新されたかどうか ══
 function isRecentlyUpdated(it) {
   if (!it.lastUpdatedAt) return false;
+  // 統一ルール：有意義な項目が入っていないと「拡張済み」と見なさない
+  if (!isEnriched(it)) return false;
   const updated = new Date(it.lastUpdatedAt);
   if (isNaN(updated)) return false;
   const now = new Date();
@@ -7112,7 +7159,7 @@ function editWebsite(id) {
     return;
   }
   it.website = trimmed;
-  it.lastUpdatedAt = nowJSTISO();
+  maybeMarkEnriched(it);
   save();
   toast(trimmed ? '公式HPを更新しました' : '公式HPを削除しました');
   if (selId === id) openDetail(id);
@@ -7381,8 +7428,7 @@ function processCsvFile(file) {
       }
 
       if (changed) {
-        item.lastUpdatedAt = nowJSTISO();
-        item.researchStatus = 'done';
+        maybeMarkEnriched(item);
       }
       // 変化のあった企業のみ記録（fillまたはexpandが1つでもあれば）
       const filledCount = fieldChanges.filter(c => c.action === 'fill' || c.action === 'expand').length;
