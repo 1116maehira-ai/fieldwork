@@ -5317,22 +5317,90 @@ function openDetail(id) {
       ${an?`<div class="phase-auto" style="margin-top:14px;background:#fff;padding:10px 14px;border-radius:10px"><div class="pa-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 2l4 4-4 4"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><path d="M7 22l-4-4 4-4"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg></div><div><div class="pa-title">移行推奨: → ${PHASE[an.phase].label}</div><div class="pa-desc">${an.msg}</div></div></div>`:''}
     </div>`;
   const tl=document.getElementById('dt-tl');
-  if (!(it.logs||[]).length) {
+  // 旧logs と 新approach.history を統合
+  const entries = [];
+  // 旧形式
+  for (const l of (it.logs || [])) {
+    entries.push({
+      ts: l.date + ' ' + (l.time || ''),
+      sortKey: (l.date || '') + 'T' + (l.time || '00:00'),
+      type: l.type, // 'visit' | 'tel' | 'letter'
+      result: l.result || '',
+      memo: l.memo || '',
+      autoPhase: l.autoPhase,
+      nextDate: l.nextDate,
+      nextAction: l.nextAction,
+      _src: 'legacy',
+    });
+  }
+  // 新形式 approach.history
+  if (it.approach && Array.isArray(it.approach.history)) {
+    for (const h of it.approach.history) {
+      const tsLabel = (h.ts || '').slice(0, 16).replace('T', ' ');
+      // result を日本語に変換
+      const resultMap = {
+        reached: '🤩 担当者につながった',
+        absent: '🏠 不在',
+        reschedule: '📅 後日折り返し',
+        rejected: '🚫 お断り',
+        meeting: '🎯 アポ獲得！',
+        reached_card: '💌 名刺交換のみ',
+        rejected_retel: '🚪 門前払い → 再電へ',
+        rejected_letter: '🚪 門前払い → 手紙へ',
+      };
+      const typeMap = {
+        tel: 'tel',
+        visit: 'visit',
+        letter_sent: 'letter',
+        dormant_recovered: 'tel',
+      };
+      let resultLabel = resultMap[h.result] || h.result || '';
+      if (h.action === 'letter_sent') resultLabel = '✉️ 直筆手紙を送付';
+      if (h.action === 'dormant_recovered') resultLabel = '💤 休眠から復帰';
+      entries.push({
+        ts: tsLabel,
+        sortKey: h.ts || '',
+        type: typeMap[h.action] || 'tel',
+        result: resultLabel,
+        memo: h.memo || '',
+        nextPhase: h.nextPhase,
+        rejectCount: h.rejectCount,
+        visitNo: h.visitNo,
+        callNo: h.callNo,
+        _src: 'new',
+      });
+    }
+  }
+  // 新しい順に並べる
+  entries.sort((a, b) => (b.sortKey || '').localeCompare(a.sortKey || ''));
+
+  if (!entries.length) {
     tl.innerHTML='<div style="padding:24px;text-align:center;color:var(--text-mid)">まだアプローチ履歴がありません</div>';
   } else {
     const tc={visit:'ti-v',tel:'ti-t',letter:'ti-l'};
-    const ri=r=>r==='アポ獲得'?'color:var(--accent)':['会えた','出た','後日折返し','送付済み','反応あり'].includes(r)?'color:var(--gold)':['不在','拒否','お断り','反応なし'].includes(r)?'color:var(--red)':'';
-    tl.innerHTML=[...it.logs].reverse().map(l=>`
+    const ri = r => {
+      if (/アポ獲得|商談獲得/.test(r)) return 'color:var(--accent);font-weight:800';
+      if (/つながった|名刺交換|会えた|出た|後日|反応あり/.test(r)) return 'color:var(--gold);font-weight:700';
+      if (/不在|拒否|お断り|反応なし|門前払い/.test(r)) return 'color:var(--red);font-weight:700';
+      if (/手紙|送付/.test(r)) return 'color:#7C3AED;font-weight:700';
+      if (/休眠から復帰/.test(r)) return 'color:#3B82F6;font-weight:700';
+      return '';
+    };
+    const icons = { visit:'🚶', tel:'📞', letter:'✉️' };
+    tl.innerHTML = entries.map(l => {
+      const noLabel = l.callNo ? ` #${l.callNo}回目` : (l.visitNo ? ` #${l.visitNo}回目` : '');
+      return `
       <div class="tl-row">
-        <div class="tl-ico ${l.autoPhase?'ti-a':tc[l.type]||''}">${PHASE[l.type]?.icon||''}</div>
+        <div class="tl-ico ${tc[l.type]||''}">${icons[l.type]||'📞'}</div>
         <div class="tl-body">
-          <div class="tl-date">${l.date} ${l.time||''} — ${PHASE[l.type]?.label||l.type}</div>
+          <div class="tl-date">${l.ts} — ${l.type === 'visit' ? '訪問' : l.type === 'letter' ? '手紙' : '電話'}${noLabel}</div>
           <div class="tl-res" style="${ri(l.result)}">${l.result}</div>
-          ${l.memo?`<div class="tl-memo">${l.memo}</div>`:''}
-          ${l.autoPhase?`<div class="tl-auto-tag"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 2l4 4-4 4"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><path d="M7 22l-4-4 4-4"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg> 自動移行 → ${PHASE[l.autoPhase]?.label||l.autoPhase}</div>`:''}
-          ${l.nextDate?`<div class="tl-next">次: ${l.nextDate} / ${l.nextAction||''}</div>`:''}
+          ${l.memo ? `<div class="tl-memo">${escapeHtml(l.memo)}</div>` : ''}
+          ${l.rejectCount ? `<div class="tl-auto-tag">拒否累計: ${l.rejectCount}回</div>` : ''}
+          ${l.nextDate ? `<div class="tl-next">次: ${l.nextDate} / ${l.nextAction || ''}</div>` : ''}
         </div>
-      </div>`).join('');
+      </div>`;
+    }).join('');
   }
   document.getElementById('dt-letter').innerHTML=letterTemplate(it);
   document.getElementById('dt-info').innerHTML=`
