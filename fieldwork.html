@@ -2563,17 +2563,17 @@ function anniversaryBadge(it) {
   
   if (a.monthsUntil === 0) {
     // 今月が周年月！
-    badge = `<div style="display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:6px;background:rgba(255,70,2,0.15);border:1px solid var(--accent);font-size:10px;font-weight:700;color:var(--accent);margin-top:4px">
+    badge = `<div style="display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:8px;background:#FEF3C7;border:1.5px solid #F59E0B;font-size:11px;font-weight:800;color:#92400E;margin-top:4px">
       🎉 今月${a.nextYears}周年！
     </div>`;
   } else if (a.monthsUntil <= 3) {
-    // 3ヶ月以内
-    badge = `<div style="display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:6px;background:var(--gold-dim);border:1px solid rgba(250,207,76,0.4);font-size:10px;font-weight:600;color:var(--gold);margin-top:4px">
+    // 3ヶ月以内：黄色＋暗い茶色文字
+    badge = `<div style="display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:8px;background:#FEF3C7;border:1.5px solid #FCD34D;font-size:11px;font-weight:800;color:#92400E;margin-top:4px">
       ⭐ ${a.nextYears}周年まであと${a.monthsUntil}ヶ月
     </div>`;
   } else {
-    // それ以外
-    badge = `<div style="display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:6px;background:var(--surface2);border:1px solid var(--border);font-size:10px;color:var(--text-mid);margin-top:4px">
+    // それ以外：グレー
+    badge = `<div style="display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:8px;background:#F3F4F6;border:1.5px solid #D1D5DB;font-size:11px;font-weight:700;color:#4B5563;margin-top:4px">
       ${a.nextYears}周年まで${a.monthsUntil}ヶ月
     </div>`;
   }
@@ -2892,7 +2892,6 @@ function renderList() {
           '<button onclick="event.stopPropagation();showCompanyFlagMenu(event,' + it.id + ')" title="企業/非企業の手動設定" style="background:transparent;border:none;cursor:pointer;font-size:14px;padding:2px 4px;color:#9CA3AF">⚙</button>' +
         '</div>' +
         (it.website ? '<a href="' + it.website + '" target="_blank" style="font-size:10px;color:var(--blue);text-decoration:none" onclick="event.stopPropagation()">🌐 HP</a>' : '<span style="font-size:10px;color:#CCC">HP未登録</span>') +
-        (annBadge ? '<div style="margin-top:4px">' + annBadge + '</div>' : '') +
       '</td>' +
 
       // 住所・電話
