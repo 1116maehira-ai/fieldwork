@@ -5875,8 +5875,22 @@ function parseAndApplyGemini(btnEl) {
   const get = (key) => {
     const idx = headers.indexOf(key);
     if (idx < 0 || idx >= dataRow.length) return '';
-    const v = (dataRow[idx] || '').replace(/^"|"$/g,'').trim();
-    return v === 'N/A' || v === 'n/a' ? '' : v;
+    let v = (dataRow[idx] || '').replace(/^"|"$/g,'').trim();
+    if (v === 'N/A' || v === 'n/a') return '';
+    // Markdownリンク形式 [text](url) を URL だけに変換
+    // [https://...](https://www.google.com/search?q=...) → https://... を抽出
+    const mdMatch = v.match(/^\[([^\]]+)\]\(([^)]+)\)$/);
+    if (mdMatch) {
+      // 1番目（表示テキスト）がURLっぽければそちらを優先（Geminiの仕様）
+      const linkText = mdMatch[1].trim();
+      const linkUrl = mdMatch[2].trim();
+      if (/^https?:\/\//.test(linkText)) {
+        v = linkText;
+      } else {
+        v = linkUrl;
+      }
+    }
+    return v;
   };
 
   // 上書きポリシー：空フィールドのみ埋める／備考は長い方を採用
@@ -6682,35 +6696,81 @@ function commitGeminiPaste() {
     return;
   }
   const text = ta.value.trim();
-  // pipe-separated（| 区切り）の表形式を期待
-  const rows = text.split(/\n/).map(r => r.trim()).filter(r => r && r.includes('|'));
-  if (!rows.length) {
-    toast('⚠️ パイプ区切り（|）の表形式が見つかりません');
+
+  // 形式自動判定：CSV（カンマ区切り）か Markdown表（パイプ区切り）か
+  // データ行に複数のカンマがあればCSV、|があればパイプ
+  const lines = text.split(/\r?\n/).map(r => r.trim()).filter(r => r);
+  if (!lines.length) {
+    toast('⚠️ データが見つかりません');
     return;
   }
-  // ヘッダー行をスキップ（company_name で始まる or "---" 区切り含む）
-  const dataRows = rows.filter(r => !/company_name/i.test(r) && !/^[\s|:\-]+$/.test(r));
+
+  // 先頭の数行をサンプルにして区切り判定（ヘッダ行以外もチェック）
+  const sample = lines.slice(0, 5).join('\n');
+  const pipeCount = (sample.match(/\|/g) || []).length;
+  const csvCount = (sample.match(/","/g) || []).length;
+  const isPipe = pipeCount > csvCount;
+
+  // 値の正規化：Markdownリンク [text](url) → URL に変換、N/A → 空
+  const normVal = (v) => {
+    if (!v) return '';
+    let s = String(v).replace(/^"|"$/g,'').trim();
+    if (s === 'N/A' || s === 'n/a' || s === '不明' || s === '—' || s === '-') return '';
+    const md = s.match(/^\[([^\]]+)\]\(([^)]+)\)$/);
+    if (md) {
+      const t = md[1].trim(), u = md[2].trim();
+      if (/^https?:\/\//.test(t)) s = t;
+      else s = u;
+    }
+    return s;
+  };
+
+  let dataRows, parseRow;
+  if (isPipe) {
+    // パイプ区切り
+    const allRows = lines.filter(r => r.includes('|'));
+    dataRows = allRows.filter(r => !/^[\s|:\-]+$/.test(r));
+    parseRow = (r) => r.replace(/^\|\s*/,'').replace(/\s*\|$/,'').split(/\s*\|\s*/).map(normVal);
+  } else {
+    // カンマ区切り（CSV）
+    dataRows = lines;
+    parseRow = (r) => parseCSVLine(r).map(normVal);
+  }
+
   if (!dataRows.length) {
     toast('⚠️ データ行が見つかりません');
     return;
   }
-  const cols = ['company_name','ceo_name','email','founding_date','anniversary_month','website_url','instagram_url','facebook_url','x_url','tiktok_url','indeed_url','job_antenna_url','agre_url','mynavi_exists','revenue','employees','notes'];
+
+  // 1行目をヘッダーとして見るか判定
+  const firstRow = parseRow(dataRows[0]);
+  const hasHeader = firstRow.some(c => /company_name/i.test(c));
+  const cols = ['company_name','ceo_name','email','founding_date','anniversary_month','months_until_anniversary','next_anniversary_years','website_url','instagram_url','facebook_url','x_url','tiktok_url','indeed_url','job_antenna_url','agre_url','mynavi_exists','revenue','employees','notes'];
+
+  // ヘッダーが見つかればその順序を採用、なければ標準順
+  let columnOrder = cols;
+  let startIdx = 0;
+  if (hasHeader) {
+    columnOrder = firstRow.map(c => c.toLowerCase().trim());
+    startIdx = 1;
+  }
+
   let updatedCount = 0;
   let notFoundCount = 0;
-  for (const row of dataRows) {
-    // 先頭・末尾の | を取り除く
-    const parts = row.replace(/^\|\s*/,'').replace(/\s*\|$/,'').split(/\s*\|\s*/);
+
+  for (let i = startIdx; i < dataRows.length; i++) {
+    const parts = parseRow(dataRows[i]);
     if (parts.length < 2) continue;
     const obj = {};
-    cols.forEach((c, i) => { obj[c] = (parts[i] || '').trim(); });
+    columnOrder.forEach((c, idx) => { obj[c] = parts[idx] || ''; });
     const name = obj.company_name;
-    if (!name || name === 'N/A') continue;
+    if (!name) continue;
     // 一致する企業を探す
     const it = items.find(x => x.company && x.company.replace(/\s+/g,'') === name.replace(/\s+/g,''));
     if (!it) { notFoundCount++; continue; }
     // 値を埋める（空フィールドのみ、備考は1.2倍以上で上書き）
     const fillIfEmpty = (key, val) => {
-      if (!val || val === 'N/A') return;
+      if (!val) return;
       if (key === 'researchNotes') {
         const existing = (it[key] || '').length;
         if (val.length >= existing * 1.2) it[key] = val;
@@ -7463,8 +7523,20 @@ function processCsvFile(file) {
       const get = (key) => {
         const idx = colMap[key];
         if (idx === -1 || idx === undefined) return '';
-        const val = (cols[idx]||'').replace(/^"|"$/g,'').trim();
-        return val === 'N/A' ? '' : val;
+        let val = (cols[idx]||'').replace(/^"|"$/g,'').trim();
+        if (val === 'N/A' || val === 'n/a') return '';
+        // Markdownリンク形式 [text](url) → URL に正規化
+        const mdMatch = val.match(/^\[([^\]]+)\]\(([^)]+)\)$/);
+        if (mdMatch) {
+          const linkText = mdMatch[1].trim();
+          const linkUrl = mdMatch[2].trim();
+          if (/^https?:\/\//.test(linkText)) {
+            val = linkText;
+          } else {
+            val = linkUrl;
+          }
+        }
+        return val;
       };
       let changed = false;
       const fieldChanges = []; // [{key, label, before, after, action}]
