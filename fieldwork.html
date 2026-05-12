@@ -6250,6 +6250,12 @@ function commitRound2() {
 
 
 function buildSiteAnalysisPrompt(it, domain) {
+  // ベースURL（末尾スラッシュ除去）
+  const base = (it.website || '').replace(/\/$/, '');
+  // よくある会社概要・採用ページのパス候補
+  const candidatePaths = ['/company', '/company/', '/about', '/about/', '/info', '/info/', '/corporate', '/corporate/', '/profile', '/profile/', '/recruit', '/recruit/', '/career', '/careers', '/jobs', '/recruitment'];
+  const candidateUrls = candidatePaths.map(p => base + p);
+
   return [
     '以下の企業について、指定したURLとそのドメイン内のサブページのみを読み、情報を抽出してください。',
     '',
@@ -6262,6 +6268,10 @@ function buildSiteAnalysisPrompt(it, domain) {
     '【調査対象企業】',
     '"' + it.company + '"',
     '公式サイト：' + it.website,
+    '',
+    '【まず最優先で確認すべきURL候補（存在すれば必ず読む）】',
+    ...candidateUrls.map(u => '・' + u),
+    '上記URLが404やリンク切れの場合は無視し、トップページのナビゲーションから「会社概要・About・採用情報」などのページを探して読むこと',
     '',
     '【調査ルール】',
     '・参照可能なドメインは ' + domain + ' のみ。それ以外は参照禁止',
