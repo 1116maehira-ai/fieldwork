@@ -1628,11 +1628,13 @@ tr:hover td { background: rgba(255,70,2,0.03); cursor: pointer; }
       <div class="dtab on" onclick="switchDtab(this,&#39;dt-tl&#39;)">アプローチ履歴</div>
       <div class="dtab" onclick="switchDtab(this,&#39;dt-letter&#39;)">直筆手紙テンプレ</div>
       <div class="dtab" onclick="switchDtab(this,&#39;dt-info&#39;)">基本情報</div>
+      <div class="dtab" onclick="switchDtab(this,&#39;dt-site&#39;)" style="color:#16A34A;font-weight:600">🔍 公式サイト解析</div>
       <div class="dtab" onclick="switchDtab(this,&#39;dt-gemini&#39;)" style="color:var(--blue);font-weight:600">✦ Gemini入力</div>
     </div>
     <div id="dt-tl" class="tl"></div>
     <div id="dt-letter" style="padding:20px 26px;display:none"></div>
     <div id="dt-info" style="padding:20px 26px;display:none"></div>
+    <div id="dt-site" style="padding:20px 26px;display:none"></div>
     <div id="dt-gemini" style="padding:20px 26px;display:none"></div>
     <div style="padding:14px 26px 20px;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;gap:12px">
       <button class="btn btn-ghost btn-sm" onclick="delCompany()" style="color:var(--red);border-color:var(--red)"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg> 削除</button>
@@ -2358,10 +2360,11 @@ const ENRICHMENT_FIELDS = [
   'fbUrl',        // Facebook
   'xUrl',         // X (Twitter)
   'tiktokUrl',    // TikTok
-  'jobUrl',       // 求人
+  'jobUrl',       // 自社採用ページ
   'indeedUrl',    // Indeed
   'jobAntennaUrl',// ジョブアンテナ
   'agreUrl',      // アグレ
+  'mynaviUrl',    // マイナビ
 ];
 
 function hasMeaningfulValue(v) {
@@ -5882,10 +5885,567 @@ function letterTemplate(it) {
 
 function switchDtab(el,id) {
   document.querySelectorAll('.dtab').forEach(t=>t.classList.remove('on')); el.classList.add('on');
-  ['dt-tl','dt-letter','dt-info','dt-gemini'].forEach(i=>{ document.getElementById(i).style.display=i===id?'block':'none'; });
+  ['dt-tl','dt-letter','dt-info','dt-site','dt-gemini'].forEach(i=>{ const e=document.getElementById(i); if(e) e.style.display=i===id?'block':'none'; });
   if (id === 'dt-gemini') renderGeminiTab();
+  if (id === 'dt-site') renderSiteAnalysisTab();
   if (id === 'dt-info') setTimeout(() => attachFieldFillListeners(), 0);
 }
+
+// ══════════════════════════════════════════
+// 公式サイト解析タブ：公式HPだけを情報源にする
+// ══════════════════════════════════════════
+function renderSiteAnalysisTab() {
+  const it = items.find(x => x.id === selId);
+  if (!it) return;
+  const el = document.getElementById('dt-site');
+  if (!el) return;
+
+  if (!it.website) {
+    // 公式HPが未登録の場合
+    el.innerHTML = `
+      <div style="background:#FEF3C7;border:2px solid #FCD34D;border-radius:14px;padding:24px;text-align:center;font-family:'Hiragino Maru Gothic ProN','Yu Gothic UI',sans-serif">
+        <div style="font-size:42px;margin-bottom:10px">🌐</div>
+        <div style="font-size:15px;font-weight:900;color:#92400E;margin-bottom:8px">公式HPが未登録です</div>
+        <div style="font-size:12px;color:#92400E;font-weight:600;margin-bottom:16px;line-height:1.7">
+          公式サイト解析を使うには、まず公式HPのURLを登録してください。<br>
+          基本情報タブから入力できます。
+        </div>
+        <button onclick="document.querySelector('.dtab:nth-child(3)').click()" style="background:linear-gradient(135deg,#FF4602,#FFB347);color:#fff;border:none;border-radius:10px;padding:10px 20px;font-size:13px;font-weight:800;cursor:pointer;font-family:inherit">📝 基本情報タブを開く</button>
+      </div>
+    `;
+    return;
+  }
+
+  // ドメイン抽出
+  let domain = '';
+  try {
+    const u = new URL(it.website.startsWith('http') ? it.website : 'https://' + it.website);
+    domain = u.hostname;
+  } catch (e) {
+    domain = it.website.replace(/^https?:\/\//, '').split('/')[0];
+  }
+
+  const prompt = buildSiteAnalysisPrompt(it, domain);
+
+  el.innerHTML = `
+    <div style="font-family:'Hiragino Maru Gothic ProN','Yu Gothic UI',sans-serif">
+
+      <!-- 説明 -->
+      <div style="background:#F0FDF4;border:2px solid #86EFAC;border-radius:14px;padding:14px 18px;margin-bottom:18px">
+        <div style="font-size:14px;font-weight:900;color:#16A34A;margin-bottom:6px">🛡️ ハルシネーション対策モード</div>
+        <div style="font-size:12px;color:#15803D;font-weight:600;line-height:1.7">
+          公式サイト <strong style="color:#16A34A">${escapeHtml(domain)}</strong> の中だけを情報源にして、Geminiに調査させます。<br>
+          ・推測ゼロ・出典付き・サイト内に書いてない項目は強制的にN/A<br>
+          ・取り込み前に確認画面で人の目チェック
+        </div>
+      </div>
+
+      <!-- ━━━━━ Round 1: 公式サイト内のみ ━━━━━ -->
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
+        <div style="background:#16A34A;color:#fff;width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:14px">1</div>
+        <div style="font-size:15px;font-weight:900;color:#16A34A">公式サイト内だけ調査（代表者・創業・SNS・求人すべて）</div>
+      </div>
+
+      <!-- STEP 1: プロンプトコピー -->
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:14px">
+        <div style="font-family:var(--font-mono);font-size:9px;color:#16A34A;letter-spacing:0.15em;margin-bottom:8px">// STEP 1 — Geminiにコピーして貼り付け</div>
+        <div style="background:#FFF;border:1px solid var(--border);border-radius:8px;padding:14px;font-size:11px;color:#374151;line-height:1.8;margin-bottom:10px;white-space:pre-wrap;user-select:all;max-height:280px;overflow-y:auto" id="site-prompt-box">${escapeHtml(prompt)}</div>
+        <div style="display:flex;gap:8px">
+          <button onclick="copySitePrompt()" style="flex:1;background:linear-gradient(135deg,#16A34A,#22C55E);color:#fff;border:none;border-radius:10px;padding:10px;font-size:13px;font-weight:800;cursor:pointer;font-family:inherit">📋 プロンプトをコピー</button>
+          <button onclick="window.open('https://gemini.google.com/','_blank')" style="background:#fff;color:#16A34A;border:2px solid #16A34A;border-radius:10px;padding:10px 16px;font-size:13px;font-weight:800;cursor:pointer;font-family:inherit">🚀 Geminiを開く</button>
+        </div>
+      </div>
+
+      <!-- STEP 2: 返答を貼り付け -->
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:14px">
+        <div style="font-family:var(--font-mono);font-size:9px;color:#16A34A;letter-spacing:0.15em;margin-bottom:8px">// STEP 2 — Geminiの返答をここに貼り付け</div>
+        <textarea id="site-result-paste" placeholder="Geminiから返ってきたCSVをここに貼り付けてください..." style="width:100%;min-height:140px;padding:12px;border:2px solid var(--border);border-radius:10px;font-size:12px;font-family:var(--font-mono);line-height:1.6;outline:none;resize:vertical" onfocus="this.style.borderColor='#16A34A'" onblur="this.style.borderColor='var(--border)'"></textarea>
+      </div>
+
+      <!-- STEP 3: 反映 -->
+      <button onclick="commitSiteAnalysis()" style="width:100%;background:linear-gradient(135deg,#16A34A,#22C55E);color:#fff;border:none;border-radius:12px;padding:14px;font-size:15px;font-weight:900;cursor:pointer;font-family:inherit;box-shadow:0 4px 12px rgba(22,163,74,0.3);transition:all 0.15s;margin-bottom:24px" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(0)'">✅ Round 1 の結果を確認画面へ</button>
+
+      <!-- ━━━━━ Round 2: SNS・求人のみ Web全体 ━━━━━ -->
+      ${renderRound2Section(it)}
+
+    </div>
+  `;
+}
+
+// Round 2 セクション（SNS・求人のみホワイトリストドメインから調査）
+function renderRound2Section(it) {
+  const r2Prompt = buildRound2Prompt(it);
+  const missing = getR2MissingFields(it);
+
+  if (missing.length === 0) {
+    return `
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
+        <div style="background:#9CA3AF;color:#fff;width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:14px">2</div>
+        <div style="font-size:15px;font-weight:900;color:#6B7280">Round 2 は不要です</div>
+      </div>
+      <div style="background:#F0FDF4;border:2px solid #86EFAC;border-radius:12px;padding:16px;text-align:center">
+        <div style="font-size:30px;margin-bottom:6px">🎉</div>
+        <div style="font-size:13px;color:#16A34A;font-weight:800">SNS・求人URLは全て揃ってます！</div>
+        <div style="font-size:11px;color:#15803D;font-weight:600;margin-top:4px">この企業はRound 2不要</div>
+      </div>
+    `;
+  }
+
+  return `
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+      <div style="background:#3B82F6;color:#fff;width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:14px">2</div>
+      <div style="font-size:15px;font-weight:900;color:#3B82F6">SNS・求人だけWeb全体から補完</div>
+    </div>
+
+    <div style="background:#EFF6FF;border:2px solid #93C5FD;border-radius:14px;padding:14px 18px;margin-bottom:14px">
+      <div style="font-size:12px;color:#1E40AF;font-weight:700;line-height:1.7">
+        💡 Round 1で取れなかった以下の項目だけ、<strong>信頼ドメインに限定して</strong>調査します：<br>
+        <span style="color:#3B82F6;font-weight:800">${missing.map(m => m.label).join(' / ')}</span><br>
+        <span style="font-size:11px;opacity:0.85">※ 代表者・創業・設立は公式HPのみで管理（このRoundでは触りません）</span>
+      </div>
+    </div>
+
+    <!-- STEP 1: プロンプト -->
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:14px">
+      <div style="font-family:var(--font-mono);font-size:9px;color:#3B82F6;letter-spacing:0.15em;margin-bottom:8px">// STEP 1 — Geminiにコピーして貼り付け</div>
+      <div style="background:#FFF;border:1px solid var(--border);border-radius:8px;padding:14px;font-size:11px;color:#374151;line-height:1.8;margin-bottom:10px;white-space:pre-wrap;user-select:all;max-height:280px;overflow-y:auto" id="r2-prompt-box">${escapeHtml(r2Prompt)}</div>
+      <div style="display:flex;gap:8px">
+        <button onclick="copyR2Prompt()" style="flex:1;background:linear-gradient(135deg,#3B82F6,#60A5FA);color:#fff;border:none;border-radius:10px;padding:10px;font-size:13px;font-weight:800;cursor:pointer;font-family:inherit">📋 プロンプトをコピー</button>
+        <button onclick="window.open('https://gemini.google.com/','_blank')" style="background:#fff;color:#3B82F6;border:2px solid #3B82F6;border-radius:10px;padding:10px 16px;font-size:13px;font-weight:800;cursor:pointer;font-family:inherit">🚀 Geminiを開く</button>
+      </div>
+    </div>
+
+    <!-- STEP 2: 返答 -->
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:14px">
+      <div style="font-family:var(--font-mono);font-size:9px;color:#3B82F6;letter-spacing:0.15em;margin-bottom:8px">// STEP 2 — Geminiの返答をここに貼り付け</div>
+      <textarea id="r2-result-paste" placeholder="Geminiから返ってきたCSVをここに貼り付けてください..." style="width:100%;min-height:120px;padding:12px;border:2px solid var(--border);border-radius:10px;font-size:12px;font-family:var(--font-mono);line-height:1.6;outline:none;resize:vertical" onfocus="this.style.borderColor='#3B82F6'" onblur="this.style.borderColor='var(--border)'"></textarea>
+    </div>
+
+    <button onclick="commitRound2()" style="width:100%;background:linear-gradient(135deg,#3B82F6,#60A5FA);color:#fff;border:none;border-radius:12px;padding:14px;font-size:15px;font-weight:900;cursor:pointer;font-family:inherit;box-shadow:0 4px 12px rgba(59,130,246,0.3);transition:all 0.15s" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(0)'">✅ Round 2 の結果を確認画面へ</button>
+  `;
+}
+
+// Round 2 で調査が必要な（=Round 1 で取れなかった）項目
+function getR2MissingFields(it) {
+  const fields = [
+    { key: 'instaUrl',     label: 'Instagram' },
+    { key: 'fbUrl',        label: 'Facebook' },
+    { key: 'xUrl',         label: 'X' },
+    { key: 'tiktokUrl',    label: 'TikTok' },
+    { key: 'indeedUrl',    label: 'Indeed' },
+    { key: 'jobAntennaUrl',label: 'ジョブアンテナ' },
+    { key: 'agreUrl',      label: 'アグレ' },
+    { key: 'mynaviUrl',    label: 'マイナビ' },
+  ];
+  return fields.filter(f => !hasMeaningfulValue(it[f.key]));
+}
+
+// Round 2 のプロンプトを生成
+function buildRound2Prompt(it) {
+  const missing = getR2MissingFields(it);
+  if (missing.length === 0) return '';
+
+  // CSV列名と各列の説明
+  const colDescs = {
+    instaUrl:     ['instagram_url',  'Instagram公式アカウント。site:instagram.com で検索'],
+    fbUrl:        ['facebook_url',   'Facebook公式ページ。site:facebook.com で検索'],
+    xUrl:         ['x_url',          'X（旧Twitter）公式アカウント。site:x.com または site:twitter.com で検索'],
+    tiktokUrl:    ['tiktok_url',     'TikTok公式アカウント。site:tiktok.com で検索'],
+    indeedUrl:    ['indeed_url',     'Indeedの企業ページ。site:indeed.com で検索'],
+    jobAntennaUrl:['job_antenna_url','ジョブアンテナの企業ページ。site:job-antenna.jp で検索'],
+    agreUrl:      ['agre_url',       'アグレ（沖縄の求人サイト）の企業ページ。site:agre.co.jp で検索'],
+    mynaviUrl:    ['mynavi_url',     'マイナビの企業ページ。site:mynavi.jp で検索'],
+  };
+
+  const csvColumns = missing.map(m => colDescs[m.key][0]);
+  const descriptions = missing.map(m => '・' + colDescs[m.key][0] + ': ' + colDescs[m.key][1]);
+
+  return [
+    '以下の企業について、指定された信頼ドメインのみを調査し、SNS・求人URLを抽出してください。',
+    '',
+    '【❗ 最重要：ハルシネーション禁止】',
+    '1. あなたの学習データの記憶ではなく、実際にWeb検索して見つけること',
+    '2. 下記の許可ドメイン以外は一切参照禁止',
+    '3. アカウント名・URLは「実在を確認した」もののみ。「ありそう」「あるはず」は禁止',
+    '4. 同名の別企業のアカウントを混ぜないこと。所在地・電話番号で必ず照合',
+    '5. 見つからない項目は必ず N/A',
+    '6. 各値の出典URLを必ず notes に記載',
+    '',
+    '【許可ドメイン（ホワイトリスト）】',
+    '・SNS: instagram.com, facebook.com, x.com, twitter.com, tiktok.com',
+    '・求人: indeed.com, mynavi.jp, mynavi-agent.jp, agre.co.jp, job-antenna.jp',
+    '※ 上記以外のドメイン（まとめサイト、ブログ、Wikipedia、検索結果ページ等）は禁止',
+    '',
+    '【調査対象企業】',
+    '"' + it.company + '"',
+    (it.website ? '公式サイト：' + it.website : ''),
+    (it.addr ? '所在地：' + it.addr : ''),
+    (it.phone ? '電話番号：' + it.phone : ''),
+    '',
+    '【照合ルール】',
+    '・同名企業が複数ある場合、所在地（住所）または電話番号でこの企業と一致するアカウントのみ採用',
+    '・所在地や電話番号が確認できないアカウントは N/A 扱い',
+    '',
+    '【出力CSV列】',
+    csvColumns.join(',') + ',notes',
+    '',
+    '【各列の説明】',
+    ...descriptions,
+    '・notes: 各URLの出典（どのページで実在を確認したか）を必ず記載',
+    '',
+    '【出力ルール】',
+    '・1行目はヘッダー行、2行目がデータ行',
+    '・各値はダブルクォートで囲む',
+    '・不明な項目は必ず N/A',
+    '・URLは https:// から始まる完全形式',
+    '・Markdownリンク [text](url) は使わない',
+  ].filter(Boolean).join('\n');
+}
+
+function copyR2Prompt() {
+  const text = document.getElementById('r2-prompt-box')?.textContent || '';
+  navigator.clipboard.writeText(text).then(() => {
+    if (typeof showCopyAnimation === 'function') {
+      showCopyAnimation('📋 Round 2 プロンプトをコピー！\nGeminiに貼り付けてね 🚀');
+    } else { toast('コピーしました'); }
+  }).catch(() => toast('コピーに失敗しました'));
+}
+
+function commitRound2() {
+  const it = items.find(x => x.id === selId);
+  if (!it) return;
+  const ta = document.getElementById('r2-result-paste');
+  if (!ta || !ta.value.trim()) {
+    toast('📋 まずGeminiの返答を貼り付けてね');
+    return;
+  }
+  const text = ta.value.trim();
+  const lines = text.split(/\r?\n/).map(r => r.trim()).filter(r => r);
+  if (!lines.length) { toast('⚠️ データが見つかりません'); return; }
+
+  // ヘッダー判定
+  let headerCols = null;
+  let dataLine = null;
+  for (const line of lines) {
+    const parts = parseCSVLine(line).map(s => s.replace(/^"|"$/g, '').trim());
+    if (parts.some(c => /_url$/i.test(c) || /^notes$/i.test(c))) {
+      headerCols = parts.map(c => c.toLowerCase().trim());
+      continue;
+    }
+    if (headerCols && parts.length > 1) {
+      dataLine = parts;
+      break;
+    }
+  }
+
+  if (!headerCols || !dataLine) {
+    toast('⚠️ ヘッダー行+データ行の形式でCSVを貼ってください');
+    return;
+  }
+
+  // 値正規化
+  const normVal = (v) => {
+    if (!v) return '';
+    let s = String(v).trim();
+    if (s === 'N/A' || s === 'n/a' || s === '不明' || s === '—' || s === '-') return '';
+    const md = s.match(/^\[([^\]]+)\]\(([^)]+)\)$/);
+    if (md) {
+      const t = md[1].trim(), u = md[2].trim();
+      if (/^https?:\/\//.test(t)) s = t; else s = u;
+    }
+    return s;
+  };
+
+  const obj = {};
+  headerCols.forEach((c, idx) => { obj[c] = normVal(dataLine[idx] || ''); });
+
+  // URLが許可ドメインかチェック
+  const allowedDomains = {
+    instagram_url:  ['instagram.com'],
+    facebook_url:   ['facebook.com', 'fb.com'],
+    x_url:          ['x.com', 'twitter.com'],
+    tiktok_url:     ['tiktok.com'],
+    indeed_url:     ['indeed.com'],
+    job_antenna_url:['job-antenna.jp'],
+    agre_url:       ['agre.co.jp'],
+    mynavi_url:     ['mynavi.jp', 'mynavi-agent.jp'],
+  };
+  const isAllowed = (csvKey, url) => {
+    if (!url) return true;
+    const doms = allowedDomains[csvKey] || [];
+    if (!doms.length) return true;
+    try {
+      const u = new URL(url.startsWith('http') ? url : 'https://' + url);
+      return doms.some(d => u.hostname.includes(d));
+    } catch (e) { return false; }
+  };
+
+  // フィルター：許可ドメイン外のURLは除外
+  let blockedCount = 0;
+  for (const csvKey of Object.keys(allowedDomains)) {
+    if (obj[csvKey] && !isAllowed(csvKey, obj[csvKey])) {
+      obj[csvKey] = '';
+      blockedCount++;
+    }
+  }
+  if (blockedCount > 0) {
+    toast('⚠️ ' + blockedCount + '件のURLが許可ドメイン外でブロックされました');
+  }
+
+  // 差分生成
+  const FIELD_LABELS = {
+    instaUrl: '📷 Instagram',
+    fbUrl: '📘 Facebook',
+    xUrl: '🐦 X',
+    tiktokUrl: '🎵 TikTok',
+    indeedUrl: '💼 Indeed',
+    jobAntennaUrl: '💼 ジョブアンテナ',
+    agreUrl: '💼 アグレ',
+    mynaviUrl: '💼 マイナビ',
+    researchNotes: '📝 出典メモ',
+  };
+  const fieldMap = {
+    instagram_url: 'instaUrl',
+    facebook_url:  'fbUrl',
+    x_url:         'xUrl',
+    tiktok_url:    'tiktokUrl',
+    indeed_url:    'indeedUrl',
+    job_antenna_url: 'jobAntennaUrl',
+    agre_url:      'agreUrl',
+    mynavi_url:    'mynaviUrl',
+    notes:         'researchNotes',
+  };
+
+  const fieldDiffs = [];
+  for (const csvKey of Object.keys(fieldMap)) {
+    const newVal = obj[csvKey];
+    if (!newVal) continue;
+    const internalKey = fieldMap[csvKey];
+    const cur = (it[internalKey] || '').toString().trim();
+    let action;
+    if (!cur) action = 'fill';
+    else if (cur === newVal) action = 'same';
+    else if (internalKey === 'researchNotes' && newVal.length >= cur.length * 1.2) action = 'expand';
+    else action = 'keep';
+    if (action === 'same') continue;
+    fieldDiffs.push({
+      key: internalKey,
+      label: FIELD_LABELS[internalKey] || internalKey,
+      currentVal: cur,
+      newVal,
+      action,
+    });
+  }
+
+  if (fieldDiffs.length === 0) {
+    toast('ℹ️ 新しい情報がありません');
+    return;
+  }
+
+  pendingGeminiDiffs = [{ itemId: it.id, company: it.company, fields: fieldDiffs }];
+  pendingGeminiNotFound = 0;
+  openGeminiPreviewModal();
+}
+
+
+
+function buildSiteAnalysisPrompt(it, domain) {
+  return [
+    '以下の企業について、指定したURLとそのドメイン内のサブページのみを読み、情報を抽出してください。',
+    '',
+    '【❗ 最重要：ハルシネーション禁止】',
+    '1. あなたの学習データの記憶ではなく、必ず実際にURLにアクセスして読むこと',
+    '2. サイト内に明記されていない項目は必ず N/A',
+    '3. 推測・想像で値を埋めることは絶対禁止',
+    '4. 各値には必ず「出典：原文の引用とURL」を notes に書く',
+    '',
+    '【調査対象企業】',
+    '"' + it.company + '"',
+    '公式サイト：' + it.website,
+    '',
+    '【調査ルール】',
+    '・上記URLおよびドメイン「' + domain + '」内のサブページのみを参照',
+    '・他のドメイン（Google検索結果、Wikipedia、SNSの中身、まとめサイト等）は参照禁止',
+    '・「会社概要」「代表挨拶」「私たちについて」「採用情報」「会社情報」「About」などのサブページがあれば必ず巡回',
+    '・サイト内に存在しない情報は必ず N/A（推測禁止）',
+    '',
+    '【出力CSV列】',
+    'company_name,ceo_name,founding_date,established_date,instagram_url,facebook_url,x_url,tiktok_url,indeed_url,job_antenna_url,agre_url,mynavi_url,own_recruit_url,notes',
+    '',
+    '【各列の説明】',
+    '・ceo_name: 代表者名（「代表取締役」「代表」「社長」などの肩書きの直後の氏名のみ）',
+    '・founding_date: 創業年月日（YYYY-MM形式、「創業」と明記されたもの。「設立」とは別物）',
+    '・established_date: 設立年月日（YYYY-MM形式、「設立」と明記されたもの。法人登記日）',
+    '・instagram_url: サイト内にInstagram公式アカウントへのリンクがあれば、そのURL',
+    '・facebook_url: 同上、Facebook',
+    '・x_url: 同上、X（旧Twitter）',
+    '・tiktok_url: 同上、TikTok',
+    '・indeed_url: サイト内に Indeed掲載ページへのリンクがあれば、そのURL',
+    '・job_antenna_url: 同上、ジョブアンテナ',
+    '・agre_url: 同上、アグレ',
+    '・mynavi_url: 同上、マイナビ',
+    '・own_recruit_url: 自社の採用ページURL（採用情報・リクルート・careersなど）',
+    '・notes: 各項目の出典を必ず記載。例：「ceo_name: \'代表取締役 照屋 太郎\'（出典：https://www.example.com/about/）; founding_date: \'1968年8月創業\'（出典：https://www.example.com/company/）」',
+    '',
+    '【出力ルール】',
+    '・1行目はヘッダー行、2行目がデータ行',
+    '・各値は必ずダブルクォートで囲む',
+    '・不明な項目は N/A（空白不可）',
+    '・URLは https:// から始まる完全形式',
+    '・URLは生の文字列のみ。Markdownリンク記法 [text](url) は使わない',
+  ].join('\n');
+}
+
+function copySitePrompt() {
+  const text = document.getElementById('site-prompt-box')?.textContent || '';
+  navigator.clipboard.writeText(text).then(() => {
+    if (typeof showCopyAnimation === 'function') {
+      showCopyAnimation('📋 プロンプトをコピー！\nGeminiに貼り付けてね🚀');
+    } else { toast('コピーしました'); }
+  }).catch(() => toast('コピーに失敗しました'));
+}
+
+function commitSiteAnalysis() {
+  const it = items.find(x => x.id === selId);
+  if (!it) return;
+  const ta = document.getElementById('site-result-paste');
+  if (!ta || !ta.value.trim()) {
+    toast('📋 まずGeminiの返答を貼り付けてね');
+    return;
+  }
+  const text = ta.value.trim();
+
+  // CSVをパース（既存のparseCSVLineを使う）
+  const lines = text.split(/\r?\n/).map(r => r.trim()).filter(r => r);
+  if (!lines.length) {
+    toast('⚠️ データが見つかりません');
+    return;
+  }
+
+  // ヘッダー判定
+  let headerCols = null;
+  let dataLine = null;
+  for (const line of lines) {
+    const parts = parseCSVLine(line).map(s => s.replace(/^"|"$/g, '').trim());
+    if (parts.some(c => /company_name/i.test(c))) {
+      headerCols = parts.map(c => c.toLowerCase().trim());
+      continue;
+    }
+    if (headerCols && parts.length > 1) {
+      dataLine = parts;
+      break;
+    }
+  }
+
+  if (!headerCols || !dataLine) {
+    // ヘッダー無し or 1行のみのケース：先頭行をデータとして既定の列順を使う
+    headerCols = ['company_name','ceo_name','founding_date','established_date','instagram_url','facebook_url','x_url','tiktok_url','indeed_url','job_antenna_url','agre_url','mynavi_url','own_recruit_url','notes'];
+    dataLine = parseCSVLine(lines[0]).map(s => s.replace(/^"|"$/g, '').trim());
+  }
+
+  // 値の正規化
+  const normVal = (v) => {
+    if (!v) return '';
+    let s = String(v).trim();
+    if (s === 'N/A' || s === 'n/a' || s === '不明' || s === '—' || s === '-') return '';
+    const md = s.match(/^\[([^\]]+)\]\(([^)]+)\)$/);
+    if (md) {
+      const t = md[1].trim(), u = md[2].trim();
+      if (/^https?:\/\//.test(t)) s = t; else s = u;
+    }
+    return s;
+  };
+
+  const obj = {};
+  headerCols.forEach((c, idx) => { obj[c] = normVal(dataLine[idx] || ''); });
+
+  // 差分計算
+  const FIELD_LABELS = {
+    person: '👤 代表者名',
+    foundingDate: '🎂 創業年月日',
+    establishedDate: '🏛 設立年月日',
+    instaUrl: '📷 Instagram',
+    fbUrl: '📘 Facebook',
+    xUrl: '🐦 X',
+    tiktokUrl: '🎵 TikTok',
+    indeedUrl: '💼 Indeed',
+    jobAntennaUrl: '💼 ジョブアンテナ',
+    agreUrl: '💼 アグレ',
+    mynaviUrl: '💼 マイナビ',
+    jobUrl: '💼 自社採用ページ',
+    researchNotes: '📝 出典メモ',
+  };
+
+  // CSV列名 → 内部フィールド名のマッピング
+  const fieldMap = {
+    ceo_name: 'person',
+    founding_date: 'foundingDate',
+    established_date: 'establishedDate',
+    instagram_url: 'instaUrl',
+    facebook_url: 'fbUrl',
+    x_url: 'xUrl',
+    tiktok_url: 'tiktokUrl',
+    indeed_url: 'indeedUrl',
+    job_antenna_url: 'jobAntennaUrl',
+    agre_url: 'agreUrl',
+    mynavi_url: 'mynaviUrl',
+    own_recruit_url: 'jobUrl',
+    notes: 'researchNotes',
+  };
+
+  const fieldDiffs = [];
+  const addDiff = (csvKey, newVal) => {
+    if (!newVal) return;
+    const internalKey = fieldMap[csvKey];
+    if (!internalKey) return;
+    const cur = (it[internalKey] || '').toString().trim();
+    let action;
+    if (!cur) action = 'fill';
+    else if (cur === newVal) action = 'same';
+    else if (internalKey === 'researchNotes' && newVal.length >= cur.length * 1.2) action = 'expand';
+    else action = 'keep';
+    if (action === 'same') return;
+    fieldDiffs.push({
+      key: internalKey,
+      label: FIELD_LABELS[internalKey] || internalKey,
+      currentVal: cur,
+      newVal,
+      action,
+    });
+  };
+
+  for (const csvKey of Object.keys(fieldMap)) {
+    addDiff(csvKey, obj[csvKey]);
+  }
+  // anniversaryMonth は founding_date から自動計算
+  if (obj.founding_date && /^\d{4}-(\d{2})/.test(obj.founding_date)) {
+    const month = parseInt(RegExp.$1, 10);
+    if (month && !it.anniversaryMonth) {
+      fieldDiffs.push({
+        key: 'anniversaryMonth',
+        label: '📅 創業月',
+        currentVal: '',
+        newVal: String(month),
+        action: 'fill',
+      });
+    }
+  }
+
+  if (fieldDiffs.length === 0) {
+    toast('ℹ️ 新しい情報がありません（既に入っているか、サイト内になし）');
+    return;
+  }
+
+  // 既存のプレビューモーダル機構を使う
+  pendingGeminiDiffs = [{
+    itemId: it.id,
+    company: it.company,
+    fields: fieldDiffs,
+  }];
+  pendingGeminiNotFound = 0;
+  openGeminiPreviewModal();
+}
+
 
 // ══ Gemini入力タブ ══
 function renderGeminiTab() {
