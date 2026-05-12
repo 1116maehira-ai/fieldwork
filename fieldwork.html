@@ -6264,7 +6264,7 @@ function buildSiteAnalysisPrompt(it, domain) {
     '公式サイト：' + it.website,
     '',
     '【調査ルール】',
-    "・上記URLおよびドメイン '" + domain + "' 内のサブページのみを参照",
+    '・参照可能なドメインは ' + domain + ' のみ。それ以外は参照禁止',
     '・他のドメイン（Google検索結果、Wikipedia、SNSの中身、まとめサイト等）は参照禁止',
     '・「会社概要」「代表挨拶」「私たちについて」「採用情報」「会社情報」「About」などのサブページがあれば必ず巡回',
     '・サイト内に存在しない情報は必ず N/A（推測禁止）',
@@ -7677,36 +7677,49 @@ function cancelGeminiPreview() {
 
 function applyGeminiPreview() {
   let updatedCount = 0;
+  let anyAppliedTotal = false;
   const diffs = pendingGeminiDiffs;
 
   for (let ci = 0; ci < diffs.length; ci++) {
     const d = diffs[ci];
     const it = items.find(x => x.id === d.itemId);
     if (!it) continue;
-    let anyApplied = false;
+    let companyApplied = false;
     for (let fi = 0; fi < d.fields.length; fi++) {
       const cb = document.getElementById('gp-c' + ci + '-f' + fi);
-      if (!cb || !cb.checked) continue; // チェックが外れてたらスキップ
+      if (!cb || !cb.checked) continue;
       const f = d.fields[fi];
       it[f.key] = f.newVal;
-      anyApplied = true;
+      companyApplied = true;
+      anyAppliedTotal = true;
     }
-    if (anyApplied) {
-      if (maybeMarkEnriched(it)) updatedCount++;
+    if (companyApplied) {
+      // 有意義項目があれば「拡張済み」フラグも立てる
+      // ただし、創業日や備考だけの場合でも値はちゃんと保存する
+      maybeMarkEnriched(it);
+      updatedCount++;
     }
   }
 
   cancelGeminiPreview();
 
-  if (updatedCount === 0) {
-    toast('⚠️ 何も適用されませんでした');
+  if (!anyAppliedTotal) {
+    toast('⚠️ 何も適用されませんでした（チェックが全て外れていた可能性）');
     return;
   }
 
   save();
-  // 入力エリアもクリア
   const ta = document.getElementById('gemini-result-paste');
   if (ta) ta.value = '';
+  const ta2 = document.getElementById('site-result-paste');
+  if (ta2) ta2.value = '';
+  const ta3 = document.getElementById('r2-result-paste');
+  if (ta3) ta3.value = '';
+
+  // 詳細画面が開いていれば再描画
+  if (typeof selId !== 'undefined' && selId) {
+    if (typeof openDetail === 'function') openDetail(selId);
+  }
 
   showCopyAnimation('書き込み完了！🎉\n' + updatedCount + ' 社の情報が更新されたよ！');
   if (pendingGeminiNotFound > 0) {
