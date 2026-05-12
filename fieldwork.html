@@ -4738,6 +4738,22 @@ function loadScriptOverrides() {
         }
       }
     }
+    // カスタムテンプレートを末尾にマージ（idがデフォと被らないものだけ）
+    if (Array.isArray(data.customTemplates)) {
+      const defaultIds = new Set(SCRIPT_TEMPLATES_DEFAULT.map(t => t.id));
+      for (const ct of data.customTemplates) {
+        if (!ct.id || defaultIds.has(ct.id)) continue;
+        if (SCRIPT_TEMPLATES.find(t => t.id === ct.id)) continue; // 既にロード済み
+        SCRIPT_TEMPLATES.push({
+          id: ct.id,
+          name: ct.name || '🆕 カスタムスクリプト',
+          target: ct.target || '',
+          color: ct.color || '#6B7280',
+          n1: ct.n1 || '',
+          custom: true, // 削除可能フラグ
+        });
+      }
+    }
   } catch(e) { console.warn('script overrides load failed', e); }
 }
 
@@ -4746,12 +4762,29 @@ loadScriptOverrides();
 
 // エディタの内容をlocalStorageに保存
 function saveScriptEdits() {
-  const data = { templates: {}, commonNodes: {} };
+  const data = { templates: {}, commonNodes: {}, customTemplates: [] };
   for (const tpl of SCRIPT_TEMPLATES) {
     const ta = document.getElementById('scr-tpl-' + tpl.id);
     if (ta) {
       tpl.n1 = ta.value;
-      data.templates[tpl.id] = { n1: ta.value };
+    }
+    // カスタムの場合：name/target/color もエディタから取得
+    if (tpl.custom) {
+      const nameEl = document.getElementById('scr-tpl-name-' + tpl.id);
+      const targetEl = document.getElementById('scr-tpl-target-' + tpl.id);
+      const colorEl = document.getElementById('scr-tpl-color-' + tpl.id);
+      if (nameEl) tpl.name = nameEl.value || tpl.name;
+      if (targetEl) tpl.target = targetEl.value || tpl.target;
+      if (colorEl) tpl.color = colorEl.value || tpl.color;
+      data.customTemplates.push({
+        id: tpl.id,
+        name: tpl.name,
+        target: tpl.target,
+        color: tpl.color,
+        n1: tpl.n1,
+      });
+    } else {
+      data.templates[tpl.id] = { n1: tpl.n1 };
     }
   }
   for (const key in SCRIPT_COMMON_NODES) {
@@ -4776,6 +4809,65 @@ function saveScriptEdits() {
   } catch(e) {
     toast('保存失敗: ' + e.message);
   }
+}
+
+// 新規スクリプト作成
+function createNewScript() {
+  const name = prompt('新しいスクリプト名を入力してください（絵文字も使えます）\n例：🍔 デリバリー営業向け', '🆕 新しいスクリプト');
+  if (!name || !name.trim()) return;
+  const target = prompt('対象企業の特徴を入力してください\n例：来店客で売上が立つ飲食店', '');
+  const colors = ['#FF4602','#F59E0B','#3B82F6','#7C3AED','#DC2626','#16A34A','#0EA5E9','#EC4899','#14B8A6','#8B5CF6'];
+  const usedColors = new Set(SCRIPT_TEMPLATES.map(t => t.color));
+  const color = colors.find(c => !usedColors.has(c)) || colors[Math.floor(Math.random()*colors.length)];
+  const newId = 'custom_' + Date.now();
+  SCRIPT_TEMPLATES.push({
+    id: newId,
+    name: name.trim(),
+    target: (target || '').trim(),
+    color,
+    n1: 'お世話になっております。**TENOHIRAの石川**と申します。\n突然のお電話失礼します。\n\n（ここに導入のセリフを書いてください）\n\n代表の{person}様はお引き合わせいただけませんでしょうか？\n\n（どうせ断られる）\n\nでは、**ご担当者様**にお繋ぎいただけますでしょうか？',
+    custom: true,
+  });
+  saveScriptEdits();
+  renderScriptEditor();
+  toast('✨ 新規スクリプト「' + name + '」を作成しました');
+}
+
+// 既存スクリプトを複製
+function duplicateScript(id) {
+  const src = SCRIPT_TEMPLATES.find(t => t.id === id);
+  if (!src) return;
+  // 編集中の最新内容も反映してから複製
+  const ta = document.getElementById('scr-tpl-' + id);
+  const currentN1 = ta ? ta.value : src.n1;
+  const newId = 'custom_' + Date.now();
+  SCRIPT_TEMPLATES.push({
+    id: newId,
+    name: src.name + ' (コピー)',
+    target: src.target,
+    color: src.color,
+    n1: currentN1,
+    custom: true,
+  });
+  saveScriptEdits();
+  renderScriptEditor();
+  toast('📋 「' + src.name + '」を複製しました');
+}
+
+// カスタムスクリプトを削除
+function deleteCustomScript(id) {
+  const tpl = SCRIPT_TEMPLATES.find(t => t.id === id);
+  if (!tpl) return;
+  if (!tpl.custom) {
+    toast('⚠️ デフォルトのスクリプトは削除できません');
+    return;
+  }
+  if (!confirm('「' + tpl.name + '」を削除してよろしいですか？\n（このアクションは元に戻せません）')) return;
+  const idx = SCRIPT_TEMPLATES.findIndex(t => t.id === id);
+  if (idx >= 0) SCRIPT_TEMPLATES.splice(idx, 1);
+  saveScriptEdits();
+  renderScriptEditor();
+  toast('🗑️ スクリプトを削除しました');
 }
 
 // 全リセット
@@ -4846,21 +4938,47 @@ function renderScriptEditor() {
 
   let html = '';
 
-  // === セクション①：5本のN1セリフ ===
+  // === セクション①：N1セリフ ===
   html += '<div style="margin-bottom:24px">';
-  html += '<div style="font-size:14px;font-weight:900;color:#FF4602;margin-bottom:12px;padding-bottom:8px;border-bottom:2px solid #FFE0D6">📞 N1：各商材の最初のセリフ</div>';
+  html += '<div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:12px;padding-bottom:8px;border-bottom:2px solid #FFE0D6">';
+  html += '<div style="font-size:14px;font-weight:900;color:#FF4602">📞 N1：各商材の最初のセリフ</div>';
+  html += '<button onclick="createNewScript()" style="padding:8px 16px;background:linear-gradient(135deg,#16A34A,#22C55E);color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:800;cursor:pointer;box-shadow:0 2px 8px rgba(22,163,74,0.25);font-family:inherit">+ 新規スクリプト作成</button>';
+  html += '</div>';
   for (const tpl of SCRIPT_TEMPLATES) {
+    const isCustom = !!tpl.custom;
     html += '<details style="margin-bottom:10px;background:#fff;border:2px solid ' + tpl.color + '33;border-radius:12px;overflow:hidden">' +
-      '<summary style="cursor:pointer;padding:12px 16px;background:' + tpl.color + '11;font-weight:800;font-size:14px;color:' + tpl.color + ';list-style:none;display:flex;align-items:center;gap:8px">' +
+      '<summary style="cursor:pointer;padding:12px 16px;background:' + tpl.color + '11;font-weight:800;font-size:14px;color:' + tpl.color + ';list-style:none;display:flex;align-items:center;gap:8px;flex-wrap:wrap">' +
         '<span>' + tpl.name + '</span>' +
+        (isCustom ? '<span style="font-size:9px;background:' + tpl.color + ';color:#fff;padding:2px 6px;border-radius:4px;font-weight:800">CUSTOM</span>' : '') +
         '<span style="font-size:10px;color:#9CA3AF;font-weight:600">▶ ' + tpl.target + '</span>' +
         '<span style="margin-left:auto;font-size:11px;color:' + tpl.color + ';font-weight:700">クリックで編集 ▾</span>' +
       '</summary>' +
       '<div style="padding:16px">' +
+        // カスタムスクリプトはname/target/colorも編集可能
+        (isCustom ? (
+          '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">' +
+            '<div>' +
+              '<div style="font-size:11px;color:#6B7280;margin-bottom:4px">スクリプト名</div>' +
+              '<input id="scr-tpl-name-' + tpl.id + '" value="' + escapeHtml(tpl.name) + '" style="width:100%;padding:8px 10px;border:2px solid #E5E7EB;border-radius:8px;font-size:13px;font-weight:700;outline:none">' +
+            '</div>' +
+            '<div>' +
+              '<div style="font-size:11px;color:#6B7280;margin-bottom:4px">対象企業</div>' +
+              '<input id="scr-tpl-target-' + tpl.id + '" value="' + escapeHtml(tpl.target) + '" style="width:100%;padding:8px 10px;border:2px solid #E5E7EB;border-radius:8px;font-size:12px;outline:none">' +
+            '</div>' +
+          '</div>' +
+          '<div style="margin-bottom:12px">' +
+            '<div style="font-size:11px;color:#6B7280;margin-bottom:4px">カラー（HEX）</div>' +
+            '<input type="color" id="scr-tpl-color-' + tpl.id + '" value="' + tpl.color + '" style="width:60px;height:32px;border:2px solid #E5E7EB;border-radius:8px;cursor:pointer">' +
+          '</div>'
+        ) : '') +
         '<div style="font-size:11px;color:#6B7280;margin-bottom:8px">変数：<code style="background:#F3F4F6;padding:1px 6px;border-radius:4px">{company}</code> <code style="background:#F3F4F6;padding:1px 6px;border-radius:4px">{years}</code> <code style="background:#F3F4F6;padding:1px 6px;border-radius:4px">{months}</code> <code style="background:#F3F4F6;padding:1px 6px;border-radius:4px">{person}</code> <code style="background:#F3F4F6;padding:1px 6px;border-radius:4px">{industry}</code> | 太字： <code style="background:#F3F4F6;padding:1px 6px;border-radius:4px">**強調**</code></div>' +
         '<textarea id="scr-tpl-' + tpl.id + '" style="width:100%;min-height:200px;padding:12px;border:2px solid #E5E7EB;border-radius:10px;font-size:13px;line-height:1.8;font-family:inherit;resize:vertical;outline:none" onfocus="this.style.borderColor=\'' + tpl.color + '\'" onblur="this.style.borderColor=\'#E5E7EB\'">' + escapeHtml(tpl.n1) + '</textarea>' +
-        '<div style="margin-top:8px;text-align:right">' +
-          '<button onclick="resetScriptNode(\'template\',\'' + tpl.id + '\')" style="padding:6px 12px;background:#fff;border:1px solid #E5E7EB;color:#6B7280;border-radius:8px;font-size:11px;cursor:pointer">↺ このセリフを初期値に</button>' +
+        '<div style="margin-top:8px;display:flex;gap:6px;justify-content:flex-end;flex-wrap:wrap">' +
+          '<button onclick="duplicateScript(\'' + tpl.id + '\')" style="padding:6px 12px;background:#fff;border:1px solid #3B82F6;color:#3B82F6;border-radius:8px;font-size:11px;cursor:pointer;font-weight:700">📋 このスクリプトを複製</button>' +
+          (isCustom
+            ? '<button onclick="deleteCustomScript(\'' + tpl.id + '\')" style="padding:6px 12px;background:#fff;border:1px solid #DC2626;color:#DC2626;border-radius:8px;font-size:11px;cursor:pointer;font-weight:700">🗑️ 削除</button>'
+            : '<button onclick="resetScriptNode(\'template\',\'' + tpl.id + '\')" style="padding:6px 12px;background:#fff;border:1px solid #E5E7EB;color:#6B7280;border-radius:8px;font-size:11px;cursor:pointer">↺ このセリフを初期値に</button>'
+          ) +
         '</div>' +
       '</div>' +
     '</details>';
