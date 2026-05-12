@@ -6319,6 +6319,14 @@ function openDetail(id) {
           <input class="finput ${it.agreUrl?'is-filled':'is-empty'}" id="edit-agre" value="${it.agreUrl||''}" placeholder="（例：未入力 — アグレ掲載URL）">
         </div>
         <div class="fl">
+          <label class="flabel">マイナビ URL</label>
+          <input class="finput ${it.mynaviUrl?'is-filled':'is-empty'}" id="edit-mynavi" value="${it.mynaviUrl||''}" placeholder="（例：未入力 — マイナビ掲載URL）">
+        </div>
+        <div class="fl">
+          <label class="flabel">メールアドレス</label>
+          <input class="finput ${it.email?'is-filled':'is-empty'}" id="edit-email" value="${it.email||''}" placeholder="（例：未入力 — info@example.com）" type="email">
+        </div>
+        <div class="fl">
           <label class="flabel">推定月商</label>
           <select class="fsel ${it.revenue?'is-filled':'is-empty'}" id="edit-revenue">
             <option value="">— 未入力 —</option>
@@ -6845,10 +6853,11 @@ function buildSiteAnalysisPrompt(it, domain) {
     '・サイト内に存在しない情報は必ず N/A（推測禁止）',
     '',
     '【出力CSV列】',
-    'company_name,ceo_name,founding_date,established_date,instagram_url,facebook_url,x_url,tiktok_url,indeed_url,job_antenna_url,agre_url,mynavi_url,own_recruit_url,notes',
+    'company_name,ceo_name,email,founding_date,established_date,instagram_url,facebook_url,x_url,tiktok_url,indeed_url,job_antenna_url,agre_url,mynavi_url,own_recruit_url,revenue,employees,notes',
     '',
     '【各列の説明】',
     '・ceo_name: 代表者名（「代表取締役」「代表」「社長」などの肩書きの直後の氏名のみ）',
+    '・email: サイト内に明記された公開メールアドレス（info@... など。お問い合わせフォームのみで明記がない場合はN/A）',
     '・founding_date: 創業年月日（YYYY-MM形式、「創業」と明記されたもの。「設立」とは別物）',
     '・established_date: 設立年月日（YYYY-MM形式、「設立」と明記されたもの。法人登記日）',
     '・instagram_url: サイト内にInstagram公式アカウントへのリンクがあれば、そのURL',
@@ -6860,6 +6869,8 @@ function buildSiteAnalysisPrompt(it, domain) {
     '・agre_url: 同上、アグレ',
     '・mynavi_url: 同上、マイナビ',
     '・own_recruit_url: 自社の採用ページURL（採用情報・リクルート・careersなど）',
+    '・revenue: 年商・売上高（サイトに明記がある場合のみ。例：約5億円。「資本金」や「従業員数」と混同しない。記載なしは必ずN/A）',
+    '・employees: 従業員数（サイトに明記がある場合のみ。例：約50名。記載なしは必ずN/A）',
     '・notes: 各項目の出典を必ず記載。例：「ceo_name: \'代表取締役 照屋 太郎\'（出典：https://www.example.com/about/）; founding_date: \'1968年8月創業\'（出典：https://www.example.com/company/）」',
     '',
     '【出力ルール】',
@@ -6957,6 +6968,7 @@ function commitSiteAnalysis() {
   // 差分計算
   const FIELD_LABELS = {
     person: '👤 代表者名',
+    email: '📧 メールアドレス',
     foundingDate: '🎂 創業年月日',
     establishedDate: '🏛 設立年月日',
     instaUrl: '📷 Instagram',
@@ -6968,12 +6980,15 @@ function commitSiteAnalysis() {
     agreUrl: '💼 アグレ',
     mynaviUrl: '💼 マイナビ',
     jobUrl: '💼 自社採用ページ',
+    revenue: '💰 売上',
+    employeeCount: '👥 従業員数',
     researchNotes: '📝 出典メモ',
   };
 
   // CSV列名 → 内部フィールド名のマッピング
   const fieldMap = {
     ceo_name: 'person',
+    email: 'email',
     founding_date: 'foundingDate',
     established_date: 'establishedDate',
     instagram_url: 'instaUrl',
@@ -6985,6 +7000,8 @@ function commitSiteAnalysis() {
     agre_url: 'agreUrl',
     mynavi_url: 'mynaviUrl',
     own_recruit_url: 'jobUrl',
+    revenue: 'revenue',
+    employees: 'employeeCount',
     notes: 'researchNotes',
   };
 
@@ -7463,6 +7480,8 @@ function saveDetailEdit() {
   const indeed      = document.getElementById('edit-indeed')?.value.trim();
   const jobantenna  = document.getElementById('edit-jobantenna')?.value.trim();
   const agre        = document.getElementById('edit-agre')?.value.trim();
+  const mynavi      = document.getElementById('edit-mynavi')?.value.trim();
+  const email       = document.getElementById('edit-email')?.value.trim();
   const revenue     = document.getElementById('edit-revenue')?.value;
   const employees   = document.getElementById('edit-employees')?.value.trim();
   const notes       = document.getElementById('edit-notes')?.value.trim();
@@ -7485,6 +7504,8 @@ function saveDetailEdit() {
   if (indeed      !== undefined) it.indeedUrl = indeed;
   if (jobantenna  !== undefined) it.jobAntennaUrl = jobantenna;
   if (agre        !== undefined) it.agreUrl = agre;
+  if (mynavi      !== undefined) it.mynaviUrl = mynavi;
+  if (email       !== undefined) it.email = email;
   if (revenue     !== undefined) it.revenue = revenue;
   if (employees   !== undefined) it.employeeCount = employees;
   if (notes       !== undefined) it.researchNotes = notes;
@@ -8094,6 +8115,7 @@ function commitGeminiPaste() {
       indeedUrl: '💼 Indeed',
       jobAntennaUrl: '💼 ジョブアンテナ',
       agreUrl: '💼 アグレ',
+      mynaviUrl: '💼 マイナビ',
       revenue: '💰 売上',
       employeeCount: '👥 従業員数',
       researchNotes: '📝 備考',
@@ -8136,6 +8158,7 @@ function commitGeminiPaste() {
       addDiff('indeedUrl', obj.indeed_url);
       addDiff('jobAntennaUrl', obj.job_antenna_url);
       addDiff('agreUrl', obj.agre_url);
+      addDiff('mynaviUrl', obj.mynavi_url);
       addDiff('revenue', obj.revenue);
       addDiff('employeeCount', obj.employees);
       addDiff('researchNotes', obj.notes);
