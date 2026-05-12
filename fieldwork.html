@@ -349,6 +349,10 @@ tr:hover td { background: rgba(255,70,2,0.03); cursor: pointer; }
   60% { transform: translateX(-4px); }
   80% { transform: translateX(4px); }
 }
+@keyframes confetti-fall {
+  0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+  100% { transform: translateY(110vh) rotate(var(--rot, 720deg)); opacity: 0.5; }
+}
 @keyframes confettiFall {
   0%   { transform: translate(0,0) rotate(0); opacity: 1; }
   100% { transform: translate(var(--dx),120px) rotate(720deg); opacity: 0; }
@@ -2172,6 +2176,8 @@ function recordTelResult(it, result, opts={}) {
   }
 
   a.history.push(entry);
+  // 電話マイルストーン
+  setTimeout(checkTelMilestone, 200);
   return entry;
 }
 
@@ -2378,11 +2384,154 @@ function isEnriched(it) {
 // 拡張時刻の更新は isEnriched() が true の時のみ
 function maybeMarkEnriched(it) {
   if (isEnriched(it)) {
+    const wasAlreadyToday = (it.lastUpdatedAt || '').slice(0, 10) === todayJST();
     it.lastUpdatedAt = nowJSTISO();
     it.researchStatus = 'done';
+    // 今日初めての拡張だったらマイルストーンチェック
+    if (!wasAlreadyToday) {
+      setTimeout(checkEnrichMilestone, 200);
+    }
     return true;
   }
   return false;
+}
+
+// ══════════════════════════════════════════
+// お祝いアニメーション（10件ごとに褒めてくれる）
+// ══════════════════════════════════════════
+const ENRICH_MESSAGES = {
+  10: { title: '顧客リスト、強くなりました！', sub: '10件達成', emoji: '💪' },
+  20: { title: '顧客リスト、強くなりました！', sub: '20件達成', emoji: '🔥' },
+  30: { title: 'さらに分厚い顧客情報が積まれてます！', sub: '30件達成', emoji: '📚' },
+  40: { title: 'いいっすね！！濃厚濃厚！！', sub: '40件達成', emoji: '✨' },
+  50: { title: '順調っすね先輩！手際が良くなってる', sub: '50件達成 半分突破！', emoji: '🚀' },
+  60: { title: 'まだまだ！！まだいけるんですね！！', sub: '60件達成', emoji: '🌟' },
+  70: { title: '眩しいっ！その所作が眩しい！！', sub: '70件達成', emoji: '☀️' },
+  80: { title: 'このお方、戦いながら強くなっています！！', sub: '80件達成', emoji: '⚔️' },
+  90: { title: 'あぁ、、あぁ！！もう、、、ぐはっ！！', sub: '90件達成 ラストスパート！', emoji: '💥' },
+  100: { title: '先生、お勤めご苦労様でした。\n今日もまた強くなってしまわれましたね。', sub: '100件達成 🎊🎊🎊', emoji: '👑' },
+};
+
+const TEL_MESSAGES = {
+  10: { title: 'ふぅ、なんとかいけましたね！', sub: '電話10件達成', emoji: '📞' },
+  20: { title: '心の平穏は保てていますか！？', sub: '電話20件達成', emoji: '🧘' },
+  30: { title: 'お疲れ様です！！いい戦いでした！！', sub: '電話30件達成 🎊', emoji: '🏆' },
+};
+
+function getTodayEnrichCount() {
+  const t = todayJST();
+  return items.filter(it => isEnriched(it) && (it.lastUpdatedAt||'').slice(0,10) === t).length;
+}
+
+function getTodayTelCount() {
+  const t = todayJST();
+  const range = { from: t + 'T00:00:00', to: t + 'T23:59:59' };
+  let c = 0;
+  for (const it of items) {
+    if (!it.approach || !it.approach.history) continue;
+    for (const h of it.approach.history) {
+      if (h.action === 'tel' && h.ts && h.ts >= range.from && h.ts <= range.to) c++;
+    }
+  }
+  return c;
+}
+
+// 今日すでにそのマイルストーンを通過した記録（重複表示防止）
+function alreadyShownMilestone(kind, count) {
+  const key = 'fw_milestones_' + todayJST();
+  try {
+    const shown = JSON.parse(localStorage.getItem(key) || '{}');
+    if (shown[kind + '_' + count]) return true;
+    shown[kind + '_' + count] = true;
+    localStorage.setItem(key, JSON.stringify(shown));
+    return false;
+  } catch(e) { return false; }
+}
+
+function checkEnrichMilestone() {
+  const count = getTodayEnrichCount();
+  // 10刻みでチェック
+  if (count > 0 && count % 10 === 0 && ENRICH_MESSAGES[count]) {
+    if (!alreadyShownMilestone('enrich', count)) {
+      showMilestoneAnimation('enrich', count, ENRICH_MESSAGES[count]);
+    }
+  }
+}
+
+function checkTelMilestone() {
+  const count = getTodayTelCount();
+  if (count > 0 && count % 10 === 0 && TEL_MESSAGES[count]) {
+    if (!alreadyShownMilestone('tel', count)) {
+      showMilestoneAnimation('tel', count, TEL_MESSAGES[count]);
+    }
+  }
+}
+
+function showMilestoneAnimation(kind, count, msg) {
+  // 既存を取り除く
+  const existing = document.getElementById('milestone-pop');
+  if (existing) existing.remove();
+
+  const isEnrich = kind === 'enrich';
+  const grad = isEnrich
+    ? 'linear-gradient(135deg,#FF4602 0%,#FFB347 50%,#FCD34D 100%)'
+    : 'linear-gradient(135deg,#22D3EE 0%,#3B82F6 50%,#8B5CF6 100%)';
+  const shadow = isEnrich ? 'rgba(255,70,2,0.5)' : 'rgba(59,130,246,0.5)';
+
+  const div = document.createElement('div');
+  div.id = 'milestone-pop';
+  div.style.cssText = 'position:fixed;inset:0;z-index:99999;display:flex;align-items:center;justify-content:center;pointer-events:none;font-family:\'Hiragino Maru Gothic ProN\',\'Yu Gothic UI\',sans-serif';
+  div.innerHTML = `
+    <div class="ms-backdrop" style="position:absolute;inset:0;background:rgba(0,0,0,0.55);backdrop-filter:blur(4px);opacity:0;transition:opacity 0.3s"></div>
+    <div class="ms-card" style="position:relative;background:${grad};color:#fff;padding:40px 50px;border-radius:32px;box-shadow:0 25px 60px ${shadow},0 0 0 6px rgba(255,255,255,0.3);text-align:center;max-width:90vw;transform:scale(0.3) rotate(-8deg);opacity:0;transition:all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1)">
+      <div style="font-size:80px;line-height:1;margin-bottom:14px;filter:drop-shadow(0 4px 8px rgba(0,0,0,0.2))">${msg.emoji}</div>
+      <div style="font-size:13px;font-weight:900;letter-spacing:0.2em;opacity:0.85;margin-bottom:8px">★ MILESTONE ★</div>
+      <div style="font-size:24px;font-weight:900;line-height:1.4;letter-spacing:0.03em;margin-bottom:14px;white-space:pre-wrap;text-shadow:0 2px 4px rgba(0,0,0,0.15)">${msg.title}</div>
+      <div style="display:inline-block;background:rgba(255,255,255,0.25);padding:8px 20px;border-radius:14px;font-size:14px;font-weight:800;letter-spacing:0.05em;backdrop-filter:blur(4px)">${isEnrich?'✨ 情報拡張':'📞 電話'} ${msg.sub}</div>
+    </div>
+    <!-- 紙吹雪コンテナ -->
+    <div class="ms-confetti" style="position:absolute;inset:0;pointer-events:none;overflow:hidden"></div>
+  `;
+  document.body.appendChild(div);
+
+  // 紙吹雪生成
+  const confettiWrap = div.querySelector('.ms-confetti');
+  const colors = ['#FF4602','#FFB347','#FCD34D','#34D399','#22D3EE','#A78BFA','#F472B6'];
+  for (let i = 0; i < 60; i++) {
+    const piece = document.createElement('div');
+    const c = colors[Math.floor(Math.random()*colors.length)];
+    const size = 8 + Math.random()*8;
+    const left = Math.random()*100;
+    const delay = Math.random()*0.3;
+    const dur = 1.5 + Math.random()*1.5;
+    const rot = Math.random()*720 - 360;
+    piece.style.cssText = `position:absolute;top:-20px;left:${left}%;width:${size}px;height:${size*0.5}px;background:${c};border-radius:2px;animation:confetti-fall ${dur}s ${delay}s ease-in forwards;transform:rotate(${Math.random()*360}deg)`;
+    piece.style.setProperty('--rot', rot + 'deg');
+    confettiWrap.appendChild(piece);
+  }
+
+  // アニメ実行
+  requestAnimationFrame(() => {
+    div.querySelector('.ms-backdrop').style.opacity = '1';
+    const card = div.querySelector('.ms-card');
+    card.style.transform = 'scale(1) rotate(0deg)';
+    card.style.opacity = '1';
+  });
+
+  // 効果音（軽い拍手・ピン音は省略、画面演出のみ）
+
+  // 3秒後にフェードアウト
+  setTimeout(() => {
+    const card = div.querySelector('.ms-card');
+    if (card) {
+      card.style.transition = 'all 0.4s ease-in';
+      card.style.transform = 'scale(0.7) translateY(-30px)';
+      card.style.opacity = '0';
+    }
+    const bd = div.querySelector('.ms-backdrop');
+    if (bd) bd.style.opacity = '0';
+  }, 3000);
+  setTimeout(() => div.remove(), 3500);
 }
 
 function calcScore(it) {
