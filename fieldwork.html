@@ -6817,6 +6817,7 @@ function commitRound2() {
 
   pendingGeminiDiffs = [{ itemId: it.id, company: it.company, fields: fieldDiffs }];
   pendingGeminiNotFound = 0;
+  pendingGeminiSource = 'site';
   openGeminiPreviewModal();
 }
 
@@ -7055,6 +7056,7 @@ function commitSiteAnalysis() {
     fields: fieldDiffs,
   }];
   pendingGeminiNotFound = 0;
+  pendingGeminiSource = 'site';
   openGeminiPreviewModal();
 }
 
@@ -7367,59 +7369,69 @@ function openGeminiGuide() {
   document.getElementById('m-gemini-guide').classList.add('open');
 }
 
-// ══ Geminiリサーチモード ══
+// ══ Geminiリサーチモード（ハルシネーション対策版） ══
 function startResearchMode() {
   // 未拡張の企業（まだGeminiで情報追加されてない企業）を上から30件
   const candidates = getFilteredItems().filter(it => !it.excluded && !isEnriched(it));
   if (!candidates.length) { toast('未拡張の企業がありません！（全社すでに情報拡張済み）'); return; }
   const batch = candidates.slice(0, 30);
 
-  // プロンプトモーダルを開く（対象を30件に絞って）
-  const industries = [...new Set(batch.map(it => it.industry).filter(Boolean))];
-  const areas = [...new Set(batch.map(it => (it.area||'').split('市')[0] + '市').filter(Boolean))].slice(0,5);
+  // 公式HPが登録されてる企業／されてない企業を分ける
+  const withWebsite = batch.filter(it => it.website && it.website.startsWith('http'));
+  const withoutWebsite = batch.filter(it => !it.website || !it.website.startsWith('http'));
+
+  // 各企業の公式HPとよくあるサブパスを列挙
   const companyList = batch.map((it, i) => {
-    return (i+1) + '. ' + it.company + ' (' + (it.area||'') + (it.addr ? ' / ' + it.addr : '') + ')';
-  }).join('\n');
+    let line = (i+1) + '. ' + it.company;
+    if (it.addr) line += ' / 所在地: ' + it.addr;
+    if (it.phone) line += ' / 電話: ' + it.phone;
+    if (it.website) {
+      const base = it.website.replace(/\/$/, '');
+      line += '\n   公式サイト: ' + it.website;
+      line += '\n   優先確認URL: ' + base + '/company/, ' + base + '/about/, ' + base + '/recruit/';
+    } else {
+      line += '\n   ⚠️ 公式サイト未登録 → この企業は基本的に全項目 N/A（営業電話で直接確認推奨）';
+    }
+    return line;
+  }).join('\n\n');
 
   const today = new Date().toLocaleDateString('ja-JP', {year:'numeric',month:'2-digit',day:'2-digit'});
   const prompt = [
-    '以下の' + batch.length + '社について調査し、必ずCSV形式のみで返答してください。説明文は不要です。',
+    '以下の' + batch.length + '社について、各企業の公式サイト内（指定したドメイン内）のみを情報源にして調査し、CSV形式で返答してください。',
+    '',
+    '【❗ 最重要：ハルシネーション禁止】',
+    '1. あなたの学習データの記憶ではなく、必ず各企業の公式サイトに実際にアクセスして読むこと',
+    '2. 公式サイトに明記されていない項目は必ず N/A（推測・想像で埋めるのは絶対禁止）',
+    '3. 公式サイト未登録の企業は、基本的に全項目 N/A（無理に他のドメインから推測しない）',
+    '4. 各企業ごとに、各項目の出典URLを notes に明記すること',
+    '5. 「会社概要」「代表挨拶」「採用情報」「About」などのサブページも必ず巡回',
+    '6. 他のドメイン（Google検索結果、Wikipedia、SNSの中身、まとめサイト等）は参照禁止',
     '',
     '【出力CSV列】',
-    'company_name,ceo_name,email,founding_date,anniversary_month,months_until_anniversary,next_anniversary_years,instagram_url,facebook_url,x_url,tiktok_url,indeed_url,job_antenna_url,agre_url,mynavi_exists,revenue,employees,notes',
-    '',
-    '【調査対象】' + areas.join('/') + ' / ' + industries.join('・'),
+    'company_name,ceo_name,email,founding_date,established_date,instagram_url,facebook_url,x_url,tiktok_url,indeed_url,job_antenna_url,agre_url,mynavi_url,own_recruit_url,revenue,employees,notes',
     '',
     '【各列の説明】',
-    '・ceo_name: 代表者名',
-    '・email: 公開メールアドレス',
-    '・founding_date: 創業年月日（YYYY-MM形式）',
-    '・anniversary_month: 創業月（数字のみ）',
-    '・months_until_anniversary: 今日（' + today + '）から次の周年まで何ヶ月（数字）',
-    '・next_anniversary_years: 次の周年は何周年（数字）',
-    '・instagram_url / facebook_url / x_url / tiktok_url: 各公式URL',
-    '・indeed_url: IndeedのURL',
-    '・job_antenna_url: ジョブアンテナのURL',
-    '・agre_url: アグレのURL',
-    '・mynavi_exists: マイナビページの有無（あり/なし/N/A）',
-    '・revenue: 年商（例：約5億円）',
-    '・employees: 従業員数',
-    '・notes: 営業提案に使える情報',
-    '',
-    '【❗ 最重要：情報の正確性ルール】',
-    '・推測・想像で値を埋めることは絶対禁止。実在する情報源で確認できない項目は必ず N/A とする',
-    '・代表者名、創業年月日、売上、従業員数は特に間違えやすい。公式サイト・登記情報・公開記事で明確に確認できた場合のみ記入',
-    '・SNSアカウントは「実在を確認した」ものだけ。同名の別企業の情報を混ぜないこと。所在地・電話番号で照合',
-    '・notesには情報の出典URLを必ず含める。例：「○○受賞歴あり。出典: https://example.com/article」',
+    '・ceo_name: 代表者名（「代表取締役」「代表」「社長」などの肩書きの直後の氏名のみ）',
+    '・email: サイト内に明記された公開メールアドレス',
+    '・founding_date: 創業年月日（YYYY-MM形式、「創業」と明記されたもの）',
+    '・established_date: 設立年月日（YYYY-MM形式、「設立」と明記されたもの。法人登記日）',
+    '・instagram_url ～ mynavi_url: 各サイト内に該当SNS/求人サイトへのリンクがあればそのURL',
+    '・own_recruit_url: 自社の採用ページURL（採用情報・リクルート・careersなど）',
+    '・revenue: 年商・売上高（サイトに明記がある場合のみ。例：約5億円）',
+    '・employees: 従業員数（サイトに明記がある場合のみ。例：約50名）',
+    '・notes: 各企業ごとに各項目の出典URLを必ず記載。例：「ceo_name: \'代表取締役 照屋 太郎\'（出典：https://www.example.com/about/）」',
     '',
     '【出力ルール】',
-    '・1行目はヘッダー行、2行目以降がデータ行',
+    '・1行目はヘッダー行、2行目以降がデータ行（行と行の間に必ず改行を入れること。1行に全部繋げて出力するのは絶対NG）',
     '・各値は必ずダブルクォートで囲む',
-    '・不明はN/A（空白不可）',
-    '・URLはhttps://から始まる完全形式で',
-    '・URLは生の文字列のみ。Markdownリンク記法 [text](url) は絶対に使わない。検索結果の参照リンクで包まない',
+    '・不明な項目はN/A（空白不可）',
+    '・URLはhttps://から始まる完全形式',
+    '・URLは生の文字列のみ。Markdownリンク記法 [text](url) は使わない',
+    '・調査対象企業の社数だけデータ行を出力すること（' + batch.length + '社なら' + batch.length + '行）',
     '',
     '【対象企業 ' + batch.length + '社】',
+    '（公式サイト登録あり: ' + withWebsite.length + '社 / 未登録: ' + withoutWebsite.length + '社）',
+    '',
     companyList,
     '',
     '=== BEGIN CSV OUTPUT NOW ===',
@@ -8106,6 +8118,7 @@ function commitGeminiPaste() {
       person: '👤 代表者名',
       email: '✉️ メール',
       foundingDate: '🎂 創業年月日',
+      establishedDate: '🏛 設立年月日',
       anniversaryMonth: '📅 創業月',
       website: '🌐 公式HP',
       instaUrl: '📷 Instagram',
@@ -8116,6 +8129,7 @@ function commitGeminiPaste() {
       jobAntennaUrl: '💼 ジョブアンテナ',
       agreUrl: '💼 アグレ',
       mynaviUrl: '💼 マイナビ',
+      jobUrl: '💼 自社採用ページ',
       revenue: '💰 売上',
       employeeCount: '👥 従業員数',
       researchNotes: '📝 備考',
@@ -8149,6 +8163,7 @@ function commitGeminiPaste() {
       addDiff('person', obj.ceo_name);
       addDiff('email', obj.email);
       addDiff('foundingDate', obj.founding_date);
+      addDiff('establishedDate', obj.established_date);
       addDiff('anniversaryMonth', obj.anniversary_month);
       addDiff('website', obj.website_url);
       addDiff('instaUrl', obj.instagram_url);
@@ -8159,6 +8174,7 @@ function commitGeminiPaste() {
       addDiff('jobAntennaUrl', obj.job_antenna_url);
       addDiff('agreUrl', obj.agre_url);
       addDiff('mynaviUrl', obj.mynavi_url);
+      addDiff('jobUrl', obj.own_recruit_url);
       addDiff('revenue', obj.revenue);
       addDiff('employeeCount', obj.employees);
       addDiff('researchNotes', obj.notes);
@@ -8180,12 +8196,14 @@ function commitGeminiPaste() {
     // プレビューモーダルを開く
     pendingGeminiDiffs = diffs;
     pendingGeminiNotFound = notFoundCount;
+    pendingGeminiSource = 'batch'; // バッチ取込：拡張済みマークしない
     openGeminiPreviewModal();
 }
 
 // プレビュー：取り込み前にユーザーが確認できる
 let pendingGeminiDiffs = [];
 let pendingGeminiNotFound = 0;
+let pendingGeminiSource = ''; // 'batch'（情報収集ページの一括取込）/ 'site'（公式サイト解析Round 1/2）/ 'detail'（個別Gemini入力タブ）
 
 function openGeminiPreviewModal() {
   const existing = document.getElementById('m-gemini-preview');
@@ -8240,7 +8258,7 @@ function openGeminiPreviewModal() {
       <div class="mhead" style="background:linear-gradient(135deg,#FFF8F3 0%,#FFEEDD 100%);border-bottom:2px solid #FFD0BC;flex-shrink:0">
         <div>
           <div class="mtitle" style="font-size:18px;font-weight:900;color:#EA580C">🔍 取り込み内容の確認</div>
-          <div style="font-size:12px;color:#92400E;font-weight:700;margin-top:2px">Geminiの嘘・古い情報をチェック！ ${diffs.length}社・${diffs.reduce((s,d)=>s+d.fields.length,0)}項目の変更候補</div>
+          <div style="font-size:12px;color:#92400E;font-weight:700;margin-top:2px">${pendingGeminiSource === 'batch' ? '⚠️ バッチ取込モード：保存しても「拡張済み」扱いにはなりません。後で1社ずつ精査してください。' : 'Geminiの嘘・古い情報をチェック！'} ${diffs.length}社・${diffs.reduce((s,d)=>s+d.fields.length,0)}項目の変更候補</div>
         </div>
         <button class="mclose" onclick="cancelGeminiPreview()">✕</button>
       </div>
@@ -8291,12 +8309,15 @@ function cancelGeminiPreview() {
   if (m) m.remove();
   pendingGeminiDiffs = [];
   pendingGeminiNotFound = 0;
+  pendingGeminiSource = '';
 }
 
 function applyGeminiPreview() {
   let updatedCount = 0;
   let anyAppliedTotal = false;
   const diffs = pendingGeminiDiffs;
+  // ソース判定：'batch'（情報収集ページから）は拡張扱いにしない
+  const skipEnrichMark = (pendingGeminiSource === 'batch');
 
   for (let ci = 0; ci < diffs.length; ci++) {
     const d = diffs[ci];
@@ -8312,9 +8333,13 @@ function applyGeminiPreview() {
       anyAppliedTotal = true;
     }
     if (companyApplied) {
-      // 有意義項目があれば「拡張済み」フラグも立てる
-      // ただし、創業日や備考だけの場合でも値はちゃんと保存する
-      maybeMarkEnriched(it);
+      if (skipEnrichMark) {
+        // バッチ取込：値だけ書き込み、拡張済みフラグは立てない
+        // （後から人間が1社ずつ確認した時に拡張扱いになる）
+      } else {
+        // Round 1/2、Gemini入力タブ、確認画面など：拡張済みマーク
+        maybeMarkEnriched(it);
+      }
       updatedCount++;
     }
   }
