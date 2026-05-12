@@ -618,7 +618,7 @@ tr:hover td { background: rgba(255,70,2,0.03); cursor: pointer; }
 ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
 
 /* ══ MOBILE RESPONSIVE ══ */
-@media (max-width: 900px) {
+@media (max-width: 480px) {
   /* サイドバー非表示 → ボトムナビへ */
   .sidebar { 
     width: 100%; height: 56px; 
@@ -661,7 +661,7 @@ tr:hover td { background: rgba(255,70,2,0.03); cursor: pointer; }
   .content { padding: 16px; }
   .page-title { font-size: 18px; }
 
-  /* テーブル → カード表示 */
+  /* テーブル → カード表示（ATTACK LIST スマホ用ビタミンPOP仕様） */
   .table-wrap table, 
   .table-wrap thead, 
   .table-wrap tbody, 
@@ -669,25 +669,77 @@ tr:hover td { background: rgba(255,70,2,0.03); cursor: pointer; }
   .table-wrap td, 
   .table-wrap tr { display: block; }
   .table-wrap thead { display: none; }
+  .table-wrap {
+    background: transparent; border: none; box-shadow: none;
+  }
   .table-wrap tr { 
-    border: 1px solid var(--border); 
-    border-radius: 10px; 
-    margin-bottom: 10px; 
-    padding: 12px 14px;
-    background: var(--surface);
+    border: none;
+    border-radius: 16px; 
+    margin-bottom: 12px; 
+    padding: 14px 16px;
+    background: #fff;
+    box-shadow: 0 2px 8px rgba(255,70,2,0.08), 0 0 0 1.5px #FFE4D5;
+    position: relative; overflow: hidden;
+  }
+  .table-wrap tr::before {
+    content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 4px;
+    background: linear-gradient(180deg, #FF4602, #FFB347);
+    border-radius: 0 4px 4px 0;
   }
   .table-wrap tr:hover td { background: transparent; }
   .table-wrap td { 
-    border: none; padding: 3px 0;
-    display: flex; align-items: center; gap: 8px;
+    border: none; padding: 0;
+    display: block;
     font-size: 12px;
   }
   .table-wrap td:empty { display: none; }
-  .table-wrap td:last-child { 
-    justify-content: flex-end; 
+  
+  /* 番号（td:nth-child(1)）はスマホで非表示 */
+  .table-wrap td:nth-child(1) { display: none; }
+
+  /* 会社名（td:nth-child(2)）はメインとして大きく目立たせる */
+  .table-wrap td:nth-child(2) {
+    font-size: 15px;
+    font-weight: 900;
+    padding-bottom: 8px;
+    margin-bottom: 8px;
+    border-bottom: 1px dashed #FFE4D5;
+  }
+  .table-wrap td:nth-child(2) > div:first-child > div:first-child {
+    font-size: 15px !important;
+  }
+
+  /* 住所・電話・業種・SNS・創業・フェーズ */
+  .table-wrap td:nth-child(3),
+  .table-wrap td:nth-child(4),
+  .table-wrap td:nth-child(5),
+  .table-wrap td:nth-child(6),
+  .table-wrap td:nth-child(7) {
+    padding: 4px 0;
+    font-size: 11.5px;
+  }
+
+  /* 業種はラベル付き、コンパクトに */
+  .table-wrap td:nth-child(4):not(:empty) { display: inline-block; margin-right: 12px; font-size: 10.5px; color: #92400E; padding: 2px 8px; background:#FFF7E6; border-radius:6px; }
+  
+  /* SNS/求人バッジは右下 */
+  .table-wrap td:nth-child(5) {
     margin-top: 6px;
-    padding-top: 8px;
-    border-top: 1px solid var(--border);
+  }
+  
+  /* アクションボタン（td:last-child）は最下部、フル幅で目立たせる */
+  .table-wrap td:last-child { 
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1.5px dashed #FFE4D5;
+    text-align: center;
+  }
+  .table-wrap td:last-child button,
+  .table-wrap td:last-child > div {
+    width: 100% !important;
+    box-sizing: border-box;
+    font-size: 14px !important;
+    padding: 12px 16px !important;
   }
 
   /* スタットカード */
@@ -696,34 +748,212 @@ tr:hover td { background: rgba(255,70,2,0.03); cursor: pointer; }
   .stat-value { font-size: 24px; }
 
   /* フィルターバー */
-  .filter-bar { gap: 6px; }
+  .filter-bar { 
+    gap: 6px; 
+    flex-wrap: wrap;
+  }
   .fi-wide { width: 100%; }
-  .filter-bar .fi { flex: 1; min-width: 80px; }
+  .filter-bar .fi { 
+    flex: 1 1 calc(50% - 4px);
+    min-width: 0; 
+    max-width: 100%;
+    font-size: 11px;
+    box-sizing: border-box;
+  }
+  .filter-bar select, .filter-bar input {
+    font-size: 11px !important;
+    max-width: 100%;
+  }
 
+  /* サマリーカード（合計・未着手・未拡張・採用中など）を2列に */
+  .content > div[style*="flex-wrap:wrap"] > div[style*="border-radius:16px"] {
+    min-width: calc(50% - 6px) !important;
+    flex: 1 1 calc(50% - 6px) !important;
+    padding: 10px 12px !important;
+  }
+  .content > div[style*="flex-wrap:wrap"] > div[style*="border-radius:16px"] > div[style*="font-size:36px"] {
+    font-size: 24px !important;
+  }
+  
   /* サマリー */
   .aq-summary { grid-template-columns: repeat(3, 1fr); gap: 8px; }
   .aq-sum-num { font-size: 26px; }
 
-  /* モーダル */
-  .modal { width: 100% !important; max-width: 100% !important; margin: 0; border-radius: 14px 14px 0 0; position: fixed; bottom: 56px; left: 0; right: 0; max-height: 85vh; }
+  /* モーダル全般：下から出てスッキリ表示 */
+  .modal { 
+    width: 100% !important; max-width: 100% !important; 
+    margin: 0; border-radius: 16px 16px 0 0; 
+    position: fixed; bottom: 56px; left: 0; right: 0; 
+    max-height: 85vh; 
+  }
   .modal-backdrop { align-items: flex-end; }
   .lc-modal { width: 100% !important; }
+
+  /* 電話モーダル：すっきりスマート版 */
+  #m-appr-tel .mhead {
+    padding: 12px 16px !important;
+    background: linear-gradient(135deg,#FFF8F3 0%,#FFEEDD 100%);
+    border-bottom: 2px solid #FFD0BC;
+  }
+  #m-appr-tel .mtitle {
+    font-size: 14px !important;
+  }
+  #m-appr-tel .mbody {
+    padding: 14px 14px !important;
+  }
+  /* 企業名・電話番号カードを縮める */
+  #m-appr-tel .mbody > div:first-child {
+    padding: 14px 12px !important;
+    margin-bottom: 12px !important;
+    border-width: 2px !important;
+  }
+  #appr-tel-company {
+    font-size: 18px !important;
+    margin-bottom: 6px !important;
+  }
+  #appr-tel-phone {
+    font-size: 24px !important;
+  }
+  /* 既知情報サマリをコンパクトに */
+  #m-appr-tel .mbody > div:nth-child(2) {
+    padding: 8px 10px !important;
+    margin-bottom: 10px !important;
+  }
+  /* 企業情報展開を小さく */
+  #m-appr-tel details {
+    padding: 8px 12px !important;
+    margin-bottom: 10px !important;
+  }
+  #m-appr-tel details summary {
+    font-size: 12px !important;
+  }
+  /* トークスクリプト選択を詰める */
+  #m-appr-tel .mbody > div:nth-of-type(4) {
+    padding: 10px 12px !important;
+    margin-bottom: 10px !important;
+  }
+  /* メモ欄 */
+  #appr-tel-memo {
+    min-height: 60px !important;
+    font-size: 12px !important;
+    padding: 8px 10px !important;
+  }
+  /* 結果ボタン群：1列 or 2列に */
+  #m-appr-tel .mbody > div[style*="grid-template-columns:repeat(2,1fr)"] {
+    gap: 6px !important;
+  }
+  /* 結果ボタンはパディング小さく、テキスト大きく保つ */
+  .appr-tel-result {
+    padding: 14px 8px !important;
+    font-size: 13px !important;
+  }
+  /* mfoot閉じるボタン */
+  #m-appr-tel .mfoot {
+    padding: 10px 14px !important;
+  }
+  /* 訪問モーダル等も同じ系統で詰める */
+  #m-appr-visit .mbody,
+  #m-appr-letter .mbody {
+    padding: 14px !important;
+  }
 
   /* 情報収集ページ */
   .content[style*="max-width:720px"] { max-width: 100% !important; }
   .fg3 { grid-template-columns: 1fr 1fr; }
 
-  /* アプローチカード */
+  /* アプローチカード（旧） */
   .aq-card { flex-wrap: wrap; }
   .aq-info { min-width: 0; flex: 1; }
 
-  /* topbarアクション */
-  .topbar-actions { gap: 6px; }
-  .topbar-actions .btn-sm { padding: 4px 8px; font-size: 10px; }
-}
+  /* アプローチ中ページのカード（新システム：ビタミンPOP横長カード） */
+  /* 横スクロールではなく、要素を縦に積みつつコンパクト＆ビタミン感維持 */
+  #ap-cards-wrap > div > div {
+    padding: 12px 14px !important;
+    gap: 8px !important;
+    flex-direction: column !important;
+    align-items: stretch !important;
+  }
+  /* 会社名＋サブ情報ブロック */
+  #ap-cards-wrap > div > div > div:first-child {
+    min-width: 0 !important;
+    width: 100%;
+  }
+  #ap-cards-wrap > div > div > div:first-child > div:first-child {
+    font-size: 14px !important;
+  }
+  /* フェーズバッジ列：横並びの横スクロール可能 */
+  #ap-cards-wrap > div > div > div:nth-child(2) {
+    width: 100%;
+    overflow-x: auto;
+    flex-wrap: wrap !important;
+    padding-bottom: 2px;
+  }
+  /* 履歴ドット列 */
+  #ap-cards-wrap > div > div > div:nth-child(3) {
+    width: 100% !important;
+    min-width: 0 !important;
+    padding: 4px 0;
+    border-top: 1px dashed #FEF3C7;
+    border-bottom: 1px dashed #FEF3C7;
+  }
+  /* 次アクションボタンを全幅で大きく */
+  #ap-cards-wrap > div > div > div:last-child {
+    width: 100%;
+  }
+  #ap-cards-wrap > div > div > div:last-child button,
+  #ap-cards-wrap > div > div > div:last-child > div {
+    width: 100% !important;
+    box-sizing: border-box;
+    padding: 12px !important;
+    font-size: 14px !important;
+    text-align: center;
+  }
+  /* アプローチ中サマリー（活動BOX） */
+  #ap-activity-cards {
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: 6px !important;
+  }
+  /* フェーズサマリー（ぜんぶ・電話初回など） */
+  .appr-stat {
+    padding: 6px !important;
+  }
+  .appr-stat > div:first-child {
+    font-size: 10px !important;
+  }
+  .appr-stat > div:last-child {
+    font-size: 18px !important;
+  }
+  /* 期間ボタン（今日/今週/今月）を整列 */
+  .ap-period-btn {
+    padding: 6px 12px !important;
+    font-size: 11px !important;
+  }
 
-@media (max-width: 480px) {
-  .stat-row-5 { grid-template-columns: repeat(2, 1fr); }
+  /* topbarアクション：スマホでは全部隠す（PC利用想定の機能） */
+  .topbar-actions { 
+    display: none !important;
+  }
+  /* topbar全体をコンパクト・横スクロール禁止 */
+  .topbar { 
+    padding: 12px !important; 
+    flex-direction: column; 
+    align-items: stretch; 
+    gap: 6px;
+    overflow-x: hidden;
+  }
+  .topbar > div:first-child {
+    width: 100%;
+  }
+  .page-title { font-size: 18px !important; }
+  .topbar-sub { font-size: 11px !important; line-height: 1.4; }
+  
+  /* 横スクロール撲滅 */
+  html, body { overflow-x: hidden; max-width: 100vw; }
+  .main { max-width: 100vw; overflow-x: hidden; }
+  .content { max-width: 100%; box-sizing: border-box; overflow-x: hidden; }
+  .content > * { max-width: 100%; box-sizing: border-box; }
+
+  /* 既存の追加ルール */
   .signal-chips { gap: 4px; }
   .schip { font-size: 10px; padding: 3px 9px; }
 }
