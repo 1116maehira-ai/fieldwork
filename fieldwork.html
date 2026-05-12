@@ -2839,7 +2839,11 @@ function _doGoPage(p, el) {
     if (typeof renderCollectSummary === 'function') renderCollectSummary();
     if (typeof renderTodayCollect === 'function') renderTodayCollect();
   }
-  if (p === 'settings') renderScriptEditor();
+  if (p === 'settings') {
+    renderScriptEditor();
+    // クラウドから最新を取得して再描画（他端末で編集された内容を反映）
+    syncScriptsFromCloud(true).then(() => renderScriptEditor()).catch(() => {});
+  }
 }
 
 function showCollectingDialog(targetPage, targetEl) {
@@ -4717,6 +4721,157 @@ const SCRIPT_TEMPLATES_DEFAULT = JSON.parse(JSON.stringify(SCRIPT_TEMPLATES));
 const SCRIPT_COMMON_NODES_DEFAULT = JSON.parse(JSON.stringify(SCRIPT_COMMON_NODES));
 
 // 起動時に localStorage から編集を読み込んで適用
+// ══════════════════════════════════════════
+// Supabaseスクリプト同期：全端末で共有
+// ══════════════════════════════════════════
+const SCRIPT_TABLE = 'fieldwork_scripts';
+
+// Supabaseから全スクリプトを取得
+async function fetchScriptsFromSupabase() {
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/${SCRIPT_TABLE}?select=*&order=sort_order.asc`, {
+      headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
+    });
+    if (!res.ok) return null;
+    const rows = await res.json();
+    return rows;
+  } catch (e) {
+    console.warn('fetchScriptsFromSupabase failed', e);
+    return null;
+  }
+}
+
+// Supabaseに1件のスクリプトをupsert
+async function upsertScriptToSupabase(row) {
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/${SCRIPT_TABLE}?on_conflict=script_id`, {
+      method: 'POST',
+      headers: {
+        'apikey': SUPABASE_KEY,
+        'Authorization': `Bearer ${SUPABASE_KEY}`,
+        'Content-Type': 'application/json',
+        'Prefer': 'resolution=merge-duplicates,return=minimal',
+      },
+      body: JSON.stringify(row),
+    });
+    return res.ok;
+  } catch (e) {
+    console.warn('upsertScriptToSupabase failed', e);
+    return false;
+  }
+}
+
+// Supabaseから1件削除
+async function deleteScriptFromSupabase(scriptId) {
+  try {
+    await fetch(`${SUPABASE_URL}/rest/v1/${SCRIPT_TABLE}?script_id=eq.${encodeURIComponent(scriptId)}`, {
+      method: 'DELETE',
+      headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
+    });
+  } catch (e) { console.warn('deleteScriptFromSupabase failed', e); }
+}
+
+// Supabaseから読み込んでSCRIPT_TEMPLATES / SCRIPT_COMMON_NODESに反映
+async function syncScriptsFromCloud(silent = false) {
+  const rows = await fetchScriptsFromSupabase();
+  if (!rows) {
+    if (!silent) toast('⚠️ クラウド接続失敗。ローカルのスクリプトを表示します');
+    return false;
+  }
+  if (rows.length === 0) {
+    // クラウドが空 → 現状のlocalStorage内容を初期データとして送る（初回セットアップ）
+    if (!silent) console.log('クラウドに既存データなし。ローカルから初期化します');
+    await pushAllScriptsToCloud();
+    return true;
+  }
+
+  // テンプレ反映
+  let customCount = 0;
+  for (const row of rows) {
+    if (row.kind === 'template') {
+      const defaultIds = new Set(SCRIPT_TEMPLATES_DEFAULT.map(t => t.id));
+      if (defaultIds.has(row.script_id)) {
+        // デフォルトテンプレ：n1だけ上書き
+        const tpl = SCRIPT_TEMPLATES.find(t => t.id === row.script_id);
+        if (tpl && typeof row.n1 === 'string') tpl.n1 = row.n1;
+      } else {
+        // カスタムテンプレ：既存配列に追加 or 更新
+        const existing = SCRIPT_TEMPLATES.find(t => t.id === row.script_id);
+        if (existing) {
+          existing.name = row.name || existing.name;
+          existing.target = row.target || existing.target;
+          existing.color = row.color || existing.color;
+          existing.n1 = row.n1 || existing.n1;
+          existing.custom = true;
+        } else {
+          SCRIPT_TEMPLATES.push({
+            id: row.script_id,
+            name: row.name || '🆕 カスタム',
+            target: row.target || '',
+            color: row.color || '#6B7280',
+            n1: row.n1 || '',
+            custom: true,
+          });
+        }
+        customCount++;
+      }
+    } else if (row.kind === 'common_node') {
+      if (SCRIPT_COMMON_NODES[row.script_id]) {
+        if (typeof row.title === 'string') SCRIPT_COMMON_NODES[row.script_id].title = row.title;
+        if (typeof row.script_body === 'string') SCRIPT_COMMON_NODES[row.script_id].script = row.script_body;
+      }
+    }
+  }
+
+  // クラウドに存在しないカスタムスクリプトはローカルからも削除（他端末で削除されたケース）
+  const cloudCustomIds = new Set(rows.filter(r => r.kind === 'template' && !SCRIPT_TEMPLATES_DEFAULT.find(d => d.id === r.script_id)).map(r => r.script_id));
+  for (let i = SCRIPT_TEMPLATES.length - 1; i >= 0; i--) {
+    const t = SCRIPT_TEMPLATES[i];
+    if (t.custom && !cloudCustomIds.has(t.id)) {
+      SCRIPT_TEMPLATES.splice(i, 1);
+    }
+  }
+
+  if (!silent) {
+    console.log(`✅ クラウドからスクリプト同期完了（カスタム${customCount}件）`);
+  }
+  return true;
+}
+
+// 現在のスクリプトを全部Supabaseにpush（初回セットアップ・全保存時）
+async function pushAllScriptsToCloud() {
+  const promises = [];
+
+  // テンプレ
+  for (const tpl of SCRIPT_TEMPLATES) {
+    promises.push(upsertScriptToSupabase({
+      script_id: tpl.id,
+      kind: 'template',
+      name: tpl.name,
+      target: tpl.target,
+      color: tpl.color,
+      n1: tpl.n1,
+      is_custom: !!tpl.custom,
+      sort_order: SCRIPT_TEMPLATES.indexOf(tpl),
+      updated_at: new Date().toISOString(),
+    }));
+  }
+  // 共通ノード
+  let nodeIdx = 0;
+  for (const key in SCRIPT_COMMON_NODES) {
+    const node = SCRIPT_COMMON_NODES[key];
+    promises.push(upsertScriptToSupabase({
+      script_id: key,
+      kind: 'common_node',
+      title: node.title,
+      script_body: node.script,
+      sort_order: nodeIdx++,
+      updated_at: new Date().toISOString(),
+    }));
+  }
+  await Promise.all(promises);
+}
+
 function loadScriptOverrides() {
   try {
     const raw = localStorage.getItem(SCRIPT_STORAGE_KEY);
@@ -4757,12 +4912,24 @@ function loadScriptOverrides() {
   } catch(e) { console.warn('script overrides load failed', e); }
 }
 
-// 起動時に1回ロード
+// 起動時に1回ロード（まずlocalStorageから瞬時に反映）
 loadScriptOverrides();
 
-// エディタの内容をlocalStorageに保存
-function saveScriptEdits() {
+// 続いてクラウドから同期（ネット遅延あるので非同期）
+(async () => {
+  try {
+    await syncScriptsFromCloud(true);
+    // 同期後、もしスクリプトエディタ画面が表示されてたら再描画
+    if (document.getElementById('script-editor-list')) {
+      if (typeof renderScriptEditor === 'function') renderScriptEditor();
+    }
+  } catch (e) { console.warn('initial cloud sync failed', e); }
+})();
+
+// エディタの内容をlocalStorage + Supabaseに保存
+async function saveScriptEdits() {
   const data = { templates: {}, commonNodes: {}, customTemplates: [] };
+  const cloudPromises = [];
   for (const tpl of SCRIPT_TEMPLATES) {
     const ta = document.getElementById('scr-tpl-' + tpl.id);
     if (ta) {
@@ -4786,7 +4953,20 @@ function saveScriptEdits() {
     } else {
       data.templates[tpl.id] = { n1: tpl.n1 };
     }
+    // クラウドにも保存
+    cloudPromises.push(upsertScriptToSupabase({
+      script_id: tpl.id,
+      kind: 'template',
+      name: tpl.name,
+      target: tpl.target,
+      color: tpl.color,
+      n1: tpl.n1,
+      is_custom: !!tpl.custom,
+      sort_order: SCRIPT_TEMPLATES.indexOf(tpl),
+      updated_at: new Date().toISOString(),
+    }));
   }
+  let nodeIdx = 0;
   for (const key in SCRIPT_COMMON_NODES) {
     const titleEl = document.getElementById('scr-node-title-' + key);
     const scriptEl = document.getElementById('scr-node-script-' + key);
@@ -4798,21 +4978,39 @@ function saveScriptEdits() {
         script: scriptEl.value,
       };
     }
+    // クラウドにも保存
+    cloudPromises.push(upsertScriptToSupabase({
+      script_id: key,
+      kind: 'common_node',
+      title: SCRIPT_COMMON_NODES[key].title,
+      script_body: SCRIPT_COMMON_NODES[key].script,
+      sort_order: nodeIdx++,
+      updated_at: new Date().toISOString(),
+    }));
   }
+
+  // localStorage保存（オフライン時のフォールバック）
   try {
     localStorage.setItem(SCRIPT_STORAGE_KEY, JSON.stringify(data));
+  } catch(e) {
+    console.warn('localStorage save failed', e);
+  }
+
+  // クラウド保存（並列実行）
+  try {
+    await Promise.all(cloudPromises);
     if (typeof showCopyAnimation === 'function') {
-      showCopyAnimation('💾 保存しました！\nスクリプトに反映されます ✨');
+      showCopyAnimation('☁️ クラウドに保存！\n他の端末にも反映されます ✨');
     } else {
-      toast('保存しました');
+      toast('☁️ クラウドに保存しました');
     }
   } catch(e) {
-    toast('保存失敗: ' + e.message);
+    toast('⚠️ クラウド保存失敗（ローカルには保存済み）: ' + e.message);
   }
 }
 
 // 新規スクリプト作成
-function createNewScript() {
+async function createNewScript() {
   const name = prompt('新しいスクリプト名を入力してください（絵文字も使えます）\n例：🍔 デリバリー営業向け', '🆕 新しいスクリプト');
   if (!name || !name.trim()) return;
   const target = prompt('対象企業の特徴を入力してください\n例：来店客で売上が立つ飲食店', '');
@@ -4828,13 +5026,13 @@ function createNewScript() {
     n1: 'お世話になっております。**TENOHIRAの石川**と申します。\n突然のお電話失礼します。\n\n（ここに導入のセリフを書いてください）\n\n代表の{person}様はお引き合わせいただけませんでしょうか？\n\n（どうせ断られる）\n\nでは、**ご担当者様**にお繋ぎいただけますでしょうか？',
     custom: true,
   });
-  saveScriptEdits();
+  await saveScriptEdits();
   renderScriptEditor();
-  toast('✨ 新規スクリプト「' + name + '」を作成しました');
+  toast('✨ 新規スクリプト「' + name + '」を作成しました（クラウド同期完了）');
 }
 
 // 既存スクリプトを複製
-function duplicateScript(id) {
+async function duplicateScript(id) {
   const src = SCRIPT_TEMPLATES.find(t => t.id === id);
   if (!src) return;
   // 編集中の最新内容も反映してから複製
@@ -4849,25 +5047,28 @@ function duplicateScript(id) {
     n1: currentN1,
     custom: true,
   });
-  saveScriptEdits();
+  await saveScriptEdits();
   renderScriptEditor();
-  toast('📋 「' + src.name + '」を複製しました');
+  toast('📋 「' + src.name + '」を複製しました（クラウド同期完了）');
 }
 
-// カスタムスクリプトを削除
-function deleteCustomScript(id) {
+// カスタムスクリプトを削除（クラウドからも削除）
+async function deleteCustomScript(id) {
   const tpl = SCRIPT_TEMPLATES.find(t => t.id === id);
   if (!tpl) return;
   if (!tpl.custom) {
     toast('⚠️ デフォルトのスクリプトは削除できません');
     return;
   }
-  if (!confirm('「' + tpl.name + '」を削除してよろしいですか？\n（このアクションは元に戻せません）')) return;
+  if (!confirm('「' + tpl.name + '」を削除してよろしいですか？\n（他の端末からも消えます）')) return;
   const idx = SCRIPT_TEMPLATES.findIndex(t => t.id === id);
   if (idx >= 0) SCRIPT_TEMPLATES.splice(idx, 1);
-  saveScriptEdits();
+  // クラウドからも削除
+  await deleteScriptFromSupabase(id);
+  // 全体を再保存（localStorage更新）
+  await saveScriptEdits();
   renderScriptEditor();
-  toast('🗑️ スクリプトを削除しました');
+  toast('🗑️ スクリプトを削除しました（全端末で反映）');
 }
 
 // 全リセット
@@ -6442,7 +6643,7 @@ function buildRound2Prompt(it) {
     '・notes: 各URLの出典（どのページで実在を確認したか）を必ず記載',
     '',
     '【出力ルール】',
-    '・1行目はヘッダー行、2行目がデータ行',
+    '・1行目はヘッダー行、2行目がデータ行（行と行の間に必ず改行を入れること。1行に全部繋げて出力するのは絶対NG）',
     '・各値はダブルクォートで囲む',
     '・不明な項目は必ず N/A',
     '・URLは https:// から始まる完全形式',
@@ -6468,7 +6669,21 @@ function commitRound2() {
     return;
   }
   const text = ta.value.trim();
-  const lines = text.split(/\r?\n/).map(r => r.trim()).filter(r => r);
+
+  // ヘッダーと値が1行に繋がってるケースを自動分離
+  const splitHeaderAndData = (raw) => {
+    if (/\r?\n/.test(raw)) return raw;
+    const m = raw.match(/^(.*?["']notes["'])\s*[\s,]?\s*(["']?\S)/);
+    if (m && m[1] && /_url/i.test(m[1])) {
+      const headerPart = m[1];
+      const dataPart = raw.slice(m[1].length).replace(/^[\s,]+/, '');
+      return headerPart + '\n' + dataPart;
+    }
+    return raw;
+  };
+  const normalizedText = splitHeaderAndData(text);
+
+  const lines = normalizedText.split(/\r?\n/).map(r => r.trim()).filter(r => r);
   if (!lines.length) { toast('⚠️ データが見つかりません'); return; }
 
   // ヘッダー判定
@@ -6476,7 +6691,9 @@ function commitRound2() {
   let dataLine = null;
   for (const line of lines) {
     const parts = parseCSVLine(line).map(s => s.replace(/^"|"$/g, '').trim());
-    if (parts.some(c => /_url$/i.test(c) || /^notes$/i.test(c))) {
+    // ヘッダー行：複数の_urlキーワードが含まれる
+    const urlKeywordCount = parts.filter(c => /^(instagram_url|facebook_url|x_url|tiktok_url|indeed_url|job_antenna_url|agre_url|mynavi_url|notes)$/i.test(c)).length;
+    if (urlKeywordCount >= 2) {
       headerCols = parts.map(c => c.toLowerCase().trim());
       continue;
     }
@@ -6646,7 +6863,7 @@ function buildSiteAnalysisPrompt(it, domain) {
     '・notes: 各項目の出典を必ず記載。例：「ceo_name: \'代表取締役 照屋 太郎\'（出典：https://www.example.com/about/）; founding_date: \'1968年8月創業\'（出典：https://www.example.com/company/）」',
     '',
     '【出力ルール】',
-    '・1行目はヘッダー行、2行目がデータ行',
+    '・1行目はヘッダー行、2行目がデータ行（行と行の間に必ず改行を入れること。1行に全部繋げて出力するのは絶対NG）',
     '・各値は必ずダブルクォートで囲む',
     '・不明な項目は N/A（空白不可）',
     '・URLは https:// から始まる完全形式',
@@ -6673,8 +6890,26 @@ function commitSiteAnalysis() {
   }
   const text = ta.value.trim();
 
+  // ヘッダーと値が1行に繋がってるケースを自動分離
+  // 例: "company_name","ceo_name",..."notes" "株式会社○○","N/A",..."notes本文"
+  //     → ヘッダーの最後の列名の後ろの " で1行目を区切る
+  const splitHeaderAndData = (raw) => {
+    // すでに改行で分かれてるならそのまま返す
+    if (/\r?\n/.test(raw)) return raw;
+    // company_name を含む先頭の「列名群」を探す
+    // パターン: "company_name","ceo_name",..."notes" の直後の空白＋"
+    const m = raw.match(/^(.*?["']notes["'])\s*[\s,]?\s*(["']?\S)/);
+    if (m && m[1] && /company_name/i.test(m[1])) {
+      const headerPart = m[1];
+      const dataPart = raw.slice(m[1].length).replace(/^[\s,]+/, '');
+      return headerPart + '\n' + dataPart;
+    }
+    return raw;
+  };
+  const normalizedText = splitHeaderAndData(text);
+
   // CSVをパース（既存のparseCSVLineを使う）
-  const lines = text.split(/\r?\n/).map(r => r.trim()).filter(r => r);
+  const lines = normalizedText.split(/\r?\n/).map(r => r.trim()).filter(r => r);
   if (!lines.length) {
     toast('⚠️ データが見つかりません');
     return;
@@ -6685,7 +6920,9 @@ function commitSiteAnalysis() {
   let dataLine = null;
   for (const line of lines) {
     const parts = parseCSVLine(line).map(s => s.replace(/^"|"$/g, '').trim());
-    if (parts.some(c => /company_name/i.test(c))) {
+    // ヘッダー行：parts内に複数の列名キーワードが含まれる
+    const headerKeywordCount = parts.filter(c => /^(company_name|ceo_name|founding_date|established_date|instagram_url|facebook_url|x_url|tiktok_url|indeed_url|job_antenna_url|agre_url|mynavi_url|own_recruit_url|notes)$/i.test(c)).length;
+    if (headerKeywordCount >= 3) {
       headerCols = parts.map(c => c.toLowerCase().trim());
       continue;
     }
@@ -6855,7 +7092,7 @@ function renderGeminiTab() {
     '・同名の別企業の情報を混ぜないこと。所在地・電話番号で必ず照合する。',
     '',
     '【出力ルール】',
-    '・1行目はヘッダー行、2行目がデータ行',
+    '・1行目はヘッダー行、2行目がデータ行（行と行の間に必ず改行を入れること。1行に全部繋げて出力するのは絶対NG）',
     '・各値は必ずダブルクォートで囲む',
     '・不明な項目はN/A（空白不可）',
     '・URLはhttps://から始まる完全形式で',
