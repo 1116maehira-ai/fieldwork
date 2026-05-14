@@ -3376,7 +3376,7 @@ function renderPosumane() {
     return `
       <div style="background:#fff;border:2px solid ${status.color}33;border-left:5px solid ${status.color};border-radius:14px;padding:14px 16px;margin-bottom:10px;display:flex;gap:12px;align-items:center;flex-wrap:wrap;box-shadow:0 2px 6px rgba(0,0,0,0.04);cursor:pointer;transition:all 0.15s" onclick="openDetail(${it.id})" onmouseover="this.style.transform='translateX(2px)';this.style.boxShadow='0 4px 12px rgba(0,0,0,0.08)'" onmouseout="this.style.transform='translateX(0)';this.style.boxShadow='0 2px 6px rgba(0,0,0,0.04)'">
         <div style="flex:1;min-width:0">
-          <div style="font-size:15px;font-weight:900;color:#1F2937;margin-bottom:4px">${escapeHtml(it.company)} ${multiCampaignBadge}</div>
+          <div style="font-size:15px;font-weight:900;color:#1F2937;margin-bottom:4px;display:flex;align-items:center;gap:8px;flex-wrap:wrap">${escapeHtml(it.company)} ${multiCampaignBadge} ${getStarHtml(it.starRating, 13)}</div>
           <div style="font-size:11px;color:#6B7280;display:flex;gap:8px;flex-wrap:wrap;align-items:center">
             ${m.genre ? `<span style="background:#FFF8E1;color:#E65100;padding:2px 8px;border-radius:6px;font-weight:800">${escapeHtml(m.genre)}</span>` : ''}
             ${m.pmArea ? `<span style="font-weight:700">📍 ${escapeHtml(m.pmArea)}</span>` : ''}
@@ -3390,6 +3390,7 @@ function renderPosumane() {
           </div>
         </div>
         <div onclick="event.stopPropagation()" style="display:flex;flex-direction:column;align-items:flex-end;gap:6px">
+          ${getStarInteractiveHtml(it.id, it.starRating)}
           <select onchange="setPosumaneStatus(${it.id}, this.value)" style="background:${status.bg};color:${status.color};border:2px solid ${status.color};padding:6px 10px;border-radius:10px;font-size:12px;font-weight:800;cursor:pointer;font-family:inherit">
             ${Object.keys(POSUMANE_STATUS_LABELS).map(k => {
               const s = POSUMANE_STATUS_LABELS[k];
@@ -3665,7 +3666,7 @@ function renderPosumaneUser() {
     return `
       <div style="background:#fff;border:2px solid ${status.color}33;border-left:5px solid ${status.color};border-radius:14px;padding:14px 16px;margin-bottom:10px;display:flex;gap:12px;align-items:center;flex-wrap:wrap;box-shadow:0 2px 6px rgba(0,0,0,0.04);cursor:pointer;transition:all 0.15s" onclick="openDetail(${it.id})" onmouseover="this.style.transform='translateX(2px)';this.style.boxShadow='0 4px 12px rgba(0,0,0,0.08)'" onmouseout="this.style.transform='translateX(0)';this.style.boxShadow='0 2px 6px rgba(0,0,0,0.04)'">
         <div style="flex:1;min-width:0">
-          <div style="font-size:15px;font-weight:900;color:#1F2937;margin-bottom:4px">${escapeHtml(it.company)} ${multiCampaignBadge}</div>
+          <div style="font-size:15px;font-weight:900;color:#1F2937;margin-bottom:4px;display:flex;align-items:center;gap:8px;flex-wrap:wrap">${escapeHtml(it.company)} ${multiCampaignBadge} ${getStarHtml(it.starRating, 13)}</div>
           <div style="font-size:11px;color:#6B7280;display:flex;gap:8px;flex-wrap:wrap;align-items:center">
             ${m.genre ? `<span style="background:#F5F3FF;color:#6D28D9;padding:2px 8px;border-radius:6px;font-weight:800">${escapeHtml(m.genre)}</span>` : ''}
             ${m.pmArea ? `<span style="font-weight:700">📍 ${escapeHtml(m.pmArea)}</span>` : ''}
@@ -3674,6 +3675,7 @@ function renderPosumaneUser() {
           </div>
         </div>
         <div onclick="event.stopPropagation()" style="display:flex;flex-direction:column;align-items:flex-end;gap:6px">
+          ${getStarInteractiveHtml(it.id, it.starRating)}
           <select onchange="setPosumaneUserStatus(${it.id}, this.value)" style="background:${status.bg};color:${status.color};border:2px solid ${status.color};padding:6px 10px;border-radius:10px;font-size:12px;font-weight:800;cursor:pointer;font-family:inherit">
             ${Object.keys(POSUMANE_USER_STATUS_LABELS).map(k => {
               const s = POSUMANE_USER_STATUS_LABELS[k];
@@ -3694,6 +3696,148 @@ function setPosumaneUserStatus(id, status) {
   renderPosumaneUser();
   const s = POSUMANE_USER_STATUS_LABELS[status];
   toast(`${s.icon} ${it.company} を「${s.label}」に変更`);
+}
+
+// ══════════════════════════════════════════
+// 🔍 ポスマネ利用企業の不足情報リサーチ
+// ══════════════════════════════════════════
+function openPosumaneUserResearch() {
+  const allItems = getPosumaneUserItems();
+  // 電話番号 or 公式サイトURL が空の企業を抽出
+  const targets = allItems.filter(it => !it.phone || !it.website);
+
+  if (!targets.length) {
+    alert('🎉 すべての利用候補企業に電話番号とURLが揃っています！リサーチ不要です。');
+    return;
+  }
+
+  // 既存モーダルを削除
+  const existing = document.getElementById('m-pmu-research');
+  if (existing) existing.remove();
+
+  // Perplexityプロンプトを生成
+  const companyList = targets.slice(0, 30).map(it => {
+    const parts = [it.company];
+    if (it.addr) parts.push(`住所: ${it.addr}`);
+    return parts.join(' / ');
+  }).join('\n');
+
+  const prompt = `以下の沖縄県内（および県外含む）の企業について、それぞれ「電話番号」と「公式サイトURL」を調査してください。
+
+【調査対象企業】
+${companyList}
+
+【厳守ルール】
+1. 公式サイトと電話番号のみを掲載してください。SNS や食べログ等の集約サイトはURLとして採用しないでください。
+2. 確実に判明したものだけを記載してください。不明な場合は空欄でOKです。憶測やハルシネーション厳禁。
+3. 公式サイトを必ず開いて記載内容を確認した上で電話番号を抽出してください。
+
+【出力形式（CSV、ヘッダー付き）】
+施設名,電話番号,公式サイトURL
+（例：オリックスレンタカー 北谷フィッシャリーナ店,098-921-0543,https://car.orix.co.jp/）
+`;
+
+  const div = document.createElement('div');
+  div.className = 'modal-backdrop open';
+  div.id = 'm-pmu-research';
+  div.innerHTML = `
+    <div class="modal" style="max-width:760px;max-height:92vh;overflow:hidden;display:flex;flex-direction:column;border-radius:18px">
+      <div class="mhead" style="background:linear-gradient(135deg,#F5F3FF 0%,#E9D5FF 100%);border-bottom:2px solid #A855F7;flex-shrink:0">
+        <div>
+          <div class="mtitle" style="font-size:18px;font-weight:900;color:#6D28D9">🔍 不足情報をリサーチ</div>
+          <div style="font-size:12px;color:#5B21B6;font-weight:700;margin-top:2px">電話番号 or URL が空の${targets.length}件 → Perplexityで調査</div>
+        </div>
+        <button class="mclose" onclick="cm('m-pmu-research')">✕</button>
+      </div>
+      <div class="mbody" style="overflow-y:auto;flex:1">
+        <div style="background:#F5F3FF;border:1.5px solid #A855F7;border-radius:10px;padding:10px 14px;margin-bottom:14px;font-size:12px;color:#5B21B6;font-weight:700;line-height:1.7">
+          📋 <strong>使い方</strong>：<br>
+          ① 下のプロンプトをコピー<br>
+          ② Perplexity を開いて貼り付け → 実行<br>
+          ③ 返ってきたCSVを下の「CSV貼り付け」枠に貼って「📥 取り込む」<br>
+          <br>
+          ⚠️ 大量だと精度が落ちるので、最大30社ずつに区切ってます（${targets.length}件中、先頭30件を対象）
+        </div>
+
+        <!-- STEP 1: プロンプト -->
+        <div style="margin-bottom:14px">
+          <div style="font-size:13px;font-weight:900;color:#7C3AED;margin-bottom:6px">STEP 1: プロンプトをコピー</div>
+          <textarea id="pmu-research-prompt" readonly style="width:100%;min-height:160px;padding:12px;border:2px solid #A855F7;border-radius:10px;font-size:11px;font-family:var(--font-mono);line-height:1.5;outline:none;resize:vertical;background:#FAFAFB">${escapeHtml(prompt)}</textarea>
+          <button onclick="copyPosumaneUserResearchPrompt()" style="margin-top:8px;background:linear-gradient(135deg,#A855F7,#7C3AED);color:#fff;border:none;padding:10px 18px;border-radius:10px;font-size:13px;font-weight:900;cursor:pointer;font-family:inherit">📋 プロンプトをコピー</button>
+        </div>
+
+        <!-- STEP 2: 結果貼り付け -->
+        <div style="margin-bottom:14px">
+          <div style="font-size:13px;font-weight:900;color:#7C3AED;margin-bottom:6px">STEP 2: Perplexity の返答（CSV）を貼り付け</div>
+          <textarea id="pmu-research-result" placeholder="施設名,電話番号,公式サイトURL&#10;..." style="width:100%;min-height:140px;padding:12px;border:2px solid #A855F7;border-radius:10px;font-size:12px;font-family:var(--font-mono);line-height:1.5;outline:none;resize:vertical"></textarea>
+        </div>
+      </div>
+      <div style="flex-shrink:0;padding:12px 16px;border-top:2px solid #A855F7;background:#FAFAFB;display:flex;gap:8px">
+        <button class="btn btn-ghost" onclick="cm('m-pmu-research')" style="flex:1">キャンセル</button>
+        <button onclick="commitPosumaneUserResearch()" style="flex:2;background:linear-gradient(135deg,#A855F7,#7C3AED);color:#fff;border:none;padding:10px;border-radius:10px;font-size:13px;font-weight:900;cursor:pointer;font-family:inherit">📥 リサーチ結果を取り込む</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(div);
+}
+
+function copyPosumaneUserResearchPrompt() {
+  const ta = document.getElementById('pmu-research-prompt');
+  if (!ta) return;
+  ta.select();
+  document.execCommand('copy');
+  toast('📋 プロンプトをコピーしました。Perplexityに貼り付けてください');
+}
+
+function commitPosumaneUserResearch() {
+  try {
+    const ta = document.getElementById('pmu-research-result');
+    const text = (ta?.value || '').trim();
+    if (!text) { alert('⚠️ CSVを貼り付けてください'); return; }
+
+    // CSVパース
+    const parsed = parsePosumaneCSV(text);
+    if (!parsed.rows.length) {
+      alert('⚠️ データ行が見つかりません。CSV形式（ヘッダー：施設名,電話番号,公式サイトURL）で貼り付けてください');
+      return;
+    }
+
+    let updated = 0, notFound = 0;
+    const pmItems = getPosumaneUserItems();
+
+    for (const row of parsed.rows) {
+      const name = (row['施設名'] || row['名称'] || row['会社名'] || '').trim();
+      if (!name) continue;
+      const newPhone = (row['電話番号'] || row['TEL'] || row['Tel'] || row['tel'] || '').trim();
+      const newUrl = (row['公式サイトURL'] || row['URL'] || row['公式サイト'] || row['HP'] || '').trim();
+      if (!newPhone && !newUrl) continue;
+
+      // 既存企業を検索（会社名で）
+      const existing = pmItems.find(it => it.company && it.company.replace(/\s+/g,'') === name.replace(/\s+/g,''));
+      if (!existing) {
+        notFound++;
+        continue;
+      }
+
+      // 電話番号は既存が空のときだけ更新
+      if (newPhone && !existing.phone) {
+        existing.phone = newPhone.replace(/[^\d\-]/g,'');
+      }
+      // URLは既存が空のときだけ更新
+      if (newUrl && !existing.website) {
+        existing.website = newUrl;
+      }
+      updated++;
+    }
+
+    save();
+    cm('m-pmu-research');
+    alert(`📥 リサーチ結果を取り込みました\n更新: ${updated}件\n企業が見つからず未反映: ${notFound}件`);
+    try { renderPosumaneUser(); } catch(e) {}
+  } catch (e) {
+    console.error('[pmu research commit] error:', e);
+    alert('❌ 取り込み処理でエラー：' + e.message);
+  }
 }
 
 function showCollectingDialog(targetPage, targetEl) {
@@ -4153,6 +4297,8 @@ function renderList() {
       '<td>' +
         '<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">' +
           '<div style="font-weight:700;font-size:13px;color:' + (it.manualCompanyFlag === 'non_company' ? '#9CA3AF' : '#222') + ';' + (it.manualCompanyFlag === 'non_company' ? 'text-decoration:line-through;' : '') + '">' + it.company + '</div>' +
+          // 星評価（小）
+          getStarHtml(it.starRating, 13) +
           // 状態バッジ（自動判定の非企業）
           (!isLikelyCompany(it) && it.manualCompanyFlag !== 'non_company' ? '<span title="自動判定：非企業（行政施設・自然地形・地名）" style="font-size:9px;font-weight:800;padding:2px 6px;border-radius:6px;background:#FEF3C7;color:#92400E;border:1px solid #FCD34D">🏞 非企業</span>' : '') +
           // 状態バッジ（手動で営業対象外にされた企業）
@@ -4432,7 +4578,7 @@ function renderApproach() {
     return '<div onclick="openDetail(' + it.id + ')" style="background:#fff;border-left:4px solid ' + c.border + ';border-top:1px solid #F3F4F6;border-right:1px solid #F3F4F6;border-bottom:1px solid #F3F4F6;border-radius:10px;padding:10px 14px;cursor:pointer;transition:all 0.15s;display:flex;align-items:center;gap:12px;flex-wrap:wrap" onmouseover="this.style.transform=\'translateX(2px)\';this.style.boxShadow=\'0 2px 8px rgba(0,0,0,0.06)\'" onmouseout="this.style.transform=\'translateX(0)\';this.style.boxShadow=\'none\'">' +
       // 左：会社名 + サブ情報（縦並び）
       '<div style="flex:1;min-width:180px">' +
-        '<div style="font-size:14px;font-weight:800;color:#1F2937;line-height:1.3;word-break:break-all">' + escapeHtml(it.company) + '</div>' +
+        '<div style="font-size:14px;font-weight:800;color:#1F2937;line-height:1.3;word-break:break-all;display:flex;align-items:center;gap:6px;flex-wrap:wrap">' + escapeHtml(it.company) + ' ' + getStarHtml(it.starRating, 12) + '</div>' +
         '<div style="font-size:10px;color:#6B7280;font-weight:600;margin-top:2px">' +
           (it.industry ? escapeHtml(it.industry) : '') +
           (it.industry && it.area ? ' · ' : '') +
@@ -5241,6 +5387,16 @@ function saveResultDirectly(it, result, opts={}) {
   const memoEl = document.getElementById('appr-tel-memo');
   const memo = memoEl ? (memoEl.value || '') : '';
 
+  // ★ メール送付の場合は専用処理
+  if (result === 'email_sent') {
+    recordEmailSent(it, memo);
+    save();
+    const m = document.getElementById('m-appr-tel');
+    if (m) m.classList.remove('open');
+    toast('✉️ メール送付を記録、3日後に再電予定をセットしました');
+    return;
+  }
+
   // ★ ここで初めてアプローチ開始（initApproach呼び出し）
   if (!it.approach || !it.approach.started) {
     initApproach(it);
@@ -5265,6 +5421,44 @@ function saveResultDirectly(it, result, opts={}) {
     toast('💤 ' + it.approach.dormantUntil + ' まで休眠（' + phaseInfo.label + '）');
   } else {
     toast('📝 記録：' + phaseInfo.label);
+  }
+}
+
+// ══════════════════════════════════════════
+// ✉️ メール送付記録
+// ══════════════════════════════════════════
+function recordEmailSent(it, memo) {
+  if (!Array.isArray(it.emails)) it.emails = [];
+  const now = new Date();
+  const sentAt = now.toISOString().slice(0, 10); // YYYY-MM-DD
+  // 3日後
+  const followup = new Date(now.getTime() + 3 * 24 * 60 * 60 * 1000);
+  const followupDate = followup.toISOString().slice(0, 10);
+
+  it.emails.push({
+    sentAt,
+    followupDate,
+    memo: memo || '',
+    responded: false,
+  });
+
+  // 次回アクション日として3日後をセット
+  it.nextDate = followupDate;
+  it.nextAction = '✉️ メール返信確認 → 再電';
+
+  // アプローチが始まってないなら開始
+  if (!it.approach || !it.approach.started) {
+    if (typeof initApproach === 'function') initApproach(it);
+  }
+  // アプローチ履歴にも記録
+  if (it.approach && Array.isArray(it.approach.history)) {
+    it.approach.history.push({
+      ts: now.toISOString(),
+      action: 'email_sent',
+      phase: it.approach.currentPhase || '',
+      memo: memo || '',
+      followupDate,
+    });
   }
 }
 
@@ -5350,6 +5544,9 @@ function createTelActionModal() {
           </button>
           <button onclick="handleTelResultClick('meeting')" class="appr-tel-result appr-tel-btn-disabled" data-needs-memo="1" style="grid-column:1/-1;padding:16px;border:2px solid #16A34A;background:#F0FDF4;color:#16A34A;border-radius:12px;font-size:14px;font-weight:900;cursor:pointer;transition:all 0.15s">
             🎯 商談獲得！
+          </button>
+          <button onclick="handleTelResultClick('email_sent')" class="appr-tel-result appr-tel-btn-disabled" data-needs-memo="1" style="grid-column:1/-1;padding:14px;border:2px solid #3B82F6;background:#EFF6FF;color:#1D4ED8;border-radius:12px;font-size:13px;font-weight:900;cursor:pointer;transition:all 0.15s">
+            ✉️ メール送付した（3日後に再電予定をセット）
           </button>
         </div>
       </div>
@@ -6377,7 +6574,7 @@ function openVisitOrTelChoiceModal(it) {
           <span style="font-size:11px;color:#9CA3AF">どっちを選んでもOK！状況に合わせて自由にね♪</span>
         </div>
 
-        <!-- 2択ボタン -->
+        <!-- 3択ボタン -->
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
           <button onclick="chooseVisitAction(${it.id},'visit')" style="padding:24px 16px;background:linear-gradient(135deg,#16A34A,#22C55E);color:#fff;border:none;border-radius:16px;font-size:16px;font-weight:900;cursor:pointer;font-family:'Hiragino Maru Gothic ProN','Yu Gothic UI',sans-serif;box-shadow:0 6px 16px rgba(22,163,74,0.3);transition:all 0.15s" onmouseover="this.style.transform='translateY(-3px)';this.style.boxShadow='0 10px 22px rgba(22,163,74,0.4)'" onmouseout="this.style.transform='translateY(0)';this.style.boxShadow='0 6px 16px rgba(22,163,74,0.3)'">
             <div style="font-size:36px;margin-bottom:6px">🚶</div>
@@ -6388,6 +6585,10 @@ function openVisitOrTelChoiceModal(it) {
             <div style="font-size:36px;margin-bottom:6px">📞</div>
             電話する
             <div style="font-size:11px;font-weight:600;opacity:0.9;margin-top:4px">もう一度電話で接触</div>
+          </button>
+          <button onclick="chooseVisitAction(${it.id},'email')" style="grid-column:1/-1;padding:18px 16px;background:linear-gradient(135deg,#3B82F6,#60A5FA);color:#fff;border:none;border-radius:16px;font-size:15px;font-weight:900;cursor:pointer;font-family:'Hiragino Maru Gothic ProN','Yu Gothic UI',sans-serif;box-shadow:0 4px 12px rgba(59,130,246,0.3);transition:all 0.15s;display:flex;align-items:center;justify-content:center;gap:12px" onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 8px 18px rgba(59,130,246,0.4)'" onmouseout="this.style.transform='translateY(0)';this.style.boxShadow='0 4px 12px rgba(59,130,246,0.3)'">
+            <span style="font-size:28px">✉️</span>
+            <span>メール送付した（3日後に再電予定）</span>
           </button>
         </div>
 
@@ -6404,10 +6605,82 @@ function chooseVisitAction(id, action) {
   setTimeout(() => {
     if (action === 'visit') {
       openVisitActionModal(it);
+    } else if (action === 'email') {
+      openEmailRecordModal(it);
     } else {
       openTelActionModal(it);
     }
   }, 200);
+}
+
+// ══════════════════════════════════════════
+// ✉️ メール送付記録モーダル
+// ══════════════════════════════════════════
+function openEmailRecordModal(it) {
+  const existing = document.getElementById('m-email-record');
+  if (existing) existing.remove();
+
+  const div = document.createElement('div');
+  div.className = 'modal-backdrop open';
+  div.id = 'm-email-record';
+  div.innerHTML = `
+    <div class="modal" style="max-width:540px;border-radius:18px">
+      <div class="mhead" style="background:linear-gradient(135deg,#EFF6FF 0%,#DBEAFE 100%);border-bottom:2px solid #3B82F6">
+        <div>
+          <div class="mtitle" style="font-size:18px;font-weight:900;color:#1D4ED8">✉️ メール送付を記録</div>
+          <div style="font-size:12px;color:#1E40AF;font-weight:700;margin-top:2px">${escapeHtml(it.company)}</div>
+        </div>
+        <button class="mclose" onclick="cm('m-email-record')">✕</button>
+      </div>
+      <div class="mbody">
+        <div style="background:#EFF6FF;border:1.5px solid #3B82F6;border-radius:10px;padding:10px 14px;margin-bottom:14px;font-size:12px;color:#1E40AF;font-weight:700;line-height:1.7">
+          💡 メール送付を記録すると、<strong>3日後（${new Date(Date.now() + 3*24*60*60*1000).toISOString().slice(0,10)}）</strong>に再電予定が自動セットされます
+        </div>
+
+        <div style="margin-bottom:14px">
+          <div style="font-size:12px;font-weight:800;color:#1E40AF;margin-bottom:6px">📝 メモ（送ったメールの内容、要点など）</div>
+          <textarea id="email-record-memo" style="width:100%;min-height:90px;padding:10px 12px;border:2px solid #3B82F6;border-radius:10px;font-size:13px;outline:none;resize:vertical;font-family:inherit" placeholder="例：提案資料を添付して送付。担当の田中様宛て。来週の打ち合わせ希望と記載..."></textarea>
+        </div>
+
+        <!-- 過去のメール履歴 -->
+        ${Array.isArray(it.emails) && it.emails.length ? `
+          <div style="margin-bottom:14px">
+            <div style="font-size:12px;font-weight:800;color:#1E40AF;margin-bottom:6px">📜 過去のメール記録（${it.emails.length}件）</div>
+            <div style="max-height:160px;overflow-y:auto;background:#F9FAFB;border:1px solid #E5E7EB;border-radius:8px;padding:8px">
+              ${it.emails.slice().reverse().map((em, i) => `
+                <div style="padding:6px 8px;border-bottom:1px dashed #E5E7EB;font-size:11px">
+                  <div style="font-weight:800;color:#1E40AF">📤 ${em.sentAt} 送付 → 🔔 ${em.followupDate} 再電予定</div>
+                  ${em.memo ? `<div style="color:#6B7280;margin-top:2px">${escapeHtml(em.memo)}</div>` : ''}
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        ` : ''}
+      </div>
+      <div class="mfoot">
+        <button class="btn btn-ghost" onclick="cm('m-email-record')">キャンセル</button>
+        <button onclick="commitEmailRecord(${it.id})" style="background:linear-gradient(135deg,#3B82F6,#60A5FA);color:#fff;border:none;padding:10px 20px;border-radius:10px;font-size:13px;font-weight:900;cursor:pointer;font-family:inherit;box-shadow:0 2px 8px rgba(59,130,246,0.3)">✉️ メール送付を記録する</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(div);
+}
+
+function commitEmailRecord(id) {
+  const it = items.find(x => x.id === id);
+  if (!it) return;
+  const memoEl = document.getElementById('email-record-memo');
+  const memo = memoEl ? memoEl.value.trim() : '';
+  if (!memo) {
+    if (!confirm('メモが空ですが、このまま記録しますか？')) return;
+  }
+  recordEmailSent(it, memo);
+  save();
+  cm('m-email-record');
+  toast('✉️ メール送付を記録、3日後に再電予定をセットしました');
+  // 再描画
+  try { if (typeof renderApproach === 'function') renderApproach(); } catch(e) {}
+  try { if (typeof updateNavBadges === 'function') updateNavBadges(); } catch(e) {}
 }
 
 // 訪問アクションモーダル（プレースホルダー：シンプル実装）
@@ -6973,8 +7246,15 @@ function openDetail(id) {
       ${anniversaryBadge(it) ? `<div style="margin-bottom:10px">${anniversaryBadge(it)}</div>` : ''}
 
       <!-- 企業名（大）-->
-      <div style="font-family:'Hiragino Maru Gothic ProN','Yu Gothic UI',sans-serif;font-size:30px;font-weight:900;letter-spacing:0.02em;color:#1F2937;line-height:1.3;margin-bottom:14px;word-break:break-all;padding-right:40px">
+      <div style="font-family:'Hiragino Maru Gothic ProN','Yu Gothic UI',sans-serif;font-size:30px;font-weight:900;letter-spacing:0.02em;color:#1F2937;line-height:1.3;margin-bottom:8px;word-break:break-all;padding-right:40px">
         ${it.company}
+      </div>
+
+      <!-- ⭐ 見込み度評価 -->
+      <div style="margin-bottom:14px;display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+        <span style="font-size:11px;color:#92400E;font-weight:800">見込み度：</span>
+        ${getStarInteractiveHtml(it.id, it.starRating)}
+        <span style="font-size:11px;color:#92400E;font-weight:700">${STAR_LABELS[it.starRating || 0].label}</span>
       </div>
 
       <!-- 電話番号（特大）-->
@@ -10346,6 +10626,70 @@ function escapeHtml(s) {
   return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
+// ══════════════════════════════════════════
+// ⭐ 見込み度評価（3段階）
+// ══════════════════════════════════════════
+// it.starRating = 0(未評価) | 1 | 2 | 3
+const STAR_LABELS = {
+  0: { label: '未評価', color: '#D1D5DB', bg: '#F9FAFB' },
+  1: { label: '少し気になる', color: '#FCD34D', bg: '#FEF3C7' },
+  2: { label: '可能性あり', color: '#FB923C', bg: '#FFEDD5' },
+  3: { label: '本命候補', color: '#EF4444', bg: '#FEE2E2' },
+};
+
+// 星マーク表示（小さめ・カード一覧用）
+function getStarHtml(rating, size) {
+  const r = rating || 0;
+  size = size || 14;
+  const stars = [];
+  for (let i = 1; i <= 3; i++) {
+    if (i <= r) {
+      stars.push(`<span style="color:#F59E0B;font-size:${size}px;line-height:1">★</span>`);
+    } else {
+      stars.push(`<span style="color:#D1D5DB;font-size:${size}px;line-height:1">★</span>`);
+    }
+  }
+  return `<span style="display:inline-flex;gap:1px;align-items:center" title="${STAR_LABELS[r].label}">${stars.join('')}</span>`;
+}
+
+// クリックで増減可能な星評価UI
+function getStarInteractiveHtml(itemId, rating) {
+  const r = rating || 0;
+  const stars = [];
+  for (let i = 1; i <= 3; i++) {
+    const active = i <= r;
+    stars.push(`<button onclick="event.stopPropagation();setStarRating(${itemId}, ${i === r ? 0 : i})" style="background:none;border:none;cursor:pointer;padding:0 1px;font-size:18px;line-height:1;color:${active ? '#F59E0B' : '#D1D5DB'};font-family:inherit" title="${active ? 'クリックで解除' : STAR_LABELS[i].label}">★</button>`);
+  }
+  return `<span style="display:inline-flex;gap:1px;align-items:center;background:#FFFBEB;padding:4px 6px;border-radius:6px;border:1px solid #FCD34D" title="見込み度: ${STAR_LABELS[r].label}">${stars.join('')}</span>`;
+}
+
+// 星評価を設定
+function setStarRating(itemId, rating) {
+  const it = items.find(x => x.id === itemId);
+  if (!it) return;
+  it.starRating = rating;
+  save();
+  // 全描画を更新（どこから呼ばれたか分からないので全部）
+  try { if (typeof renderList === 'function') renderList(); } catch(e) {}
+  try { if (typeof renderApproach === 'function') renderApproach(); } catch(e) {}
+  try { if (typeof renderPosumane === 'function') renderPosumane(); } catch(e) {}
+  try { if (typeof renderPosumaneUser === 'function') renderPosumaneUser(); } catch(e) {}
+  // 詳細画面が開いてたら再描画
+  try {
+    const detailModal = document.getElementById('m-detail');
+    if (detailModal && detailModal.classList.contains('open')) {
+      if (typeof openDetail === 'function') openDetail(itemId);
+    }
+  } catch(e) {}
+  // トースト
+  if (rating === 0) {
+    toast(`☆ ${it.company} の評価を解除`);
+  } else {
+    const s = STAR_LABELS[rating];
+    toast(`⭐${'★'.repeat(rating)} ${it.company} を「${s.label}」に評価`);
+  }
+}
+
 function parseCSVLine(line) {
   const result = []; let current = ''; let inQuotes = false;
   for (let i = 0; i < line.length; i++) {
@@ -11487,6 +11831,9 @@ document.getElementById('today-label').textContent = (() => {
     <div class="topbar-actions">
       <button class="btn btn-sm" onclick="openPosumaneUserImport()" style="background:linear-gradient(135deg,#A855F7,#7C3AED);color:#fff;border:none;font-weight:700;font-size:13px">
         📥 CSV取込（候補企業リスト）
+      </button>
+      <button class="btn btn-sm" onclick="openPosumaneUserResearch()" style="background:#fff;border:2px solid #A855F7;color:#7C3AED;font-weight:700;font-size:13px">
+        🔍 不足情報をリサーチ
       </button>
     </div>
   </div>
