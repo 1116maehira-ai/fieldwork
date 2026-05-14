@@ -1078,6 +1078,19 @@ tr:hover td { background: rgba(255,70,2,0.03); cursor: pointer; }
       <span class="nav-badge gold" id="nb-posumane">0</span>
     </div>
 
+    <div class="nav-item" onclick="goPage(&#39;posumane_user&#39;,this)">
+      <span class="nav-icon" style="background:#F3E8FF">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="3" y="7" width="18" height="13" rx="2" fill="#A855F7"/>
+          <path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" stroke="#A855F7" stroke-width="2" fill="none"/>
+          <circle cx="12" cy="13" r="3" fill="white"/>
+          <text x="12" y="15.5" fill="#A855F7" font-size="5" font-weight="900" text-anchor="middle">¥</text>
+        </svg>
+      </span>
+      <span class="nav-label">ポスマネ利用企業</span>
+      <span class="nav-badge gold" id="nb-posumane-user">0</span>
+    </div>
+
     <div class="nav-item" onclick="openAddModal()">
       <span class="nav-icon" style="background:#FCE4EC">
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -2862,6 +2875,9 @@ function _doGoPage(p, el) {
   if (p === 'posumane') {
     renderPosumane();
   }
+  if (p === 'posumane_user') {
+    renderPosumaneUser();
+  }
 }
 
 // ══════════════════════════════════════════
@@ -2874,6 +2890,19 @@ const POSUMANE_STATUS_LABELS = {
   proposing: { label: '配布提案中', icon: '📄', color: '#3B82F6', bg: '#EFF6FF' },
   allowed:   { label: '配布許可済', icon: '✅', color: '#16A34A', bg: '#F0FDF4' },
   rejected:  { label: '拒否', icon: '🚫', color: '#DC2626', bg: '#FEF2F2' },
+};
+
+// ══════════════════════════════════════════
+// 💼 ポスマネ利用企業キャンペーン
+// ══════════════════════════════════════════
+const POSUMANE_USER_STATUS_LABELS = {
+  untouched:    { label: '未着手', icon: '⚪', color: '#9CA3AF', bg: '#F9FAFB' },
+  called:       { label: '電話した', icon: '📞', color: '#F59E0B', bg: '#FFFBEB' },
+  hearing:      { label: 'ヒアリング中', icon: '🎯', color: '#EC4899', bg: '#FCE7F3' },
+  proposing:    { label: '提案中', icon: '📄', color: '#3B82F6', bg: '#EFF6FF' },
+  considering:  { label: '契約検討中', icon: '💰', color: '#A855F7', bg: '#F5F3FF' },
+  contracted:   { label: '契約済', icon: '✅', color: '#16A34A', bg: '#F0FDF4' },
+  lost:         { label: '失注', icon: '🚫', color: '#DC2626', bg: '#FEF2F2' },
 };
 
 function getPosumaneItems() {
@@ -3278,6 +3307,284 @@ function setPosumaneStatus(id, status) {
   toast(`${s.icon} ${it.company} を「${s.label}」に変更`);
 }
 
+// ══════════════════════════════════════════
+// 💼 ポスマネ利用企業（広告主候補）
+// ══════════════════════════════════════════
+function getPosumaneUserItems() {
+  return items.filter(it => it.campaign === 'posumane_user');
+}
+
+function openPosumaneUserImport() {
+  document.getElementById('m-posumane-user-import').classList.add('open');
+  document.getElementById('posumane-user-csv-paste').value = '';
+  document.getElementById('posumane-user-preview-wrap').style.display = 'none';
+  const info = document.getElementById('posumane-user-file-info');
+  if (info) info.innerHTML = '対応：.csv ファイル / 文字コードはUTF-8';
+  initPosumaneUserDropZone();
+}
+
+function initPosumaneUserDropZone() {
+  const dz = document.getElementById('posumane-user-drop-zone');
+  if (!dz || dz.dataset.initialized) return;
+  dz.dataset.initialized = '1';
+  dz.addEventListener('dragover', (e) => {
+    e.preventDefault(); e.stopPropagation();
+    dz.style.background = '#E9D5FF'; dz.style.borderColor = '#7C3AED'; dz.style.transform = 'scale(1.02)';
+  });
+  dz.addEventListener('dragleave', (e) => {
+    e.preventDefault(); e.stopPropagation();
+    dz.style.background = '#F5F3FF'; dz.style.borderColor = '#A855F7'; dz.style.transform = 'scale(1)';
+  });
+  dz.addEventListener('drop', (e) => {
+    e.preventDefault(); e.stopPropagation();
+    dz.style.background = '#F5F3FF'; dz.style.borderColor = '#A855F7'; dz.style.transform = 'scale(1)';
+    if (e.dataTransfer && e.dataTransfer.files) handlePosumaneUserFileSelect(e.dataTransfer.files);
+  });
+}
+
+function handlePosumaneUserFileSelect(files) {
+  if (!files || !files.length) return;
+  const file = files[0];
+  const info = document.getElementById('posumane-user-file-info');
+  if (info) info.innerHTML = `<span style="color:#16A34A;font-weight:800">✅ ${escapeHtml(file.name)} (${(file.size/1024).toFixed(1)}KB) 読み込み中...</span>`;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    let text = e.target.result;
+    if (text.indexOf('\uFFFD') !== -1) {
+      const reader2 = new FileReader();
+      reader2.onload = (e2) => applyLoadedPosumaneUserCSV(e2.target.result, file.name);
+      reader2.readAsText(file, 'Shift_JIS');
+    } else {
+      applyLoadedPosumaneUserCSV(text, file.name);
+    }
+  };
+  reader.onerror = () => {
+    if (info) info.innerHTML = `<span style="color:#DC2626;font-weight:800">❌ ファイル読み込み失敗</span>`;
+    toast('⚠️ ファイル読み込みに失敗しました');
+  };
+  reader.readAsText(file, 'UTF-8');
+}
+
+function applyLoadedPosumaneUserCSV(text, filename) {
+  const ta = document.getElementById('posumane-user-csv-paste');
+  if (ta) ta.value = text;
+  const info = document.getElementById('posumane-user-file-info');
+  const lineCount = text.split(/\r?\n/).filter(r => r.trim()).length;
+  if (info) info.innerHTML = `<span style="color:#16A34A;font-weight:800">✅ ${escapeHtml(filename)} (${lineCount}行) 読み込み完了</span>`;
+  previewPosumaneUserImport();
+}
+
+function previewPosumaneUserImport() {
+  const ta = document.getElementById('posumane-user-csv-paste');
+  const text = (ta?.value || '').trim();
+  if (!text) { toast('⚠️ CSVを貼り付けてください'); return; }
+  const parsed = parsePosumaneCSV(text);
+  if (!parsed.rows.length) { toast('⚠️ データ行が見つかりません'); return; }
+
+  let newCount = 0, mergeCount = 0;
+  for (const row of parsed.rows) {
+    const name = row['施設名'] || row['名称'] || row['会社名'] || '';
+    if (!name) continue;
+    const existing = items.find(it => it.company && it.company.replace(/\s+/g,'') === name.replace(/\s+/g,''));
+    if (existing) mergeCount++; else newCount++;
+  }
+
+  const wrap = document.getElementById('posumane-user-preview-wrap');
+  const preview = document.getElementById('posumane-user-preview');
+  wrap.style.display = 'block';
+
+  const sampleHtml = parsed.rows.slice(0, 8).map(r => {
+    const name = r['施設名'] || r['名称'] || '';
+    const existing = items.find(it => it.company && it.company.replace(/\s+/g,'') === name.replace(/\s+/g,''));
+    return `<div style="padding:6px 8px;border-bottom:1px solid #E9D5FF">${existing ? '<span style="color:#16A34A;font-weight:800">🔄 統合</span>' : '<span style="color:#A855F7;font-weight:800">✨ 新規</span>'} <strong>${escapeHtml(name)}</strong> <span style="color:#9CA3AF;font-size:10px">${escapeHtml(r['ジャンル']||'')} / ${escapeHtml(r['市町村']||'')}</span></div>`;
+  }).join('');
+
+  preview.innerHTML = `
+    <div style="background:#F5F3FF;padding:10px;border-radius:8px;margin-bottom:10px;font-weight:800;color:#5B21B6">
+      📊 取込予定：合計 ${parsed.rows.length}件<br>
+      ・✨ 新規追加：${newCount}件<br>
+      ・🔄 既存に統合（利用企業タグ追加）：${mergeCount}件
+    </div>
+    <div style="font-size:11px;color:#6B7280;margin-bottom:4px">先頭8件サンプル：</div>
+    ${sampleHtml}
+    ${parsed.rows.length > 8 ? `<div style="padding:6px 8px;color:#9CA3AF;font-size:10px;text-align:center">…他 ${parsed.rows.length - 8} 件</div>` : ''}
+  `;
+}
+
+function commitPosumaneUserImport() {
+  try {
+    const ta = document.getElementById('posumane-user-csv-paste');
+    const text = (ta?.value || '').trim();
+    if (!text) { alert('⚠️ CSVを貼り付けてください'); return; }
+    const parsed = parsePosumaneCSV(text);
+    if (!parsed.rows.length) { alert('⚠️ データ行が見つかりません'); return; }
+    if (!confirm(`${parsed.rows.length}件のデータを取り込みます。よろしいですか？`)) return;
+
+    let newCount = 0, mergeCount = 0, errorCount = 0;
+    for (const row of parsed.rows) {
+      try {
+        const name = (row['施設名'] || row['名称'] || row['会社名'] || '').trim();
+        if (!name) continue;
+        const genre = row['ジャンル'] || '';
+        const pmArea = row['エリア'] || '';
+        const city = row['市町村'] || '';
+        const district = row['地区'] || '';
+        const addr = row['住所'] || '';
+        const phone = (row['電話番号'] || '').replace(/[^\d\-]/g,'');
+
+        const existing = items.find(it => it.company && it.company.replace(/\s+/g,'') === name.replace(/\s+/g,''));
+        if (existing) {
+          existing.campaign = 'posumane_user';
+          if (!existing.campaignStatus) existing.campaignStatus = 'untouched';
+          existing.campaignMeta = existing.campaignMeta || {};
+          Object.assign(existing.campaignMeta, { genre, pmArea, city, district });
+          if (!existing.addr && addr) existing.addr = addr;
+          if (!existing.phone && phone) existing.phone = phone;
+          mergeCount++;
+        } else {
+          items.push({
+            id: Date.now() + Math.floor(Math.random() * 100000),
+            company: name,
+            industry: genre,
+            area: city + (district ? ' ' + district : ''),
+            addr, phone,
+            excluded: false, score: 0,
+            campaign: 'posumane_user',
+            campaignStatus: 'untouched',
+            campaignMeta: { genre, pmArea, city, district },
+            createdAt: (typeof nowJSTISO === 'function' ? nowJSTISO() : new Date().toISOString()),
+          });
+          newCount++;
+        }
+      } catch (rowErr) {
+        errorCount++;
+        console.error('[posumane_user import] 行エラー:', row, rowErr);
+      }
+    }
+
+    try { if (typeof save === 'function') save(); } catch(e) { console.error('save error', e); }
+    try { cm('m-posumane-user-import'); } catch(e) {}
+
+    alert(`📥 取込完了！\n新規 ${newCount}件 / 統合 ${mergeCount}件\n（エラー ${errorCount}件）`);
+
+    try { renderPosumaneUser(); } catch(e) { console.warn('renderPosumaneUser error', e); }
+    try { if (typeof updateNavBadges === 'function') updateNavBadges(); } catch(e) {}
+  } catch (mainErr) {
+    console.error('[posumane_user import] メインエラー:', mainErr);
+    alert('❌ 取込処理でエラーが発生しました：\n' + mainErr.message);
+  }
+}
+
+function renderPosumaneUser() {
+  const wrap = document.getElementById('posumane-user-list-wrap');
+  if (!wrap) return;
+  const pmItems = getPosumaneUserItems();
+
+  const genreSel = document.getElementById('pmu-genre');
+  const areaSel = document.getElementById('pmu-area');
+  if (genreSel) {
+    const genres = [...new Set(pmItems.map(it => it.campaignMeta?.genre || '').filter(Boolean))].sort();
+    const cur = genreSel.value;
+    genreSel.innerHTML = '<option value="">🏷️ 全ジャンル</option>' + genres.map(g => `<option value="${escapeHtml(g)}" ${cur===g?'selected':''}>${escapeHtml(g)}</option>`).join('');
+  }
+  if (areaSel) {
+    const areas = [...new Set(pmItems.map(it => it.campaignMeta?.pmArea || '').filter(Boolean))].sort();
+    const cur = areaSel.value;
+    areaSel.innerHTML = '<option value="">📍 全エリア</option>' + areas.map(a => `<option value="${escapeHtml(a)}" ${cur===a?'selected':''}>${escapeHtml(a)}</option>`).join('');
+  }
+
+  const summary = document.getElementById('posumane-user-summary');
+  if (summary) {
+    const counts = {};
+    Object.keys(POSUMANE_USER_STATUS_LABELS).forEach(k => counts[k] = 0);
+    for (const it of pmItems) {
+      const s = it.campaignStatus || 'untouched';
+      counts[s] = (counts[s] || 0) + 1;
+    }
+    summary.innerHTML = `
+      <div style="flex:1;min-width:120px;background:linear-gradient(135deg,#F5F3FF,#E9D5FF);border:2px solid #A855F7;border-radius:14px;padding:14px;text-align:center">
+        <div style="font-size:11px;color:#6D28D9;font-weight:800;margin-bottom:4px">合計</div>
+        <div style="font-size:28px;font-weight:900;color:#5B21B6">${pmItems.length}</div>
+      </div>
+      ${Object.keys(POSUMANE_USER_STATUS_LABELS).map(k => {
+        const s = POSUMANE_USER_STATUS_LABELS[k];
+        return `<div style="flex:1;min-width:110px;background:${s.bg};border:2px solid ${s.color}44;border-radius:14px;padding:10px;text-align:center">
+          <div style="font-size:10px;color:${s.color};font-weight:800">${s.icon} ${s.label}</div>
+          <div style="font-size:22px;font-weight:900;color:${s.color};margin-top:2px">${counts[k]||0}</div>
+        </div>`;
+      }).join('')}
+    `;
+  }
+
+  const search = (document.getElementById('pmu-search')?.value || '').toLowerCase();
+  const statusF = document.getElementById('pmu-status')?.value || '';
+  const genreF = document.getElementById('pmu-genre')?.value || '';
+  const areaF = document.getElementById('pmu-area')?.value || '';
+  const sortF = document.getElementById('pmu-sort')?.value || 'name';
+
+  let filtered = pmItems.filter(it => {
+    if (search && !it.company.toLowerCase().includes(search)) return false;
+    if (statusF && (it.campaignStatus || 'untouched') !== statusF) return false;
+    if (genreF && (it.campaignMeta?.genre || '') !== genreF) return false;
+    if (areaF && (it.campaignMeta?.pmArea || '') !== areaF) return false;
+    return true;
+  });
+
+  const statusOrder = ['untouched','called','hearing','proposing','considering','contracted','lost'];
+  filtered.sort((a, b) => {
+    if (sortF === 'name') return a.company.localeCompare(b.company);
+    if (sortF === 'status') return statusOrder.indexOf(a.campaignStatus||'untouched') - statusOrder.indexOf(b.campaignStatus||'untouched');
+    if (sortF === 'genre') return (a.campaignMeta?.genre||'').localeCompare(b.campaignMeta?.genre||'');
+    if (sortF === 'area') return (a.campaignMeta?.pmArea||'').localeCompare(b.campaignMeta?.pmArea||'');
+    return 0;
+  });
+
+  if (!filtered.length) {
+    wrap.innerHTML = `<div style="background:#F5F3FF;border:2px dashed #A855F7;border-radius:14px;padding:40px;text-align:center;color:#5B21B6">
+      <div style="font-size:50px;margin-bottom:10px">💼</div>
+      <div style="font-size:15px;font-weight:900;margin-bottom:6px">${pmItems.length===0 ? 'まだ利用候補企業がありません' : '条件に合う企業がありません'}</div>
+      <div style="font-size:12px;font-weight:600">${pmItems.length===0 ? '上の「📥 CSV取込」から候補リストCSVを取り込んでください' : 'フィルターを変更してみてください'}</div>
+    </div>`;
+    return;
+  }
+
+  wrap.innerHTML = filtered.map(it => {
+    const m = it.campaignMeta || {};
+    const status = POSUMANE_USER_STATUS_LABELS[it.campaignStatus || 'untouched'];
+    return `
+      <div style="background:#fff;border:2px solid ${status.color}33;border-left:5px solid ${status.color};border-radius:14px;padding:14px 16px;margin-bottom:10px;display:flex;gap:12px;align-items:center;flex-wrap:wrap;box-shadow:0 2px 6px rgba(0,0,0,0.04);cursor:pointer;transition:all 0.15s" onclick="openDetail(${it.id})" onmouseover="this.style.transform='translateX(2px)';this.style.boxShadow='0 4px 12px rgba(0,0,0,0.08)'" onmouseout="this.style.transform='translateX(0)';this.style.boxShadow='0 2px 6px rgba(0,0,0,0.04)'">
+        <div style="flex:1;min-width:0">
+          <div style="font-size:15px;font-weight:900;color:#1F2937;margin-bottom:4px">${escapeHtml(it.company)}</div>
+          <div style="font-size:11px;color:#6B7280;display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+            ${m.genre ? `<span style="background:#F5F3FF;color:#6D28D9;padding:2px 8px;border-radius:6px;font-weight:800">${escapeHtml(m.genre)}</span>` : ''}
+            ${m.pmArea ? `<span style="font-weight:700">📍 ${escapeHtml(m.pmArea)}</span>` : ''}
+            ${m.city ? `<span style="font-weight:700">${escapeHtml(m.city)}${m.district?'・'+escapeHtml(m.district):''}</span>` : ''}
+            ${it.phone ? `<span style="font-weight:700">📞 ${escapeHtml(it.phone)}</span>` : ''}
+          </div>
+        </div>
+        <div onclick="event.stopPropagation()" style="display:flex;flex-direction:column;align-items:flex-end;gap:6px">
+          <select onchange="setPosumaneUserStatus(${it.id}, this.value)" style="background:${status.bg};color:${status.color};border:2px solid ${status.color};padding:6px 10px;border-radius:10px;font-size:12px;font-weight:800;cursor:pointer;font-family:inherit">
+            ${Object.keys(POSUMANE_USER_STATUS_LABELS).map(k => {
+              const s = POSUMANE_USER_STATUS_LABELS[k];
+              return `<option value="${k}" ${(it.campaignStatus||'untouched')===k?'selected':''}>${s.icon} ${s.label}</option>`;
+            }).join('')}
+          </select>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function setPosumaneUserStatus(id, status) {
+  const it = items.find(x => x.id === id);
+  if (!it) return;
+  it.campaignStatus = status;
+  save();
+  renderPosumaneUser();
+  const s = POSUMANE_USER_STATUS_LABELS[status];
+  toast(`${s.icon} ${it.company} を「${s.label}」に変更`);
+}
+
 function showCollectingDialog(targetPage, targetEl) {
   document.getElementById('m-collecting-alert').classList.add('open');
   document.getElementById('collect-alert-stay').onclick = function() {
@@ -3320,6 +3627,7 @@ function updateBadges() {
     x.phase === 'apo'
   ).length);
   set('nb-posumane', items.filter(x => x.campaign === 'posumane').length);
+  set('nb-posumane-user', items.filter(x => x.campaign === 'posumane_user').length);
   set('nb-notice', (notices||[]).length);
 }
 
@@ -11054,6 +11362,96 @@ document.getElementById('today-label').textContent = (() => {
     <div style="flex-shrink:0;padding:12px 16px;border-top:2px solid #FFC107;background:#FAFAFB;display:flex;gap:8px;flex-wrap:wrap">
       <button onclick="previewPosumaneImport()" style="flex:1;background:#fff;border:2px solid #FF9800;color:#FF9800;padding:10px;border-radius:10px;font-size:13px;font-weight:800;cursor:pointer;font-family:inherit">🔍 プレビュー</button>
       <button onclick="commitPosumaneImport()" style="flex:1;background:linear-gradient(135deg,#FF9800,#FFC107);color:#fff;border:none;border-radius:10px;padding:10px;font-size:13px;font-weight:900;cursor:pointer;font-family:inherit;box-shadow:0 2px 8px rgba(255,152,0,0.3)">📥 取り込む</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ PAGE: ポスマネ利用企業 ═══ -->
+<div class="page" id="page-posumane_user">
+  <div class="topbar" style="background:linear-gradient(135deg,#F5F3FF 0%,#E9D5FF 100%);border-bottom:2px solid #A855F7">
+    <div>
+      <div class="page-title" style="color:#6D28D9;font-size:22px">💼 ポスマネ利用企業</div>
+      <div class="topbar-sub" style="color:#5B21B6;font-weight:700">ポスマネサービスを使ってくれる広告主の営業先リスト</div>
+    </div>
+    <div class="topbar-actions">
+      <button class="btn btn-sm" onclick="openPosumaneUserImport()" style="background:linear-gradient(135deg,#A855F7,#7C3AED);color:#fff;border:none;font-weight:700;font-size:13px">
+        📥 CSV取込（候補企業リスト）
+      </button>
+    </div>
+  </div>
+
+  <div class="content">
+    <div style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:18px" id="posumane-user-summary"></div>
+
+    <div class="filter-bar" id="posumane-user-filters" style="margin-bottom:14px">
+      <input class="fi fi-wide" type="text" id="pmu-search" placeholder="🔍 施設名で検索..." oninput="renderPosumaneUser()" style="font-size:13px">
+      <select class="fi" id="pmu-status" onchange="renderPosumaneUser()" style="font-size:13px">
+        <option value="">📊 全ステータス</option>
+        <option value="untouched">⚪ 未着手</option>
+        <option value="called">📞 電話した</option>
+        <option value="hearing">🎯 ヒアリング中</option>
+        <option value="proposing">📄 提案中</option>
+        <option value="considering">💰 契約検討中</option>
+        <option value="contracted">✅ 契約済</option>
+        <option value="lost">🚫 失注</option>
+      </select>
+      <select class="fi" id="pmu-genre" onchange="renderPosumaneUser()" style="font-size:13px">
+        <option value="">🏷️ 全ジャンル</option>
+      </select>
+      <select class="fi" id="pmu-area" onchange="renderPosumaneUser()" style="font-size:13px">
+        <option value="">📍 全エリア</option>
+      </select>
+      <select class="fi" id="pmu-sort" onchange="renderPosumaneUser()" style="font-size:13px">
+        <option value="name">施設名順</option>
+        <option value="status">ステータス順</option>
+        <option value="genre">ジャンル順</option>
+        <option value="area">エリア順</option>
+      </select>
+    </div>
+
+    <div id="posumane-user-list-wrap"></div>
+  </div>
+</div>
+
+<!-- ═══ MODAL: ポスマネ利用企業CSV取込 ═══ -->
+<div class="modal-backdrop" id="m-posumane-user-import">
+  <div class="modal" style="max-width:760px;max-height:92vh;overflow:hidden;display:flex;flex-direction:column;border-radius:18px;font-family:'Hiragino Maru Gothic ProN','Yu Gothic UI',sans-serif">
+    <div class="mhead" style="background:linear-gradient(135deg,#F5F3FF 0%,#E9D5FF 100%);border-bottom:2px solid #A855F7;flex-shrink:0">
+      <div>
+        <div class="mtitle" style="font-size:18px;font-weight:900;color:#6D28D9">📥 ポスマネ利用企業CSV取込</div>
+        <div style="font-size:12px;color:#5B21B6;font-weight:700;margin-top:2px">ポスマネサービス利用候補の企業リストCSVを取り込みます</div>
+      </div>
+      <button class="mclose" onclick="cm('m-posumane-user-import')">✕</button>
+    </div>
+    <div class="mbody" style="overflow-y:auto;flex:1">
+      <div style="background:#F5F3FF;border:1.5px solid #A855F7;border-radius:10px;padding:10px 14px;margin-bottom:14px;font-size:12px;color:#5B21B6;font-weight:700;line-height:1.7">
+        💡 必要なCSV列：施設名 / ジャンル / エリア / 市町村 / 地区 / 住所 / 電話番号 / 訪問回数 / 最終配布日 / 現在ステータス<br>
+        重複チェック：会社名が既存と一致すれば「ポスマネ利用企業タグだけ追加」して統合します
+      </div>
+
+      <div id="posumane-user-drop-zone" style="border:3px dashed #A855F7;background:#F5F3FF;border-radius:14px;padding:30px 20px;text-align:center;cursor:pointer;transition:all 0.2s;margin-bottom:14px" onclick="document.getElementById('posumane-user-file-input').click()">
+        <div style="font-size:42px;margin-bottom:8px">📥</div>
+        <div style="font-size:14px;font-weight:900;color:#6D28D9;margin-bottom:4px">CSVファイルをドラッグ&ドロップ</div>
+        <div style="font-size:12px;color:#5B21B6;font-weight:700;margin-bottom:10px">または、ここをクリックしてファイル選択</div>
+        <div id="posumane-user-file-info" style="font-size:11px;color:#9CA3AF;font-weight:600">対応：.csv ファイル / 文字コードはUTF-8</div>
+        <input type="file" id="posumane-user-file-input" accept=".csv,text/csv" style="display:none" onchange="handlePosumaneUserFileSelect(this.files)">
+      </div>
+
+      <details style="margin-bottom:14px">
+        <summary style="cursor:pointer;font-size:11px;color:#9CA3AF;font-weight:700;padding:6px 0;list-style:none">▶ 上級者向け：テキストで直接貼り付けたい場合</summary>
+        <div style="margin-top:8px">
+          <textarea id="posumane-user-csv-paste" placeholder="施設名,ジャンル,エリア,市町村,地区,住所,電話番号,訪問回数,最終配布日,現在ステータス&#10;..." style="width:100%;min-height:140px;padding:12px;border:2px solid #A855F7;border-radius:10px;font-size:12px;font-family:var(--font-mono);line-height:1.5;outline:none;resize:vertical"></textarea>
+        </div>
+      </details>
+
+      <div id="posumane-user-preview-wrap" style="display:none">
+        <div style="font-size:13px;font-weight:900;color:#6D28D9;margin-bottom:8px">📋 プレビュー（取込前確認）</div>
+        <div id="posumane-user-preview" style="background:#FFF;border:1.5px solid #A855F7;border-radius:10px;padding:10px;max-height:280px;overflow-y:auto;font-size:11px;line-height:1.7"></div>
+      </div>
+    </div>
+    <div style="flex-shrink:0;padding:12px 16px;border-top:2px solid #A855F7;background:#FAFAFB;display:flex;gap:8px;flex-wrap:wrap">
+      <button onclick="previewPosumaneUserImport()" style="flex:1;background:#fff;border:2px solid #A855F7;color:#A855F7;padding:10px;border-radius:10px;font-size:13px;font-weight:800;cursor:pointer;font-family:inherit">🔍 プレビュー</button>
+      <button onclick="commitPosumaneUserImport()" style="flex:1;background:linear-gradient(135deg,#A855F7,#7C3AED);color:#fff;border:none;border-radius:10px;padding:10px;font-size:13px;font-weight:900;cursor:pointer;font-family:inherit;box-shadow:0 2px 8px rgba(168,85,247,0.3)">📥 取り込む</button>
     </div>
   </div>
 </div>
