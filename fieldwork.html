@@ -2905,8 +2905,106 @@ const POSUMANE_USER_STATUS_LABELS = {
   lost:         { label: '失注', icon: '🚫', color: '#DC2626', bg: '#FEF2F2' },
 };
 
+// ══════════════════════════════════════════
+// 🔧 キャンペーン操作ヘルパー（複数所属対応）
+// ══════════════════════════════════════════
+// データ構造の進化：
+//   旧: it.campaign='posumane', it.campaignStatus='untouched', it.campaignMeta={...}
+//   新: it.campaigns=['posumane','posumane_user'], it.campaignStatuses={posumane:..,posumane_user:..}, it.campaignMetas={posumane:{...},posumane_user:{...}}
+// 旧形式も自動マイグレーション
+
+// 旧形式 → 新形式 マイグレーション
+function migrateCampaignFields(it) {
+  // 既に新形式ならスキップ
+  if (Array.isArray(it.campaigns)) return;
+  // 旧形式があれば変換
+  if (it.campaign) {
+    const cId = it.campaign;
+    it.campaigns = [cId];
+    it.campaignStatuses = { [cId]: it.campaignStatus || 'untouched' };
+    it.campaignMetas = { [cId]: it.campaignMeta || {} };
+  } else {
+    it.campaigns = [];
+    it.campaignStatuses = {};
+    it.campaignMetas = {};
+  }
+  // 旧フィールドは互換用に保持（古いコードが参照するため）
+}
+
+// 全itemsを移行
+function migrateAllCampaigns() {
+  let migrated = 0;
+  for (const it of items) {
+    if (!Array.isArray(it.campaigns)) {
+      migrateCampaignFields(it);
+      migrated++;
+    }
+  }
+  if (migrated > 0) console.log('[migrate] キャンペーンフィールドを', migrated, '件移行しました');
+}
+
+// 起動時にマイグレーション実行
+setTimeout(() => {
+  if (typeof items !== 'undefined' && Array.isArray(items)) {
+    migrateAllCampaigns();
+  }
+}, 100);
+
+// あるキャンペーンに属するか
+function hasCampaign(it, campaignId) {
+  if (Array.isArray(it.campaigns)) return it.campaigns.includes(campaignId);
+  return it.campaign === campaignId; // 旧形式フォールバック
+}
+
+// キャンペーン追加（既存に追加、なければ作る）
+function addCampaign(it, campaignId, status, meta) {
+  migrateCampaignFields(it);
+  if (!it.campaigns.includes(campaignId)) {
+    it.campaigns.push(campaignId);
+  }
+  if (!it.campaignStatuses) it.campaignStatuses = {};
+  if (!it.campaignMetas) it.campaignMetas = {};
+  // ステータスは初回のみセット（既存があれば触らない）
+  if (!it.campaignStatuses[campaignId]) {
+    it.campaignStatuses[campaignId] = status || 'untouched';
+  }
+  // メタは上書き or マージ
+  if (meta) {
+    it.campaignMetas[campaignId] = Object.assign(it.campaignMetas[campaignId] || {}, meta);
+  }
+  // 旧互換フィールドも更新（主たるキャンペーンとして最初のものを記録）
+  it.campaign = it.campaigns[0];
+  it.campaignStatus = it.campaignStatuses[it.campaign];
+  it.campaignMeta = it.campaignMetas[it.campaign];
+}
+
+// キャンペーンのステータスを取得
+function getCampaignStatus(it, campaignId) {
+  if (it.campaignStatuses && it.campaignStatuses[campaignId]) return it.campaignStatuses[campaignId];
+  if (it.campaign === campaignId) return it.campaignStatus || 'untouched';
+  return 'untouched';
+}
+
+// キャンペーンのメタを取得
+function getCampaignMeta(it, campaignId) {
+  if (it.campaignMetas && it.campaignMetas[campaignId]) return it.campaignMetas[campaignId];
+  if (it.campaign === campaignId) return it.campaignMeta || {};
+  return {};
+}
+
+// キャンペーンのステータス変更
+function setCampaignStatus(it, campaignId, status) {
+  migrateCampaignFields(it);
+  if (!it.campaignStatuses) it.campaignStatuses = {};
+  it.campaignStatuses[campaignId] = status;
+  // 旧互換フィールドも更新
+  if (it.campaign === campaignId) {
+    it.campaignStatus = status;
+  }
+}
+
 function getPosumaneItems() {
-  return items.filter(it => it.campaign === 'posumane');
+  return items.filter(it => hasCampaign(it, 'posumane'));
 }
 
 function openPosumaneImport() {
@@ -3115,17 +3213,15 @@ function commitPosumaneImport() {
         const existing = items.find(it => it.company && it.company.replace(/\s+/g,'') === name.replace(/\s+/g,''));
 
         if (existing) {
-          existing.campaign = 'posumane';
-          if (!existing.campaignStatus) existing.campaignStatus = 'untouched';
-          existing.campaignMeta = existing.campaignMeta || {};
-          Object.assign(existing.campaignMeta, {
+          // 新方式：addCampaignで複数所属対応
+          addCampaign(existing, 'posumane', 'untouched', {
             genre, pmArea, city, district, visitCount, lastDeliveryDate: lastDate, deliveryStatus,
           });
           if (!existing.addr && addr) existing.addr = addr;
           if (!existing.phone && phone) existing.phone = phone;
           mergeCount++;
         } else {
-          items.push({
+          const newIt = {
             id: Date.now() + Math.floor(Math.random() * 100000),
             company: name,
             industry: genre,
@@ -3134,11 +3230,15 @@ function commitPosumaneImport() {
             phone,
             excluded: false,
             score: 0,
-            campaign: 'posumane',
-            campaignStatus: 'untouched',
-            campaignMeta: { genre, pmArea, city, district, visitCount, lastDeliveryDate: lastDate, deliveryStatus },
+            campaigns: [],
+            campaignStatuses: {},
+            campaignMetas: {},
             createdAt: (typeof nowJSTISO === 'function' ? nowJSTISO() : new Date().toISOString()),
+          };
+          addCampaign(newIt, 'posumane', 'untouched', {
+            genre, pmArea, city, district, visitCount, lastDeliveryDate: lastDate, deliveryStatus,
           });
+          items.push(newIt);
           newCount++;
         }
       } catch (rowErr) {
@@ -3183,12 +3283,12 @@ function renderPosumane() {
   const genreSel = document.getElementById('pm-genre');
   const areaSel = document.getElementById('pm-area');
   if (genreSel) {
-    const genres = [...new Set(pmItems.map(it => it.campaignMeta?.genre || '').filter(Boolean))].sort();
+    const genres = [...new Set(pmItems.map(it => getCampaignMeta(it, 'posumane').genre || '').filter(Boolean))].sort();
     const cur = genreSel.value;
     genreSel.innerHTML = '<option value="">🏷️ 全ジャンル</option>' + genres.map(g => `<option value="${escapeHtml(g)}" ${cur===g?'selected':''}>${escapeHtml(g)}</option>`).join('');
   }
   if (areaSel) {
-    const areas = [...new Set(pmItems.map(it => it.campaignMeta?.pmArea || '').filter(Boolean))].sort();
+    const areas = [...new Set(pmItems.map(it => getCampaignMeta(it, 'posumane').pmArea || '').filter(Boolean))].sort();
     const cur = areaSel.value;
     areaSel.innerHTML = '<option value="">📍 全エリア</option>' + areas.map(a => `<option value="${escapeHtml(a)}" ${cur===a?'selected':''}>${escapeHtml(a)}</option>`).join('');
   }
@@ -3199,7 +3299,7 @@ function renderPosumane() {
     const counts = {};
     Object.keys(POSUMANE_STATUS_LABELS).forEach(k => counts[k] = 0);
     for (const it of pmItems) {
-      const s = it.campaignStatus || 'untouched';
+      const s = getCampaignStatus(it, 'posumane');
       counts[s] = (counts[s] || 0) + 1;
     }
     summary.innerHTML = `
@@ -3226,23 +3326,24 @@ function renderPosumane() {
   const sortF = document.getElementById('pm-sort')?.value || 'visit_desc';
 
   let filtered = pmItems.filter(it => {
+    const m = getCampaignMeta(it, 'posumane');
     if (search && !it.company.toLowerCase().includes(search)) return false;
-    if (statusF && (it.campaignStatus || 'untouched') !== statusF) return false;
-    if (genreF && (it.campaignMeta?.genre || '') !== genreF) return false;
-    if (areaF && (it.campaignMeta?.pmArea || '') !== areaF) return false;
-    if (deliveryF && (it.campaignMeta?.deliveryStatus || '') !== deliveryF) return false;
+    if (statusF && getCampaignStatus(it, 'posumane') !== statusF) return false;
+    if (genreF && (m.genre || '') !== genreF) return false;
+    if (areaF && (m.pmArea || '') !== areaF) return false;
+    if (deliveryF && (m.deliveryStatus || '') !== deliveryF) return false;
     return true;
   });
 
   // ソート
   const statusOrder = ['untouched','called','meeting','proposing','allowed','rejected'];
   filtered.sort((a, b) => {
-    const am = a.campaignMeta || {}, bm = b.campaignMeta || {};
+    const am = getCampaignMeta(a, 'posumane'), bm = getCampaignMeta(b, 'posumane');
     if (sortF === 'visit_desc') return (bm.visitCount||0) - (am.visitCount||0);
     if (sortF === 'visit_asc') return (am.visitCount||0) - (bm.visitCount||0);
     if (sortF === 'last_desc') return (bm.lastDeliveryDate||'').localeCompare(am.lastDeliveryDate||'');
     if (sortF === 'last_asc') return (am.lastDeliveryDate||'').localeCompare(bm.lastDeliveryDate||'');
-    if (sortF === 'status') return statusOrder.indexOf(a.campaignStatus||'untouched') - statusOrder.indexOf(b.campaignStatus||'untouched');
+    if (sortF === 'status') return statusOrder.indexOf(getCampaignStatus(a,'posumane')) - statusOrder.indexOf(getCampaignStatus(b,'posumane'));
     if (sortF === 'name') return a.company.localeCompare(b.company);
     return 0;
   });
@@ -3258,20 +3359,24 @@ function renderPosumane() {
 
   // カード一覧
   wrap.innerHTML = filtered.map(it => {
-    const m = it.campaignMeta || {};
-    const status = POSUMANE_STATUS_LABELS[it.campaignStatus || 'untouched'];
+    const m = getCampaignMeta(it, 'posumane');
+    const curStatus = getCampaignStatus(it, 'posumane');
+    const status = POSUMANE_STATUS_LABELS[curStatus];
     const visitBadge = m.visitCount > 0 ? `<span style="background:#FEF3C7;color:#92400E;padding:2px 8px;border-radius:6px;font-size:10px;font-weight:800">🚶 ${m.visitCount}回配布</span>` : '';
     const lastBadge = m.lastDeliveryDate ? `<span style="color:#6B7280;font-size:10px;font-weight:700">📅 最終 ${m.lastDeliveryDate}</span>` : '';
-    // ポスマネ側の配布状態（DMM水族館パンフ配布の進捗）
     const deliveryBadge = m.deliveryStatus === 'done'
       ? `<span style="background:#DCFCE7;color:#15803D;padding:2px 8px;border-radius:6px;font-size:10px;font-weight:800" title="DMM水族館パンフレットの配布完了">📦 配布済</span>`
       : m.deliveryStatus === 'pending'
       ? `<span style="background:#FEE2E2;color:#B91C1C;padding:2px 8px;border-radius:6px;font-size:10px;font-weight:800" title="DMM水族館パンフレットの配布待ち">⏳ 配布待ち</span>`
       : '';
+    // 複数キャンペーン所属表示
+    const multiCampaignBadge = hasCampaign(it, 'posumane_user')
+      ? `<span style="background:#F5F3FF;color:#6D28D9;padding:2px 6px;border-radius:5px;font-size:9px;font-weight:800;border:1px solid #A855F7" title="ポスマネ利用企業候補にも所属">💼 利用企業候補にも所属</span>`
+      : '';
     return `
       <div style="background:#fff;border:2px solid ${status.color}33;border-left:5px solid ${status.color};border-radius:14px;padding:14px 16px;margin-bottom:10px;display:flex;gap:12px;align-items:center;flex-wrap:wrap;box-shadow:0 2px 6px rgba(0,0,0,0.04);cursor:pointer;transition:all 0.15s" onclick="openDetail(${it.id})" onmouseover="this.style.transform='translateX(2px)';this.style.boxShadow='0 4px 12px rgba(0,0,0,0.08)'" onmouseout="this.style.transform='translateX(0)';this.style.boxShadow='0 2px 6px rgba(0,0,0,0.04)'">
         <div style="flex:1;min-width:0">
-          <div style="font-size:15px;font-weight:900;color:#1F2937;margin-bottom:4px">${escapeHtml(it.company)}</div>
+          <div style="font-size:15px;font-weight:900;color:#1F2937;margin-bottom:4px">${escapeHtml(it.company)} ${multiCampaignBadge}</div>
           <div style="font-size:11px;color:#6B7280;display:flex;gap:8px;flex-wrap:wrap;align-items:center">
             ${m.genre ? `<span style="background:#FFF8E1;color:#E65100;padding:2px 8px;border-radius:6px;font-weight:800">${escapeHtml(m.genre)}</span>` : ''}
             ${m.pmArea ? `<span style="font-weight:700">📍 ${escapeHtml(m.pmArea)}</span>` : ''}
@@ -3288,7 +3393,7 @@ function renderPosumane() {
           <select onchange="setPosumaneStatus(${it.id}, this.value)" style="background:${status.bg};color:${status.color};border:2px solid ${status.color};padding:6px 10px;border-radius:10px;font-size:12px;font-weight:800;cursor:pointer;font-family:inherit">
             ${Object.keys(POSUMANE_STATUS_LABELS).map(k => {
               const s = POSUMANE_STATUS_LABELS[k];
-              return `<option value="${k}" ${(it.campaignStatus||'untouched')===k?'selected':''}>${s.icon} ${s.label}</option>`;
+              return `<option value="${k}" ${curStatus===k?'selected':''}>${s.icon} ${s.label}</option>`;
             }).join('')}
           </select>
         </div>
@@ -3300,7 +3405,7 @@ function renderPosumane() {
 function setPosumaneStatus(id, status) {
   const it = items.find(x => x.id === id);
   if (!it) return;
-  it.campaignStatus = status;
+  setCampaignStatus(it, 'posumane', status);
   save();
   renderPosumane();
   const s = POSUMANE_STATUS_LABELS[status];
@@ -3311,7 +3416,7 @@ function setPosumaneStatus(id, status) {
 // 💼 ポスマネ利用企業（広告主候補）
 // ══════════════════════════════════════════
 function getPosumaneUserItems() {
-  return items.filter(it => it.campaign === 'posumane_user');
+  return items.filter(it => hasCampaign(it, 'posumane_user'));
 }
 
 function openPosumaneUserImport() {
@@ -3434,26 +3539,26 @@ function commitPosumaneUserImport() {
 
         const existing = items.find(it => it.company && it.company.replace(/\s+/g,'') === name.replace(/\s+/g,''));
         if (existing) {
-          existing.campaign = 'posumane_user';
-          if (!existing.campaignStatus) existing.campaignStatus = 'untouched';
-          existing.campaignMeta = existing.campaignMeta || {};
-          Object.assign(existing.campaignMeta, { genre, pmArea, city, district });
+          // 新方式：addCampaignで複数所属対応（既存のposumaneキャンペーンは保持）
+          addCampaign(existing, 'posumane_user', 'untouched', { genre, pmArea, city, district });
           if (!existing.addr && addr) existing.addr = addr;
           if (!existing.phone && phone) existing.phone = phone;
           mergeCount++;
         } else {
-          items.push({
+          const newIt = {
             id: Date.now() + Math.floor(Math.random() * 100000),
             company: name,
             industry: genre,
             area: city + (district ? ' ' + district : ''),
             addr, phone,
             excluded: false, score: 0,
-            campaign: 'posumane_user',
-            campaignStatus: 'untouched',
-            campaignMeta: { genre, pmArea, city, district },
+            campaigns: [],
+            campaignStatuses: {},
+            campaignMetas: {},
             createdAt: (typeof nowJSTISO === 'function' ? nowJSTISO() : new Date().toISOString()),
-          });
+          };
+          addCampaign(newIt, 'posumane_user', 'untouched', { genre, pmArea, city, district });
+          items.push(newIt);
           newCount++;
         }
       } catch (rowErr) {
@@ -3483,12 +3588,12 @@ function renderPosumaneUser() {
   const genreSel = document.getElementById('pmu-genre');
   const areaSel = document.getElementById('pmu-area');
   if (genreSel) {
-    const genres = [...new Set(pmItems.map(it => it.campaignMeta?.genre || '').filter(Boolean))].sort();
+    const genres = [...new Set(pmItems.map(it => getCampaignMeta(it, 'posumane_user').genre || '').filter(Boolean))].sort();
     const cur = genreSel.value;
     genreSel.innerHTML = '<option value="">🏷️ 全ジャンル</option>' + genres.map(g => `<option value="${escapeHtml(g)}" ${cur===g?'selected':''}>${escapeHtml(g)}</option>`).join('');
   }
   if (areaSel) {
-    const areas = [...new Set(pmItems.map(it => it.campaignMeta?.pmArea || '').filter(Boolean))].sort();
+    const areas = [...new Set(pmItems.map(it => getCampaignMeta(it, 'posumane_user').pmArea || '').filter(Boolean))].sort();
     const cur = areaSel.value;
     areaSel.innerHTML = '<option value="">📍 全エリア</option>' + areas.map(a => `<option value="${escapeHtml(a)}" ${cur===a?'selected':''}>${escapeHtml(a)}</option>`).join('');
   }
@@ -3498,7 +3603,7 @@ function renderPosumaneUser() {
     const counts = {};
     Object.keys(POSUMANE_USER_STATUS_LABELS).forEach(k => counts[k] = 0);
     for (const it of pmItems) {
-      const s = it.campaignStatus || 'untouched';
+      const s = getCampaignStatus(it, 'posumane_user');
       counts[s] = (counts[s] || 0) + 1;
     }
     summary.innerHTML = `
@@ -3523,19 +3628,21 @@ function renderPosumaneUser() {
   const sortF = document.getElementById('pmu-sort')?.value || 'name';
 
   let filtered = pmItems.filter(it => {
+    const m = getCampaignMeta(it, 'posumane_user');
     if (search && !it.company.toLowerCase().includes(search)) return false;
-    if (statusF && (it.campaignStatus || 'untouched') !== statusF) return false;
-    if (genreF && (it.campaignMeta?.genre || '') !== genreF) return false;
-    if (areaF && (it.campaignMeta?.pmArea || '') !== areaF) return false;
+    if (statusF && getCampaignStatus(it, 'posumane_user') !== statusF) return false;
+    if (genreF && (m.genre || '') !== genreF) return false;
+    if (areaF && (m.pmArea || '') !== areaF) return false;
     return true;
   });
 
   const statusOrder = ['untouched','called','hearing','proposing','considering','contracted','lost'];
   filtered.sort((a, b) => {
+    const am = getCampaignMeta(a, 'posumane_user'), bm = getCampaignMeta(b, 'posumane_user');
     if (sortF === 'name') return a.company.localeCompare(b.company);
-    if (sortF === 'status') return statusOrder.indexOf(a.campaignStatus||'untouched') - statusOrder.indexOf(b.campaignStatus||'untouched');
-    if (sortF === 'genre') return (a.campaignMeta?.genre||'').localeCompare(b.campaignMeta?.genre||'');
-    if (sortF === 'area') return (a.campaignMeta?.pmArea||'').localeCompare(b.campaignMeta?.pmArea||'');
+    if (sortF === 'status') return statusOrder.indexOf(getCampaignStatus(a,'posumane_user')) - statusOrder.indexOf(getCampaignStatus(b,'posumane_user'));
+    if (sortF === 'genre') return (am.genre||'').localeCompare(bm.genre||'');
+    if (sortF === 'area') return (am.pmArea||'').localeCompare(bm.pmArea||'');
     return 0;
   });
 
@@ -3549,12 +3656,16 @@ function renderPosumaneUser() {
   }
 
   wrap.innerHTML = filtered.map(it => {
-    const m = it.campaignMeta || {};
-    const status = POSUMANE_USER_STATUS_LABELS[it.campaignStatus || 'untouched'];
+    const m = getCampaignMeta(it, 'posumane_user');
+    const curStatus = getCampaignStatus(it, 'posumane_user');
+    const status = POSUMANE_USER_STATUS_LABELS[curStatus];
+    const multiCampaignBadge = hasCampaign(it, 'posumane')
+      ? `<span style="background:#FFF8E1;color:#E65100;padding:2px 6px;border-radius:5px;font-size:9px;font-weight:800;border:1px solid #FFC107" title="ポスマネ配布許諾にも所属">📦 配布先にも所属</span>`
+      : '';
     return `
       <div style="background:#fff;border:2px solid ${status.color}33;border-left:5px solid ${status.color};border-radius:14px;padding:14px 16px;margin-bottom:10px;display:flex;gap:12px;align-items:center;flex-wrap:wrap;box-shadow:0 2px 6px rgba(0,0,0,0.04);cursor:pointer;transition:all 0.15s" onclick="openDetail(${it.id})" onmouseover="this.style.transform='translateX(2px)';this.style.boxShadow='0 4px 12px rgba(0,0,0,0.08)'" onmouseout="this.style.transform='translateX(0)';this.style.boxShadow='0 2px 6px rgba(0,0,0,0.04)'">
         <div style="flex:1;min-width:0">
-          <div style="font-size:15px;font-weight:900;color:#1F2937;margin-bottom:4px">${escapeHtml(it.company)}</div>
+          <div style="font-size:15px;font-weight:900;color:#1F2937;margin-bottom:4px">${escapeHtml(it.company)} ${multiCampaignBadge}</div>
           <div style="font-size:11px;color:#6B7280;display:flex;gap:8px;flex-wrap:wrap;align-items:center">
             ${m.genre ? `<span style="background:#F5F3FF;color:#6D28D9;padding:2px 8px;border-radius:6px;font-weight:800">${escapeHtml(m.genre)}</span>` : ''}
             ${m.pmArea ? `<span style="font-weight:700">📍 ${escapeHtml(m.pmArea)}</span>` : ''}
@@ -3566,7 +3677,7 @@ function renderPosumaneUser() {
           <select onchange="setPosumaneUserStatus(${it.id}, this.value)" style="background:${status.bg};color:${status.color};border:2px solid ${status.color};padding:6px 10px;border-radius:10px;font-size:12px;font-weight:800;cursor:pointer;font-family:inherit">
             ${Object.keys(POSUMANE_USER_STATUS_LABELS).map(k => {
               const s = POSUMANE_USER_STATUS_LABELS[k];
-              return `<option value="${k}" ${(it.campaignStatus||'untouched')===k?'selected':''}>${s.icon} ${s.label}</option>`;
+              return `<option value="${k}" ${curStatus===k?'selected':''}>${s.icon} ${s.label}</option>`;
             }).join('')}
           </select>
         </div>
@@ -3578,7 +3689,7 @@ function renderPosumaneUser() {
 function setPosumaneUserStatus(id, status) {
   const it = items.find(x => x.id === id);
   if (!it) return;
-  it.campaignStatus = status;
+  setCampaignStatus(it, 'posumane_user', status);
   save();
   renderPosumaneUser();
   const s = POSUMANE_USER_STATUS_LABELS[status];
@@ -3626,8 +3737,8 @@ function updateBadges() {
     (x.approach && x.approach.currentPhase === 'meeting_won') ||
     x.phase === 'apo'
   ).length);
-  set('nb-posumane', items.filter(x => x.campaign === 'posumane').length);
-  set('nb-posumane-user', items.filter(x => x.campaign === 'posumane_user').length);
+  set('nb-posumane', items.filter(x => hasCampaign(x, 'posumane')).length);
+  set('nb-posumane-user', items.filter(x => hasCampaign(x, 'posumane_user')).length);
   set('nb-notice', (notices||[]).length);
 }
 
