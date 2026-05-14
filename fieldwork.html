@@ -1159,6 +1159,12 @@ tr:hover td { background: rgba(255,70,2,0.03); cursor: pointer; }
       <button class="btn btn-ghost btn-sm" onclick="bulkRestoreCorporations()" style="background:#F0FDF4;border-color:#86EFAC;color:#16A34A" title="株式会社・有限会社などの法人で営業対象外設定されているものを一括解除">
         ✓ 法人を一括解除
       </button>
+      <button class="btn btn-sm" onclick="openBulkAddToCampaign('posumane')" style="background:linear-gradient(135deg,#FF9800,#FFC107);color:#fff;border:none;font-weight:700;font-size:13px" title="現在の絞り込み結果を一括でポスマネ配布キャンペーンに追加">
+        📦 一括でポスマネ配布に追加
+      </button>
+      <button class="btn btn-sm" onclick="openBulkAddToCampaign('posumane_user')" style="background:linear-gradient(135deg,#A855F7,#7C3AED);color:#fff;border:none;font-weight:700;font-size:13px" title="現在の絞り込み結果を一括でポスマネ利用企業キャンペーンに追加">
+        💼 一括でポスマネ利用企業に追加
+      </button>
     </div>
   </div>
   <div class="content">
@@ -3000,6 +3006,197 @@ function setCampaignStatus(it, campaignId, status) {
   // 旧互換フィールドも更新
   if (it.campaign === campaignId) {
     it.campaignStatus = status;
+  }
+}
+
+// キャンペーンから削除
+function removeCampaign(it, campaignId) {
+  migrateCampaignFields(it);
+  if (Array.isArray(it.campaigns)) {
+    it.campaigns = it.campaigns.filter(c => c !== campaignId);
+  }
+  if (it.campaignStatuses) delete it.campaignStatuses[campaignId];
+  if (it.campaignMetas) delete it.campaignMetas[campaignId];
+  // 旧互換フィールドの整理
+  if (it.campaign === campaignId) {
+    it.campaign = it.campaigns[0] || '';
+    it.campaignStatus = it.campaign ? it.campaignStatuses[it.campaign] : '';
+    it.campaignMeta = it.campaign ? it.campaignMetas[it.campaign] : {};
+  }
+}
+
+// キャンペーン所属をトグル（あれば外す、なければ追加）
+function toggleItemCampaign(itemId, campaignId) {
+  const it = items.find(x => x.id === itemId);
+  if (!it) return;
+  const campaignName = campaignId === 'posumane' ? 'ポスマネ配布' : 'ポスマネ利用企業';
+  if (hasCampaign(it, campaignId)) {
+    if (!confirm(`${it.company} を「${campaignName}」から外しますか？\n（ステータスや関連情報も削除されます）`)) return;
+    removeCampaign(it, campaignId);
+    save();
+    toast(`✓ ${it.company} を「${campaignName}」から外しました`);
+  } else {
+    addCampaign(it, campaignId, 'untouched', {});
+    save();
+    toast(`📥 ${it.company} を「${campaignName}」に追加しました`);
+  }
+  // 詳細画面再描画
+  try { openDetail(itemId); } catch(e) {}
+  // 各画面再描画
+  try { if (typeof renderPosumane === 'function') renderPosumane(); } catch(e) {}
+  try { if (typeof renderPosumaneUser === 'function') renderPosumaneUser(); } catch(e) {}
+  try { if (typeof renderList === 'function') renderList(); } catch(e) {}
+  try { if (typeof updateNavBadges === 'function') updateNavBadges(); } catch(e) {}
+}
+
+// アタックリストの現在のフィルター条件で絞った結果を返す
+function getCurrentFilteredItems() {
+  const search = (document.getElementById('ls-search')?.value || '').toLowerCase();
+  const ind = document.getElementById('ls-industry')?.value || '';
+  const rank = document.getElementById('ls-rank')?.value || '';
+  const apf = document.getElementById('ls-ap')?.value || '';
+  const showExcluded = document.getElementById('ls-show-excluded')?.checked || false;
+  const showNonBiz = document.getElementById('ls-show-nonbiz')?.checked !== false;
+  const researchFilter = document.getElementById('ls-research')?.value || '';
+  const snsF = document.getElementById('ls-sns')?.value || '';
+  const jobF = document.getElementById('ls-job')?.value || '';
+  const prefF = document.getElementById('ls-pref')?.value || '';
+  const areaF = document.getElementById('ls-area')?.value || '';
+  const periodF = document.getElementById('ls-period')?.value || '';
+
+  let list = items.filter(it => {
+    if (!showExcluded && (it.manualCompanyFlag === 'non_company' || it.excluded)) return false;
+    if (!showNonBiz && !isLikelyCompany(it) && it.manualCompanyFlag !== 'company') return false;
+    if (researchFilter === 'not_enriched' && isEnriched(it)) return false;
+    if (researchFilter === 'enriched' && !isEnriched(it)) return false;
+    if (search && !it.company.toLowerCase().includes(search)) return false;
+    if (ind && it.industry !== ind) return false;
+    if (rank && it.score?.rank !== rank) return false;
+    if (apf==='none' && (it.logs||[]).length>0) return false;
+    if (apf==='ongoing' && !['visit','tel','letter'].includes(it.phase)) return false;
+    if (apf==='apo' && it.phase!=='apo') return false;
+    if (activeSigs.size>0) { const s=new Set(it.signals||[]); for(const f of activeSigs) if(!s.has(f)) return false; }
+    return true;
+  });
+  if (snsF === 'has_sns') list = list.filter(it => it.instaUrl || it.fbUrl || it.tiktokUrl);
+  if (snsF === 'no_sns') list = list.filter(it => !it.instaUrl && !it.fbUrl && !it.tiktokUrl);
+  if (jobF === 'has_job') list = list.filter(it => it.jobUrl);
+  if (jobF === 'no_job') list = list.filter(it => !it.jobUrl);
+  if (prefF) list = list.filter(it => getPrefFromArea(it.area || it.addr || '') === prefF);
+  if (areaF) list = list.filter(it => (it.area || '').includes(areaF));
+  if (periodF) {
+    const now = new Date();
+    const todayStr = todayJST();
+    const daysAgo = (n) => { const d = new Date(now); d.setDate(d.getDate() - n); return d.toISOString().slice(0,10); };
+    if (periodF === 'collected_today') list = list.filter(it => (it.createdAt||'').slice(0,10) === todayStr);
+    else if (periodF === 'collected_week') { const limit = daysAgo(7); list = list.filter(it => (it.createdAt||'').slice(0,10) >= limit); }
+    else if (periodF === 'collected_month') { const limit = daysAgo(30); list = list.filter(it => (it.createdAt||'').slice(0,10) >= limit); }
+    else if (periodF === 'enriched_today') list = list.filter(it => isEnriched(it) && (it.lastUpdatedAt||'').slice(0,10) === todayStr);
+    else if (periodF === 'enriched_week') { const limit = daysAgo(7); list = list.filter(it => isEnriched(it) && (it.lastUpdatedAt||'').slice(0,10) >= limit); }
+    else if (periodF === 'enriched_month') { const limit = daysAgo(30); list = list.filter(it => isEnriched(it) && (it.lastUpdatedAt||'').slice(0,10) >= limit); }
+    else if (periodF === 'never_enriched') list = list.filter(it => !isEnriched(it));
+  }
+  return list;
+}
+
+// 一括キャンペーン追加モーダルを開く
+function openBulkAddToCampaign(campaignId) {
+  const filtered = getCurrentFilteredItems();
+  if (!filtered.length) {
+    alert('⚠️ 現在の絞り込み条件に該当する企業がありません。\nフィルターを変更してください。');
+    return;
+  }
+
+  const campaignName = campaignId === 'posumane' ? '📦 ポスマネ配布' : '💼 ポスマネ利用企業';
+  const campaignColor = campaignId === 'posumane' ? '#E65100' : '#6D28D9';
+  const campaignBg = campaignId === 'posumane' ? '#FFF8E1' : '#F5F3FF';
+  const campaignBorder = campaignId === 'posumane' ? '#FFC107' : '#A855F7';
+
+  // 既に所属している企業を分けてカウント
+  const alreadyIn = filtered.filter(it => hasCampaign(it, campaignId));
+  const toAdd = filtered.filter(it => !hasCampaign(it, campaignId));
+
+  // 既存モーダル削除
+  const existing = document.getElementById('m-bulk-campaign');
+  if (existing) existing.remove();
+
+  const sampleHtml = toAdd.slice(0, 10).map(it => `
+    <div style="padding:5px 8px;border-bottom:1px dashed #E5E7EB;font-size:11px;display:flex;gap:6px;align-items:center">
+      <span style="font-weight:800">${escapeHtml(it.company)}</span>
+      ${it.industry ? `<span style="color:#9CA3AF;font-size:10px">${escapeHtml(it.industry)}</span>` : ''}
+    </div>
+  `).join('');
+
+  const div = document.createElement('div');
+  div.className = 'modal-backdrop open';
+  div.id = 'm-bulk-campaign';
+  div.innerHTML = `
+    <div class="modal" style="max-width:600px;border-radius:18px">
+      <div class="mhead" style="background:${campaignBg};border-bottom:2px solid ${campaignBorder}">
+        <div>
+          <div class="mtitle" style="font-size:18px;font-weight:900;color:${campaignColor}">${campaignName} に一括追加</div>
+          <div style="font-size:12px;color:${campaignColor};font-weight:700;margin-top:2px">現在のフィルター結果から ${campaignName} に追加します</div>
+        </div>
+        <button class="mclose" onclick="cm('m-bulk-campaign')">✕</button>
+      </div>
+      <div class="mbody">
+        <div style="background:${campaignBg};border:1.5px solid ${campaignBorder};border-radius:10px;padding:12px 14px;margin-bottom:14px;font-size:13px;color:${campaignColor};font-weight:800;line-height:1.8">
+          📊 <strong>追加予定の件数</strong>：<br>
+          ・絞り込み結果：${filtered.length}件<br>
+          ・✨ 新規追加：${toAdd.length}件<br>
+          ・⚠️ 既に所属（スキップ）：${alreadyIn.length}件
+        </div>
+
+        ${toAdd.length > 0 ? `
+          <div style="font-size:12px;font-weight:800;color:#374151;margin-bottom:6px">📋 追加される企業（先頭10件）:</div>
+          <div style="background:#FAFAFB;border:1px solid #E5E7EB;border-radius:8px;padding:6px;max-height:240px;overflow-y:auto;margin-bottom:10px">
+            ${sampleHtml}
+            ${toAdd.length > 10 ? `<div style="padding:6px 8px;color:#9CA3AF;font-size:10px;text-align:center">…他 ${toAdd.length - 10} 件</div>` : ''}
+          </div>
+        ` : '<div style="background:#FEF3C7;padding:14px;border-radius:10px;color:#92400E;font-weight:700;text-align:center">すべて既に所属しているため、追加する企業はありません</div>'}
+      </div>
+      <div class="mfoot">
+        <button class="btn btn-ghost" onclick="cm('m-bulk-campaign')">キャンセル</button>
+        ${toAdd.length > 0
+          ? `<button onclick="commitBulkAddToCampaign('${campaignId}')" style="background:linear-gradient(135deg,${campaignBorder},${campaignColor});color:#fff;border:none;padding:10px 20px;border-radius:10px;font-size:13px;font-weight:900;cursor:pointer;font-family:inherit">📥 ${toAdd.length}件を追加する</button>`
+          : ''}
+      </div>
+    </div>
+  `;
+  document.body.appendChild(div);
+}
+
+function commitBulkAddToCampaign(campaignId) {
+  try {
+    const filtered = getCurrentFilteredItems();
+    const toAdd = filtered.filter(it => !hasCampaign(it, campaignId));
+    const campaignName = campaignId === 'posumane' ? 'ポスマネ配布' : 'ポスマネ利用企業';
+
+    let added = 0;
+    for (const it of toAdd) {
+      try {
+        // 既存のアタックリスト情報からメタを引き継ぐ
+        const genre = it.industry || '';
+        const city = (it.area || '').match(/^(\S+?[市町村])/)?.[1] || '';
+        addCampaign(it, campaignId, 'untouched', { genre, city });
+        added++;
+      } catch (e) {
+        console.error('bulk add error:', it.company, e);
+      }
+    }
+
+    save();
+    cm('m-bulk-campaign');
+    alert(`📥 ${campaignName} に ${added}件 追加しました 🎉`);
+
+    // 再描画
+    try { if (typeof renderList === 'function') renderList(); } catch(e) {}
+    try { if (typeof renderPosumane === 'function') renderPosumane(); } catch(e) {}
+    try { if (typeof renderPosumaneUser === 'function') renderPosumaneUser(); } catch(e) {}
+    try { if (typeof updateNavBadges === 'function') updateNavBadges(); } catch(e) {}
+  } catch (mainErr) {
+    console.error('[bulk add] メインエラー:', mainErr);
+    alert('❌ 一括追加でエラー：' + mainErr.message);
   }
 }
 
@@ -7251,10 +7448,21 @@ function openDetail(id) {
       </div>
 
       <!-- ⭐ 見込み度評価 -->
-      <div style="margin-bottom:14px;display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+      <div style="margin-bottom:10px;display:flex;align-items:center;gap:10px;flex-wrap:wrap">
         <span style="font-size:11px;color:#92400E;font-weight:800">見込み度：</span>
         ${getStarInteractiveHtml(it.id, it.starRating)}
         <span style="font-size:11px;color:#92400E;font-weight:700">${STAR_LABELS[it.starRating || 0].label}</span>
+      </div>
+
+      <!-- 🏷️ キャンペーン所属 -->
+      <div style="margin-bottom:14px;display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+        <span style="font-size:11px;color:#6B7280;font-weight:800">キャンペーン：</span>
+        ${hasCampaign(it, 'posumane')
+          ? `<button onclick="toggleItemCampaign(${it.id},'posumane')" style="background:#FFF8E1;color:#E65100;border:2px solid #FFC107;padding:5px 10px;border-radius:8px;font-size:11px;font-weight:800;cursor:pointer;font-family:inherit" title="クリックでポスマネ配布から外す">📦 ポスマネ配布 ✓</button>`
+          : `<button onclick="toggleItemCampaign(${it.id},'posumane')" style="background:#fff;color:#9CA3AF;border:2px dashed #D1D5DB;padding:5px 10px;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit" title="クリックでポスマネ配布候補に追加">＋ 📦 ポスマネ配布に追加</button>`}
+        ${hasCampaign(it, 'posumane_user')
+          ? `<button onclick="toggleItemCampaign(${it.id},'posumane_user')" style="background:#F5F3FF;color:#6D28D9;border:2px solid #A855F7;padding:5px 10px;border-radius:8px;font-size:11px;font-weight:800;cursor:pointer;font-family:inherit" title="クリックでポスマネ利用企業から外す">💼 ポスマネ利用企業 ✓</button>`
+          : `<button onclick="toggleItemCampaign(${it.id},'posumane_user')" style="background:#fff;color:#9CA3AF;border:2px dashed #D1D5DB;padding:5px 10px;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit" title="クリックでポスマネ利用企業候補に追加">＋ 💼 利用企業候補に追加</button>`}
       </div>
 
       <!-- 電話番号（特大）-->
