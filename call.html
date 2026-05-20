@@ -1,0 +1,898 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ポスマネ｜アタック</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root {
+  --bg: #FFF8F1;
+  --card: #FFFFFF;
+  --primary: #FF6B35;
+  --primary-dark: #E55A2B;
+  --primary-light: #FFE3D0;
+  --accent: #F7B731;
+  --text: #2D3436;
+  --text-sub: #636E72;
+  --text-mute: #94A3B8;
+  --border: #FFE3D0;
+  --border-soft: #F3F4F6;
+  --green: #10B981;
+  --green-light: #D1FAE5;
+  --yellow: #F59E0B;
+  --yellow-light: #FEF3C7;
+  --orange: #F97316;
+  --orange-light: #FED7AA;
+  --red: #EF4444;
+  --red-light: #FEE2E2;
+  --gray: #94A3B8;
+  --blue: #3B82F6;
+  --blue-light: #DBEAFE;
+  --purple: #8B5CF6;
+  --purple-light: #EDE9FE;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Yu Gothic UI", sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.6;
+  min-height: 100vh;
+  padding-bottom: 80px;
+}
+.container { max-width: 1100px; margin: 0 auto; padding: 12px; }
+.header {
+  background: linear-gradient(135deg, var(--primary), #FF8C42);
+  color: white;
+  padding: 16px 20px;
+  border-radius: 14px;
+  margin-bottom: 16px;
+  box-shadow: 0 4px 20px rgba(255,107,53,0.15);
+  display:flex; justify-content:space-between; align-items:center; gap: 12px;
+  flex-wrap: wrap;
+}
+.header h1 { font-size: 18px; font-weight: 800; }
+.header .sub { font-size: 11px; opacity: 0.95; }
+.header-nav { display:flex; gap:8px; flex-wrap:wrap; }
+.header-nav a {
+  background: rgba(255,255,255,0.2);
+  color: white;
+  padding: 6px 12px;
+  border-radius: 8px;
+  text-decoration: none;
+  font-size: 12px;
+  font-weight: 700;
+  border: 1px solid rgba(255,255,255,0.3);
+}
+.header-nav a:hover { background: rgba(255,255,255,0.3); }
+
+/* 統計サマリー */
+.stats-row {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 6px;
+  margin-bottom: 16px;
+}
+@media (max-width: 700px) {
+  .stats-row { grid-template-columns: repeat(4, 1fr); }
+}
+.stat-card {
+  background: white;
+  border-radius: 10px;
+  padding: 10px 6px;
+  text-align: center;
+  cursor: pointer;
+  border: 2px solid transparent;
+  transition: all 0.15s;
+}
+.stat-card:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+.stat-card.active { border-color: var(--primary); background: #FFF3E8; }
+.stat-card .num { font-size: 18px; font-weight: 800; }
+.stat-card .lbl { font-size: 10px; color: var(--text-sub); margin-top: 2px; line-height: 1.3; }
+.stat-card.all .num { color: var(--text); }
+.stat-card.pending .num { color: var(--gray); }
+.stat-card.today .num { color: var(--red); }
+.stat-card.contacted .num { color: var(--blue); }
+.stat-card.callback .num { color: var(--orange); }
+.stat-card.won .num { color: var(--green); }
+.stat-card.declined .num { color: var(--text-mute); }
+
+/* コントロールバー */
+.control-bar {
+  background: white;
+  border-radius: 12px;
+  padding: 12px;
+  margin-bottom: 12px;
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.search-input {
+  flex: 1;
+  min-width: 200px;
+  padding: 8px 12px;
+  border: 2px solid var(--border);
+  border-radius: 8px;
+  font-size: 14px;
+  background: #FFFBF7;
+}
+.search-input:focus { outline: none; border-color: var(--primary); }
+.sort-select {
+  padding: 8px 12px;
+  border: 2px solid var(--border);
+  border-radius: 8px;
+  font-size: 13px;
+  background: white;
+  font-weight: 600;
+  cursor: pointer;
+}
+.refresh-btn {
+  padding: 8px 14px;
+  background: white;
+  border: 2px solid var(--primary);
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--primary);
+  cursor: pointer;
+}
+.refresh-btn:hover { background: var(--primary); color: white; }
+
+/* 企業カード */
+.company-list { display: flex; flex-direction: column; gap: 8px; }
+.company-card {
+  background: white;
+  border-radius: 12px;
+  padding: 14px;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 12px;
+  align-items: center;
+  cursor: pointer;
+  border-left: 4px solid var(--border);
+  transition: all 0.15s;
+}
+.company-card:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.06); }
+.company-card.pending { border-left-color: var(--gray); }
+.company-card.contacted { border-left-color: var(--blue); }
+.company-card.pending_callback { border-left-color: var(--orange); }
+.company-card.declined { border-left-color: var(--text-mute); opacity: 0.7; }
+.company-card.won { border-left-color: var(--green); background: #F0FDF4; }
+.company-card.mailed { border-left-color: var(--purple); }
+.company-card.today { background: #FEF2F2; border-left-color: var(--red); }
+.company-info { min-width: 0; }
+.company-name { font-size: 15px; font-weight: 700; word-break: break-all; margin-bottom: 4px; }
+.company-meta { display: flex; gap: 10px; flex-wrap: wrap; font-size: 12px; color: var(--text-sub); }
+.company-meta span { display:inline-flex; align-items:center; gap:3px; }
+.phase-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 8px;
+  font-size: 10px;
+  font-weight: 700;
+  margin-right: 6px;
+}
+.phase-pending { background: #F3F4F6; color: #6B7280; }
+.phase-contacted { background: var(--blue-light); color: #1E40AF; }
+.phase-pending_callback { background: var(--orange-light); color: #9A3412; }
+.phase-declined { background: #F3F4F6; color: #9CA3AF; }
+.phase-won { background: var(--green-light); color: #065F46; }
+.phase-mailed { background: var(--purple-light); color: #5B21B6; }
+.next-date-tag {
+  display: inline-block;
+  background: var(--yellow-light);
+  color: #92400E;
+  padding: 2px 8px;
+  border-radius: 8px;
+  font-size: 11px;
+  font-weight: 700;
+}
+.next-date-tag.today { background: var(--red-light); color: #991B1B; }
+.next-date-tag.past { background: #FEE2E2; color: #7F1D1D; }
+.attack-btn {
+  background: linear-gradient(135deg, var(--primary), #FF8C42);
+  color: white;
+  border: none;
+  padding: 10px 18px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+  white-space: nowrap;
+  box-shadow: 0 2px 8px rgba(255,107,53,0.25);
+}
+.attack-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(255,107,53,0.35); }
+
+/* モーダル */
+.modal-backdrop {
+  display: none;
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.5);
+  z-index: 100;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 12px;
+  overflow-y: auto;
+}
+.modal-backdrop.show { display: flex; }
+.modal {
+  background: white;
+  border-radius: 16px;
+  width: 100%;
+  max-width: 700px;
+  margin-top: 12px;
+  margin-bottom: 12px;
+  overflow: hidden;
+  box-shadow: 0 20px 50px rgba(0,0,0,0.2);
+}
+.modal-header {
+  background: linear-gradient(135deg, var(--primary), #FF8C42);
+  color: white;
+  padding: 16px 20px;
+  display:flex; justify-content:space-between; align-items:center;
+}
+.modal-header h2 { font-size: 16px; font-weight: 700; }
+.modal-close { background: none; border: none; color: white; font-size: 24px; cursor: pointer; line-height: 1; }
+.modal-body { padding: 20px; }
+
+.target-card {
+  background: #FFF3E8;
+  border-radius: 12px;
+  padding: 16px;
+  text-align: center;
+  margin-bottom: 16px;
+  border: 2px solid var(--primary-light);
+}
+.target-card .name { font-size: 20px; font-weight: 800; color: var(--text); margin-bottom: 8px; }
+.target-card .phone { font-size: 22px; font-weight: 800; color: var(--primary); margin-bottom: 6px; }
+.target-card .phone.empty { color: var(--text-mute); font-size: 16px; }
+.target-card .info-row { font-size: 12px; color: var(--text-sub); margin: 2px 0; word-break: break-all; }
+
+/* 過去履歴タイムライン */
+.history-section { margin-bottom: 20px; }
+.section-title { font-size: 13px; font-weight: 700; color: var(--text-sub); margin-bottom: 8px; display:flex; align-items:center; gap:6px; }
+.timeline {
+  border-left: 2px solid var(--border);
+  padding-left: 14px;
+  margin-left: 6px;
+}
+.timeline-item {
+  position: relative;
+  margin-bottom: 10px;
+  background: #FFFBF7;
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 12px;
+}
+.timeline-item::before {
+  content: '';
+  position: absolute;
+  left: -19px;
+  top: 12px;
+  width: 10px;
+  height: 10px;
+  background: var(--primary);
+  border-radius: 50%;
+  border: 2px solid white;
+}
+.timeline-item .date { font-weight: 700; color: var(--text); }
+.timeline-item .result { color: var(--primary); font-weight: 600; margin-left: 6px; }
+.timeline-item .memo { color: var(--text-sub); margin-top: 4px; word-break: break-all; }
+.timeline-empty { font-size: 12px; color: var(--text-mute); padding: 8px; text-align: center; }
+
+/* スクリプト */
+.script-box {
+  background: #FFFBF7;
+  border: 2px solid var(--border);
+  border-radius: 12px;
+  margin-bottom: 16px;
+  max-height: 340px;
+  overflow-y: auto;
+}
+.script-header {
+  background: var(--primary);
+  color: white;
+  padding: 10px 14px;
+  font-weight: 700;
+  font-size: 13px;
+  position: sticky;
+  top: 0;
+}
+.script-content {
+  padding: 14px;
+  font-size: 13px;
+  line-height: 1.8;
+}
+.script-content h1 { font-size: 14px; margin: 12px 0 6px; color: var(--primary); }
+.script-content h2 { font-size: 13px; margin: 10px 0 4px; color: var(--text); border-bottom: 1px solid var(--border); padding-bottom: 2px; }
+.script-content h3 { font-size: 12px; margin: 8px 0 2px; color: var(--text-sub); }
+.script-content p { margin: 4px 0; }
+.script-content strong { color: var(--primary-dark); }
+.script-content blockquote {
+  border-left: 3px solid var(--primary);
+  padding: 6px 10px;
+  background: white;
+  margin: 6px 0;
+  border-radius: 4px;
+  font-size: 12px;
+}
+.script-content hr { border: none; border-top: 1px dashed var(--border); margin: 10px 0; }
+.script-content ul { padding-left: 20px; }
+.script-content li { margin: 2px 0; }
+
+/* メモ入力 */
+.memo-input {
+  width: 100%;
+  border: 2px solid var(--border);
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-size: 14px;
+  resize: vertical;
+  min-height: 80px;
+  font-family: inherit;
+  background: #FFFBF7;
+  margin-bottom: 12px;
+}
+.memo-input:focus { outline: none; border-color: var(--primary); background: white; }
+
+/* 結果ボタン */
+.result-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.result-btn {
+  background: white;
+  border: 2px solid var(--border);
+  border-radius: 10px;
+  padding: 12px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.15s;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.result-btn:hover { transform: translateY(-1px); }
+.result-btn .emoji { font-size: 18px; }
+.result-btn[data-result="connected"]:hover { background: var(--blue-light); border-color: var(--blue); }
+.result-btn[data-result="absent"]:hover { background: var(--orange-light); border-color: var(--orange); }
+.result-btn[data-result="callback"]:hover { background: var(--yellow-light); border-color: var(--yellow); }
+.result-btn[data-result="declined"]:hover { background: var(--red-light); border-color: var(--red); }
+.result-btn[data-result="won"]:hover { background: var(--green-light); border-color: var(--green); }
+.result-btn[data-result="mailed"]:hover { background: var(--purple-light); border-color: var(--purple); }
+
+/* 次回予定 */
+.next-date-row {
+  display: grid;
+  grid-template-columns: 1fr auto auto auto auto;
+  gap: 6px;
+  margin-bottom: 12px;
+  align-items: center;
+}
+.next-date-row label { font-size: 12px; font-weight: 700; color: var(--text-sub); }
+.date-input {
+  border: 2px solid var(--border);
+  border-radius: 8px;
+  padding: 6px 10px;
+  font-size: 13px;
+  background: #FFFBF7;
+}
+.date-quick {
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 4px 8px;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  color: var(--text-sub);
+}
+.date-quick:hover { background: var(--primary); color: white; border-color: var(--primary); }
+
+/* 状態 */
+.loading {
+  text-align: center;
+  padding: 40px 20px;
+  color: var(--text-sub);
+}
+.loading .icon { font-size: 36px; margin-bottom: 8px; }
+.empty {
+  text-align: center;
+  padding: 40px 20px;
+  color: var(--text-mute);
+  background: white;
+  border-radius: 12px;
+}
+.empty .icon { font-size: 36px; margin-bottom: 8px; }
+.toast {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--text);
+  color: white;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 700;
+  z-index: 200;
+  opacity: 0;
+  transition: opacity 0.3s;
+  pointer-events: none;
+}
+.toast.show { opacity: 1; }
+.toast.success { background: var(--green); }
+.toast.error { background: var(--red); }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <div>
+      <h1>📞 ポスマネ｜アタック</h1>
+      <div class="sub">パンフレット配布許諾の獲得</div>
+    </div>
+    <div class="header-nav">
+      <a href="attack.html">📋 リスト作成</a>
+      <a href="fieldwork.html">🔍 FIELDWORK</a>
+    </div>
+  </div>
+
+  <div class="stats-row" id="stats-row">
+    <div class="stat-card all active" data-filter="all"><div class="num" id="cnt-all">-</div><div class="lbl">全件</div></div>
+    <div class="stat-card today" data-filter="today"><div class="num" id="cnt-today">-</div><div class="lbl">今日<br>のタスク</div></div>
+    <div class="stat-card pending" data-filter="pending"><div class="num" id="cnt-pending">-</div><div class="lbl">未着手</div></div>
+    <div class="stat-card callback" data-filter="pending_callback"><div class="num" id="cnt-callback">-</div><div class="lbl">後日<br>かけ直し</div></div>
+    <div class="stat-card contacted" data-filter="contacted"><div class="num" id="cnt-contacted">-</div><div class="lbl">担当者<br>つながった</div></div>
+    <div class="stat-card won" data-filter="won"><div class="num" id="cnt-won">-</div><div class="lbl">商談<br>獲得</div></div>
+    <div class="stat-card declined" data-filter="declined"><div class="num" id="cnt-declined">-</div><div class="lbl">お断り</div></div>
+  </div>
+
+  <div class="control-bar">
+    <input type="text" class="search-input" id="search-input" placeholder="🔍 会社名・住所・電話で検索...">
+    <select class="sort-select" id="sort-select">
+      <option value="default">並び順: 優先度順</option>
+      <option value="next_date">次回予定日順</option>
+      <option value="updated">更新日(新しい順)</option>
+      <option value="name">会社名順</option>
+      <option value="phone">電話あり優先</option>
+    </select>
+    <button class="refresh-btn" onclick="loadCompanies()">🔄 更新</button>
+  </div>
+
+  <div id="list-area">
+    <div class="loading"><div class="icon">⏳</div>読み込み中...</div>
+  </div>
+</div>
+
+<!-- アタックモーダル -->
+<div class="modal-backdrop" id="attack-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <h2>📞 電話アプローチ</h2>
+      <button class="modal-close" onclick="closeModal()">×</button>
+    </div>
+    <div class="modal-body" id="modal-body">
+      <!-- 動的生成 -->
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const SUPABASE_URL = 'https://osipzwbsfbgbegjowydm.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_yO0lVlOP_r-qhnwjxqq0UQ_qjxSrlnC';
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+let companies = [];
+let scripts = [];
+let currentFilter = 'all';
+let currentSort = 'default';
+let searchText = '';
+let currentCompany = null;
+
+// 結果定義
+const RESULT_DEFS = {
+  connected: { emoji: '😊', label: '担当者につながった', phase: 'contacted', needNext: false },
+  absent:    { emoji: '🏠', label: '不在・留守電',        phase: 'pending_callback', needNext: true, nextDays: 1 },
+  callback:  { emoji: '📅', label: '後日かけ直し',        phase: 'pending_callback', needNext: true, nextDays: 3 },
+  declined:  { emoji: '❌', label: 'お断り',              phase: 'declined', needNext: false },
+  won:       { emoji: '🎯', label: '商談獲得！',          phase: 'won', needNext: true, nextDays: 7 },
+  mailed:    { emoji: '✉️', label: 'メール送付した',      phase: 'mailed', needNext: true, nextDays: 3 },
+};
+
+// 初期化
+async function init() {
+  await Promise.all([loadCompanies(), loadScripts()]);
+}
+
+async function loadCompanies() {
+  try {
+    document.getElementById('list-area').innerHTML = '<div class="loading"><div class="icon">⏳</div>読み込み中...</div>';
+    const { data, error } = await sb
+      .from('posmane_attacks')
+      .select('*')
+      .order('updated_at', { ascending: false });
+    if (error) throw error;
+    companies = data || [];
+    renderStats();
+    renderList();
+  } catch (e) {
+    console.error(e);
+    document.getElementById('list-area').innerHTML = `<div class="empty"><div class="icon">⚠️</div>読み込みエラー: ${e.message}</div>`;
+  }
+}
+
+async function loadScripts() {
+  try {
+    const { data, error } = await sb
+      .from('posmane_scripts')
+      .select('*')
+      .eq('is_active', true)
+      .order('sort_order');
+    if (error) throw error;
+    scripts = data || [];
+  } catch (e) {
+    console.error('scripts load error:', e);
+    scripts = [];
+  }
+}
+
+// 統計
+function renderStats() {
+  const today = todayStr();
+  const counters = {
+    all: companies.length,
+    today: companies.filter(c => c.next_date && c.next_date <= today && c.phase !== 'declined' && c.phase !== 'won').length,
+    pending: companies.filter(c => c.phase === 'pending').length,
+    pending_callback: companies.filter(c => c.phase === 'pending_callback').length,
+    contacted: companies.filter(c => c.phase === 'contacted').length,
+    won: companies.filter(c => c.phase === 'won').length,
+    declined: companies.filter(c => c.phase === 'declined').length,
+  };
+  document.getElementById('cnt-all').textContent = counters.all;
+  document.getElementById('cnt-today').textContent = counters.today;
+  document.getElementById('cnt-pending').textContent = counters.pending;
+  document.getElementById('cnt-callback').textContent = counters.pending_callback;
+  document.getElementById('cnt-contacted').textContent = counters.contacted;
+  document.getElementById('cnt-won').textContent = counters.won;
+  document.getElementById('cnt-declined').textContent = counters.declined;
+}
+
+// 一覧描画
+function renderList() {
+  const area = document.getElementById('list-area');
+  const today = todayStr();
+  
+  // フィルタ
+  let list = [...companies];
+  if (currentFilter === 'today') {
+    list = list.filter(c => c.next_date && c.next_date <= today && c.phase !== 'declined' && c.phase !== 'won');
+  } else if (currentFilter !== 'all') {
+    list = list.filter(c => c.phase === currentFilter);
+  }
+  
+  // 検索
+  if (searchText) {
+    const q = searchText.toLowerCase();
+    list = list.filter(c => 
+      (c.company_name || '').toLowerCase().includes(q) ||
+      (c.address || '').toLowerCase().includes(q) ||
+      (c.phone || '').includes(q)
+    );
+  }
+  
+  // ソート
+  if (currentSort === 'default') {
+    // 優先度: 今日のタスク → 後日かけ直し → 未着手 → 担当者 → メール → 商談 → 断り
+    const phaseOrder = { pending_callback: 0, contacted: 1, mailed: 2, pending: 3, won: 4, declined: 5 };
+    list.sort((a, b) => {
+      // 今日タスク優先
+      const aT = (a.next_date && a.next_date <= today && a.phase !== 'declined' && a.phase !== 'won') ? 0 : 1;
+      const bT = (b.next_date && b.next_date <= today && b.phase !== 'declined' && b.phase !== 'won') ? 0 : 1;
+      if (aT !== bT) return aT - bT;
+      // フェーズ順
+      const pa = phaseOrder[a.phase] ?? 99;
+      const pb = phaseOrder[b.phase] ?? 99;
+      if (pa !== pb) return pa - pb;
+      // 電話ある方を優先
+      const ta = a.phone ? 0 : 1;
+      const tb = b.phone ? 0 : 1;
+      if (ta !== tb) return ta - tb;
+      return (a.company_name || '').localeCompare(b.company_name || '');
+    });
+  } else if (currentSort === 'next_date') {
+    list.sort((a, b) => (a.next_date || '9999-99-99').localeCompare(b.next_date || '9999-99-99'));
+  } else if (currentSort === 'updated') {
+    list.sort((a, b) => (b.updated_at || '').localeCompare(a.updated_at || ''));
+  } else if (currentSort === 'name') {
+    list.sort((a, b) => (a.company_name || '').localeCompare(b.company_name || ''));
+  } else if (currentSort === 'phone') {
+    list.sort((a, b) => {
+      const ta = a.phone ? 0 : 1;
+      const tb = b.phone ? 0 : 1;
+      if (ta !== tb) return ta - tb;
+      return (a.company_name || '').localeCompare(b.company_name || '');
+    });
+  }
+  
+  if (list.length === 0) {
+    area.innerHTML = `<div class="empty"><div class="icon">○</div>該当する企業がありません</div>`;
+    return;
+  }
+  
+  const today2 = today;
+  area.innerHTML = `
+    <div style="font-size:12px;color:var(--text-sub);margin-bottom:8px;">📋 ${list.length}件表示中 / 全${companies.length}件</div>
+    <div class="company-list">
+      ${list.map(c => {
+        const isToday = c.next_date && c.next_date <= today2 && c.phase !== 'declined' && c.phase !== 'won';
+        const phaseLabel = phaseLabel_(c.phase);
+        let nextDateHtml = '';
+        if (c.next_date) {
+          const cls = c.next_date < today2 ? 'past' : (c.next_date === today2 ? 'today' : '');
+          nextDateHtml = `<span class="next-date-tag ${cls}">📅 ${formatDate(c.next_date)}</span>`;
+        }
+        const visitCount = (c.logs || []).length;
+        return `
+        <div class="company-card ${c.phase} ${isToday ? 'today' : ''}" onclick="openModal('${c.id}')">
+          <div class="company-info">
+            <div class="company-name">
+              <span class="phase-badge phase-${c.phase}">${phaseLabel}</span>
+              ${escapeHtml(c.company_name)}
+            </div>
+            <div class="company-meta">
+              <span>📞 ${escapeHtml(c.phone || '電話なし')}</span>
+              <span>📍 ${escapeHtml((c.address || '').substring(0, 30))}${(c.address || '').length > 30 ? '...' : ''}</span>
+              ${visitCount > 0 ? `<span>📝 ${visitCount}回</span>` : ''}
+              ${nextDateHtml}
+            </div>
+          </div>
+          <button class="attack-btn">📞 開始</button>
+        </div>`;
+      }).join('')}
+    </div>
+  `;
+}
+
+function phaseLabel_(p) {
+  return ({
+    pending: '未着手',
+    contacted: '担当者◯',
+    pending_callback: '後日',
+    declined: 'お断り',
+    won: '🎯獲得',
+    mailed: '✉メール',
+  })[p] || p;
+}
+
+// モーダル
+function openModal(id) {
+  const c = companies.find(x => x.id === id);
+  if (!c) return;
+  currentCompany = c;
+  renderModal();
+  document.getElementById('attack-modal').classList.add('show');
+}
+
+function closeModal() {
+  document.getElementById('attack-modal').classList.remove('show');
+  currentCompany = null;
+}
+
+function renderModal() {
+  const c = currentCompany;
+  const phone = c.phone || '';
+  const script = scripts[0]; // 1つ目のスクリプト使用
+  const logs = (c.logs || []).slice().reverse(); // 新しい順
+  
+  document.getElementById('modal-body').innerHTML = `
+    <div class="target-card">
+      <div class="name">${escapeHtml(c.company_name)}</div>
+      ${phone 
+        ? `<div class="phone"><a href="tel:${escapeHtml(phone)}" style="color:inherit;text-decoration:none;">📞 ${escapeHtml(phone)}</a></div>`
+        : `<div class="phone empty">電話番号未登録</div>`}
+      ${c.address ? `<div class="info-row">📍 ${escapeHtml(c.address)}</div>` : ''}
+      ${c.genre ? `<div class="info-row">🏷️ ${escapeHtml(c.genre)}</div>` : ''}
+      ${c.website ? `<div class="info-row">🌐 <a href="${escapeHtml(c.website)}" target="_blank">${escapeHtml(c.website)}</a></div>` : ''}
+    </div>
+
+    <div class="history-section">
+      <div class="section-title">📚 過去のアタック履歴 (${logs.length}件)</div>
+      ${logs.length === 0 
+        ? '<div class="timeline-empty">まだアタック履歴はありません</div>'
+        : `<div class="timeline">
+            ${logs.slice(0, 5).map(log => {
+              const def = RESULT_DEFS[log.result] || { emoji: '📝', label: log.result };
+              return `
+              <div class="timeline-item">
+                <span class="date">${log.date || ''} ${log.time || ''}</span>
+                <span class="result">${def.emoji} ${def.label}</span>
+                ${log.next_date ? `<span style="color:var(--text-sub);margin-left:6px;">→ ${log.next_date}</span>` : ''}
+                ${log.memo ? `<div class="memo">💬 ${escapeHtml(log.memo)}</div>` : ''}
+              </div>`;
+            }).join('')}
+            ${logs.length > 5 ? `<div class="timeline-empty">他 ${logs.length - 5} 件...</div>` : ''}
+          </div>`
+      }
+    </div>
+
+    ${script ? `
+    <div class="script-box">
+      <div class="script-header">${script.emoji || '📝'} ${escapeHtml(script.name)}</div>
+      <div class="script-content">${markdownLite(script.content)}</div>
+    </div>` : ''}
+
+    <div class="section-title">✏️ メモ（必須）</div>
+    <textarea class="memo-input" id="memo-input" placeholder="例: 受付の田中さん対応、社長は午後在席、SNS活用したいとのこと">${escapeHtml(c.memo || '')}</textarea>
+
+    <div class="section-title">📅 次回予定日（オプション）</div>
+    <div class="next-date-row">
+      <input type="date" class="date-input" id="next-date-input" value="${c.next_date || ''}">
+      <button class="date-quick" onclick="setQuickDate(1)">明日</button>
+      <button class="date-quick" onclick="setQuickDate(3)">3日後</button>
+      <button class="date-quick" onclick="setQuickDate(7)">1週間後</button>
+      <button class="date-quick" onclick="setQuickDate(0)">クリア</button>
+    </div>
+
+    <div class="section-title">📝 電話の結果を選んで記録</div>
+    <div class="result-grid">
+      ${Object.entries(RESULT_DEFS).map(([key, def]) => `
+        <button class="result-btn" data-result="${key}" onclick="recordResult('${key}')">
+          <span class="emoji">${def.emoji}</span>
+          <span>${def.label}</span>
+        </button>
+      `).join('')}
+    </div>
+    
+    <div style="display:flex;gap:8px;">
+      <button class="refresh-btn" style="flex:1;" onclick="closeModal()">閉じる（記録しない）</button>
+    </div>
+  `;
+}
+
+function setQuickDate(days) {
+  const input = document.getElementById('next-date-input');
+  if (days === 0) { input.value = ''; return; }
+  const d = new Date();
+  d.setDate(d.getDate() + days);
+  input.value = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+
+async function recordResult(resultKey) {
+  const def = RESULT_DEFS[resultKey];
+  if (!def) return;
+  const memo = document.getElementById('memo-input').value.trim();
+  if (!memo) {
+    if (!confirm('メモが空欄ですが、このまま記録しますか？')) return;
+  }
+  
+  let nextDate = document.getElementById('next-date-input').value || null;
+  if (def.needNext && !nextDate) {
+    // 自動デフォルト
+    const d = new Date();
+    d.setDate(d.getDate() + def.nextDays);
+    nextDate = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  }
+  
+  const now = new Date();
+  const logEntry = {
+    id: 'log_' + Date.now(),
+    date: `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`,
+    time: `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`,
+    result: resultKey,
+    memo: memo,
+    next_date: nextDate,
+  };
+  
+  const newLogs = [...(currentCompany.logs || []), logEntry];
+  
+  try {
+    const { error } = await sb
+      .from('posmane_attacks')
+      .update({
+        phase: def.phase,
+        memo: memo,
+        next_date: nextDate,
+        logs: newLogs,
+      })
+      .eq('id', currentCompany.id);
+    if (error) throw error;
+    
+    // ローカル更新
+    currentCompany.phase = def.phase;
+    currentCompany.memo = memo;
+    currentCompany.next_date = nextDate;
+    currentCompany.logs = newLogs;
+    const idx = companies.findIndex(x => x.id === currentCompany.id);
+    if (idx >= 0) companies[idx] = { ...currentCompany };
+    
+    showToast(`✅ ${def.label} を記録しました`, 'success');
+    closeModal();
+    renderStats();
+    renderList();
+  } catch (e) {
+    console.error(e);
+    showToast(`⚠️ 保存エラー: ${e.message}`, 'error');
+  }
+}
+
+// ヘルパー
+function todayStr() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+function formatDate(s) {
+  if (!s) return '';
+  return s.substring(5).replace('-', '/');
+}
+function escapeHtml(s) {
+  return (s || '').toString().replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]);
+}
+function markdownLite(md) {
+  if (!md) return '';
+  let html = md;
+  // ヘッダー
+  html = html.replace(/^### (.+)$/gm, '<h3>$1</h3>');
+  html = html.replace(/^## (.+)$/gm, '<h2>$1</h2>');
+  html = html.replace(/^# (.+)$/gm, '<h1>$1</h1>');
+  // 区切り
+  html = html.replace(/^---+$/gm, '<hr>');
+  // 太字
+  html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+  // 引用
+  html = html.replace(/^> (.+)$/gm, '<blockquote>$1</blockquote>');
+  // 連続するblockquoteをまとめる
+  html = html.replace(/(<\/blockquote>\n<blockquote>)/g, '<br>');
+  // リスト
+  html = html.replace(/^- (.+)$/gm, '<li>$1</li>');
+  html = html.replace(/(<li>[\s\S]+?<\/li>)/g, m => `<ul>${m}</ul>`);
+  html = html.replace(/<\/ul>\n<ul>/g, '');
+  // 段落（連続改行）
+  html = html.split(/\n\n+/).map(p => {
+    if (p.startsWith('<') || p.trim() === '') return p;
+    return `<p>${p.replace(/\n/g, '<br>')}</p>`;
+  }).join('\n');
+  return html;
+}
+function showToast(msg, type) {
+  const t = document.getElementById('toast');
+  t.className = 'toast ' + (type || '');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+// イベント
+document.querySelectorAll('.stat-card').forEach(card => {
+  card.addEventListener('click', () => {
+    document.querySelectorAll('.stat-card').forEach(c => c.classList.remove('active'));
+    card.classList.add('active');
+    currentFilter = card.dataset.filter;
+    renderList();
+  });
+});
+
+document.getElementById('search-input').addEventListener('input', e => {
+  searchText = e.target.value;
+  renderList();
+});
+document.getElementById('sort-select').addEventListener('change', e => {
+  currentSort = e.target.value;
+  renderList();
+});
+document.getElementById('attack-modal').addEventListener('click', e => {
+  if (e.target.id === 'attack-modal') closeModal();
+});
+
+init();
+</script>
+</body>
+</html>
