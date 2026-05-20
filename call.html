@@ -270,6 +270,54 @@ body {
 .company-card.p1 { background: linear-gradient(to right, #FFFBEB, white 80px); }
 .company-card.p2 { background: linear-gradient(to right, #FFF7ED, white 80px); }
 .company-card.p3 { background: linear-gradient(to right, #FEF2F2, white 80px); }
+.company-card.excluded { opacity: 0.55; background: #F9FAFB; border-left-color: #D1D5DB !important; }
+.company-card.excluded .company-name { text-decoration: line-through; color: var(--text-mute); }
+
+/* 対象外ボタン(右上小さく) */
+.card-top-actions {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  display: flex;
+  gap: 4px;
+}
+.card-wrap { position: relative; }
+.exclude-btn {
+  background: white;
+  border: 1px solid var(--border-soft);
+  border-radius: 6px;
+  width: 26px;
+  height: 26px;
+  cursor: pointer;
+  font-size: 12px;
+  color: #9CA3AF;
+  transition: all 0.15s;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.exclude-btn:hover { background: #FEE2E2; color: #DC2626; border-color: #DC2626; transform: scale(1.1); }
+.exclude-btn.active { background: #DC2626; color: white; border-color: #DC2626; }
+.exclude-btn.active:hover { background: #B91C1C; }
+
+/* 含むチェックボックス */
+.include-excluded-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-sub);
+  cursor: pointer;
+  white-space: nowrap;
+  padding: 4px 8px;
+  background: #F9FAFB;
+  border-radius: 6px;
+  border: 1px solid var(--border-soft);
+}
+.include-excluded-row:hover { background: #F3F4F6; }
+.include-excluded-row input { cursor: pointer; }
 
 /* モーダル */
 .modal-backdrop {
@@ -597,6 +645,10 @@ body {
       <option value="name">会社名順</option>
       <option value="phone">電話あり優先</option>
     </select>
+    <label class="include-excluded-row">
+      <input type="checkbox" id="include-excluded">
+      ⛔ 対象外を含める
+    </label>
     <button class="refresh-btn" onclick="loadCompanies()">🔄 更新</button>
   </div>
 
@@ -632,6 +684,7 @@ let currentArea = 'all';
 let currentPriority = 'all';
 let currentSort = 'default';
 let searchText = '';
+let includeExcluded = false;
 let currentCompany = null;
 let currentStepKey = 'opening';
 let scriptHistory = []; // 戻る用
@@ -752,9 +805,14 @@ function renderList() {
   
   let list = [...companies];
   
+  // 対象外フィルタ (デフォルト: 対象外を除外)
+  if (!includeExcluded) {
+    list = list.filter(c => c.phase !== 'excluded');
+  }
+  
   // ステータスフィルタ
   if (currentFilter === 'today') {
-    list = list.filter(c => c.next_date && c.next_date <= today && c.phase !== 'declined' && c.phase !== 'won');
+    list = list.filter(c => c.next_date && c.next_date <= today && c.phase !== 'declined' && c.phase !== 'won' && c.phase !== 'excluded');
   } else if (currentFilter !== 'all') {
     list = list.filter(c => c.phase === currentFilter);
   }
@@ -871,31 +929,82 @@ function renderCard(c, today) {
   if (tiktok) links.push(`<a class="link-btn tiktok" href="${escapeHtml(tiktok)}" target="_blank" onclick="event.stopPropagation()">🎵 TT</a>`);
   
   const priorityClass = priority > 0 ? `p${priority} has-priority` : '';
+  const isExcluded = c.phase === 'excluded';
   
   return `
-    <div class="company-card ${c.phase} ${isToday ? 'today' : ''} ${priorityClass}">
-      <div class="company-info" onclick="openModal('${c.id}')" style="cursor:pointer;">
-        <div class="company-name">
-          <span class="phase-badge phase-${c.phase}">${phaseLab}</span>
-          ${escapeHtml(c.company_name)}
+    <div class="card-wrap">
+      <div class="company-card ${c.phase} ${isToday ? 'today' : ''} ${priorityClass} ${isExcluded ? 'excluded' : ''}">
+        <div class="company-info" onclick="openModal('${c.id}')" style="cursor:pointer;">
+          <div class="company-name">
+            <span class="phase-badge phase-${c.phase}">${phaseLab}</span>
+            ${escapeHtml(c.company_name)}
+          </div>
+          <div class="company-meta">
+            <span>🗺️ ${escapeHtml(areaTag)}</span>
+            <span>📞 ${escapeHtml(c.phone || '電話なし')}</span>
+            ${visitCount > 0 ? `<span>📝 ${visitCount}回</span>` : ''}
+            ${nextDateHtml}
+          </div>
+          <div class="link-row">
+            ${links.join('')}
+          </div>
         </div>
-        <div class="company-meta">
-          <span>🗺️ ${escapeHtml(areaTag)}</span>
-          <span>📞 ${escapeHtml(c.phone || '電話なし')}</span>
-          ${visitCount > 0 ? `<span>📝 ${visitCount}回</span>` : ''}
-          ${nextDateHtml}
-        </div>
-        <div class="link-row">
-          ${links.join('')}
+        <div class="card-actions">
+          <button class="priority-btn p${priority}" onclick="cyclePriority('${c.id}', event)" title="クリックで⭐を増減">
+            ${priorityLabel}
+          </button>
+          <button class="attack-btn" onclick="openModal('${c.id}')">${isExcluded ? '👁 詳細' : '📞 開始'}</button>
         </div>
       </div>
-      <div class="card-actions">
-        <button class="priority-btn p${priority}" onclick="cyclePriority('${c.id}', event)" title="クリックで⭐を増減">
-          ${priorityLabel}
+      <div class="card-top-actions">
+        <button class="exclude-btn ${isExcluded ? 'active' : ''}" onclick="toggleExclude('${c.id}', event)" 
+          title="${isExcluded ? '対象に戻す' : '対象外にする'}">
+          ${isExcluded ? '↩' : '⛔'}
         </button>
-        <button class="attack-btn" onclick="openModal('${c.id}')">📞 開始</button>
       </div>
     </div>`;
+}
+
+// 対象外にする/戻す
+async function toggleExclude(id, ev) {
+  if (ev) ev.stopPropagation();
+  const c = companies.find(x => x.id === id);
+  if (!c) return;
+  const isExcluded = c.phase === 'excluded';
+  const newPhase = isExcluded ? (c.logs && c.logs.length > 0 ? 'contacted' : 'pending') : 'excluded';
+  
+  if (!isExcluded) {
+    if (!confirm(`「${c.company_name}」を対象外にしますか？\n(再表示するにはオプションで「対象外を含める」をON)`)) return;
+  }
+  
+  // 対象外にする場合、以前のphaseを記録
+  const updates = { phase: newPhase };
+  let newSourceData = { ...(c.source_data || {}) };
+  if (!isExcluded) {
+    newSourceData._previous_phase = c.phase;
+    updates.source_data = newSourceData;
+  } else if (newSourceData._previous_phase) {
+    // 戻すとき、以前のphaseに復元
+    updates.phase = newSourceData._previous_phase;
+    delete newSourceData._previous_phase;
+    updates.source_data = newSourceData;
+  }
+  
+  try {
+    const { error } = await sb
+      .from('posmane_attacks')
+      .update(updates)
+      .eq('id', id);
+    if (error) throw error;
+    c.phase = updates.phase;
+    c.source_data = updates.source_data || c.source_data;
+    renderStats();
+    renderList();
+    showToast(isExcluded ? '✅ 対象に戻しました' : '⛔ 対象外にしました', 'success');
+  } catch (e) {
+    console.error(e);
+    showToast(`⚠️ ${e.message}`, 'error');
+  }
 }
 
 // 優先度サイクル: 0 → 1 → 2 → 3 → 0
@@ -976,9 +1085,14 @@ function renderModal() {
       ${c.address ? `<div class="info-row">📍 ${escapeHtml(c.address)}</div>` : ''}
       ${c.genre ? `<div class="info-row">🏷️ ${escapeHtml(c.genre)}</div>` : ''}
       ${modalLinks.length > 0 ? `<div class="modal-links">${modalLinks.join('')}</div>` : ''}
-      <div style="margin-top:12px;">
+      <div style="margin-top:12px; display:flex; gap:8px; justify-content:center; flex-wrap:wrap;">
         <button class="priority-btn modal-priority p${c.priority || 0}" onclick="cyclePriority('${c.id}', event); setTimeout(() => renderModal(), 300);">
           ${(c.priority || 0) === 0 ? '☆ 優先度なし' : '⭐'.repeat(c.priority || 0)}
+        </button>
+        <button class="exclude-btn ${c.phase === 'excluded' ? 'active' : ''}" 
+          style="width:auto;height:auto;padding:8px 14px;font-size:13px;"
+          onclick="toggleExclude('${c.id}', event); setTimeout(() => closeModal(), 300);">
+          ${c.phase === 'excluded' ? '↩ 対象に戻す' : '⛔ 対象外にする'}
         </button>
       </div>
     </div>
@@ -1232,6 +1346,10 @@ document.getElementById('area-select').addEventListener('change', e => {
 });
 document.getElementById('priority-select').addEventListener('change', e => {
   currentPriority = e.target.value;
+  renderList();
+});
+document.getElementById('include-excluded').addEventListener('change', e => {
+  includeExcluded = e.target.checked;
   renderList();
 });
 document.getElementById('sort-select').addEventListener('change', e => {
