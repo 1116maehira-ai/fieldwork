@@ -1,0 +1,753 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ポスマネ｜アタックリスト作成ツール</title>
+<style>
+:root {
+  --bg: #FFF8F1;
+  --card: #FFFFFF;
+  --primary: #FF6B35;
+  --primary-dark: #E55A2B;
+  --accent: #F7B731;
+  --text: #2D3436;
+  --text-sub: #636E72;
+  --border: #FFE3D0;
+  --green: #10B981;
+  --yellow: #F59E0B;
+  --orange: #F97316;
+  --red: #EF4444;
+  --gray: #94A3B8;
+  --blue: #3B82F6;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Yu Gothic UI", sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.6;
+  padding: 16px;
+  min-height: 100vh;
+}
+.container { max-width: 1100px; margin: 0 auto; }
+.header {
+  background: linear-gradient(135deg, var(--primary), #FF8C42);
+  color: white;
+  padding: 24px;
+  border-radius: 16px;
+  margin-bottom: 24px;
+  box-shadow: 0 4px 20px rgba(255,107,53,0.15);
+}
+.header h1 { font-size: 22px; font-weight: 800; margin-bottom: 4px; }
+.header p { font-size: 13px; opacity: 0.95; }
+.step { background: var(--card); border-radius: 16px; padding: 20px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); }
+.step-title { font-size: 16px; font-weight: 700; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+.step-num { display: inline-flex; width: 28px; height: 28px; background: var(--primary); color: white; border-radius: 50%; align-items: center; justify-content: center; font-size: 14px; font-weight: 700; }
+.upload-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+@media (max-width: 640px) { .upload-row { grid-template-columns: 1fr; } }
+.upload-box {
+  border: 2px dashed var(--border);
+  border-radius: 12px;
+  padding: 16px;
+  text-align: center;
+  background: #FFFBF7;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.upload-box:hover { border-color: var(--primary); background: #FFF3E8; }
+.upload-box.loaded { border-style: solid; border-color: var(--green); background: #F0FDF4; }
+.upload-box .label { font-size: 13px; font-weight: 700; color: var(--text); margin-bottom: 4px; }
+.upload-box .sub { font-size: 11px; color: var(--text-sub); margin-bottom: 8px; }
+.upload-box .filename { font-size: 12px; color: var(--green); font-weight: 600; word-break: break-all; }
+input[type="file"] { display: none; }
+.btn {
+  background: var(--primary);
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+  width: 100%;
+}
+.btn:hover { background: var(--primary-dark); transform: translateY(-1px); }
+.btn:disabled { background: #CCCCCC; cursor: not-allowed; transform: none; }
+.btn-secondary { background: white; color: var(--primary); border: 2px solid var(--primary); }
+.btn-secondary:hover { background: var(--primary); color: white; }
+.btn-success { background: var(--green); }
+.btn-success:hover { background: #059669; }
+.btn-danger { background: var(--red); }
+.btn-skip { background: var(--gray); }
+.stat-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin: 16px 0; }
+@media (max-width: 640px) { .stat-grid { grid-template-columns: repeat(2, 1fr); } }
+.stat {
+  background: #FFFBF7;
+  border-radius: 10px;
+  padding: 12px 8px;
+  text-align: center;
+  border: 1px solid var(--border);
+}
+.stat .num { font-size: 22px; font-weight: 800; }
+.stat .label { font-size: 10px; color: var(--text-sub); margin-top: 4px; line-height: 1.3; }
+.stat.confirmed .num { color: var(--green); }
+.stat.high .num { color: var(--yellow); }
+.stat.medium .num { color: var(--orange); }
+.stat.low .num { color: var(--blue); }
+.stat.attack .num { color: var(--text); }
+.review-card {
+  border: 2px solid var(--border);
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 12px;
+  background: #FFFBF7;
+}
+.review-progress { font-size: 12px; color: var(--text-sub); margin-bottom: 12px; font-weight: 600; display:flex; justify-content:space-between; align-items:center; }
+.confidence-badge {
+  display: inline-block;
+  font-size: 11px;
+  padding: 3px 10px;
+  border-radius: 12px;
+  font-weight: 700;
+}
+.conf-confirmed { background: #D1FAE5; color: #065F46; }
+.conf-high { background: #FEF3C7; color: #92400E; }
+.conf-medium { background: #FED7AA; color: #9A3412; }
+.conf-low { background: #DBEAFE; color: #1E40AF; }
+.review-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+@media (max-width: 640px) { .review-pair { grid-template-columns: 1fr; } }
+.review-side {
+  background: white;
+  border-radius: 8px;
+  padding: 12px;
+  border-left: 4px solid var(--primary);
+}
+.review-side.fw { border-left-color: var(--accent); }
+.review-side.pm { border-left-color: var(--primary); }
+.review-side .badge {
+  display: inline-block;
+  font-size: 10px;
+  padding: 2px 8px;
+  border-radius: 6px;
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+.review-side.fw .badge { background: #FEF3C7; color: #B45309; }
+.review-side.pm .badge { background: #FFE3D0; color: #C2410C; }
+.review-side .name { font-size: 14px; font-weight: 700; margin-bottom: 6px; word-break: break-all; }
+.review-side .detail { font-size: 12px; color: var(--text-sub); margin: 2px 0; word-break: break-all; }
+.score-box {
+  background: #FFF3E8;
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 12px;
+  color: var(--text-sub);
+  margin-bottom: 12px;
+}
+.score-box .reasons { color: var(--primary); font-weight: 600; }
+.action-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+.action-grid .btn { padding: 10px; font-size: 13px; }
+.exclude-list, .result-list {
+  max-height: 500px;
+  overflow-y: auto;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px;
+  background: #FFFBF7;
+}
+.list-item {
+  background: white;
+  border-radius: 6px;
+  padding: 10px 12px;
+  margin-bottom: 6px;
+  font-size: 13px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 8px;
+}
+.list-item .info { flex: 1; min-width: 0; }
+.list-item .name { font-weight: 700; word-break: break-all; }
+.list-item .sub { font-size: 11px; color: var(--text-sub); margin-top: 2px; word-break: break-all; }
+.list-item .reason { font-size: 11px; color: var(--primary); font-weight: 600; margin-top: 2px; }
+.list-item .actions { display: flex; gap: 4px; flex-shrink: 0; }
+.mini-btn {
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 4px 10px;
+  font-size: 11px;
+  cursor: pointer;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.mini-btn:hover { background: var(--primary); color: white; border-color: var(--primary); }
+.mini-btn.active-keep { background: var(--green); color: white; border-color: var(--green); }
+.tab-row { display: flex; gap: 4px; margin-bottom: 16px; border-bottom: 2px solid var(--border); overflow-x: auto; }
+.tab {
+  padding: 10px 14px;
+  background: transparent;
+  border: none;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  color: var(--text-sub);
+  border-bottom: 3px solid transparent;
+  margin-bottom: -2px;
+  white-space: nowrap;
+}
+.tab.active { color: var(--primary); border-bottom-color: var(--primary); }
+.hidden { display: none !important; }
+.empty-state { text-align: center; padding: 40px 20px; color: var(--text-sub); }
+.empty-state .icon { font-size: 40px; margin-bottom: 12px; }
+.note {
+  background: #FEF3C7;
+  border-left: 4px solid var(--accent);
+  padding: 10px 14px;
+  border-radius: 6px;
+  font-size: 12px;
+  margin-bottom: 16px;
+  color: #92400E;
+}
+.completion {
+  text-align: center;
+  padding: 30px 20px;
+  background: linear-gradient(135deg, #10B981, #34D399);
+  border-radius: 12px;
+  color: white;
+  margin-bottom: 16px;
+}
+.completion .icon { font-size: 48px; margin-bottom: 8px; }
+.completion h3 { font-size: 18px; margin-bottom: 4px; }
+.completion p { font-size: 13px; opacity: 0.95; }
+.legend-note {
+  font-size: 11px;
+  color: var(--text-sub);
+  background: #F3F4F6;
+  padding: 10px 14px;
+  border-radius: 6px;
+  margin-bottom: 12px;
+  line-height: 1.7;
+}
+.bulk-actions { display:flex; gap:8px; margin-bottom: 12px; flex-wrap:wrap; }
+.bulk-btn {
+  flex: 1; min-width: 130px;
+  background: white;
+  border: 2px solid var(--border);
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  color: var(--text);
+}
+.bulk-btn:hover { background: var(--bg); border-color: var(--primary); color: var(--primary); }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <h1>🎯 ポスマネ｜アタックリスト作成ツール</h1>
+    <p>FIELDWORKの営業候補からポスマネ既存配布先を除外して、新規アタック対象を抽出します</p>
+  </div>
+
+  <div class="step" id="step1">
+    <div class="step-title"><span class="step-num">1</span>CSVをアップロード</div>
+    <div class="upload-row">
+      <label class="upload-box" id="pm-box">
+        <input type="file" id="pm-file" accept=".csv">
+        <div class="label">📦 ポスマネ facilities</div>
+        <div class="sub">既存配布先（除外対象）</div>
+        <div class="filename" id="pm-name">クリックして選択</div>
+      </label>
+      <label class="upload-box" id="fw-box">
+        <input type="file" id="fw-file" accept=".csv">
+        <div class="label">🔍 FIELDWORK 営業候補</div>
+        <div class="sub">アタック候補のソース</div>
+        <div class="filename" id="fw-name">クリックして選択</div>
+      </label>
+    </div>
+    <div style="margin-top:16px;">
+      <button class="btn" id="match-btn" disabled>マッチング開始</button>
+    </div>
+  </div>
+
+  <div class="step hidden" id="step2">
+    <div class="step-title"><span class="step-num">2</span>マッチング結果</div>
+    <div class="stat-grid">
+      <div class="stat confirmed"><div class="num" id="cnt-confirmed">0</div><div class="label">🟢 確定<br>(自動除外)</div></div>
+      <div class="stat high"><div class="num" id="cnt-high">0</div><div class="label">🟡 高確度<br>(自動除外)</div></div>
+      <div class="stat medium"><div class="num" id="cnt-medium">0</div><div class="label">🟠 中確度<br>(要確認)</div></div>
+      <div class="stat low"><div class="num" id="cnt-low">0</div><div class="label">🔵 低確度<br>(要確認)</div></div>
+      <div class="stat attack"><div class="num" id="cnt-attack">0</div><div class="label">⚪ 重複なし<br>(アタック)</div></div>
+    </div>
+    <div class="legend-note">
+      <b>判定基準</b><br>
+      🟢 <b>確定</b>: 電話番号+名前が完全一致 → 確実に同じ施設、自動除外<br>
+      🟡 <b>高確度</b>: 電話番号が一致(名前は表記揺れ) → ほぼ確実に同じ、自動除外<br>
+      🟠 <b>中確度</b>: 名前は完全一致だが電話番号に差(別店舗の可能性) → 1件ずつ確認<br>
+      🔵 <b>低確度</b>: 名前が部分一致のみ → 1件ずつ確認
+    </div>
+    <div class="tab-row">
+      <button class="tab active" data-tab="review">⚠️ 要確認 (<span id="tab-review">0</span>)</button>
+      <button class="tab" data-tab="auto">✅ 自動除外 (<span id="tab-auto">0</span>)</button>
+      <button class="tab" data-tab="attack">⚪ アタック (<span id="tab-attack">0</span>)</button>
+    </div>
+
+    <div class="tab-content" id="tab-content-review">
+      <div id="review-area"></div>
+    </div>
+    <div class="tab-content hidden" id="tab-content-auto">
+      <div id="auto-area"></div>
+    </div>
+    <div class="tab-content hidden" id="tab-content-attack">
+      <div class="result-list" id="attack-area"></div>
+    </div>
+  </div>
+
+  <div class="step hidden" id="step3">
+    <div class="step-title"><span class="step-num">3</span>アタックリスト出力</div>
+    <div class="stat-grid" style="grid-template-columns: repeat(2, 1fr);">
+      <div class="stat attack"><div class="num" id="final-count">0</div><div class="label">📋 最終アタック件数</div></div>
+      <div class="stat confirmed"><div class="num" id="exclude-count">0</div><div class="label">🚫 除外確定件数</div></div>
+    </div>
+    <button class="btn btn-success" id="download-btn">💾 アタックリストCSVをダウンロード</button>
+    <button class="btn btn-secondary" id="download-excluded-btn" style="margin-top:8px;">📋 除外リストCSVも欲しい(検証用)</button>
+  </div>
+</div>
+
+<script>
+// ========== 正規化関数 ==========
+function nStrict(s) {
+  if (!s) return '';
+  s = s.normalize('NFKC').toLowerCase();
+  s = s.replace(/\s+/g, '');
+  ['(配布不要)','(配送不要)','|一旦行かない'].forEach(w => { s = s.split(w).join(''); });
+  s = s.replace(/[ー\-・,()（）&'"\.!\?]/g, '');
+  return s;
+}
+function nLoose(s) {
+  if (!s) return '';
+  s = nStrict(s);
+  ['ホテル','hotel','沖縄','okinawa','那覇','naha'].forEach(w => { s = s.split(w).join(''); });
+  return s;
+}
+function nTel(s) {
+  if (!s) return '';
+  return s.normalize('NFKC').replace(/\D/g, '');
+}
+function nAddr(s) {
+  if (!s) return '';
+  s = s.normalize('NFKC');
+  s = s.replace(/^日本、?/, '').replace(/〒\d{3}-?\d{4}/g, '').replace(/沖縄県/g, '').replace(/\s+/g, '');
+  return s;
+}
+function extractBanchi(s) {
+  if (!s) return '';
+  const m = s.match(/(\d+[-－‐]\d+[-－‐]?\d*)/);
+  return m ? m[1].replace(/[－‐]/g, '-') : '';
+}
+
+// ========== CSV パーサー ==========
+function parseCSV(text) {
+  text = text.replace(/^\uFEFF/, '');
+  const rows = [];
+  let row = [], cell = '', inQuote = false;
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i], n = text[i+1];
+    if (inQuote) {
+      if (c === '"' && n === '"') { cell += '"'; i++; }
+      else if (c === '"') { inQuote = false; }
+      else cell += c;
+    } else {
+      if (c === '"') inQuote = true;
+      else if (c === ',') { row.push(cell); cell = ''; }
+      else if (c === '\n' || c === '\r') {
+        if (c === '\r' && n === '\n') i++;
+        row.push(cell); cell = '';
+        if (row.length > 1 || row[0] !== '') rows.push(row);
+        row = [];
+      } else cell += c;
+    }
+  }
+  if (cell !== '' || row.length > 0) { row.push(cell); rows.push(row); }
+  if (rows.length === 0) return [];
+  const headers = rows[0];
+  return rows.slice(1).map(r => {
+    const obj = {};
+    headers.forEach((h, i) => obj[h] = (r[i] || '').trim());
+    return obj;
+  }).filter(o => Object.values(o).some(v => v !== ''));
+}
+
+// ========== State ==========
+let pmData = null, fwData = null;
+let matchResult = { confirmed: [], high: [], medium: [], low: [], attack: [] };
+let reviewDecisions = {};
+
+function setupUpload(fileId, boxId, nameId, target) {
+  const fileEl = document.getElementById(fileId);
+  const boxEl = document.getElementById(boxId);
+  const nameEl = document.getElementById(nameId);
+  fileEl.addEventListener('change', e => {
+    const f = e.target.files[0];
+    if (!f) return;
+    const reader = new FileReader();
+    reader.onload = ev => {
+      const data = parseCSV(ev.target.result);
+      if (target === 'pm') pmData = data; else fwData = data;
+      nameEl.textContent = `✓ ${f.name} (${data.length}件)`;
+      boxEl.classList.add('loaded');
+      document.getElementById('match-btn').disabled = !(pmData && fwData);
+    };
+    reader.readAsText(f, 'utf-8');
+  });
+}
+setupUpload('pm-file', 'pm-box', 'pm-name', 'pm');
+setupUpload('fw-file', 'fw-box', 'fw-name', 'fw');
+
+function runMatch() {
+  matchResult = { confirmed: [], high: [], medium: [], low: [], attack: [] };
+  reviewDecisions = {};
+  const pmNorm = pmData.map((r, idx) => ({
+    idx, raw: r, name: r.name || '', tel: r.tel || '', addr: r.address || '',
+    isExcluded: (r.name || '').startsWith('(配布不要)') || (r.name || '').startsWith('(配送不要)'),
+    nStrict: nStrict(r.name), nLoose: nLoose(r.name), nTel: nTel(r.tel), nAddr: nAddr(r.address),
+    banchi: extractBanchi(r.address),
+  }));
+  fwData.forEach((fw, fwIdx) => {
+    const fwName = fw['会社名'] || '';
+    const fwTel = fw['電話'] || '';
+    const fwAddr = fw['住所'] || '';
+    const fwNs = nStrict(fwName);
+    const fwNl = nLoose(fwName);
+    const fwNt = nTel(fwTel);
+    const fwNa = nAddr(fwAddr);
+    const fwBanchi = extractBanchi(fwAddr);
+    const candidates = [];
+    pmNorm.forEach(pm => {
+      let score = 0;
+      const reasons = [];
+      if (fwNt && pm.nTel && fwNt === pm.nTel) { score += 100; reasons.push('📞TEL一致'); }
+      if (fwNs && pm.nStrict && fwNs === pm.nStrict) { score += 80; reasons.push('🏷️名称完全一致'); }
+      else if (fwNs && pm.nStrict && fwNs.length >= 4 && pm.nStrict.length >= 4) {
+        const short = fwNs.length < pm.nStrict.length ? fwNs : pm.nStrict;
+        const long = fwNs.length < pm.nStrict.length ? pm.nStrict : fwNs;
+        if (long.includes(short) && short.length / long.length >= 0.5) {
+          score += 40; reasons.push(`🏷️名称部分一致(${short.length}/${long.length})`);
+        } else if (fwNl && pm.nLoose && fwNl.length >= 3 && pm.nLoose.length >= 3) {
+          if (fwNl === pm.nLoose) { score += 35; reasons.push('🏷️名称一致(共通語除去)'); }
+          else if (fwNl.includes(pm.nLoose) || pm.nLoose.includes(fwNl)) {
+            const s2 = fwNl.length < pm.nLoose.length ? fwNl : pm.nLoose;
+            const l2 = fwNl.length < pm.nLoose.length ? pm.nLoose : fwNl;
+            if (s2.length / l2.length >= 0.6) { score += 25; reasons.push(`🏷️部分一致(共通語除去 ${s2.length}/${l2.length})`); }
+          }
+        }
+      }
+      if (fwAddr && pm.addr && fwBanchi && pm.banchi && fwBanchi === pm.banchi) {
+        const preFw = fwNa.includes(fwBanchi) ? fwNa.split(fwBanchi)[0] : '';
+        const prePm = pm.nAddr.includes(pm.banchi) ? pm.nAddr.split(pm.banchi)[0] : '';
+        if (preFw && prePm) {
+          const mFw = preFw.match(/([^0-9]+?(?:市|町|村|区))/);
+          const mPm = prePm.match(/([^0-9]+?(?:市|町|村|区))/);
+          if (mFw && mPm && mFw[1] === mPm[1]) { score += 70; reasons.push(`📍同一番地(${mFw[1]}${fwBanchi})`); }
+          else { score += 30; reasons.push(`📍番地一致(${fwBanchi})`); }
+        }
+      }
+      if (score >= 40) candidates.push({ score, reasons, pm });
+    });
+    candidates.sort((a,b) => b.score - a.score);
+    const best = candidates[0];
+    if (!best) { matchResult.attack.push({ fw, fwIdx }); return; }
+    const m = { fw, fwIdx, pm: best.pm.raw, pmExcluded: best.pm.isExcluded, score: best.score, reasons: best.reasons };
+    if (best.score >= 150) matchResult.confirmed.push(m);
+    else if (best.score >= 100) matchResult.high.push(m);
+    else if (best.score >= 70) matchResult.medium.push(m);
+    else matchResult.low.push(m);
+  });
+  renderResults();
+}
+
+function renderResults() {
+  document.getElementById('step2').classList.remove('hidden');
+  document.getElementById('step3').classList.remove('hidden');
+  document.getElementById('cnt-confirmed').textContent = matchResult.confirmed.length;
+  document.getElementById('cnt-high').textContent = matchResult.high.length;
+  document.getElementById('cnt-medium').textContent = matchResult.medium.length;
+  document.getElementById('cnt-low').textContent = matchResult.low.length;
+  document.getElementById('cnt-attack').textContent = matchResult.attack.length;
+  document.getElementById('tab-review').textContent = matchResult.medium.length + matchResult.low.length;
+  document.getElementById('tab-auto').textContent = matchResult.confirmed.length + matchResult.high.length;
+  document.getElementById('tab-attack').textContent = matchResult.attack.length;
+  renderReview();
+  renderAuto();
+  renderAttack();
+  updateFinalCount();
+  document.getElementById('step2').scrollIntoView({ behavior: 'smooth' });
+}
+
+function renderReview() {
+  const area = document.getElementById('review-area');
+  const items = [
+    ...matchResult.medium.map((m, i) => ({m, key: `med-${i}`, conf: 'medium', label: '🟠 中確度'})),
+    ...matchResult.low.map((m, i) => ({m, key: `low-${i}`, conf: 'low', label: '🔵 低確度'})),
+  ];
+  if (items.length === 0) {
+    area.innerHTML = '<div class="empty-state"><div class="icon">✨</div>要確認の案件はありません</div>';
+    return;
+  }
+  const undecided = items.filter(x => !reviewDecisions[x.key]);
+  const total = items.length;
+  const done = total - undecided.length;
+  let html = `
+    <div class="bulk-actions">
+      <button class="bulk-btn" onclick="bulkDecide('exclude')">▼ 残り全部「同じ(除外)」</button>
+      <button class="bulk-btn" onclick="bulkDecide('keep')">▼ 残り全部「別物(残す)」</button>
+      <button class="bulk-btn" onclick="resetReview()">▼ 判定をリセット</button>
+    </div>
+  `;
+  if (undecided.length === 0) {
+    html += `<div class="completion"><div class="icon">🎉</div><h3>すべての判定が完了！</h3><p>${total}件すべてYES/NO判定されました</p></div>`;
+  } else {
+    const cur = undecided[0];
+    const m = cur.m;
+    const fw = m.fw;
+    const pm = m.pm;
+    const confClass = cur.conf === 'medium' ? 'conf-medium' : 'conf-low';
+    html += `
+      <div class="review-card">
+        <div class="review-progress">
+          <span>📍 ${done + 1} / ${total} 件目</span>
+          <span class="confidence-badge ${confClass}">${cur.label}</span>
+        </div>
+        <div class="score-box">
+          🔍 マッチ理由: <span class="reasons">${m.reasons.join(' / ')}</span> (スコア: ${m.score})
+          ${m.pmExcluded ? '<br>⚠️ ポスマネ側は「(配布不要)」マーク付き' : ''}
+        </div>
+        <div class="review-pair">
+          <div class="review-side fw">
+            <span class="badge">FIELDWORK</span>
+            <div class="name">${escapeHtml(fw['会社名'])}</div>
+            <div class="detail">📞 ${escapeHtml(fw['電話'] || '電話番号なし')}</div>
+            <div class="detail">📍 ${escapeHtml(fw['住所'] || '住所なし')}</div>
+            <div class="detail">🏷️ ${escapeHtml(fw['業種'] || '')}</div>
+          </div>
+          <div class="review-side pm">
+            <span class="badge">ポスマネ既存</span>
+            <div class="name">${escapeHtml(pm.name)}</div>
+            <div class="detail">📞 ${escapeHtml(pm.tel || '電話番号なし')}</div>
+            <div class="detail">📍 ${escapeHtml(pm.address || '住所なし')}</div>
+            <div class="detail">🏷️ ${escapeHtml(pm.genre || '')}</div>
+          </div>
+        </div>
+        <p style="font-size:13px;font-weight:600;margin-bottom:8px;">この2つは同じ施設ですか？</p>
+        <div class="action-grid">
+          <button class="btn btn-danger" onclick="decide('${cur.key}', 'exclude')">✅ 同じ<br>(除外)</button>
+          <button class="btn btn-success" onclick="decide('${cur.key}', 'keep')">❌ 別物<br>(アタック対象)</button>
+          <button class="btn btn-skip" onclick="decide('${cur.key}', 'skip')">⏭️ 後で<br>判断</button>
+        </div>
+      </div>
+    `;
+  }
+  const decided = items.filter(x => reviewDecisions[x.key] && reviewDecisions[x.key] !== 'skip');
+  if (decided.length > 0) {
+    html += `<div style="margin-top:16px;"><b style="font-size:13px;">判定済み (${decided.length}件)</b></div>`;
+    html += '<div class="exclude-list" style="max-height:300px;">';
+    decided.forEach(x => {
+      const d = reviewDecisions[x.key];
+      const label = d === 'exclude' ? '🚫 除外' : '⚪ アタック残す';
+      html += `
+        <div class="list-item">
+          <div class="info">
+            <div class="name">${escapeHtml(x.m.fw['会社名'])}</div>
+            <div class="sub">↔ ${escapeHtml(x.m.pm.name)}</div>
+            <div class="reason">${x.m.reasons.join(', ')}</div>
+          </div>
+          <div class="actions">
+            <button class="mini-btn" onclick="decide('${x.key}', '${d === 'exclude' ? 'keep' : 'exclude'}')">${label} → 反転</button>
+          </div>
+        </div>
+      `;
+    });
+    html += '</div>';
+  }
+  area.innerHTML = html;
+}
+
+function decide(key, decision) {
+  reviewDecisions[key] = decision;
+  renderReview();
+  updateFinalCount();
+}
+function bulkDecide(decision) {
+  const allItems = [
+    ...matchResult.medium.map((m, i) => ({key: `med-${i}`})),
+    ...matchResult.low.map((m, i) => ({key: `low-${i}`})),
+  ];
+  const undecCount = allItems.filter(x => !reviewDecisions[x.key]).length;
+  if (undecCount === 0) { alert('未判定の項目がありません'); return; }
+  if (!confirm(`未判定の ${undecCount}件 を「${decision === 'exclude' ? '同じ(除外)' : '別物(残す)'}」にしますか？`)) return;
+  allItems.forEach(x => { if (!reviewDecisions[x.key]) reviewDecisions[x.key] = decision; });
+  renderReview();
+  updateFinalCount();
+}
+function resetReview() {
+  if (!confirm('全ての判定をリセットしますか？')) return;
+  reviewDecisions = {};
+  renderReview();
+  renderAuto();
+  updateFinalCount();
+}
+
+function renderAuto() {
+  const area = document.getElementById('auto-area');
+  const items = [
+    ...matchResult.confirmed.map((m, i) => ({m, conf: 'confirmed', label: '🟢 確定', key: `conf-${i}`})),
+    ...matchResult.high.map((m, i) => ({m, conf: 'high', label: '🟡 高確度', key: `hi-${i}`})),
+  ];
+  if (items.length === 0) {
+    area.innerHTML = '<div class="empty-state"><div class="icon">○</div>自動除外件数はゼロです</div>';
+    return;
+  }
+  area.innerHTML = `
+    <div class="note">これらは確実に同じ施設として自動除外されます。誤検知を発見したら「アタックに戻す」を押してください。</div>
+    <div class="exclude-list">
+      ${items.map(x => {
+        const m = x.m;
+        const reverted = reviewDecisions[x.key] === 'keep';
+        return `
+        <div class="list-item">
+          <div class="info">
+            <div class="name">
+              <span class="confidence-badge conf-${x.conf}" style="font-size:9px;padding:1px 6px;">${x.label}</span>
+              ${escapeHtml(m.fw['会社名'])}
+            </div>
+            <div class="sub">↔ PM: ${escapeHtml(m.pm.name)}</div>
+            <div class="sub">📞 FW:${escapeHtml(m.fw['電話']||'-')} ↔ PM:${escapeHtml(m.pm.tel||'-')}</div>
+            <div class="sub">📍 FW:${escapeHtml(m.fw['住所']||'-')}</div>
+            <div class="sub">　　 PM:${escapeHtml(m.pm.address||'-')}</div>
+            <div class="reason">${m.reasons.join(', ')} (${m.score})</div>
+          </div>
+          <div class="actions">
+            <button class="mini-btn ${reverted ? 'active-keep' : ''}" onclick="toggleAutoExclude('${x.key}')">
+              ${reverted ? '✅ アタックに戻す中' : '🔄 アタックに戻す'}
+            </button>
+          </div>
+        </div>`;
+      }).join('')}
+    </div>
+  `;
+}
+
+function toggleAutoExclude(key) {
+  if (reviewDecisions[key] === 'keep') delete reviewDecisions[key];
+  else reviewDecisions[key] = 'keep';
+  renderAuto();
+  updateFinalCount();
+}
+
+function renderAttack() {
+  const area = document.getElementById('attack-area');
+  const finalList = getFinalAttackList();
+  if (finalList.length === 0) {
+    area.innerHTML = '<div class="empty-state"><div class="icon">○</div>該当なし</div>';
+    return;
+  }
+  const limit = 100;
+  area.innerHTML = finalList.slice(0, limit).map(fw => `
+    <div class="list-item">
+      <div class="info">
+        <div class="name">${escapeHtml(fw['会社名'])}</div>
+        <div class="sub">📞 ${escapeHtml(fw['電話'] || '電話なし')} / 📍 ${escapeHtml(fw['住所'] || '')}</div>
+      </div>
+    </div>
+  `).join('') + (finalList.length > limit ? `<div class="empty-state">他 ${finalList.length - limit} 件...</div>` : '');
+}
+
+function getFinalAttackList() {
+  let list = matchResult.attack.map(m => m.fw);
+  matchResult.confirmed.forEach((m, i) => { if (reviewDecisions[`conf-${i}`] === 'keep') list.push(m.fw); });
+  matchResult.high.forEach((m, i) => { if (reviewDecisions[`hi-${i}`] === 'keep') list.push(m.fw); });
+  matchResult.medium.forEach((m, i) => { if (reviewDecisions[`med-${i}`] === 'keep') list.push(m.fw); });
+  matchResult.low.forEach((m, i) => { if (reviewDecisions[`low-${i}`] === 'keep') list.push(m.fw); });
+  return list;
+}
+
+function getExcludedList() {
+  const excluded = [];
+  matchResult.confirmed.forEach((m, i) => {
+    if (reviewDecisions[`conf-${i}`] !== 'keep') excluded.push({...m.fw, 除外理由: '🟢確定(自動)', マッチ先: m.pm.name, マッチ詳細: m.reasons.join('/'), スコア: m.score});
+  });
+  matchResult.high.forEach((m, i) => {
+    if (reviewDecisions[`hi-${i}`] !== 'keep') excluded.push({...m.fw, 除外理由: '🟡高確度(自動)', マッチ先: m.pm.name, マッチ詳細: m.reasons.join('/'), スコア: m.score});
+  });
+  matchResult.medium.forEach((m, i) => {
+    if (reviewDecisions[`med-${i}`] === 'exclude') excluded.push({...m.fw, 除外理由: '🟠中確度(手動)', マッチ先: m.pm.name, マッチ詳細: m.reasons.join('/'), スコア: m.score});
+  });
+  matchResult.low.forEach((m, i) => {
+    if (reviewDecisions[`low-${i}`] === 'exclude') excluded.push({...m.fw, 除外理由: '🔵低確度(手動)', マッチ先: m.pm.name, マッチ詳細: m.reasons.join('/'), スコア: m.score});
+  });
+  return excluded;
+}
+
+function updateFinalCount() {
+  document.getElementById('final-count').textContent = getFinalAttackList().length;
+  document.getElementById('exclude-count').textContent = getExcludedList().length;
+  renderAttack();
+}
+
+document.querySelectorAll('.tab').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden'));
+    btn.classList.add('active');
+    document.getElementById('tab-content-' + btn.dataset.tab).classList.remove('hidden');
+  });
+});
+
+function makeCSV(rows, headers) {
+  const head = headers.join(',');
+  const body = rows.map(r => headers.map(h => {
+    const v = (r[h] || '').toString().replace(/"/g, '""');
+    return `"${v}"`;
+  }).join(',')).join('\n');
+  return '\uFEFF' + head + '\n' + body;
+}
+
+document.getElementById('download-btn').addEventListener('click', () => {
+  const list = getFinalAttackList();
+  if (list.length === 0) { alert('アタック対象がありません'); return; }
+  const headers = Object.keys(fwData[0]);
+  const csv = makeCSV(list, headers);
+  download(csv, `posmane_attack_${dateStr()}.csv`);
+});
+
+document.getElementById('download-excluded-btn').addEventListener('click', () => {
+  const excluded = getExcludedList();
+  if (excluded.length === 0) { alert('除外データがありません'); return; }
+  const headers = [...Object.keys(fwData[0]), '除外理由', 'マッチ先', 'マッチ詳細', 'スコア'];
+  const csv = makeCSV(excluded, headers);
+  download(csv, `posmane_excluded_${dateStr()}.csv`);
+});
+
+function download(text, filename) {
+  const blob = new Blob([text], { type: 'text/csv;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename; a.click();
+  URL.revokeObjectURL(url);
+}
+function dateStr() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+function escapeHtml(s) {
+  return (s || '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]);
+}
+
+document.getElementById('match-btn').addEventListener('click', runMatch);
+</script>
+</body>
+</html>
