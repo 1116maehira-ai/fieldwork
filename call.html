@@ -72,7 +72,7 @@ body {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
   gap: 6px;
-  margin-bottom: 16px;
+  margin-bottom: 12px;
 }
 @media (max-width: 700px) {
   .stats-row { grid-template-columns: repeat(4, 1fr); }
@@ -111,7 +111,7 @@ body {
 }
 .search-input {
   flex: 1;
-  min-width: 200px;
+  min-width: 180px;
   padding: 8px 12px;
   border: 2px solid var(--border);
   border-radius: 8px;
@@ -119,7 +119,7 @@ body {
   background: #FFFBF7;
 }
 .search-input:focus { outline: none; border-color: var(--primary); }
-.sort-select {
+.sort-select, .area-select {
   padding: 8px 12px;
   border: 2px solid var(--border);
   border-radius: 8px;
@@ -127,6 +127,7 @@ body {
   background: white;
   font-weight: 600;
   cursor: pointer;
+  min-width: 130px;
 }
 .refresh-btn {
   padding: 8px 14px;
@@ -150,7 +151,6 @@ body {
   grid-template-columns: 1fr auto;
   gap: 12px;
   align-items: center;
-  cursor: pointer;
   border-left: 4px solid var(--border);
   transition: all 0.15s;
 }
@@ -164,7 +164,7 @@ body {
 .company-card.today { background: #FEF2F2; border-left-color: var(--red); }
 .company-info { min-width: 0; }
 .company-name { font-size: 15px; font-weight: 700; word-break: break-all; margin-bottom: 4px; }
-.company-meta { display: flex; gap: 10px; flex-wrap: wrap; font-size: 12px; color: var(--text-sub); }
+.company-meta { display: flex; gap: 10px; flex-wrap: wrap; font-size: 12px; color: var(--text-sub); margin-bottom: 6px; }
 .company-meta span { display:inline-flex; align-items:center; gap:3px; }
 .phase-badge {
   display: inline-block;
@@ -191,6 +191,41 @@ body {
 }
 .next-date-tag.today { background: var(--red-light); color: #991B1B; }
 .next-date-tag.past { background: #FEE2E2; color: #7F1D1D; }
+
+/* リンクボタン */
+.link-row {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.link-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 4px 8px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-sub);
+  text-decoration: none;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+.link-btn:hover { background: var(--primary); color: white; border-color: var(--primary); transform: translateY(-1px); }
+.link-btn.hp { color: #0EA5E9; border-color: #BAE6FD; }
+.link-btn.hp:hover { background: #0EA5E9; color: white; }
+.link-btn.insta { color: #DB2777; border-color: #FBCFE8; }
+.link-btn.insta:hover { background: linear-gradient(135deg, #F472B6, #DB2777); color: white; }
+.link-btn.fb { color: #2563EB; border-color: #BFDBFE; }
+.link-btn.fb:hover { background: #2563EB; color: white; }
+.link-btn.tiktok { color: #000; border-color: #D4D4D8; }
+.link-btn.tiktok:hover { background: #000; color: white; }
+.link-btn.tel { color: var(--green); border-color: #A7F3D0; }
+.link-btn.tel:hover { background: var(--green); color: white; }
+
+.card-actions { display: flex; flex-direction: column; gap: 6px; align-items: flex-end; }
 .attack-btn {
   background: linear-gradient(135deg, var(--primary), #FF8C42);
   color: white;
@@ -204,6 +239,37 @@ body {
   box-shadow: 0 2px 8px rgba(255,107,53,0.25);
 }
 .attack-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(255,107,53,0.35); }
+
+/* ⭐ 優先度 */
+.priority-btn {
+  background: white;
+  border: 2px solid var(--border);
+  border-radius: 8px;
+  padding: 6px 10px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 700;
+  transition: all 0.15s;
+  white-space: nowrap;
+  letter-spacing: -2px;
+  min-width: 60px;
+  text-align: center;
+}
+.priority-btn:hover { transform: scale(1.05); }
+.priority-btn.p0 { color: #D1D5DB; }
+.priority-btn.p1 { background: #FEF3C7; border-color: #FBBF24; color: #D97706; }
+.priority-btn.p2 { background: #FED7AA; border-color: #FB923C; color: #C2410C; }
+.priority-btn.p3 { background: #FECACA; border-color: #EF4444; color: #B91C1C; box-shadow: 0 2px 8px rgba(239,68,68,0.2); }
+.priority-btn.modal-priority {
+  font-size: 24px;
+  padding: 10px 20px;
+  letter-spacing: 0;
+  min-width: 120px;
+}
+.company-card.has-priority { border-left-width: 6px; }
+.company-card.p1 { background: linear-gradient(to right, #FFFBEB, white 80px); }
+.company-card.p2 { background: linear-gradient(to right, #FFF7ED, white 80px); }
+.company-card.p3 { background: linear-gradient(to right, #FEF2F2, white 80px); }
 
 /* モーダル */
 .modal-backdrop {
@@ -221,7 +287,7 @@ body {
   background: white;
   border-radius: 16px;
   width: 100%;
-  max-width: 700px;
+  max-width: 720px;
   margin-top: 12px;
   margin-bottom: 12px;
   overflow: hidden;
@@ -249,6 +315,7 @@ body {
 .target-card .phone { font-size: 22px; font-weight: 800; color: var(--primary); margin-bottom: 6px; }
 .target-card .phone.empty { color: var(--text-mute); font-size: 16px; }
 .target-card .info-row { font-size: 12px; color: var(--text-sub); margin: 2px 0; word-break: break-all; }
+.target-card .modal-links { display: flex; gap: 6px; justify-content: center; margin-top: 10px; flex-wrap: wrap; }
 
 /* 過去履歴タイムライン */
 .history-section { margin-bottom: 20px; }
@@ -282,45 +349,101 @@ body {
 .timeline-item .memo { color: var(--text-sub); margin-top: 4px; word-break: break-all; }
 .timeline-empty { font-size: 12px; color: var(--text-mute); padding: 8px; text-align: center; }
 
-/* スクリプト */
-.script-box {
+/* スクリプト分岐 */
+.script-flow {
   background: #FFFBF7;
   border: 2px solid var(--border);
   border-radius: 12px;
   margin-bottom: 16px;
-  max-height: 340px;
-  overflow-y: auto;
+  overflow: hidden;
 }
-.script-header {
+.script-step-header {
   background: var(--primary);
   color: white;
-  padding: 10px 14px;
+  padding: 12px 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.script-step-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   font-weight: 700;
-  font-size: 13px;
-  position: sticky;
-  top: 0;
+  font-size: 14px;
 }
-.script-content {
-  padding: 14px;
-  font-size: 13px;
-  line-height: 1.8;
+.script-step-title .emoji { font-size: 20px; }
+.script-back-btn {
+  background: rgba(255,255,255,0.2);
+  border: 1px solid rgba(255,255,255,0.4);
+  color: white;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
 }
-.script-content h1 { font-size: 14px; margin: 12px 0 6px; color: var(--primary); }
-.script-content h2 { font-size: 13px; margin: 10px 0 4px; color: var(--text); border-bottom: 1px solid var(--border); padding-bottom: 2px; }
-.script-content h3 { font-size: 12px; margin: 8px 0 2px; color: var(--text-sub); }
-.script-content p { margin: 4px 0; }
-.script-content strong { color: var(--primary-dark); }
-.script-content blockquote {
-  border-left: 3px solid var(--primary);
-  padding: 6px 10px;
+.script-back-btn:hover { background: rgba(255,255,255,0.35); }
+.script-speech {
+  padding: 16px;
+  font-size: 14px;
+  line-height: 1.9;
   background: white;
-  margin: 6px 0;
-  border-radius: 4px;
-  font-size: 12px;
+  border-bottom: 1px solid var(--border);
 }
-.script-content hr { border: none; border-top: 1px dashed var(--border); margin: 10px 0; }
-.script-content ul { padding-left: 20px; }
-.script-content li { margin: 2px 0; }
+.script-speech strong { color: var(--primary-dark); font-weight: 700; background: linear-gradient(transparent 60%, #FFE3D0 60%); }
+.script-branches {
+  padding: 14px 16px;
+  background: #FFFBF7;
+}
+.script-branches-title {
+  font-size: 12px;
+  color: var(--text-sub);
+  font-weight: 700;
+  margin-bottom: 10px;
+}
+.branch-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 6px;
+}
+@media (min-width: 600px) {
+  .branch-grid { grid-template-columns: 1fr 1fr; }
+}
+.branch-btn {
+  background: white;
+  border: 2px solid var(--border);
+  border-radius: 10px;
+  padding: 12px 14px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  text-align: left;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.15s;
+  color: var(--text);
+}
+.branch-btn:hover { transform: translateY(-1px); box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+.branch-btn .arrow { margin-left: auto; opacity: 0.5; }
+.branch-btn[data-color="green"]:hover { background: var(--green-light); border-color: var(--green); }
+.branch-btn[data-color="yellow"]:hover { background: var(--yellow-light); border-color: var(--yellow); }
+.branch-btn[data-color="orange"]:hover { background: var(--orange-light); border-color: var(--orange); }
+.branch-btn[data-color="red"]:hover { background: var(--red-light); border-color: var(--red); }
+.branch-btn[data-color="blue"]:hover { background: var(--blue-light); border-color: var(--blue); }
+.branch-btn[data-color="purple"]:hover { background: var(--purple-light); border-color: var(--purple); }
+.branch-btn[data-color="primary"]:hover { background: #FFF3E8; border-color: var(--primary); }
+
+/* 結果ボタンセクション */
+.finish-section {
+  background: #FFF3E8;
+  border: 2px dashed var(--primary);
+  border-radius: 12px;
+  padding: 14px;
+  margin-bottom: 12px;
+}
+.finish-section .ttl { font-size: 13px; font-weight: 700; margin-bottom: 10px; color: var(--primary-dark); }
 
 /* メモ入力 */
 .memo-input {
@@ -375,7 +498,6 @@ body {
   margin-bottom: 12px;
   align-items: center;
 }
-.next-date-row label { font-size: 12px; font-weight: 700; color: var(--text-sub); }
 .date-input {
   border: 2px solid var(--border);
   border-radius: 8px;
@@ -456,8 +578,20 @@ body {
 
   <div class="control-bar">
     <input type="text" class="search-input" id="search-input" placeholder="🔍 会社名・住所・電話で検索...">
+    <select class="area-select" id="area-select">
+      <option value="all">エリア: すべて</option>
+    </select>
+    <select class="area-select" id="priority-select" style="min-width:120px;">
+      <option value="all">⭐ すべて</option>
+      <option value="3">⭐⭐⭐ のみ</option>
+      <option value="2plus">⭐⭐ 以上</option>
+      <option value="1plus">⭐ 以上</option>
+      <option value="0">⭐なし</option>
+    </select>
     <select class="sort-select" id="sort-select">
       <option value="default">並び順: 優先度順</option>
+      <option value="priority">⭐ 多い順</option>
+      <option value="area">エリア順</option>
       <option value="next_date">次回予定日順</option>
       <option value="updated">更新日(新しい順)</option>
       <option value="name">会社名順</option>
@@ -494,9 +628,13 @@ const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 let companies = [];
 let scripts = [];
 let currentFilter = 'all';
+let currentArea = 'all';
+let currentPriority = 'all';
 let currentSort = 'default';
 let searchText = '';
 let currentCompany = null;
+let currentStepKey = 'opening';
+let scriptHistory = []; // 戻る用
 
 // 結果定義
 const RESULT_DEFS = {
@@ -506,6 +644,14 @@ const RESULT_DEFS = {
   declined:  { emoji: '❌', label: 'お断り',              phase: 'declined', needNext: false },
   won:       { emoji: '🎯', label: '商談獲得！',          phase: 'won', needNext: true, nextDays: 7 },
   mailed:    { emoji: '✉️', label: 'メール送付した',      phase: 'mailed', needNext: true, nextDays: 3 },
+};
+
+// FINISH_*マッピング
+const FINISH_TO_RESULT = {
+  FINISH_WON: 'won',
+  FINISH_MAIL: 'mailed',
+  FINISH_CALLBACK: 'callback',
+  FINISH_DECLINED: 'declined',
 };
 
 // 初期化
@@ -522,6 +668,7 @@ async function loadCompanies() {
       .order('updated_at', { ascending: false });
     if (error) throw error;
     companies = data || [];
+    buildAreaOptions();
     renderStats();
     renderList();
   } catch (e) {
@@ -543,6 +690,38 @@ async function loadScripts() {
     console.error('scripts load error:', e);
     scripts = [];
   }
+}
+
+// 住所からエリア抽出
+function extractArea(addr) {
+  if (!addr) return '(住所なし)';
+  // 「沖縄県」「日本、〒XXX-XXXX」「〒XXX-XXXX」を除去
+  let s = addr.normalize('NFKC');
+  s = s.replace(/^日本[、,]?\s*/, '');
+  s = s.replace(/〒\d{3}-?\d{4}\s*/g, '');
+  s = s.replace(/^沖縄県\s*/, '');
+  s = s.replace(/^Okinawa[,，]?\s*/i, '');
+  // 市区町村抽出
+  const m = s.match(/^([^0-9０-９]+?(?:市|町|村|区|郡))/);
+  if (m) {
+    let area = m[1];
+    // 「中頭郡北谷町」みたいなのは郡まで含めて整理
+    return area.length > 8 ? area.substring(0, 8) + '…' : area;
+  }
+  return '(その他)';
+}
+
+function buildAreaOptions() {
+  const areas = {};
+  companies.forEach(c => {
+    const a = extractArea(c.address);
+    areas[a] = (areas[a] || 0) + 1;
+  });
+  const sel = document.getElementById('area-select');
+  const sortedAreas = Object.entries(areas).sort((a,b) => b[1] - a[1]);
+  sel.innerHTML = `<option value="all">エリア: すべて (${companies.length})</option>` +
+    sortedAreas.map(([a, n]) => `<option value="${escapeHtml(a)}">${escapeHtml(a)} (${n})</option>`).join('');
+  sel.value = currentArea;
 }
 
 // 統計
@@ -571,12 +750,26 @@ function renderList() {
   const area = document.getElementById('list-area');
   const today = todayStr();
   
-  // フィルタ
   let list = [...companies];
+  
+  // ステータスフィルタ
   if (currentFilter === 'today') {
     list = list.filter(c => c.next_date && c.next_date <= today && c.phase !== 'declined' && c.phase !== 'won');
   } else if (currentFilter !== 'all') {
     list = list.filter(c => c.phase === currentFilter);
+  }
+  
+  // エリアフィルタ
+  if (currentArea !== 'all') {
+    list = list.filter(c => extractArea(c.address) === currentArea);
+  }
+  
+  // 優先度フィルタ
+  if (currentPriority !== 'all') {
+    if (currentPriority === '3') list = list.filter(c => (c.priority || 0) === 3);
+    else if (currentPriority === '2plus') list = list.filter(c => (c.priority || 0) >= 2);
+    else if (currentPriority === '1plus') list = list.filter(c => (c.priority || 0) >= 1);
+    else if (currentPriority === '0') list = list.filter(c => (c.priority || 0) === 0);
   }
   
   // 検索
@@ -591,21 +784,36 @@ function renderList() {
   
   // ソート
   if (currentSort === 'default') {
-    // 優先度: 今日のタスク → 後日かけ直し → 未着手 → 担当者 → メール → 商談 → 断り
     const phaseOrder = { pending_callback: 0, contacted: 1, mailed: 2, pending: 3, won: 4, declined: 5 };
     list.sort((a, b) => {
-      // 今日タスク優先
+      // 優先度高い順を最優先
+      const pria = a.priority || 0;
+      const prib = b.priority || 0;
+      if (pria !== prib) return prib - pria;
+      // 今日タスク
       const aT = (a.next_date && a.next_date <= today && a.phase !== 'declined' && a.phase !== 'won') ? 0 : 1;
       const bT = (b.next_date && b.next_date <= today && b.phase !== 'declined' && b.phase !== 'won') ? 0 : 1;
       if (aT !== bT) return aT - bT;
-      // フェーズ順
       const pa = phaseOrder[a.phase] ?? 99;
       const pb = phaseOrder[b.phase] ?? 99;
       if (pa !== pb) return pa - pb;
-      // 電話ある方を優先
       const ta = a.phone ? 0 : 1;
       const tb = b.phone ? 0 : 1;
       if (ta !== tb) return ta - tb;
+      return (a.company_name || '').localeCompare(b.company_name || '');
+    });
+  } else if (currentSort === 'priority') {
+    list.sort((a, b) => {
+      const pria = a.priority || 0;
+      const prib = b.priority || 0;
+      if (pria !== prib) return prib - pria;
+      return (a.company_name || '').localeCompare(b.company_name || '');
+    });
+  } else if (currentSort === 'area') {
+    list.sort((a, b) => {
+      const aa = extractArea(a.address);
+      const bb = extractArea(b.address);
+      if (aa !== bb) return aa.localeCompare(bb);
       return (a.company_name || '').localeCompare(b.company_name || '');
     });
   } else if (currentSort === 'next_date') {
@@ -628,38 +836,89 @@ function renderList() {
     return;
   }
   
-  const today2 = today;
   area.innerHTML = `
     <div style="font-size:12px;color:var(--text-sub);margin-bottom:8px;">📋 ${list.length}件表示中 / 全${companies.length}件</div>
     <div class="company-list">
-      ${list.map(c => {
-        const isToday = c.next_date && c.next_date <= today2 && c.phase !== 'declined' && c.phase !== 'won';
-        const phaseLabel = phaseLabel_(c.phase);
-        let nextDateHtml = '';
-        if (c.next_date) {
-          const cls = c.next_date < today2 ? 'past' : (c.next_date === today2 ? 'today' : '');
-          nextDateHtml = `<span class="next-date-tag ${cls}">📅 ${formatDate(c.next_date)}</span>`;
-        }
-        const visitCount = (c.logs || []).length;
-        return `
-        <div class="company-card ${c.phase} ${isToday ? 'today' : ''}" onclick="openModal('${c.id}')">
-          <div class="company-info">
-            <div class="company-name">
-              <span class="phase-badge phase-${c.phase}">${phaseLabel}</span>
-              ${escapeHtml(c.company_name)}
-            </div>
-            <div class="company-meta">
-              <span>📞 ${escapeHtml(c.phone || '電話なし')}</span>
-              <span>📍 ${escapeHtml((c.address || '').substring(0, 30))}${(c.address || '').length > 30 ? '...' : ''}</span>
-              ${visitCount > 0 ? `<span>📝 ${visitCount}回</span>` : ''}
-              ${nextDateHtml}
-            </div>
-          </div>
-          <button class="attack-btn">📞 開始</button>
-        </div>`;
-      }).join('')}
+      ${list.map(c => renderCard(c, today)).join('')}
     </div>
   `;
+}
+
+function renderCard(c, today) {
+  const isToday = c.next_date && c.next_date <= today && c.phase !== 'declined' && c.phase !== 'won';
+  const phaseLab = phaseLabel_(c.phase);
+  const areaTag = extractArea(c.address);
+  let nextDateHtml = '';
+  if (c.next_date) {
+    const cls = c.next_date < today ? 'past' : (c.next_date === today ? 'today' : '');
+    nextDateHtml = `<span class="next-date-tag ${cls}">📅 ${formatDate(c.next_date)}</span>`;
+  }
+  const visitCount = (c.logs || []).length;
+  const priority = c.priority || 0;
+  const priorityLabel = priority === 0 ? '☆' : '⭐'.repeat(priority);
+  
+  // ソースデータからSNS等抽出
+  const src = c.source_data || {};
+  const hp = c.website || src['公式HPURL'] || '';
+  const insta = src['InstagramURL'] || '';
+  const fb = src['FacebookURL'] || '';
+  const tiktok = src['TikTokURL'] || '';
+  const links = [];
+  if (c.phone) links.push(`<a class="link-btn tel" href="tel:${escapeHtml(c.phone)}" onclick="event.stopPropagation()">📞 発信</a>`);
+  if (hp) links.push(`<a class="link-btn hp" href="${escapeHtml(hp)}" target="_blank" onclick="event.stopPropagation()">🌐 HP</a>`);
+  if (insta) links.push(`<a class="link-btn insta" href="${escapeHtml(insta)}" target="_blank" onclick="event.stopPropagation()">📷 IG</a>`);
+  if (fb) links.push(`<a class="link-btn fb" href="${escapeHtml(fb)}" target="_blank" onclick="event.stopPropagation()">📘 FB</a>`);
+  if (tiktok) links.push(`<a class="link-btn tiktok" href="${escapeHtml(tiktok)}" target="_blank" onclick="event.stopPropagation()">🎵 TT</a>`);
+  
+  const priorityClass = priority > 0 ? `p${priority} has-priority` : '';
+  
+  return `
+    <div class="company-card ${c.phase} ${isToday ? 'today' : ''} ${priorityClass}">
+      <div class="company-info" onclick="openModal('${c.id}')" style="cursor:pointer;">
+        <div class="company-name">
+          <span class="phase-badge phase-${c.phase}">${phaseLab}</span>
+          ${escapeHtml(c.company_name)}
+        </div>
+        <div class="company-meta">
+          <span>🗺️ ${escapeHtml(areaTag)}</span>
+          <span>📞 ${escapeHtml(c.phone || '電話なし')}</span>
+          ${visitCount > 0 ? `<span>📝 ${visitCount}回</span>` : ''}
+          ${nextDateHtml}
+        </div>
+        <div class="link-row">
+          ${links.join('')}
+        </div>
+      </div>
+      <div class="card-actions">
+        <button class="priority-btn p${priority}" onclick="cyclePriority('${c.id}', event)" title="クリックで⭐を増減">
+          ${priorityLabel}
+        </button>
+        <button class="attack-btn" onclick="openModal('${c.id}')">📞 開始</button>
+      </div>
+    </div>`;
+}
+
+// 優先度サイクル: 0 → 1 → 2 → 3 → 0
+async function cyclePriority(id, ev) {
+  if (ev) ev.stopPropagation();
+  const c = companies.find(x => x.id === id);
+  if (!c) return;
+  const cur = c.priority || 0;
+  const next = (cur + 1) % 4;
+  try {
+    const { error } = await sb
+      .from('posmane_attacks')
+      .update({ priority: next })
+      .eq('id', id);
+    if (error) throw error;
+    c.priority = next;
+    renderList();
+    const label = next === 0 ? '優先度をクリア' : `⭐${next} に設定`;
+    showToast(`${label}しました`, 'success');
+  } catch (e) {
+    console.error(e);
+    showToast(`⚠️ ${e.message}`, 'error');
+  }
 }
 
 function phaseLabel_(p) {
@@ -678,6 +937,8 @@ function openModal(id) {
   const c = companies.find(x => x.id === id);
   if (!c) return;
   currentCompany = c;
+  currentStepKey = (scripts[0]?.script_json?.start) || 'opening';
+  scriptHistory = [];
   renderModal();
   document.getElementById('attack-modal').classList.add('show');
 }
@@ -690,8 +951,21 @@ function closeModal() {
 function renderModal() {
   const c = currentCompany;
   const phone = c.phone || '';
-  const script = scripts[0]; // 1つ目のスクリプト使用
-  const logs = (c.logs || []).slice().reverse(); // 新しい順
+  const script = scripts[0];
+  const logs = (c.logs || []).slice().reverse();
+  
+  const src = c.source_data || {};
+  const hp = c.website || src['公式HPURL'] || '';
+  const insta = src['InstagramURL'] || '';
+  const fb = src['FacebookURL'] || '';
+  const tiktok = src['TikTokURL'] || '';
+  const jobUrl = src['求人URL'] || '';
+  const modalLinks = [];
+  if (hp) modalLinks.push(`<a class="link-btn hp" href="${escapeHtml(hp)}" target="_blank">🌐 公式HP</a>`);
+  if (insta) modalLinks.push(`<a class="link-btn insta" href="${escapeHtml(insta)}" target="_blank">📷 Instagram</a>`);
+  if (fb) modalLinks.push(`<a class="link-btn fb" href="${escapeHtml(fb)}" target="_blank">📘 Facebook</a>`);
+  if (tiktok) modalLinks.push(`<a class="link-btn tiktok" href="${escapeHtml(tiktok)}" target="_blank">🎵 TikTok</a>`);
+  if (jobUrl) modalLinks.push(`<a class="link-btn" href="${escapeHtml(jobUrl)}" target="_blank">💼 求人</a>`);
   
   document.getElementById('modal-body').innerHTML = `
     <div class="target-card">
@@ -701,7 +975,12 @@ function renderModal() {
         : `<div class="phone empty">電話番号未登録</div>`}
       ${c.address ? `<div class="info-row">📍 ${escapeHtml(c.address)}</div>` : ''}
       ${c.genre ? `<div class="info-row">🏷️ ${escapeHtml(c.genre)}</div>` : ''}
-      ${c.website ? `<div class="info-row">🌐 <a href="${escapeHtml(c.website)}" target="_blank">${escapeHtml(c.website)}</a></div>` : ''}
+      ${modalLinks.length > 0 ? `<div class="modal-links">${modalLinks.join('')}</div>` : ''}
+      <div style="margin-top:12px;">
+        <button class="priority-btn modal-priority p${c.priority || 0}" onclick="cyclePriority('${c.id}', event); setTimeout(() => renderModal(), 300);">
+          ${(c.priority || 0) === 0 ? '☆ 優先度なし' : '⭐'.repeat(c.priority || 0)}
+        </button>
+      </div>
     </div>
 
     <div class="history-section">
@@ -724,16 +1003,12 @@ function renderModal() {
       }
     </div>
 
-    ${script ? `
-    <div class="script-box">
-      <div class="script-header">${script.emoji || '📝'} ${escapeHtml(script.name)}</div>
-      <div class="script-content">${markdownLite(script.content)}</div>
-    </div>` : ''}
+    <div id="script-area">${renderScriptStep()}</div>
 
-    <div class="section-title">✏️ メモ（必須）</div>
-    <textarea class="memo-input" id="memo-input" placeholder="例: 受付の田中さん対応、社長は午後在席、SNS活用したいとのこと">${escapeHtml(c.memo || '')}</textarea>
+    <div class="section-title">✏️ メモ（電話の重要なやりとりを記録）</div>
+    <textarea class="memo-input" id="memo-input" placeholder="例: 受付の田中さん対応、社長は午後在席">${escapeHtml(c.memo || '')}</textarea>
 
-    <div class="section-title">📅 次回予定日（オプション）</div>
+    <div class="section-title">📅 次回予定日（オプション・自動設定もされます）</div>
     <div class="next-date-row">
       <input type="date" class="date-input" id="next-date-input" value="${c.next_date || ''}">
       <button class="date-quick" onclick="setQuickDate(1)">明日</button>
@@ -742,20 +1017,115 @@ function renderModal() {
       <button class="date-quick" onclick="setQuickDate(0)">クリア</button>
     </div>
 
-    <div class="section-title">📝 電話の結果を選んで記録</div>
-    <div class="result-grid">
-      ${Object.entries(RESULT_DEFS).map(([key, def]) => `
-        <button class="result-btn" data-result="${key}" onclick="recordResult('${key}')">
-          <span class="emoji">${def.emoji}</span>
-          <span>${def.label}</span>
-        </button>
-      `).join('')}
+    <div class="finish-section">
+      <div class="ttl">📞 通話結果を記録して終了</div>
+      <div class="result-grid">
+        ${Object.entries(RESULT_DEFS).map(([key, def]) => `
+          <button class="result-btn" data-result="${key}" onclick="recordResult('${key}')">
+            <span class="emoji">${def.emoji}</span>
+            <span>${def.label}</span>
+          </button>
+        `).join('')}
+      </div>
     </div>
     
-    <div style="display:flex;gap:8px;">
-      <button class="refresh-btn" style="flex:1;" onclick="closeModal()">閉じる（記録しない）</button>
+    <button class="refresh-btn" style="width:100%;" onclick="closeModal()">閉じる（記録しない）</button>
+  `;
+}
+
+function renderScriptStep() {
+  const script = scripts[0];
+  if (!script || !script.script_json || !script.script_json.steps) {
+    return '<div class="empty"><div class="icon">📝</div>スクリプトが読み込まれていません</div>';
+  }
+  const steps = script.script_json.steps;
+  const step = steps[currentStepKey];
+  if (!step) return '<div class="empty">ステップが見つかりません</div>';
+  
+  const backBtn = scriptHistory.length > 0 
+    ? `<button class="script-back-btn" onclick="scriptBack()">⬅ 戻る</button>` 
+    : `<button class="script-back-btn" onclick="scriptReset()">🔄 最初から</button>`;
+  
+  return `
+    <div class="script-flow">
+      <div class="script-step-header">
+        <div class="script-step-title">
+          <span class="emoji">${step.emoji || '📝'}</span>
+          <span>${escapeHtml(step.title)}</span>
+        </div>
+        ${backBtn}
+      </div>
+      <div class="script-speech">${renderSpeech(step.speech)}</div>
+      ${step.branches && step.branches.length > 0 ? `
+        <div class="script-branches">
+          <div class="script-branches-title">👂 相手の反応はどれに近いですか？</div>
+          <div class="branch-grid">
+            ${step.branches.map(b => {
+              if (b.next && b.next.startsWith('FINISH_')) {
+                return `<button class="branch-btn" data-color="${b.color || 'primary'}" onclick="scriptFinish('${b.next}')">
+                  <span>${escapeHtml(b.label)}</span>
+                  <span class="arrow">▶</span>
+                </button>`;
+              }
+              return `<button class="branch-btn" data-color="${b.color || 'primary'}" onclick="scriptGo('${b.next}')">
+                <span>${escapeHtml(b.label)}</span>
+                <span class="arrow">▶</span>
+              </button>`;
+            }).join('')}
+          </div>
+        </div>` : ''}
     </div>
   `;
+}
+
+function renderSpeech(text) {
+  if (!text) return '';
+  // 改行を<br>に
+  let html = escapeHtml(text).replace(/\n/g, '<br>');
+  // **太字** 処理
+  html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+  return html;
+}
+
+function scriptGo(nextKey) {
+  scriptHistory.push(currentStepKey);
+  currentStepKey = nextKey;
+  document.getElementById('script-area').innerHTML = renderScriptStep();
+  document.getElementById('script-area').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function scriptBack() {
+  if (scriptHistory.length === 0) return;
+  currentStepKey = scriptHistory.pop();
+  document.getElementById('script-area').innerHTML = renderScriptStep();
+}
+
+function scriptReset() {
+  const script = scripts[0];
+  currentStepKey = script?.script_json?.start || 'opening';
+  scriptHistory = [];
+  document.getElementById('script-area').innerHTML = renderScriptStep();
+}
+
+function scriptFinish(finishKey) {
+  // FINISH_WON → won 等
+  const resultKey = FINISH_TO_RESULT[finishKey];
+  if (resultKey) {
+    // 結果ボタンエリアにスクロールして気づかせる
+    const finishSec = document.querySelector('.finish-section');
+    if (finishSec) finishSec.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    // 該当ボタンを強調
+    const btn = document.querySelector(`.result-btn[data-result="${resultKey}"]`);
+    if (btn) {
+      btn.style.transform = 'scale(1.05)';
+      btn.style.boxShadow = '0 0 0 3px var(--primary)';
+      setTimeout(() => {
+        btn.style.transform = '';
+        btn.style.boxShadow = '';
+      }, 2000);
+    }
+    showToast(`👇 下の「${RESULT_DEFS[resultKey].label}」ボタンを押して記録してください`, 'success');
+  }
 }
 
 function setQuickDate(days) {
@@ -776,7 +1146,6 @@ async function recordResult(resultKey) {
   
   let nextDate = document.getElementById('next-date-input').value || null;
   if (def.needNext && !nextDate) {
-    // 自動デフォルト
     const d = new Date();
     d.setDate(d.getDate() + def.nextDays);
     nextDate = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
@@ -806,7 +1175,6 @@ async function recordResult(resultKey) {
       .eq('id', currentCompany.id);
     if (error) throw error;
     
-    // ローカル更新
     currentCompany.phase = def.phase;
     currentCompany.memo = memo;
     currentCompany.next_date = nextDate;
@@ -836,32 +1204,6 @@ function formatDate(s) {
 function escapeHtml(s) {
   return (s || '').toString().replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]);
 }
-function markdownLite(md) {
-  if (!md) return '';
-  let html = md;
-  // ヘッダー
-  html = html.replace(/^### (.+)$/gm, '<h3>$1</h3>');
-  html = html.replace(/^## (.+)$/gm, '<h2>$1</h2>');
-  html = html.replace(/^# (.+)$/gm, '<h1>$1</h1>');
-  // 区切り
-  html = html.replace(/^---+$/gm, '<hr>');
-  // 太字
-  html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
-  // 引用
-  html = html.replace(/^> (.+)$/gm, '<blockquote>$1</blockquote>');
-  // 連続するblockquoteをまとめる
-  html = html.replace(/(<\/blockquote>\n<blockquote>)/g, '<br>');
-  // リスト
-  html = html.replace(/^- (.+)$/gm, '<li>$1</li>');
-  html = html.replace(/(<li>[\s\S]+?<\/li>)/g, m => `<ul>${m}</ul>`);
-  html = html.replace(/<\/ul>\n<ul>/g, '');
-  // 段落（連続改行）
-  html = html.split(/\n\n+/).map(p => {
-    if (p.startsWith('<') || p.trim() === '') return p;
-    return `<p>${p.replace(/\n/g, '<br>')}</p>`;
-  }).join('\n');
-  return html;
-}
 function showToast(msg, type) {
   const t = document.getElementById('toast');
   t.className = 'toast ' + (type || '');
@@ -882,6 +1224,14 @@ document.querySelectorAll('.stat-card').forEach(card => {
 
 document.getElementById('search-input').addEventListener('input', e => {
   searchText = e.target.value;
+  renderList();
+});
+document.getElementById('area-select').addEventListener('change', e => {
+  currentArea = e.target.value;
+  renderList();
+});
+document.getElementById('priority-select').addEventListener('change', e => {
+  currentPriority = e.target.value;
   renderList();
 });
 document.getElementById('sort-select').addEventListener('change', e => {
