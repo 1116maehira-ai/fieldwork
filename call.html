@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ポスマネ｜アタック</title>
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 :root {
@@ -483,6 +484,57 @@ body {
 .branch-btn[data-color="purple"]:hover { background: var(--purple-light); border-color: var(--purple); }
 .branch-btn[data-color="primary"]:hover { background: #FFF3E8; border-color: var(--primary); }
 
+/* スクリプト編集モード */
+.script-edit-btn {
+  background: rgba(255,255,255,0.2);
+  border: 1px solid rgba(255,255,255,0.4);
+  color: white;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  margin-right: 6px;
+}
+.script-edit-btn:hover { background: rgba(255,255,255,0.35); }
+.script-edit-btn.save { background: var(--green); border-color: var(--green); }
+.script-edit-btn.save:hover { background: #059669; }
+.script-edit-btn.cancel { background: rgba(255,255,255,0.15); }
+.script-title-edit {
+  background: rgba(255,255,255,0.95);
+  color: var(--text);
+  border: 1px solid rgba(255,255,255,0.5);
+  border-radius: 6px;
+  padding: 4px 8px;
+  font-size: 14px;
+  font-weight: 700;
+  flex: 1;
+  min-width: 100px;
+}
+.script-speech-edit {
+  width: 100%;
+  border: 2px solid var(--primary);
+  border-radius: 8px;
+  padding: 12px;
+  font-family: inherit;
+  font-size: 14px;
+  line-height: 1.9;
+  resize: vertical;
+  min-height: 200px;
+  background: #FFFBF7;
+  margin-bottom: 8px;
+}
+.script-speech-edit:focus { outline: none; border-color: var(--primary-dark); }
+.edit-hint {
+  font-size: 11px;
+  color: var(--text-sub);
+  background: var(--yellow-light);
+  padding: 6px 10px;
+  border-radius: 6px;
+  margin-bottom: 8px;
+}
+.script-header-actions { display: flex; gap: 4px; align-items: center; }
+
 /* 結果ボタンセクション */
 .finish-section {
   background: #FFF3E8;
@@ -599,6 +651,140 @@ body {
 .toast.show { opacity: 1; }
 .toast.success { background: var(--green); }
 .toast.error { background: var(--red); }
+
+/* レポートモーダル */
+.report-modal {
+  max-width: 800px;
+}
+.report-period-row {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+  padding: 8px;
+  background: #FFFBF7;
+  border-radius: 8px;
+}
+.period-btn {
+  background: white;
+  border: 2px solid var(--border);
+  border-radius: 8px;
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  color: var(--text);
+}
+.period-btn:hover { border-color: var(--primary); color: var(--primary); }
+.period-btn.active { background: var(--primary); color: white; border-color: var(--primary); }
+.report-summary {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-bottom: 16px;
+}
+@media (max-width: 600px) {
+  .report-summary { grid-template-columns: repeat(2, 1fr); }
+}
+.report-stat {
+  background: #FFFBF7;
+  border-radius: 10px;
+  padding: 14px;
+  text-align: center;
+  border: 2px solid var(--border);
+}
+.report-stat.big { grid-column: 1 / -1; background: linear-gradient(135deg, var(--primary), #FF8C42); color: white; border: none; }
+.report-stat.big .num { color: white !important; }
+.report-stat .num { font-size: 28px; font-weight: 800; }
+.report-stat .lbl { font-size: 11px; color: var(--text-sub); margin-top: 4px; }
+.report-stat.big .lbl { color: white; opacity: 0.95; }
+.report-breakdown {
+  background: #FFFBF7;
+  border-radius: 10px;
+  padding: 14px;
+  margin-bottom: 16px;
+}
+.report-breakdown .row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 0;
+  border-bottom: 1px dashed var(--border);
+  font-size: 13px;
+}
+.report-breakdown .row:last-child { border-bottom: none; }
+.report-breakdown .row .label { display:flex; align-items:center; gap:6px; }
+.report-breakdown .row .count { font-weight: 800; color: var(--primary); }
+.report-breakdown .bar-wrap {
+  flex: 1;
+  margin: 0 12px;
+  height: 6px;
+  background: #F3F4F6;
+  border-radius: 3px;
+  overflow: hidden;
+}
+.report-breakdown .bar { height: 100%; background: var(--primary); }
+.report-list {
+  background: #FFFBF7;
+  border-radius: 10px;
+  padding: 8px;
+  margin-bottom: 16px;
+}
+.report-call-item {
+  background: white;
+  border-radius: 8px;
+  padding: 10px 12px;
+  margin-bottom: 6px;
+  font-size: 13px;
+  border-left: 4px solid var(--border);
+}
+.report-call-item.connected { border-left-color: var(--blue); }
+.report-call-item.absent { border-left-color: var(--orange); }
+.report-call-item.callback { border-left-color: var(--yellow); }
+.report-call-item.declined { border-left-color: var(--text-mute); }
+.report-call-item.won { border-left-color: var(--green); background: #F0FDF4; }
+.report-call-item.mailed { border-left-color: var(--purple); }
+.report-call-item .head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+  flex-wrap: wrap;
+}
+.report-call-item .time { font-size: 11px; color: var(--text-sub); font-weight: 700; white-space: nowrap; }
+.report-call-item .name { font-weight: 700; font-size: 13px; flex: 1; min-width: 0; }
+.report-call-item .result-tag {
+  font-size: 10px;
+  padding: 2px 8px;
+  border-radius: 8px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.report-call-item .memo { font-size: 12px; color: var(--text-sub); margin-top: 4px; word-break: break-all; }
+.report-section-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-sub);
+  margin: 12px 0 8px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.report-empty {
+  text-align: center;
+  color: var(--text-mute);
+  padding: 40px 20px;
+  font-size: 14px;
+}
+.report-empty .icon { font-size: 36px; margin-bottom: 8px; }
+
+/* ヘッダーのレポートボタン */
+.header-nav .report-btn {
+  background: rgba(255,255,255,0.3);
+  font-weight: 800;
+}
+.header-nav .report-btn:hover { background: rgba(255,255,255,0.45); }
 </style>
 </head>
 <body>
@@ -609,6 +795,7 @@ body {
       <div class="sub">パンフレット配布許諾の獲得</div>
     </div>
     <div class="header-nav">
+      <button class="report-btn" onclick="openReport()" style="cursor:pointer;border:1px solid rgba(255,255,255,0.3);padding:6px 12px;border-radius:8px;font-size:12px;font-weight:700;color:white;background:rgba(255,255,255,0.3);">📊 レポート</button>
       <a href="attack.html">📋 リスト作成</a>
       <a href="fieldwork.html">🔍 FIELDWORK</a>
     </div>
@@ -670,6 +857,19 @@ body {
   </div>
 </div>
 
+<!-- レポートモーダル -->
+<div class="modal-backdrop" id="report-modal">
+  <div class="modal report-modal">
+    <div class="modal-header">
+      <h2>📊 アタックレポート</h2>
+      <button class="modal-close" onclick="closeReport()">×</button>
+    </div>
+    <div class="modal-body" id="report-body">
+      <!-- 動的生成 -->
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
@@ -688,6 +888,8 @@ let includeExcluded = false;
 let currentCompany = null;
 let currentStepKey = 'opening';
 let scriptHistory = []; // 戻る用
+let scriptEditMode = false; // 編集モード
+let reportPeriod = 'today'; // today/yesterday/week/lastweek/month/lastmonth/all
 
 // 結果定義
 const RESULT_DEFS = {
@@ -1048,6 +1250,7 @@ function openModal(id) {
   currentCompany = c;
   currentStepKey = (scripts[0]?.script_json?.start) || 'opening';
   scriptHistory = [];
+  scriptEditMode = false;
   renderModal();
   document.getElementById('attack-modal').classList.add('show');
 }
@@ -1156,6 +1359,31 @@ function renderScriptStep() {
   const step = steps[currentStepKey];
   if (!step) return '<div class="empty">ステップが見つかりません</div>';
   
+  // 編集モード
+  if (scriptEditMode) {
+    return `
+      <div class="script-flow">
+        <div class="script-step-header">
+          <div class="script-step-title" style="flex:1;">
+            <span class="emoji">${step.emoji || '📝'}</span>
+            <input type="text" class="script-title-edit" id="edit-title" value="${escapeHtml(step.title)}">
+          </div>
+          <div class="script-header-actions">
+            <button class="script-edit-btn save" onclick="saveScriptStep()">💾 保存</button>
+            <button class="script-edit-btn cancel" onclick="cancelScriptEdit()">❌</button>
+          </div>
+        </div>
+        <div style="padding: 14px;">
+          <div class="edit-hint">
+            💡 ヒント: **テキスト** で太字、改行はそのまま反映されます<br>
+            ⚠️ この変更は全員に反映されます。慎重に！
+          </div>
+          <textarea class="script-speech-edit" id="edit-speech">${escapeHtml(step.speech || '')}</textarea>
+        </div>
+      </div>
+    `;
+  }
+  
   const backBtn = scriptHistory.length > 0 
     ? `<button class="script-back-btn" onclick="scriptBack()">⬅ 戻る</button>` 
     : `<button class="script-back-btn" onclick="scriptReset()">🔄 最初から</button>`;
@@ -1167,7 +1395,10 @@ function renderScriptStep() {
           <span class="emoji">${step.emoji || '📝'}</span>
           <span>${escapeHtml(step.title)}</span>
         </div>
-        ${backBtn}
+        <div class="script-header-actions">
+          <button class="script-edit-btn" onclick="startScriptEdit()" title="このセリフを編集">✏️</button>
+          ${backBtn}
+        </div>
       </div>
       <div class="script-speech">${renderSpeech(step.speech)}</div>
       ${step.branches && step.branches.length > 0 ? `
@@ -1192,6 +1423,54 @@ function renderScriptStep() {
   `;
 }
 
+// スクリプト編集モード
+function startScriptEdit() {
+  scriptEditMode = true;
+  document.getElementById('script-area').innerHTML = renderScriptStep();
+}
+
+function cancelScriptEdit() {
+  if (!confirm('編集内容を破棄しますか？')) return;
+  scriptEditMode = false;
+  document.getElementById('script-area').innerHTML = renderScriptStep();
+}
+
+async function saveScriptStep() {
+  const newTitle = document.getElementById('edit-title').value.trim();
+  const newSpeech = document.getElementById('edit-speech').value;
+  
+  if (!newTitle) { alert('タイトルは空にできません'); return; }
+  
+  const script = scripts[0];
+  if (!script) return;
+  
+  // ローカルでJSONを書き換える
+  const newJson = JSON.parse(JSON.stringify(script.script_json));
+  if (!newJson.steps[currentStepKey]) {
+    alert('ステップが見つかりません');
+    return;
+  }
+  newJson.steps[currentStepKey].title = newTitle;
+  newJson.steps[currentStepKey].speech = newSpeech;
+  
+  try {
+    const { error } = await sb
+      .from('posmane_scripts')
+      .update({ script_json: newJson })
+      .eq('id', script.id);
+    if (error) throw error;
+    
+    // ローカル更新
+    script.script_json = newJson;
+    scriptEditMode = false;
+    document.getElementById('script-area').innerHTML = renderScriptStep();
+    showToast('✅ スクリプトを保存しました', 'success');
+  } catch (e) {
+    console.error(e);
+    showToast(`⚠️ 保存エラー: ${e.message}`, 'error');
+  }
+}
+
 function renderSpeech(text) {
   if (!text) return '';
   // 改行を<br>に
@@ -1204,6 +1483,7 @@ function renderSpeech(text) {
 function scriptGo(nextKey) {
   scriptHistory.push(currentStepKey);
   currentStepKey = nextKey;
+  scriptEditMode = false;
   document.getElementById('script-area').innerHTML = renderScriptStep();
   document.getElementById('script-area').scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
@@ -1211,6 +1491,7 @@ function scriptGo(nextKey) {
 function scriptBack() {
   if (scriptHistory.length === 0) return;
   currentStepKey = scriptHistory.pop();
+  scriptEditMode = false;
   document.getElementById('script-area').innerHTML = renderScriptStep();
 }
 
@@ -1218,6 +1499,7 @@ function scriptReset() {
   const script = scripts[0];
   currentStepKey = script?.script_json?.start || 'opening';
   scriptHistory = [];
+  scriptEditMode = false;
   document.getElementById('script-area').innerHTML = renderScriptStep();
 }
 
@@ -1359,6 +1641,226 @@ document.getElementById('sort-select').addEventListener('change', e => {
 document.getElementById('attack-modal').addEventListener('click', e => {
   if (e.target.id === 'attack-modal') closeModal();
 });
+document.getElementById('report-modal').addEventListener('click', e => {
+  if (e.target.id === 'report-modal') closeReport();
+});
+
+// ========== レポート機能 ==========
+function openReport() {
+  reportPeriod = 'today';
+  renderReport();
+  document.getElementById('report-modal').classList.add('show');
+}
+function closeReport() {
+  document.getElementById('report-modal').classList.remove('show');
+}
+
+function getPeriodRange(period) {
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const fmt = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  let from, to, label;
+  
+  if (period === 'today') {
+    from = fmt(today); to = fmt(today);
+    label = '今日 (' + from + ')';
+  } else if (period === 'yesterday') {
+    const y = new Date(today); y.setDate(y.getDate() - 1);
+    from = fmt(y); to = fmt(y);
+    label = '昨日 (' + from + ')';
+  } else if (period === 'week') {
+    // 今週（月曜始まり）
+    const d = new Date(today);
+    const day = d.getDay() === 0 ? 7 : d.getDay();
+    const monday = new Date(d); monday.setDate(d.getDate() - (day - 1));
+    from = fmt(monday); to = fmt(today);
+    label = `今週 (${from} 〜 ${to})`;
+  } else if (period === 'lastweek') {
+    const d = new Date(today);
+    const day = d.getDay() === 0 ? 7 : d.getDay();
+    const lastMonday = new Date(d); lastMonday.setDate(d.getDate() - (day - 1) - 7);
+    const lastSunday = new Date(lastMonday); lastSunday.setDate(lastMonday.getDate() + 6);
+    from = fmt(lastMonday); to = fmt(lastSunday);
+    label = `先週 (${from} 〜 ${to})`;
+  } else if (period === 'month') {
+    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    from = fmt(monthStart); to = fmt(today);
+    label = `今月 (${from} 〜 ${to})`;
+  } else if (period === 'lastmonth') {
+    const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    const lastMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0);
+    from = fmt(lastMonthStart); to = fmt(lastMonthEnd);
+    label = `先月 (${from} 〜 ${to})`;
+  } else { // all
+    from = '0000-00-00'; to = '9999-99-99';
+    label = '全期間';
+  }
+  return { from, to, label };
+}
+
+function renderReport() {
+  const range = getPeriodRange(reportPeriod);
+  
+  // ログを期間で絞り込み（企業情報も付与）
+  const calls = [];
+  companies.forEach(c => {
+    (c.logs || []).forEach(log => {
+      if (log.date >= range.from && log.date <= range.to) {
+        calls.push({
+          ...log,
+          company_name: c.company_name,
+          phone: c.phone,
+          address: c.address,
+          company_id: c.id,
+          area: extractArea(c.address),
+        });
+      }
+    });
+  });
+  
+  // 新しい順に並べる
+  calls.sort((a, b) => {
+    const aKey = (a.date || '') + (a.time || '');
+    const bKey = (b.date || '') + (b.time || '');
+    return bKey.localeCompare(aKey);
+  });
+  
+  // 集計
+  const counts = { connected:0, absent:0, callback:0, declined:0, won:0, mailed:0 };
+  calls.forEach(c => { if (counts[c.result] !== undefined) counts[c.result]++; });
+  const total = calls.length;
+  const wonList = calls.filter(c => c.result === 'won');
+  const declinedCount = counts.declined;
+  const contactRate = total > 0 ? Math.round((counts.connected + counts.won + counts.mailed) / total * 100) : 0;
+  
+  // エリア別集計
+  const byArea = {};
+  calls.forEach(c => { byArea[c.area] = (byArea[c.area] || 0) + 1; });
+  const sortedAreas = Object.entries(byArea).sort((a,b) => b[1] - a[1]);
+  
+  // 結果別の表示順
+  const RESULT_DISPLAY = [
+    { key:'won',       emoji:'🎯', label:'商談獲得！',          color:'var(--green)' },
+    { key:'connected', emoji:'😊', label:'担当者つながった',     color:'var(--blue)' },
+    { key:'mailed',    emoji:'✉️', label:'メール送付',          color:'var(--purple)' },
+    { key:'callback',  emoji:'📅', label:'後日かけ直し',         color:'var(--yellow)' },
+    { key:'absent',    emoji:'🏠', label:'不在・留守電',         color:'var(--orange)' },
+    { key:'declined',  emoji:'❌', label:'お断り',              color:'var(--gray)' },
+  ];
+  
+  const body = document.getElementById('report-body');
+  body.innerHTML = `
+    <div class="report-period-row">
+      ${['today','yesterday','week','lastweek','month','lastmonth','all'].map(p => {
+        const labels = { today:'今日', yesterday:'昨日', week:'今週', lastweek:'先週', month:'今月', lastmonth:'先月', all:'全期間' };
+        return `<button class="period-btn ${p === reportPeriod ? 'active' : ''}" onclick="changeReportPeriod('${p}')">${labels[p]}</button>`;
+      }).join('')}
+    </div>
+    
+    <div style="font-size:13px;font-weight:700;margin-bottom:12px;color:var(--text-sub);">📅 ${range.label}</div>
+    
+    <div class="report-summary">
+      <div class="report-stat big">
+        <div class="num">${total}</div>
+        <div class="lbl">📞 総コール数</div>
+      </div>
+      <div class="report-stat">
+        <div class="num" style="color:var(--green);">${counts.won}</div>
+        <div class="lbl">🎯 商談獲得</div>
+      </div>
+      <div class="report-stat">
+        <div class="num" style="color:var(--blue);">${contactRate}%</div>
+        <div class="lbl">😊 接触率</div>
+      </div>
+      <div class="report-stat">
+        <div class="num" style="color:var(--orange);">${counts.callback + counts.absent}</div>
+        <div class="lbl">📅 要フォロー</div>
+      </div>
+    </div>
+    
+    ${total === 0 ? `
+      <div class="report-empty">
+        <div class="icon">📭</div>
+        この期間のアタック実績がありません
+      </div>
+    ` : `
+      <div class="report-section-title">📊 結果別の内訳</div>
+      <div class="report-breakdown">
+        ${RESULT_DISPLAY.map(def => {
+          const cnt = counts[def.key];
+          const pct = total > 0 ? Math.round(cnt / total * 100) : 0;
+          return `
+            <div class="row">
+              <span class="label">${def.emoji} ${def.label}</span>
+              <div class="bar-wrap"><div class="bar" style="width:${pct}%;background:${def.color};"></div></div>
+              <span class="count">${cnt}</span>
+            </div>
+          `;
+        }).join('')}
+      </div>
+      
+      ${wonList.length > 0 ? `
+        <div class="report-section-title">🎉 商談獲得 (${wonList.length}件)</div>
+        <div class="report-list">
+          ${wonList.map(c => `
+            <div class="report-call-item won">
+              <div class="head">
+                <span class="time">${c.date} ${c.time}</span>
+                <span class="name">${escapeHtml(c.company_name)}</span>
+                <span class="result-tag" style="background:var(--green-light);color:#065F46;">🎯 商談獲得</span>
+              </div>
+              ${c.next_date ? `<div style="font-size:11px;color:var(--text-sub);">📅 次回: ${c.next_date}</div>` : ''}
+              ${c.memo ? `<div class="memo">💬 ${escapeHtml(c.memo)}</div>` : ''}
+            </div>
+          `).join('')}
+        </div>
+      ` : ''}
+      
+      ${sortedAreas.length > 1 ? `
+        <div class="report-section-title">🗺️ エリア別の内訳</div>
+        <div class="report-breakdown">
+          ${sortedAreas.slice(0, 8).map(([area, cnt]) => {
+            const pct = total > 0 ? Math.round(cnt / total * 100) : 0;
+            return `
+              <div class="row">
+                <span class="label">${escapeHtml(area)}</span>
+                <div class="bar-wrap"><div class="bar" style="width:${pct}%;"></div></div>
+                <span class="count">${cnt}</span>
+              </div>
+            `;
+          }).join('')}
+        </div>
+      ` : ''}
+      
+      <div class="report-section-title">
+        📋 全コール詳細 (${total}件)
+        <span style="font-size:11px;font-weight:400;color:var(--text-mute);">新しい順</span>
+      </div>
+      <div class="report-list">
+        ${calls.map(c => {
+          const def = (RESULT_DEFS[c.result] || { emoji:'📝', label:c.result });
+          return `
+            <div class="report-call-item ${c.result}" onclick="openModal('${c.company_id}'); closeReport();" style="cursor:pointer;">
+              <div class="head">
+                <span class="time">${c.date.substring(5)} ${c.time}</span>
+                <span class="name">${escapeHtml(c.company_name)}</span>
+                <span class="result-tag">${def.emoji} ${def.label}</span>
+              </div>
+              <div style="font-size:11px;color:var(--text-sub);">🗺️ ${escapeHtml(c.area)} / 📞 ${escapeHtml(c.phone || '電話なし')}</div>
+              ${c.next_date ? `<div style="font-size:11px;color:var(--text-sub);">→ 次回: ${c.next_date}</div>` : ''}
+              ${c.memo ? `<div class="memo">💬 ${escapeHtml(c.memo)}</div>` : ''}
+            </div>
+          `;
+        }).join('')}
+      </div>
+    `}
+  `;
+}
+
+function changeReportPeriod(period) {
+  reportPeriod = period;
+  renderReport();
+}
 
 init();
 </script>
