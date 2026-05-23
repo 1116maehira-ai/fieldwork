@@ -4,7 +4,11 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ポスマネ｜アタック</title>
+<link rel="icon" type="image/x-icon" href="favicon.ico">
 <link rel="icon" type="image/svg+xml" href="favicon.svg">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="192x192" href="favicon-192.png">
+<link rel="icon" type="image/png" sizes="512x512" href="favicon-512.png">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 :root {
@@ -1255,7 +1259,18 @@ function openModal(id) {
   document.getElementById('attack-modal').classList.add('show');
 }
 
-function closeModal() {
+function closeModal(force) {
+  if (!force) {
+    // メモ欄に何か入力されてたら確認
+    const memoEl = document.getElementById('memo-input');
+    if (memoEl) {
+      const currentMemo = memoEl.value.trim();
+      const originalMemo = (currentCompany && currentCompany.memo) || '';
+      if (currentMemo && currentMemo !== originalMemo) {
+        if (!confirm('⚠️ メモを記録せずに閉じますか？\n\n入力したメモは保存されません。')) return;
+      }
+    }
+  }
   document.getElementById('attack-modal').classList.remove('show');
   currentCompany = null;
 }
@@ -1579,7 +1594,7 @@ async function recordResult(resultKey) {
     if (idx >= 0) companies[idx] = { ...currentCompany };
     
     showToast(`✅ ${def.label} を記録しました`, 'success');
-    closeModal();
+    closeModal(true);
     renderStats();
     renderList();
   } catch (e) {
@@ -1639,7 +1654,8 @@ document.getElementById('sort-select').addEventListener('change', e => {
   renderList();
 });
 document.getElementById('attack-modal').addEventListener('click', e => {
-  if (e.target.id === 'attack-modal') closeModal();
+  // 背景クリックでは閉じない(誤操作で入力内容が消えるのを防ぐ)
+  // 閉じるのは ×ボタン or 「閉じる（記録しない）」ボタンのみ
 });
 document.getElementById('report-modal').addEventListener('click', e => {
   if (e.target.id === 'report-modal') closeReport();
