@@ -883,6 +883,7 @@ const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 let companies = [];
 let scripts = [];
+let currentScriptIndex = 0; // ★ 現在使ってるスクリプトのインデックス（0=A, 1=B, 2=C）
 let currentFilter = 'all';
 let currentArea = 'all';
 let currentPriority = 'all';
@@ -1271,7 +1272,8 @@ function openModal(id) {
   const c = companies.find(x => x.id === id);
   if (!c) return;
   currentCompany = c;
-  currentStepKey = (scripts[0]?.script_json?.start) || 'opening';
+  currentScriptIndex = 0; // 開く時は常にA：王道ハートフルに戻す
+  currentStepKey = (scripts[currentScriptIndex]?.script_json?.start) || 'opening';
   scriptHistory = [];
   scriptEditMode = false;
   renderModal();
@@ -1297,7 +1299,7 @@ function closeModal(force) {
 function renderModal() {
   const c = currentCompany;
   const phone = c.phone || '';
-  const script = scripts[0];
+  const script = scripts[currentScriptIndex];
   const logs = (c.logs || []).slice().reverse();
   
   const src = c.source_data || {};
@@ -1354,6 +1356,27 @@ function renderModal() {
       }
     </div>
 
+    <!-- ★ トークスクリプトバリエーション切替タブ -->
+    <div style="display:flex;gap:6px;margin-bottom:10px;align-items:center;flex-wrap:wrap">
+      <span style="font-size:11px;font-weight:700;color:#0F766E">📜 トークパターン：</span>
+      ${scripts.map((s, i) => `
+        <button onclick="switchScriptVariant(${i})" style="
+          padding:6px 12px;
+          border:2px solid ${i === currentScriptIndex ? '#14B8A6' : '#E5E7EB'};
+          background:${i === currentScriptIndex ? 'linear-gradient(135deg,#14B8A6,#2DD4BF)' : '#fff'};
+          color:${i === currentScriptIndex ? '#fff' : '#6B7280'};
+          border-radius:8px;
+          font-size:11px;
+          font-weight:800;
+          cursor:pointer;
+          font-family:inherit;
+          transition:all 0.15s;
+        " onmouseover="if(${i !== currentScriptIndex})this.style.borderColor='#14B8A6';" onmouseout="if(${i !== currentScriptIndex})this.style.borderColor='#E5E7EB';">
+          ${escapeHtml(s.name || s.variant || 'スクリプト')}
+        </button>
+      `).join('')}
+    </div>
+
     <div id="script-area">${renderScriptStep()}</div>
 
     <div class="section-title">✏️ メモ（電話の重要なやりとりを記録）</div>
@@ -1385,7 +1408,7 @@ function renderModal() {
 }
 
 function renderScriptStep() {
-  const script = scripts[0];
+  const script = scripts[currentScriptIndex];
   if (!script || !script.script_json || !script.script_json.steps) {
     return '<div class="empty"><div class="icon">📝</div>スクリプトが読み込まれていません</div>';
   }
@@ -1475,7 +1498,7 @@ async function saveScriptStep() {
   
   if (!newTitle) { alert('タイトルは空にできません'); return; }
   
-  const script = scripts[0];
+  const script = scripts[currentScriptIndex];
   if (!script) return;
   
   // ローカルでJSONを書き換える
@@ -1487,22 +1510,51 @@ async function saveScriptStep() {
   newJson.steps[currentStepKey].title = newTitle;
   newJson.steps[currentStepKey].speech = newSpeech;
   
+  // UPDATE 実行
+  let result;
   try {
-    const { error } = await sb
+    result = await sb
       .from('centercall_scripts')
       .update({ script_json: newJson })
       .eq('id', script.id);
-    if (error) throw error;
-    
-    // ローカル更新
-    script.script_json = newJson;
-    scriptEditMode = false;
-    document.getElementById('script-area').innerHTML = renderScriptStep();
-    showToast('✅ スクリプトを保存しました', 'success');
   } catch (e) {
-    console.error(e);
+    // ネットワーク例外（Realtime切断などのノイズ含む）
+    console.warn('UPDATE 例外（ネットワーク系の可能性）:', e);
+    // 例外が起きても、実は更新できてる場合があるので念のため再取得して確認
+    try {
+      const { data: check } = await sb
+        .from('centercall_scripts')
+        .select('script_json')
+        .eq('id', script.id)
+        .single();
+      const savedSpeech = check?.script_json?.steps?.[currentStepKey]?.speech;
+      if (savedSpeech === newSpeech) {
+        // 実は保存できてた
+        script.script_json = newJson;
+        scriptEditMode = false;
+        document.getElementById('script-area').innerHTML = renderScriptStep();
+        showToast('✅ スクリプトを保存しました', 'success');
+        return;
+      }
+    } catch (e2) {
+      // 取得もダメ → 本当に失敗
+    }
     showToast(`⚠️ 保存エラー: ${e.message}`, 'error');
+    return;
   }
+  
+  // 正常終了パス
+  if (result.error) {
+    console.error('保存エラー:', result.error);
+    showToast(`⚠️ 保存エラー: ${result.error.message}`, 'error');
+    return;
+  }
+  
+  // ローカル更新
+  script.script_json = newJson;
+  scriptEditMode = false;
+  document.getElementById('script-area').innerHTML = renderScriptStep();
+  showToast('✅ スクリプトを保存しました', 'success');
 }
 
 function renderSpeech(text) {
@@ -1530,11 +1582,24 @@ function scriptBack() {
 }
 
 function scriptReset() {
-  const script = scripts[0];
+  const script = scripts[currentScriptIndex];
   currentStepKey = script?.script_json?.start || 'opening';
   scriptHistory = [];
   scriptEditMode = false;
   document.getElementById('script-area').innerHTML = renderScriptStep();
+}
+
+// ★ トークスクリプトのバリエーション切替（A/B/C）
+function switchScriptVariant(idx) {
+  if (idx < 0 || idx >= scripts.length) return;
+  currentScriptIndex = idx;
+  // 新しいスクリプトの開始ステップに戻す
+  const script = scripts[currentScriptIndex];
+  currentStepKey = script?.script_json?.start || 'opening';
+  scriptHistory = [];
+  scriptEditMode = false;
+  // モーダル全体を再描画（タブのアクティブ表示も更新するため）
+  renderModal();
 }
 
 function scriptFinish(finishKey) {
