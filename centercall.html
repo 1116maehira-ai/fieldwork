@@ -19,7 +19,7 @@
   --primary-light: #CCFBF1;
   --accent: #06B6D4;
   --text: #134E4A;
-  --text-sub: #4B5563;
+  --text-sub: #636E72;
   --text-mute: #94A3B8;
   --border: #99F6E4;
   --border-soft: #F3F4F6;
@@ -936,6 +936,16 @@ async function loadCompanies() {
   }
 }
 
+const __CC_DEFAULTS__ = [{"script_id":"cc_v_warm","name":"A：王道ハートフル","variant":"A","sort_order":1,"is_active":true,"script_json":{"start":"opening","steps":{"opening":{"emoji":"🌸","title":"ご挨拶（王道ハートフル型）","speech":"突然のお電話、失礼いたします。\n\nわたくし、株式会社TENOHIRAの**石川**と申します。\n\n御社の電話の向こうにいる、まだ見ぬお客様との出会いを、わたしたちが一本一本、心を込めてお預かりさせていただく——そんなサービスをお届けしております。\n\nご担当の方、いらっしゃいますでしょうか？","branches":[{"label":"✅ 担当者につながった","next":"pitch","color":"green"},{"label":"💬 内容を聞きたいと言われた","next":"pitch","color":"primary"},{"label":"🚫 断られた","next":"FINISH_REFUSE","color":"red"},{"label":"📭 不在・後日かけ直し","next":"FINISH_AGAIN","color":"yellow"}]},"pitch":{"emoji":"💌","title":"本題（核心）","speech":"実は、沖縄県内の中小企業様向けに、**1日¥11,000から始められる、お試しテレアポ代行**をご提供しております。\n\n月固定で20万、30万かかる業界の常識とは、ちょっと違うんです。\n\n3つの台本でA/Bテストして、**当日中にレポート**もお渡し。\n\n御社の電話業務、もし一度でも「重い」と感じたことがあるなら——3日間だけ、お預けいただけませんか？","branches":[{"label":"🎯 興味あり！詳しく聞きたい","next":"close","color":"green"},{"label":"📧 資料を送ってほしい","next":"send_doc","color":"primary"},{"label":"🚫 不要・断られた","next":"FINISH_REFUSE","color":"red"}]},"close":{"emoji":"🤝","title":"クロージング","speech":"ありがとうございます。\n\nぜひ、ご担当者様とお話しさせていただきたく、**30分だけお時間**いただけませんでしょうか？\n\nオンラインでも、ご訪問でも、どちらでも合わせます。\n\nご希望の日時、教えていただけますか？","branches":[{"label":"🎉 商談獲得！","next":"FINISH_WIN","color":"green"},{"label":"📧 まず資料で","next":"send_doc","color":"primary"},{"label":"💭 検討するとのこと","next":"FINISH_AGAIN","color":"yellow"}]},"send_doc":{"emoji":"📧","title":"資料送付","speech":"かしこまりました。\n\nではまず、サービス資料を一度お送りさせていただきます。\n\nメールアドレス、もしくは「資料送付先」を教えていただけますか？\n\n3日後あたりに、改めて「ご覧いただけたか」のお電話を入れさせていただきます。","branches":[{"label":"📧 メールアドレス聞けた→送付","next":"FINISH_EMAIL","color":"green"},{"label":"⏰ 後日かけ直し希望","next":"FINISH_AGAIN","color":"yellow"}]}}}},{"script_id":"cc_v_passion","name":"B：情熱倒置型","variant":"B","sort_order":2,"is_active":true,"script_json":{"start":"opening","steps":{"opening":{"emoji":"🔥","title":"ご挨拶（情熱倒置型）","speech":"お世話になります、突然のお電話、失礼いたします。\n\n沖縄でテレアポ代行をやっております、TENOHIRAの**石川**と申します。\n\n——叶えたいんです。\n\n御社が、本来なら出会えていたはずの、**まだ会えていないお客様**との、ご縁を。\n\n責任者の方、いらっしゃいますか？","branches":[{"label":"✅ 担当者につながった","next":"pitch","color":"green"},{"label":"💬 内容を聞かれた","next":"pitch","color":"primary"},{"label":"🚫 断られた","next":"FINISH_REFUSE","color":"red"},{"label":"📭 不在・後日","next":"FINISH_AGAIN","color":"yellow"}]},"pitch":{"emoji":"⚡","title":"本題（情熱）","speech":"なぜ電話なのか——お伝えさせてください。\n\n御社の商品やサービス、本当にいいものだと、わたしは信じています。\n\nだからこそ「届けたい」「知ってほしい」、そう思っている**お客様候補**が、まだ何百社も、この沖縄にいる。\n\nわたしたちは、3つの台本で言葉を磨き、毎日70本かけ、**当日中に分析レポート**をお戻しします。\n\n月20万、30万も要りません。**1日¥11,000**から、お試しいただけます。\n\nどうですか、3日間だけ、預けてみていただけませんか？","branches":[{"label":"🎯 興味あり","next":"close","color":"green"},{"label":"📧 資料が欲しい","next":"send_doc","color":"primary"},{"label":"🚫 不要","next":"FINISH_REFUSE","color":"red"}]},"close":{"emoji":"🤝","title":"クロージング","speech":"嬉しいです、本当に。\n\nぜひ詳しくお話しさせてください、**30分**でけっこうです。\n\nオンライン会議でも、御社に伺うのでも構いません。\n\nご都合の良い日時、教えていただけますか？","branches":[{"label":"🎉 商談獲得！","next":"FINISH_WIN","color":"green"},{"label":"📧 まず資料で","next":"send_doc","color":"primary"},{"label":"💭 検討する","next":"FINISH_AGAIN","color":"yellow"}]},"send_doc":{"emoji":"📧","title":"資料送付","speech":"もちろんです、まずは資料をご覧ください。\n\nメールアドレスを教えていただけますか？\n\n3日後あたりに、改めて「中身、ご覧いただけたか」のお電話を入れさせていただきますね。","branches":[{"label":"📧 メール送付OK","next":"FINISH_EMAIL","color":"green"},{"label":"⏰ 後日かけ直し","next":"FINISH_AGAIN","color":"yellow"}]}}}},{"script_id":"cc_v_hook","name":"C：フック問いかけ型","variant":"C","sort_order":3,"is_active":true,"script_json":{"start":"opening","steps":{"opening":{"emoji":"❓","title":"ご挨拶（フック問いかけ）","speech":"お忙しいところ、すみません。沖縄のTENOHIRA、**石川**と申します。\n\n——ひとつだけ、伺ってもいいですか？\n\n御社の電話業務、いま、**社長や責任者の手間**になっていたりしませんか？\n\nもしそうなら、30秒だけ、お時間ください。","branches":[{"label":"✅ 聞いてくれる","next":"pitch","color":"green"},{"label":"💬 内容を聞かれた","next":"pitch","color":"primary"},{"label":"🚫 断られた","next":"FINISH_REFUSE","color":"red"},{"label":"📭 不在","next":"FINISH_AGAIN","color":"yellow"}]},"pitch":{"emoji":"💡","title":"本題（フック深堀り）","speech":"ありがとうございます。\n\n人手不足、電話一本に1時間、社長が出てしまう——それ、もう、手放しませんか？\n\nわたしたちは沖縄県内の中小企業様向けに、**1日¥11,000**から始められるテレアポ代行をお届けしております。\n\n月20万、30万の月額固定ではなく、**1日単位で試せる**のが特徴です。\n\nしかも、3つの台本で言葉を試し、**毎日レポート**でフィードバック。\n\n社長や責任者の電話業務、軽くなりますよ。\n\n一度、お話だけでも、聞いていただけませんか？","branches":[{"label":"🎯 聞きたい","next":"close","color":"green"},{"label":"📧 資料で","next":"send_doc","color":"primary"},{"label":"🚫 不要","next":"FINISH_REFUSE","color":"red"}]},"close":{"emoji":"🤝","title":"クロージング","speech":"ありがとうございます。\n\nまずは、お話しだけでも。**30分だけ**お時間いただけませんか？\n\nオンラインでも、お伺いするのでも、ご都合の良い形でお願いします。","branches":[{"label":"🎉 商談獲得！","next":"FINISH_WIN","color":"green"},{"label":"📧 まず資料で","next":"send_doc","color":"primary"},{"label":"💭 検討する","next":"FINISH_AGAIN","color":"yellow"}]},"send_doc":{"emoji":"📧","title":"資料送付","speech":"では資料をお送りいたします。\n\nメールアドレス、もしくは「サービス資料送付先」を教えていただけますか？\n\n3日後、改めて「ご覧いただけたか」お電話差し上げますね。","branches":[{"label":"📧 メール送付OK","next":"FINISH_EMAIL","color":"green"},{"label":"⏰ 後日","next":"FINISH_AGAIN","color":"yellow"}]}}}}];
+
+async function seedDefaultScripts() {
+  try {
+    const { error } = await sb.from('centercall_scripts').insert(__CC_DEFAULTS__);
+    if (error) console.warn('seed error:', error);
+    else console.log('🎉 デフォルトトークスクリプト3本を投入しました');
+  } catch (e) { console.warn('seed failed:', e); }
+}
+
 async function loadScripts() {
   try {
     const { data, error } = await sb
@@ -945,173 +955,18 @@ async function loadScripts() {
       .order('sort_order');
     if (error) throw error;
     scripts = data || [];
-    // 初回：何も無ければデフォルト3本を投入
     if (!scripts.length) {
       await seedDefaultScripts();
-      const { data: data2 } = await sb
+      const { data: d2 } = await sb
         .from('centercall_scripts')
         .select('*')
         .eq('is_active', true)
         .order('sort_order');
-      scripts = data2 || [];
+      scripts = d2 || [];
     }
   } catch (e) {
     console.error('scripts load error:', e);
     scripts = [];
-  }
-}
-
-// 初回セットアップ：ハートフルな3バリエーションを投入
-async function seedDefaultScripts() {
-  const defaults = [
-    {
-      script_id: 'cc_v_warm',
-      name: 'A：王道ハートフル',
-      variant: 'A',
-      sort_order: 1,
-      is_active: true,
-      script_json: {
-        steps: {
-          opening: {
-            emoji: '🌸',
-            title: 'ご挨拶（王道ハートフル型）',
-            body: '突然のお電話、失礼いたします。\n\nわたくし、株式会社TENOHIRAの**石川**と申します。\n\n御社の電話の向こうにいる、まだ見ぬお客様との出会いを、わたしたちが一本一本、心を込めてお預かりさせていただく——そんなサービスをお届けしております。\n\nご担当の方、いらっしゃいますでしょうか？',
-            next: { ok: 'pitch', ng: 'closing_ng' }
-          },
-          pitch: {
-            emoji: '💌',
-            title: '本題（核心）',
-            body: '実は、沖縄県内の中小企業様向けに、**1日¥11,000から始められる、お試しテレアポ代行**をご提供しております。\n\n月固定で20万、30万かかる業界の常識とは、ちょっと違うんです。\n\n3つの台本でA/Bテストして、**当日中にレポート**もお渡し。\n\n御社の電話業務、もし一度でも「重い」と感じたことがあるなら——3日間だけ、お預けいただけませんか？',
-            next: { interested: 'close', followup: 'send_doc', refuse: 'closing_ng' }
-          },
-          close: {
-            emoji: '🤝',
-            title: 'クロージング',
-            body: 'ありがとうございます。\n\nぜひ、ご担当者様とお話しさせていただきたく、**30分だけお時間**いただけませんでしょうか？\n\nオンラインでも、ご訪問でも、どちらでも合わせます。\n\nご希望の日時、教えていただけますか？',
-            next: { ok: 'closing_ok', ng: 'send_doc' }
-          },
-          send_doc: {
-            emoji: '📧',
-            title: '資料送付',
-            body: 'かしこまりました。\n\nではまず、サービス資料を一度お送りさせていただきます。\n\nメールアドレス、もしくは「資料送付先」を教えていただけますか？\n\n3日後あたりに、改めて「ご覧いただけたか」のお電話を入れさせていただきます。',
-            next: { ok: 'closing_ok' }
-          },
-          closing_ok: {
-            emoji: '✨',
-            title: '終話（前向き）',
-            body: 'お忙しいところ、本当にありがとうございました。\n\nまた改めて、ご連絡させていただきます。\n\n失礼いたします。',
-            next: {}
-          },
-          closing_ng: {
-            emoji: '🙏',
-            title: '終話（お断り）',
-            body: '承知いたしました。\n\nお時間いただきまして、ありがとうございました。\n\nまた何か機会がございましたら、よろしくお願いいたします。失礼いたします。',
-            next: {}
-          },
-        }
-      },
-    },
-    {
-      script_id: 'cc_v_passion',
-      name: 'B：情熱倒置型',
-      variant: 'B',
-      sort_order: 2,
-      is_active: true,
-      script_json: {
-        steps: {
-          opening: {
-            emoji: '🔥',
-            title: 'ご挨拶（情熱倒置型）',
-            body: 'お世話になります、突然のお電話、失礼いたします。\n\n沖縄でテレアポ代行をやっております、TENOHIRAの**石川**と申します。\n\n——叶えたいんです。\n\n御社が、本来なら出会えていたはずの、**まだ会えていないお客様**との、ご縁を。\n\n責任者の方、いらっしゃいますか？',
-            next: { ok: 'pitch', ng: 'closing_ng' }
-          },
-          pitch: {
-            emoji: '⚡',
-            title: '本題（情熱）',
-            body: 'なぜ電話なのか——お伝えさせてください。\n\n御社の商品やサービス、本当にいいものだと、わたしは信じています。\n\nだからこそ「届けたい」「知ってほしい」、そう思っている**お客様候補**が、まだ何百社も、この沖縄にいる。\n\nわたしたちは、3つの台本で言葉を磨き、毎日70本かけ、**当日中に分析レポート**をお戻しします。\n\n月20万、30万も要りません。**1日¥11,000**から、お試しいただけます。\n\nどうですか、3日間だけ、預けてみていただけませんか？',
-            next: { interested: 'close', followup: 'send_doc', refuse: 'closing_ng' }
-          },
-          close: {
-            emoji: '🤝',
-            title: 'クロージング',
-            body: '嬉しいです、本当に。\n\nぜひ詳しくお話しさせてください、**30分**でけっこうです。\n\nオンライン会議でも、御社に伺うのでも構いません。\n\nご都合の良い日時、教えていただけますか？',
-            next: { ok: 'closing_ok', ng: 'send_doc' }
-          },
-          send_doc: {
-            emoji: '📧',
-            title: '資料送付',
-            body: 'もちろんです、まずは資料をご覧ください。\n\nメールアドレスを教えていただけますか？\n\n3日後あたりに、改めて「中身、ご覧いただけたか」のお電話を入れさせていただきますね。',
-            next: { ok: 'closing_ok' }
-          },
-          closing_ok: {
-            emoji: '✨',
-            title: '終話（前向き）',
-            body: 'ありがとうございます！\n\n御社の電話の向こうに、新しい出会いがあること、信じております。\n\nまたご連絡いたします、失礼いたします。',
-            next: {}
-          },
-          closing_ng: {
-            emoji: '🙏',
-            title: '終話（お断り）',
-            body: '承知いたしました、お時間いただきましてありがとうございました。\n\nまたご縁がございましたら、ぜひ。失礼いたします。',
-            next: {}
-          },
-        }
-      },
-    },
-    {
-      script_id: 'cc_v_hook',
-      name: 'C：フック問いかけ型',
-      variant: 'C',
-      sort_order: 3,
-      is_active: true,
-      script_json: {
-        steps: {
-          opening: {
-            emoji: '❓',
-            title: 'ご挨拶（フック問いかけ）',
-            body: 'お忙しいところ、すみません。沖縄のTENOHIRA、**石川**と申します。\n\n——ひとつだけ、伺ってもいいですか？\n\n御社の電話業務、いま、**社長や責任者の手間**になっていたりしませんか？\n\nもしそうなら、30秒だけ、お時間ください。',
-            next: { ok: 'pitch', ng: 'closing_ng' }
-          },
-          pitch: {
-            emoji: '💡',
-            title: '本題（フック深堀り）',
-            body: 'ありがとうございます。\n\n人手不足、電話一本に1時間、社長が出てしまう——それ、もう、手放しませんか？\n\nわたしたちは沖縄県内の中小企業様向けに、**1日¥11,000**から始められるテレアポ代行をお届けしております。\n\n月20万、30万の月額固定ではなく、**1日単位で試せる**のが特徴です。\n\nしかも、3つの台本で言葉を試し、**毎日レポート**でフィードバック。\n\n社長や責任者の電話業務、軽くなりますよ。\n\n一度、お話だけでも、聞いていただけませんか？',
-            next: { interested: 'close', followup: 'send_doc', refuse: 'closing_ng' }
-          },
-          close: {
-            emoji: '🤝',
-            title: 'クロージング',
-            body: 'ありがとうございます。\n\nまずは、お話しだけでも。**30分だけ**お時間いただけませんか？\n\nオンラインでも、お伺いするのでも、ご都合の良い形でお願いします。',
-            next: { ok: 'closing_ok', ng: 'send_doc' }
-          },
-          send_doc: {
-            emoji: '📧',
-            title: '資料送付',
-            body: 'では資料をお送りいたします。\n\nメールアドレス、もしくは「サービス資料送付先」を教えていただけますか？\n\n3日後、改めて「ご覧いただけたか」お電話差し上げますね。',
-            next: { ok: 'closing_ok' }
-          },
-          closing_ok: {
-            emoji: '✨',
-            title: '終話（前向き）',
-            body: 'お時間、本当にありがとうございました。\n\nまたご連絡させていただきます。失礼いたします。',
-            next: {}
-          },
-          closing_ng: {
-            emoji: '🙏',
-            title: '終話（お断り）',
-            body: '承知いたしました。お忙しいところ失礼いたしました。\n\nまた機会がございましたら、よろしくお願いいたします。',
-            next: {}
-          },
-        }
-      },
-    },
-  ];
-  try {
-    const { error } = await sb.from('centercall_scripts').insert(defaults);
-    if (error) console.warn('seed error:', error);
-    else console.log('🎉 デフォルトトークスクリプト3本を投入しました');
-  } catch (e) {
-    console.warn('seed failed:', e);
   }
 }
 
