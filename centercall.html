@@ -1,0 +1,2048 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>センターコール｜アタック</title>
+<link rel="icon" type="image/x-icon" href="favicon.ico">
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="192x192" href="favicon-192.png">
+<link rel="icon" type="image/png" sizes="512x512" href="favicon-512.png">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root {
+  --bg: #F0FDFA;
+  --card: #FFFFFF;
+  --primary: #14B8A6;
+  --primary-dark: #0F9488;
+  --primary-light: #CCFBF1;
+  --accent: #06B6D4;
+  --text: #134E4A;
+  --text-sub: #4B5563;
+  --text-mute: #94A3B8;
+  --border: #99F6E4;
+  --border-soft: #F3F4F6;
+  --green: #10B981;
+  --green-light: #D1FAE5;
+  --yellow: #F59E0B;
+  --yellow-light: #FEF3C7;
+  --orange: #F97316;
+  --orange-light: #FED7AA;
+  --red: #EF4444;
+  --red-light: #FEE2E2;
+  --gray: #94A3B8;
+  --blue: #3B82F6;
+  --blue-light: #DBEAFE;
+  --purple: #8B5CF6;
+  --purple-light: #EDE9FE;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Yu Gothic UI", sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.6;
+  min-height: 100vh;
+  padding-bottom: 80px;
+}
+.container { max-width: 1100px; margin: 0 auto; padding: 12px; }
+.header {
+  background: linear-gradient(135deg, var(--primary), #FF8C42);
+  color: white;
+  padding: 16px 20px;
+  border-radius: 14px;
+  margin-bottom: 16px;
+  box-shadow: 0 4px 20px rgba(255,107,53,0.15);
+  display:flex; justify-content:space-between; align-items:center; gap: 12px;
+  flex-wrap: wrap;
+}
+.header h1 { font-size: 18px; font-weight: 800; }
+.header .sub { font-size: 11px; opacity: 0.95; }
+.header-nav { display:flex; gap:8px; flex-wrap:wrap; }
+.header-nav a {
+  background: rgba(255,255,255,0.2);
+  color: white;
+  padding: 6px 12px;
+  border-radius: 8px;
+  text-decoration: none;
+  font-size: 12px;
+  font-weight: 700;
+  border: 1px solid rgba(255,255,255,0.3);
+}
+.header-nav a:hover { background: rgba(255,255,255,0.3); }
+
+/* 統計サマリー */
+.stats-row {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 6px;
+  margin-bottom: 12px;
+}
+@media (max-width: 700px) {
+  .stats-row { grid-template-columns: repeat(4, 1fr); }
+}
+.stat-card {
+  background: white;
+  border-radius: 10px;
+  padding: 10px 6px;
+  text-align: center;
+  cursor: pointer;
+  border: 2px solid transparent;
+  transition: all 0.15s;
+}
+.stat-card:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+.stat-card.active { border-color: var(--primary); background: #FFF3E8; }
+.stat-card .num { font-size: 18px; font-weight: 800; }
+.stat-card .lbl { font-size: 10px; color: var(--text-sub); margin-top: 2px; line-height: 1.3; }
+.stat-card.all .num { color: var(--text); }
+.stat-card.pending .num { color: var(--gray); }
+.stat-card.today .num { color: var(--red); }
+.stat-card.contacted .num { color: var(--blue); }
+.stat-card.callback .num { color: var(--orange); }
+.stat-card.won .num { color: var(--green); }
+.stat-card.declined .num { color: var(--text-mute); }
+
+/* コントロールバー */
+.control-bar {
+  background: white;
+  border-radius: 12px;
+  padding: 12px;
+  margin-bottom: 12px;
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.search-input {
+  flex: 1;
+  min-width: 180px;
+  padding: 8px 12px;
+  border: 2px solid var(--border);
+  border-radius: 8px;
+  font-size: 14px;
+  background: #FFFBF7;
+}
+.search-input:focus { outline: none; border-color: var(--primary); }
+.sort-select, .area-select {
+  padding: 8px 12px;
+  border: 2px solid var(--border);
+  border-radius: 8px;
+  font-size: 13px;
+  background: white;
+  font-weight: 600;
+  cursor: pointer;
+  min-width: 130px;
+}
+.refresh-btn {
+  padding: 8px 14px;
+  background: white;
+  border: 2px solid var(--primary);
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--primary);
+  cursor: pointer;
+}
+.refresh-btn:hover { background: var(--primary); color: white; }
+
+/* 企業カード */
+.company-list { display: flex; flex-direction: column; gap: 8px; }
+.company-card {
+  background: white;
+  border-radius: 12px;
+  padding: 14px;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 12px;
+  align-items: center;
+  border-left: 4px solid var(--border);
+  transition: all 0.15s;
+}
+.company-card:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.06); }
+.company-card.pending { border-left-color: var(--gray); }
+.company-card.contacted { border-left-color: var(--blue); }
+.company-card.pending_callback { border-left-color: var(--orange); }
+.company-card.declined { border-left-color: var(--text-mute); opacity: 0.7; }
+.company-card.won { border-left-color: var(--green); background: #F0FDF4; }
+.company-card.mailed { border-left-color: var(--purple); }
+.company-card.today { background: #FEF2F2; border-left-color: var(--red); }
+.company-info { min-width: 0; }
+.company-name { font-size: 15px; font-weight: 700; word-break: break-all; margin-bottom: 4px; }
+.company-meta { display: flex; gap: 10px; flex-wrap: wrap; font-size: 12px; color: var(--text-sub); margin-bottom: 6px; }
+.company-meta span { display:inline-flex; align-items:center; gap:3px; }
+.phase-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 8px;
+  font-size: 10px;
+  font-weight: 700;
+  margin-right: 6px;
+}
+.phase-pending { background: #F3F4F6; color: #6B7280; }
+.phase-contacted { background: var(--blue-light); color: #1E40AF; }
+.phase-pending_callback { background: var(--orange-light); color: #9A3412; }
+.phase-declined { background: #F3F4F6; color: #9CA3AF; }
+.phase-won { background: var(--green-light); color: #065F46; }
+.phase-mailed { background: var(--purple-light); color: #5B21B6; }
+.next-date-tag {
+  display: inline-block;
+  background: var(--yellow-light);
+  color: #92400E;
+  padding: 2px 8px;
+  border-radius: 8px;
+  font-size: 11px;
+  font-weight: 700;
+}
+.next-date-tag.today { background: var(--red-light); color: #991B1B; }
+.next-date-tag.past { background: #FEE2E2; color: #7F1D1D; }
+
+/* リンクボタン */
+.link-row {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.link-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 4px 8px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-sub);
+  text-decoration: none;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+.link-btn:hover { background: var(--primary); color: white; border-color: var(--primary); transform: translateY(-1px); }
+.link-btn.hp { color: #0EA5E9; border-color: #BAE6FD; }
+.link-btn.hp:hover { background: #0EA5E9; color: white; }
+.link-btn.insta { color: #DB2777; border-color: #FBCFE8; }
+.link-btn.insta:hover { background: linear-gradient(135deg, #F472B6, #DB2777); color: white; }
+.link-btn.fb { color: #2563EB; border-color: #BFDBFE; }
+.link-btn.fb:hover { background: #2563EB; color: white; }
+.link-btn.tiktok { color: #000; border-color: #D4D4D8; }
+.link-btn.tiktok:hover { background: #000; color: white; }
+.link-btn.tel { color: var(--green); border-color: #A7F3D0; }
+.link-btn.tel:hover { background: var(--green); color: white; }
+
+.card-actions { display: flex; flex-direction: column; gap: 6px; align-items: flex-end; }
+.attack-btn {
+  background: linear-gradient(135deg, var(--primary), #FF8C42);
+  color: white;
+  border: none;
+  padding: 10px 18px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+  white-space: nowrap;
+  box-shadow: 0 2px 8px rgba(255,107,53,0.25);
+}
+.attack-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(255,107,53,0.35); }
+
+/* ⭐ 優先度 */
+.priority-btn {
+  background: white;
+  border: 2px solid var(--border);
+  border-radius: 8px;
+  padding: 6px 10px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 700;
+  transition: all 0.15s;
+  white-space: nowrap;
+  letter-spacing: -2px;
+  min-width: 60px;
+  text-align: center;
+}
+.priority-btn:hover { transform: scale(1.05); }
+.priority-btn.p0 { color: #D1D5DB; }
+.priority-btn.p1 { background: #FEF3C7; border-color: #FBBF24; color: #D97706; }
+.priority-btn.p2 { background: #FED7AA; border-color: #FB923C; color: #C2410C; }
+.priority-btn.p3 { background: #FECACA; border-color: #EF4444; color: #B91C1C; box-shadow: 0 2px 8px rgba(239,68,68,0.2); }
+.priority-btn.modal-priority {
+  font-size: 24px;
+  padding: 10px 20px;
+  letter-spacing: 0;
+  min-width: 120px;
+}
+.company-card.has-priority { border-left-width: 6px; }
+.company-card.p1 { background: linear-gradient(to right, #FFFBEB, white 80px); }
+.company-card.p2 { background: linear-gradient(to right, #FFF7ED, white 80px); }
+.company-card.p3 { background: linear-gradient(to right, #FEF2F2, white 80px); }
+.company-card.excluded { opacity: 0.55; background: #F9FAFB; border-left-color: #D1D5DB !important; }
+.company-card.excluded .company-name { text-decoration: line-through; color: var(--text-mute); }
+
+/* 対象外ボタン(右上小さく) */
+.card-top-actions {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  display: flex;
+  gap: 4px;
+}
+.card-wrap { position: relative; }
+.exclude-btn {
+  background: white;
+  border: 1px solid var(--border-soft);
+  border-radius: 6px;
+  width: 26px;
+  height: 26px;
+  cursor: pointer;
+  font-size: 12px;
+  color: #9CA3AF;
+  transition: all 0.15s;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.exclude-btn:hover { background: #FEE2E2; color: #DC2626; border-color: #DC2626; transform: scale(1.1); }
+.exclude-btn.active { background: #DC2626; color: white; border-color: #DC2626; }
+.exclude-btn.active:hover { background: #B91C1C; }
+
+/* 含むチェックボックス */
+.include-excluded-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-sub);
+  cursor: pointer;
+  white-space: nowrap;
+  padding: 4px 8px;
+  background: #F9FAFB;
+  border-radius: 6px;
+  border: 1px solid var(--border-soft);
+}
+.include-excluded-row:hover { background: #F3F4F6; }
+.include-excluded-row input { cursor: pointer; }
+
+/* モーダル */
+.modal-backdrop {
+  display: none;
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.5);
+  z-index: 100;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 12px;
+  overflow-y: auto;
+}
+.modal-backdrop.show { display: flex; }
+.modal {
+  background: white;
+  border-radius: 16px;
+  width: 100%;
+  max-width: 720px;
+  margin-top: 12px;
+  margin-bottom: 12px;
+  overflow: hidden;
+  box-shadow: 0 20px 50px rgba(0,0,0,0.2);
+}
+.modal-header {
+  background: linear-gradient(135deg, var(--primary), #FF8C42);
+  color: white;
+  padding: 16px 20px;
+  display:flex; justify-content:space-between; align-items:center;
+}
+.modal-header h2 { font-size: 16px; font-weight: 700; }
+.modal-close { background: none; border: none; color: white; font-size: 24px; cursor: pointer; line-height: 1; }
+.modal-body { padding: 20px; }
+
+.target-card {
+  background: #FFF3E8;
+  border-radius: 12px;
+  padding: 16px;
+  text-align: center;
+  margin-bottom: 16px;
+  border: 2px solid var(--primary-light);
+}
+.target-card .name { font-size: 20px; font-weight: 800; color: var(--text); margin-bottom: 8px; }
+.target-card .phone { font-size: 22px; font-weight: 800; color: var(--primary); margin-bottom: 6px; }
+.target-card .phone.empty { color: var(--text-mute); font-size: 16px; }
+.target-card .info-row { font-size: 12px; color: var(--text-sub); margin: 2px 0; word-break: break-all; }
+.target-card .modal-links { display: flex; gap: 6px; justify-content: center; margin-top: 10px; flex-wrap: wrap; }
+
+/* 過去履歴タイムライン */
+.history-section { margin-bottom: 20px; }
+.section-title { font-size: 13px; font-weight: 700; color: var(--text-sub); margin-bottom: 8px; display:flex; align-items:center; gap:6px; }
+.timeline {
+  border-left: 2px solid var(--border);
+  padding-left: 14px;
+  margin-left: 6px;
+}
+.timeline-item {
+  position: relative;
+  margin-bottom: 10px;
+  background: #FFFBF7;
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 12px;
+}
+.timeline-item::before {
+  content: '';
+  position: absolute;
+  left: -19px;
+  top: 12px;
+  width: 10px;
+  height: 10px;
+  background: var(--primary);
+  border-radius: 50%;
+  border: 2px solid white;
+}
+.timeline-item .date { font-weight: 700; color: var(--text); }
+.timeline-item .result { color: var(--primary); font-weight: 600; margin-left: 6px; }
+.timeline-item .memo { color: var(--text-sub); margin-top: 4px; word-break: break-all; }
+.timeline-empty { font-size: 12px; color: var(--text-mute); padding: 8px; text-align: center; }
+
+/* スクリプト分岐 */
+.script-flow {
+  background: #FFFBF7;
+  border: 2px solid var(--border);
+  border-radius: 12px;
+  margin-bottom: 16px;
+  overflow: hidden;
+}
+.script-step-header {
+  background: var(--primary);
+  color: white;
+  padding: 12px 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.script-step-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 700;
+  font-size: 14px;
+}
+.script-step-title .emoji { font-size: 20px; }
+.script-back-btn {
+  background: rgba(255,255,255,0.2);
+  border: 1px solid rgba(255,255,255,0.4);
+  color: white;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.script-back-btn:hover { background: rgba(255,255,255,0.35); }
+.script-speech {
+  padding: 16px;
+  font-size: 14px;
+  line-height: 1.9;
+  background: white;
+  border-bottom: 1px solid var(--border);
+}
+.script-speech strong { color: var(--primary-dark); font-weight: 700; background: linear-gradient(transparent 60%, #FFE3D0 60%); }
+.script-branches {
+  padding: 14px 16px;
+  background: #FFFBF7;
+}
+.script-branches-title {
+  font-size: 12px;
+  color: var(--text-sub);
+  font-weight: 700;
+  margin-bottom: 10px;
+}
+.branch-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 6px;
+}
+@media (min-width: 600px) {
+  .branch-grid { grid-template-columns: 1fr 1fr; }
+}
+.branch-btn {
+  background: white;
+  border: 2px solid var(--border);
+  border-radius: 10px;
+  padding: 12px 14px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  text-align: left;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.15s;
+  color: var(--text);
+}
+.branch-btn:hover { transform: translateY(-1px); box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+.branch-btn .arrow { margin-left: auto; opacity: 0.5; }
+.branch-btn[data-color="green"]:hover { background: var(--green-light); border-color: var(--green); }
+.branch-btn[data-color="yellow"]:hover { background: var(--yellow-light); border-color: var(--yellow); }
+.branch-btn[data-color="orange"]:hover { background: var(--orange-light); border-color: var(--orange); }
+.branch-btn[data-color="red"]:hover { background: var(--red-light); border-color: var(--red); }
+.branch-btn[data-color="blue"]:hover { background: var(--blue-light); border-color: var(--blue); }
+.branch-btn[data-color="purple"]:hover { background: var(--purple-light); border-color: var(--purple); }
+.branch-btn[data-color="primary"]:hover { background: #FFF3E8; border-color: var(--primary); }
+
+/* スクリプト編集モード */
+.script-edit-btn {
+  background: rgba(255,255,255,0.2);
+  border: 1px solid rgba(255,255,255,0.4);
+  color: white;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  margin-right: 6px;
+}
+.script-edit-btn:hover { background: rgba(255,255,255,0.35); }
+.script-edit-btn.save { background: var(--green); border-color: var(--green); }
+.script-edit-btn.save:hover { background: #059669; }
+.script-edit-btn.cancel { background: rgba(255,255,255,0.15); }
+.script-title-edit {
+  background: rgba(255,255,255,0.95);
+  color: var(--text);
+  border: 1px solid rgba(255,255,255,0.5);
+  border-radius: 6px;
+  padding: 4px 8px;
+  font-size: 14px;
+  font-weight: 700;
+  flex: 1;
+  min-width: 100px;
+}
+.script-speech-edit {
+  width: 100%;
+  border: 2px solid var(--primary);
+  border-radius: 8px;
+  padding: 12px;
+  font-family: inherit;
+  font-size: 14px;
+  line-height: 1.9;
+  resize: vertical;
+  min-height: 200px;
+  background: #FFFBF7;
+  margin-bottom: 8px;
+}
+.script-speech-edit:focus { outline: none; border-color: var(--primary-dark); }
+.edit-hint {
+  font-size: 11px;
+  color: var(--text-sub);
+  background: var(--yellow-light);
+  padding: 6px 10px;
+  border-radius: 6px;
+  margin-bottom: 8px;
+}
+.script-header-actions { display: flex; gap: 4px; align-items: center; }
+
+/* 結果ボタンセクション */
+.finish-section {
+  background: #FFF3E8;
+  border: 2px dashed var(--primary);
+  border-radius: 12px;
+  padding: 14px;
+  margin-bottom: 12px;
+}
+.finish-section .ttl { font-size: 13px; font-weight: 700; margin-bottom: 10px; color: var(--primary-dark); }
+
+/* メモ入力 */
+.memo-input {
+  width: 100%;
+  border: 2px solid var(--border);
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-size: 14px;
+  resize: vertical;
+  min-height: 80px;
+  font-family: inherit;
+  background: #FFFBF7;
+  margin-bottom: 12px;
+}
+.memo-input:focus { outline: none; border-color: var(--primary); background: white; }
+
+/* 結果ボタン */
+.result-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.result-btn {
+  background: white;
+  border: 2px solid var(--border);
+  border-radius: 10px;
+  padding: 12px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.15s;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.result-btn:hover { transform: translateY(-1px); }
+.result-btn .emoji { font-size: 18px; }
+.result-btn[data-result="connected"]:hover { background: var(--blue-light); border-color: var(--blue); }
+.result-btn[data-result="absent"]:hover { background: var(--orange-light); border-color: var(--orange); }
+.result-btn[data-result="callback"]:hover { background: var(--yellow-light); border-color: var(--yellow); }
+.result-btn[data-result="declined"]:hover { background: var(--red-light); border-color: var(--red); }
+.result-btn[data-result="won"]:hover { background: var(--green-light); border-color: var(--green); }
+.result-btn[data-result="mailed"]:hover { background: var(--purple-light); border-color: var(--purple); }
+
+/* 次回予定 */
+.next-date-row {
+  display: grid;
+  grid-template-columns: 1fr auto auto auto auto;
+  gap: 6px;
+  margin-bottom: 12px;
+  align-items: center;
+}
+.date-input {
+  border: 2px solid var(--border);
+  border-radius: 8px;
+  padding: 6px 10px;
+  font-size: 13px;
+  background: #FFFBF7;
+}
+.date-quick {
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 4px 8px;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  color: var(--text-sub);
+}
+.date-quick:hover { background: var(--primary); color: white; border-color: var(--primary); }
+
+/* 状態 */
+.loading {
+  text-align: center;
+  padding: 40px 20px;
+  color: var(--text-sub);
+}
+.loading .icon { font-size: 36px; margin-bottom: 8px; }
+.empty {
+  text-align: center;
+  padding: 40px 20px;
+  color: var(--text-mute);
+  background: white;
+  border-radius: 12px;
+}
+.empty .icon { font-size: 36px; margin-bottom: 8px; }
+.toast {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--text);
+  color: white;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 700;
+  z-index: 200;
+  opacity: 0;
+  transition: opacity 0.3s;
+  pointer-events: none;
+}
+.toast.show { opacity: 1; }
+.toast.success { background: var(--green); }
+.toast.error { background: var(--red); }
+
+/* レポートモーダル */
+.report-modal {
+  max-width: 800px;
+}
+.report-period-row {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+  padding: 8px;
+  background: #FFFBF7;
+  border-radius: 8px;
+}
+.period-btn {
+  background: white;
+  border: 2px solid var(--border);
+  border-radius: 8px;
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  color: var(--text);
+}
+.period-btn:hover { border-color: var(--primary); color: var(--primary); }
+.period-btn.active { background: var(--primary); color: white; border-color: var(--primary); }
+.report-summary {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-bottom: 16px;
+}
+@media (max-width: 600px) {
+  .report-summary { grid-template-columns: repeat(2, 1fr); }
+}
+.report-stat {
+  background: #FFFBF7;
+  border-radius: 10px;
+  padding: 14px;
+  text-align: center;
+  border: 2px solid var(--border);
+}
+.report-stat.big { grid-column: 1 / -1; background: linear-gradient(135deg, var(--primary), #FF8C42); color: white; border: none; }
+.report-stat.big .num { color: white !important; }
+.report-stat .num { font-size: 28px; font-weight: 800; }
+.report-stat .lbl { font-size: 11px; color: var(--text-sub); margin-top: 4px; }
+.report-stat.big .lbl { color: white; opacity: 0.95; }
+.report-breakdown {
+  background: #FFFBF7;
+  border-radius: 10px;
+  padding: 14px;
+  margin-bottom: 16px;
+}
+.report-breakdown .row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 0;
+  border-bottom: 1px dashed var(--border);
+  font-size: 13px;
+}
+.report-breakdown .row:last-child { border-bottom: none; }
+.report-breakdown .row .label { display:flex; align-items:center; gap:6px; }
+.report-breakdown .row .count { font-weight: 800; color: var(--primary); }
+.report-breakdown .bar-wrap {
+  flex: 1;
+  margin: 0 12px;
+  height: 6px;
+  background: #F3F4F6;
+  border-radius: 3px;
+  overflow: hidden;
+}
+.report-breakdown .bar { height: 100%; background: var(--primary); }
+.report-list {
+  background: #FFFBF7;
+  border-radius: 10px;
+  padding: 8px;
+  margin-bottom: 16px;
+}
+.report-call-item {
+  background: white;
+  border-radius: 8px;
+  padding: 10px 12px;
+  margin-bottom: 6px;
+  font-size: 13px;
+  border-left: 4px solid var(--border);
+}
+.report-call-item.connected { border-left-color: var(--blue); }
+.report-call-item.absent { border-left-color: var(--orange); }
+.report-call-item.callback { border-left-color: var(--yellow); }
+.report-call-item.declined { border-left-color: var(--text-mute); }
+.report-call-item.won { border-left-color: var(--green); background: #F0FDF4; }
+.report-call-item.mailed { border-left-color: var(--purple); }
+.report-call-item .head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+  flex-wrap: wrap;
+}
+.report-call-item .time { font-size: 11px; color: var(--text-sub); font-weight: 700; white-space: nowrap; }
+.report-call-item .name { font-weight: 700; font-size: 13px; flex: 1; min-width: 0; }
+.report-call-item .result-tag {
+  font-size: 10px;
+  padding: 2px 8px;
+  border-radius: 8px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.report-call-item .memo { font-size: 12px; color: var(--text-sub); margin-top: 4px; word-break: break-all; }
+.report-section-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-sub);
+  margin: 12px 0 8px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.report-empty {
+  text-align: center;
+  color: var(--text-mute);
+  padding: 40px 20px;
+  font-size: 14px;
+}
+.report-empty .icon { font-size: 36px; margin-bottom: 8px; }
+
+/* ヘッダーのレポートボタン */
+.header-nav .report-btn {
+  background: rgba(255,255,255,0.3);
+  font-weight: 800;
+}
+.header-nav .report-btn:hover { background: rgba(255,255,255,0.45); }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <div>
+      <h1>🎧 センターコール｜アタック</h1>
+      <div class="sub">テレアポ代行サービスの営業（電話アポ獲得）</div>
+    </div>
+    <div class="header-nav">
+      <button class="report-btn" onclick="openReport()" style="cursor:pointer;border:1px solid rgba(255,255,255,0.3);padding:6px 12px;border-radius:8px;font-size:12px;font-weight:700;color:white;background:rgba(255,255,255,0.3);">📊 レポート</button>
+      <a href="attack.html">📋 リスト作成</a>
+      <a href="fieldwork.html">🔍 FIELDWORK</a>
+    </div>
+  </div>
+
+  <div class="stats-row" id="stats-row">
+    <div class="stat-card all active" data-filter="all"><div class="num" id="cnt-all">-</div><div class="lbl">全件</div></div>
+    <div class="stat-card today" data-filter="today"><div class="num" id="cnt-today">-</div><div class="lbl">今日<br>のタスク</div></div>
+    <div class="stat-card pending" data-filter="pending"><div class="num" id="cnt-pending">-</div><div class="lbl">未着手</div></div>
+    <div class="stat-card callback" data-filter="pending_callback"><div class="num" id="cnt-callback">-</div><div class="lbl">後日<br>かけ直し</div></div>
+    <div class="stat-card contacted" data-filter="contacted"><div class="num" id="cnt-contacted">-</div><div class="lbl">担当者<br>つながった</div></div>
+    <div class="stat-card won" data-filter="won"><div class="num" id="cnt-won">-</div><div class="lbl">商談<br>獲得</div></div>
+    <div class="stat-card declined" data-filter="declined"><div class="num" id="cnt-declined">-</div><div class="lbl">お断り</div></div>
+  </div>
+
+  <div class="control-bar">
+    <input type="text" class="search-input" id="search-input" placeholder="🔍 会社名・住所・電話で検索...">
+    <select class="area-select" id="area-select">
+      <option value="all">エリア: すべて</option>
+    </select>
+    <select class="area-select" id="priority-select" style="min-width:120px;">
+      <option value="all">⭐ すべて</option>
+      <option value="3">⭐⭐⭐ のみ</option>
+      <option value="2plus">⭐⭐ 以上</option>
+      <option value="1plus">⭐ 以上</option>
+      <option value="0">⭐なし</option>
+    </select>
+    <select class="sort-select" id="sort-select">
+      <option value="default">並び順: 優先度順</option>
+      <option value="priority">⭐ 多い順</option>
+      <option value="area">エリア順</option>
+      <option value="next_date">次回予定日順</option>
+      <option value="updated">更新日(新しい順)</option>
+      <option value="name">会社名順</option>
+      <option value="phone">電話あり優先</option>
+    </select>
+    <label class="include-excluded-row">
+      <input type="checkbox" id="include-excluded">
+      ⛔ 対象外を含める
+    </label>
+    <button class="refresh-btn" onclick="loadCompanies()">🔄 更新</button>
+  </div>
+
+  <div id="list-area">
+    <div class="loading"><div class="icon">⏳</div>読み込み中...</div>
+  </div>
+</div>
+
+<!-- アタックモーダル -->
+<div class="modal-backdrop" id="attack-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <h2>📞 電話アプローチ</h2>
+      <button class="modal-close" onclick="closeModal()">×</button>
+    </div>
+    <div class="modal-body" id="modal-body">
+      <!-- 動的生成 -->
+    </div>
+  </div>
+</div>
+
+<!-- レポートモーダル -->
+<div class="modal-backdrop" id="report-modal">
+  <div class="modal report-modal">
+    <div class="modal-header">
+      <h2>📊 アタックレポート</h2>
+      <button class="modal-close" onclick="closeReport()">×</button>
+    </div>
+    <div class="modal-body" id="report-body">
+      <!-- 動的生成 -->
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const SUPABASE_URL = 'https://osipzwbsfbgbegjowydm.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_yO0lVlOP_r-qhnwjxqq0UQ_qjxSrlnC';
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+let companies = [];
+let scripts = [];
+let currentFilter = 'all';
+let currentArea = 'all';
+let currentPriority = 'all';
+let currentSort = 'default';
+let searchText = '';
+let includeExcluded = false;
+let currentCompany = null;
+let currentStepKey = 'opening';
+let scriptHistory = []; // 戻る用
+let scriptEditMode = false; // 編集モード
+let reportPeriod = 'today'; // today/yesterday/week/lastweek/month/lastmonth/all
+
+// 結果定義
+const RESULT_DEFS = {
+  connected: { emoji: '😊', label: '担当者につながった', phase: 'contacted', needNext: false },
+  absent:    { emoji: '🏠', label: '不在・留守電',        phase: 'pending_callback', needNext: true, nextDays: 1 },
+  callback:  { emoji: '📅', label: '後日かけ直し',        phase: 'pending_callback', needNext: true, nextDays: 3 },
+  declined:  { emoji: '❌', label: 'お断り',              phase: 'declined', needNext: false },
+  won:       { emoji: '🎯', label: '商談獲得！',          phase: 'won', needNext: true, nextDays: 7 },
+  mailed:    { emoji: '✉️', label: 'メール送付した',      phase: 'mailed', needNext: true, nextDays: 3 },
+};
+
+// FINISH_*マッピング
+const FINISH_TO_RESULT = {
+  FINISH_WON: 'won',
+  FINISH_MAIL: 'mailed',
+  FINISH_CALLBACK: 'callback',
+  FINISH_DECLINED: 'declined',
+};
+
+// 初期化
+async function init() {
+  await Promise.all([loadCompanies(), loadScripts()]);
+}
+
+async function loadCompanies() {
+  try {
+    document.getElementById('list-area').innerHTML = '<div class="loading"><div class="icon">⏳</div>読み込み中...</div>';
+    const { data, error } = await sb
+      .from('centercall_attacks')
+      .select('*')
+      .order('updated_at', { ascending: false });
+    if (error) throw error;
+    companies = data || [];
+    buildAreaOptions();
+    renderStats();
+    renderList();
+  } catch (e) {
+    console.error(e);
+    document.getElementById('list-area').innerHTML = `<div class="empty"><div class="icon">⚠️</div>読み込みエラー: ${e.message}</div>`;
+  }
+}
+
+async function loadScripts() {
+  try {
+    const { data, error } = await sb
+      .from('centercall_scripts')
+      .select('*')
+      .eq('is_active', true)
+      .order('sort_order');
+    if (error) throw error;
+    scripts = data || [];
+    // 初回：何も無ければデフォルト3本を投入
+    if (!scripts.length) {
+      await seedDefaultScripts();
+      const { data: data2 } = await sb
+        .from('centercall_scripts')
+        .select('*')
+        .eq('is_active', true)
+        .order('sort_order');
+      scripts = data2 || [];
+    }
+  } catch (e) {
+    console.error('scripts load error:', e);
+    scripts = [];
+  }
+}
+
+// 初回セットアップ：ハートフルな3バリエーションを投入
+async function seedDefaultScripts() {
+  const defaults = [
+    {
+      script_id: 'cc_v_warm',
+      name: 'A：王道ハートフル',
+      variant: 'A',
+      sort_order: 1,
+      is_active: true,
+      script_json: {
+        steps: {
+          opening: {
+            emoji: '🌸',
+            title: 'ご挨拶（王道ハートフル型）',
+            body: '突然のお電話、失礼いたします。\n\nわたくし、株式会社TENOHIRAの**石川**と申します。\n\n御社の電話の向こうにいる、まだ見ぬお客様との出会いを、わたしたちが一本一本、心を込めてお預かりさせていただく——そんなサービスをお届けしております。\n\nご担当の方、いらっしゃいますでしょうか？',
+            next: { ok: 'pitch', ng: 'closing_ng' }
+          },
+          pitch: {
+            emoji: '💌',
+            title: '本題（核心）',
+            body: '実は、沖縄県内の中小企業様向けに、**1日¥11,000から始められる、お試しテレアポ代行**をご提供しております。\n\n月固定で20万、30万かかる業界の常識とは、ちょっと違うんです。\n\n3つの台本でA/Bテストして、**当日中にレポート**もお渡し。\n\n御社の電話業務、もし一度でも「重い」と感じたことがあるなら——3日間だけ、お預けいただけませんか？',
+            next: { interested: 'close', followup: 'send_doc', refuse: 'closing_ng' }
+          },
+          close: {
+            emoji: '🤝',
+            title: 'クロージング',
+            body: 'ありがとうございます。\n\nぜひ、ご担当者様とお話しさせていただきたく、**30分だけお時間**いただけませんでしょうか？\n\nオンラインでも、ご訪問でも、どちらでも合わせます。\n\nご希望の日時、教えていただけますか？',
+            next: { ok: 'closing_ok', ng: 'send_doc' }
+          },
+          send_doc: {
+            emoji: '📧',
+            title: '資料送付',
+            body: 'かしこまりました。\n\nではまず、サービス資料を一度お送りさせていただきます。\n\nメールアドレス、もしくは「資料送付先」を教えていただけますか？\n\n3日後あたりに、改めて「ご覧いただけたか」のお電話を入れさせていただきます。',
+            next: { ok: 'closing_ok' }
+          },
+          closing_ok: {
+            emoji: '✨',
+            title: '終話（前向き）',
+            body: 'お忙しいところ、本当にありがとうございました。\n\nまた改めて、ご連絡させていただきます。\n\n失礼いたします。',
+            next: {}
+          },
+          closing_ng: {
+            emoji: '🙏',
+            title: '終話（お断り）',
+            body: '承知いたしました。\n\nお時間いただきまして、ありがとうございました。\n\nまた何か機会がございましたら、よろしくお願いいたします。失礼いたします。',
+            next: {}
+          },
+        }
+      },
+    },
+    {
+      script_id: 'cc_v_passion',
+      name: 'B：情熱倒置型',
+      variant: 'B',
+      sort_order: 2,
+      is_active: true,
+      script_json: {
+        steps: {
+          opening: {
+            emoji: '🔥',
+            title: 'ご挨拶（情熱倒置型）',
+            body: 'お世話になります、突然のお電話、失礼いたします。\n\n沖縄でテレアポ代行をやっております、TENOHIRAの**石川**と申します。\n\n——叶えたいんです。\n\n御社が、本来なら出会えていたはずの、**まだ会えていないお客様**との、ご縁を。\n\n責任者の方、いらっしゃいますか？',
+            next: { ok: 'pitch', ng: 'closing_ng' }
+          },
+          pitch: {
+            emoji: '⚡',
+            title: '本題（情熱）',
+            body: 'なぜ電話なのか——お伝えさせてください。\n\n御社の商品やサービス、本当にいいものだと、わたしは信じています。\n\nだからこそ「届けたい」「知ってほしい」、そう思っている**お客様候補**が、まだ何百社も、この沖縄にいる。\n\nわたしたちは、3つの台本で言葉を磨き、毎日70本かけ、**当日中に分析レポート**をお戻しします。\n\n月20万、30万も要りません。**1日¥11,000**から、お試しいただけます。\n\nどうですか、3日間だけ、預けてみていただけませんか？',
+            next: { interested: 'close', followup: 'send_doc', refuse: 'closing_ng' }
+          },
+          close: {
+            emoji: '🤝',
+            title: 'クロージング',
+            body: '嬉しいです、本当に。\n\nぜひ詳しくお話しさせてください、**30分**でけっこうです。\n\nオンライン会議でも、御社に伺うのでも構いません。\n\nご都合の良い日時、教えていただけますか？',
+            next: { ok: 'closing_ok', ng: 'send_doc' }
+          },
+          send_doc: {
+            emoji: '📧',
+            title: '資料送付',
+            body: 'もちろんです、まずは資料をご覧ください。\n\nメールアドレスを教えていただけますか？\n\n3日後あたりに、改めて「中身、ご覧いただけたか」のお電話を入れさせていただきますね。',
+            next: { ok: 'closing_ok' }
+          },
+          closing_ok: {
+            emoji: '✨',
+            title: '終話（前向き）',
+            body: 'ありがとうございます！\n\n御社の電話の向こうに、新しい出会いがあること、信じております。\n\nまたご連絡いたします、失礼いたします。',
+            next: {}
+          },
+          closing_ng: {
+            emoji: '🙏',
+            title: '終話（お断り）',
+            body: '承知いたしました、お時間いただきましてありがとうございました。\n\nまたご縁がございましたら、ぜひ。失礼いたします。',
+            next: {}
+          },
+        }
+      },
+    },
+    {
+      script_id: 'cc_v_hook',
+      name: 'C：フック問いかけ型',
+      variant: 'C',
+      sort_order: 3,
+      is_active: true,
+      script_json: {
+        steps: {
+          opening: {
+            emoji: '❓',
+            title: 'ご挨拶（フック問いかけ）',
+            body: 'お忙しいところ、すみません。沖縄のTENOHIRA、**石川**と申します。\n\n——ひとつだけ、伺ってもいいですか？\n\n御社の電話業務、いま、**社長や責任者の手間**になっていたりしませんか？\n\nもしそうなら、30秒だけ、お時間ください。',
+            next: { ok: 'pitch', ng: 'closing_ng' }
+          },
+          pitch: {
+            emoji: '💡',
+            title: '本題（フック深堀り）',
+            body: 'ありがとうございます。\n\n人手不足、電話一本に1時間、社長が出てしまう——それ、もう、手放しませんか？\n\nわたしたちは沖縄県内の中小企業様向けに、**1日¥11,000**から始められるテレアポ代行をお届けしております。\n\n月20万、30万の月額固定ではなく、**1日単位で試せる**のが特徴です。\n\nしかも、3つの台本で言葉を試し、**毎日レポート**でフィードバック。\n\n社長や責任者の電話業務、軽くなりますよ。\n\n一度、お話だけでも、聞いていただけませんか？',
+            next: { interested: 'close', followup: 'send_doc', refuse: 'closing_ng' }
+          },
+          close: {
+            emoji: '🤝',
+            title: 'クロージング',
+            body: 'ありがとうございます。\n\nまずは、お話しだけでも。**30分だけ**お時間いただけませんか？\n\nオンラインでも、お伺いするのでも、ご都合の良い形でお願いします。',
+            next: { ok: 'closing_ok', ng: 'send_doc' }
+          },
+          send_doc: {
+            emoji: '📧',
+            title: '資料送付',
+            body: 'では資料をお送りいたします。\n\nメールアドレス、もしくは「サービス資料送付先」を教えていただけますか？\n\n3日後、改めて「ご覧いただけたか」お電話差し上げますね。',
+            next: { ok: 'closing_ok' }
+          },
+          closing_ok: {
+            emoji: '✨',
+            title: '終話（前向き）',
+            body: 'お時間、本当にありがとうございました。\n\nまたご連絡させていただきます。失礼いたします。',
+            next: {}
+          },
+          closing_ng: {
+            emoji: '🙏',
+            title: '終話（お断り）',
+            body: '承知いたしました。お忙しいところ失礼いたしました。\n\nまた機会がございましたら、よろしくお願いいたします。',
+            next: {}
+          },
+        }
+      },
+    },
+  ];
+  try {
+    const { error } = await sb.from('centercall_scripts').insert(defaults);
+    if (error) console.warn('seed error:', error);
+    else console.log('🎉 デフォルトトークスクリプト3本を投入しました');
+  } catch (e) {
+    console.warn('seed failed:', e);
+  }
+}
+
+// 住所からエリア抽出
+function extractArea(addr) {
+  if (!addr) return '(住所なし)';
+  // 「沖縄県」「日本、〒XXX-XXXX」「〒XXX-XXXX」を除去
+  let s = addr.normalize('NFKC');
+  s = s.replace(/^日本[、,]?\s*/, '');
+  s = s.replace(/〒\d{3}-?\d{4}\s*/g, '');
+  s = s.replace(/^沖縄県\s*/, '');
+  s = s.replace(/^Okinawa[,，]?\s*/i, '');
+  // 市区町村抽出
+  const m = s.match(/^([^0-9０-９]+?(?:市|町|村|区|郡))/);
+  if (m) {
+    let area = m[1];
+    // 「中頭郡北谷町」みたいなのは郡まで含めて整理
+    return area.length > 8 ? area.substring(0, 8) + '…' : area;
+  }
+  return '(その他)';
+}
+
+function buildAreaOptions() {
+  const areas = {};
+  companies.forEach(c => {
+    const a = extractArea(c.address);
+    areas[a] = (areas[a] || 0) + 1;
+  });
+  const sel = document.getElementById('area-select');
+  const sortedAreas = Object.entries(areas).sort((a,b) => b[1] - a[1]);
+  sel.innerHTML = `<option value="all">エリア: すべて (${companies.length})</option>` +
+    sortedAreas.map(([a, n]) => `<option value="${escapeHtml(a)}">${escapeHtml(a)} (${n})</option>`).join('');
+  sel.value = currentArea;
+}
+
+// 統計
+function renderStats() {
+  const today = todayStr();
+  const counters = {
+    all: companies.length,
+    today: companies.filter(c => c.next_date && c.next_date <= today && c.phase !== 'declined' && c.phase !== 'won').length,
+    pending: companies.filter(c => c.phase === 'pending').length,
+    pending_callback: companies.filter(c => c.phase === 'pending_callback').length,
+    contacted: companies.filter(c => c.phase === 'contacted').length,
+    won: companies.filter(c => c.phase === 'won').length,
+    declined: companies.filter(c => c.phase === 'declined').length,
+  };
+  document.getElementById('cnt-all').textContent = counters.all;
+  document.getElementById('cnt-today').textContent = counters.today;
+  document.getElementById('cnt-pending').textContent = counters.pending;
+  document.getElementById('cnt-callback').textContent = counters.pending_callback;
+  document.getElementById('cnt-contacted').textContent = counters.contacted;
+  document.getElementById('cnt-won').textContent = counters.won;
+  document.getElementById('cnt-declined').textContent = counters.declined;
+}
+
+// 一覧描画
+function renderList() {
+  const area = document.getElementById('list-area');
+  const today = todayStr();
+  
+  let list = [...companies];
+  
+  // 対象外フィルタ (デフォルト: 対象外を除外)
+  if (!includeExcluded) {
+    list = list.filter(c => c.phase !== 'excluded');
+  }
+  
+  // ステータスフィルタ
+  if (currentFilter === 'today') {
+    list = list.filter(c => c.next_date && c.next_date <= today && c.phase !== 'declined' && c.phase !== 'won' && c.phase !== 'excluded');
+  } else if (currentFilter !== 'all') {
+    list = list.filter(c => c.phase === currentFilter);
+  }
+  
+  // エリアフィルタ
+  if (currentArea !== 'all') {
+    list = list.filter(c => extractArea(c.address) === currentArea);
+  }
+  
+  // 優先度フィルタ
+  if (currentPriority !== 'all') {
+    if (currentPriority === '3') list = list.filter(c => (c.priority || 0) === 3);
+    else if (currentPriority === '2plus') list = list.filter(c => (c.priority || 0) >= 2);
+    else if (currentPriority === '1plus') list = list.filter(c => (c.priority || 0) >= 1);
+    else if (currentPriority === '0') list = list.filter(c => (c.priority || 0) === 0);
+  }
+  
+  // 検索
+  if (searchText) {
+    const q = searchText.toLowerCase();
+    list = list.filter(c => 
+      (c.company_name || '').toLowerCase().includes(q) ||
+      (c.address || '').toLowerCase().includes(q) ||
+      (c.phone || '').includes(q)
+    );
+  }
+  
+  // ソート
+  if (currentSort === 'default') {
+    const phaseOrder = { pending_callback: 0, contacted: 1, mailed: 2, pending: 3, won: 4, declined: 5 };
+    list.sort((a, b) => {
+      // 優先度高い順を最優先
+      const pria = a.priority || 0;
+      const prib = b.priority || 0;
+      if (pria !== prib) return prib - pria;
+      // 今日タスク
+      const aT = (a.next_date && a.next_date <= today && a.phase !== 'declined' && a.phase !== 'won') ? 0 : 1;
+      const bT = (b.next_date && b.next_date <= today && b.phase !== 'declined' && b.phase !== 'won') ? 0 : 1;
+      if (aT !== bT) return aT - bT;
+      const pa = phaseOrder[a.phase] ?? 99;
+      const pb = phaseOrder[b.phase] ?? 99;
+      if (pa !== pb) return pa - pb;
+      const ta = a.phone ? 0 : 1;
+      const tb = b.phone ? 0 : 1;
+      if (ta !== tb) return ta - tb;
+      return (a.company_name || '').localeCompare(b.company_name || '');
+    });
+  } else if (currentSort === 'priority') {
+    list.sort((a, b) => {
+      const pria = a.priority || 0;
+      const prib = b.priority || 0;
+      if (pria !== prib) return prib - pria;
+      return (a.company_name || '').localeCompare(b.company_name || '');
+    });
+  } else if (currentSort === 'area') {
+    list.sort((a, b) => {
+      const aa = extractArea(a.address);
+      const bb = extractArea(b.address);
+      if (aa !== bb) return aa.localeCompare(bb);
+      return (a.company_name || '').localeCompare(b.company_name || '');
+    });
+  } else if (currentSort === 'next_date') {
+    list.sort((a, b) => (a.next_date || '9999-99-99').localeCompare(b.next_date || '9999-99-99'));
+  } else if (currentSort === 'updated') {
+    list.sort((a, b) => (b.updated_at || '').localeCompare(a.updated_at || ''));
+  } else if (currentSort === 'name') {
+    list.sort((a, b) => (a.company_name || '').localeCompare(b.company_name || ''));
+  } else if (currentSort === 'phone') {
+    list.sort((a, b) => {
+      const ta = a.phone ? 0 : 1;
+      const tb = b.phone ? 0 : 1;
+      if (ta !== tb) return ta - tb;
+      return (a.company_name || '').localeCompare(b.company_name || '');
+    });
+  }
+  
+  if (list.length === 0) {
+    area.innerHTML = `<div class="empty"><div class="icon">○</div>該当する企業がありません</div>`;
+    return;
+  }
+  
+  area.innerHTML = `
+    <div style="font-size:12px;color:var(--text-sub);margin-bottom:8px;">📋 ${list.length}件表示中 / 全${companies.length}件</div>
+    <div class="company-list">
+      ${list.map(c => renderCard(c, today)).join('')}
+    </div>
+  `;
+}
+
+function renderCard(c, today) {
+  const isToday = c.next_date && c.next_date <= today && c.phase !== 'declined' && c.phase !== 'won';
+  const phaseLab = phaseLabel_(c.phase);
+  const areaTag = extractArea(c.address);
+  let nextDateHtml = '';
+  if (c.next_date) {
+    const cls = c.next_date < today ? 'past' : (c.next_date === today ? 'today' : '');
+    nextDateHtml = `<span class="next-date-tag ${cls}">📅 ${formatDate(c.next_date)}</span>`;
+  }
+  const visitCount = (c.logs || []).length;
+  const priority = c.priority || 0;
+  const priorityLabel = priority === 0 ? '☆' : '⭐'.repeat(priority);
+  
+  // ソースデータからSNS等抽出
+  const src = c.source_data || {};
+  const hp = c.website || src['公式HPURL'] || '';
+  const insta = src['InstagramURL'] || '';
+  const fb = src['FacebookURL'] || '';
+  const tiktok = src['TikTokURL'] || '';
+  const links = [];
+  if (c.phone) links.push(`<a class="link-btn tel" href="tel:${escapeHtml(c.phone)}" onclick="event.stopPropagation()">📞 発信</a>`);
+  if (hp) links.push(`<a class="link-btn hp" href="${escapeHtml(hp)}" target="_blank" onclick="event.stopPropagation()">🌐 HP</a>`);
+  if (insta) links.push(`<a class="link-btn insta" href="${escapeHtml(insta)}" target="_blank" onclick="event.stopPropagation()">📷 IG</a>`);
+  if (fb) links.push(`<a class="link-btn fb" href="${escapeHtml(fb)}" target="_blank" onclick="event.stopPropagation()">📘 FB</a>`);
+  if (tiktok) links.push(`<a class="link-btn tiktok" href="${escapeHtml(tiktok)}" target="_blank" onclick="event.stopPropagation()">🎵 TT</a>`);
+  
+  const priorityClass = priority > 0 ? `p${priority} has-priority` : '';
+  const isExcluded = c.phase === 'excluded';
+  
+  return `
+    <div class="card-wrap">
+      <div class="company-card ${c.phase} ${isToday ? 'today' : ''} ${priorityClass} ${isExcluded ? 'excluded' : ''}">
+        <div class="company-info" onclick="openModal('${c.id}')" style="cursor:pointer;">
+          <div class="company-name">
+            <span class="phase-badge phase-${c.phase}">${phaseLab}</span>
+            ${escapeHtml(c.company_name)}
+          </div>
+          <div class="company-meta">
+            <span>🗺️ ${escapeHtml(areaTag)}</span>
+            <span>📞 ${escapeHtml(c.phone || '電話なし')}</span>
+            ${visitCount > 0 ? `<span>📝 ${visitCount}回</span>` : ''}
+            ${nextDateHtml}
+          </div>
+          <div class="link-row">
+            ${links.join('')}
+          </div>
+        </div>
+        <div class="card-actions">
+          <button class="priority-btn p${priority}" onclick="cyclePriority('${c.id}', event)" title="クリックで⭐を増減">
+            ${priorityLabel}
+          </button>
+          <button class="attack-btn" onclick="openModal('${c.id}')">${isExcluded ? '👁 詳細' : '📞 開始'}</button>
+        </div>
+      </div>
+      <div class="card-top-actions">
+        <button class="exclude-btn ${isExcluded ? 'active' : ''}" onclick="toggleExclude('${c.id}', event)" 
+          title="${isExcluded ? '対象に戻す' : '対象外にする'}">
+          ${isExcluded ? '↩' : '⛔'}
+        </button>
+      </div>
+    </div>`;
+}
+
+// 対象外にする/戻す
+async function toggleExclude(id, ev) {
+  if (ev) ev.stopPropagation();
+  const c = companies.find(x => x.id === id);
+  if (!c) return;
+  const isExcluded = c.phase === 'excluded';
+  const newPhase = isExcluded ? (c.logs && c.logs.length > 0 ? 'contacted' : 'pending') : 'excluded';
+  
+  if (!isExcluded) {
+    if (!confirm(`「${c.company_name}」を対象外にしますか？\n(再表示するにはオプションで「対象外を含める」をON)`)) return;
+  }
+  
+  // 対象外にする場合、以前のphaseを記録
+  const updates = { phase: newPhase };
+  let newSourceData = { ...(c.source_data || {}) };
+  if (!isExcluded) {
+    newSourceData._previous_phase = c.phase;
+    updates.source_data = newSourceData;
+  } else if (newSourceData._previous_phase) {
+    // 戻すとき、以前のphaseに復元
+    updates.phase = newSourceData._previous_phase;
+    delete newSourceData._previous_phase;
+    updates.source_data = newSourceData;
+  }
+  
+  try {
+    const { error } = await sb
+      .from('centercall_attacks')
+      .update(updates)
+      .eq('id', id);
+    if (error) throw error;
+    c.phase = updates.phase;
+    c.source_data = updates.source_data || c.source_data;
+    renderStats();
+    renderList();
+    showToast(isExcluded ? '✅ 対象に戻しました' : '⛔ 対象外にしました', 'success');
+  } catch (e) {
+    console.error(e);
+    showToast(`⚠️ ${e.message}`, 'error');
+  }
+}
+
+// 優先度サイクル: 0 → 1 → 2 → 3 → 0
+async function cyclePriority(id, ev) {
+  if (ev) ev.stopPropagation();
+  const c = companies.find(x => x.id === id);
+  if (!c) return;
+  const cur = c.priority || 0;
+  const next = (cur + 1) % 4;
+  try {
+    const { error } = await sb
+      .from('centercall_attacks')
+      .update({ priority: next })
+      .eq('id', id);
+    if (error) throw error;
+    c.priority = next;
+    renderList();
+    const label = next === 0 ? '優先度をクリア' : `⭐${next} に設定`;
+    showToast(`${label}しました`, 'success');
+  } catch (e) {
+    console.error(e);
+    showToast(`⚠️ ${e.message}`, 'error');
+  }
+}
+
+function phaseLabel_(p) {
+  return ({
+    pending: '未着手',
+    contacted: '担当者◯',
+    pending_callback: '後日',
+    declined: 'お断り',
+    won: '🎯獲得',
+    mailed: '✉メール',
+  })[p] || p;
+}
+
+// モーダル
+function openModal(id) {
+  const c = companies.find(x => x.id === id);
+  if (!c) return;
+  currentCompany = c;
+  currentStepKey = (scripts[0]?.script_json?.start) || 'opening';
+  scriptHistory = [];
+  scriptEditMode = false;
+  renderModal();
+  document.getElementById('attack-modal').classList.add('show');
+}
+
+function closeModal(force) {
+  if (!force) {
+    // メモ欄に何か入力されてたら確認
+    const memoEl = document.getElementById('memo-input');
+    if (memoEl) {
+      const currentMemo = memoEl.value.trim();
+      const originalMemo = (currentCompany && currentCompany.memo) || '';
+      if (currentMemo && currentMemo !== originalMemo) {
+        if (!confirm('⚠️ メモを記録せずに閉じますか？\n\n入力したメモは保存されません。')) return;
+      }
+    }
+  }
+  document.getElementById('attack-modal').classList.remove('show');
+  currentCompany = null;
+}
+
+function renderModal() {
+  const c = currentCompany;
+  const phone = c.phone || '';
+  const script = scripts[0];
+  const logs = (c.logs || []).slice().reverse();
+  
+  const src = c.source_data || {};
+  const hp = c.website || src['公式HPURL'] || '';
+  const insta = src['InstagramURL'] || '';
+  const fb = src['FacebookURL'] || '';
+  const tiktok = src['TikTokURL'] || '';
+  const jobUrl = src['求人URL'] || '';
+  const modalLinks = [];
+  if (hp) modalLinks.push(`<a class="link-btn hp" href="${escapeHtml(hp)}" target="_blank">🌐 公式HP</a>`);
+  if (insta) modalLinks.push(`<a class="link-btn insta" href="${escapeHtml(insta)}" target="_blank">📷 Instagram</a>`);
+  if (fb) modalLinks.push(`<a class="link-btn fb" href="${escapeHtml(fb)}" target="_blank">📘 Facebook</a>`);
+  if (tiktok) modalLinks.push(`<a class="link-btn tiktok" href="${escapeHtml(tiktok)}" target="_blank">🎵 TikTok</a>`);
+  if (jobUrl) modalLinks.push(`<a class="link-btn" href="${escapeHtml(jobUrl)}" target="_blank">💼 求人</a>`);
+  
+  document.getElementById('modal-body').innerHTML = `
+    <div class="target-card">
+      <div class="name">${escapeHtml(c.company_name)}</div>
+      ${phone 
+        ? `<div class="phone"><a href="tel:${escapeHtml(phone)}" style="color:inherit;text-decoration:none;">📞 ${escapeHtml(phone)}</a></div>`
+        : `<div class="phone empty">電話番号未登録</div>`}
+      ${c.address ? `<div class="info-row">📍 ${escapeHtml(c.address)}</div>` : ''}
+      ${c.genre ? `<div class="info-row">🏷️ ${escapeHtml(c.genre)}</div>` : ''}
+      ${modalLinks.length > 0 ? `<div class="modal-links">${modalLinks.join('')}</div>` : ''}
+      <div style="margin-top:12px; display:flex; gap:8px; justify-content:center; flex-wrap:wrap;">
+        <button class="priority-btn modal-priority p${c.priority || 0}" onclick="cyclePriority('${c.id}', event); setTimeout(() => renderModal(), 300);">
+          ${(c.priority || 0) === 0 ? '☆ 優先度なし' : '⭐'.repeat(c.priority || 0)}
+        </button>
+        <button class="exclude-btn ${c.phase === 'excluded' ? 'active' : ''}" 
+          style="width:auto;height:auto;padding:8px 14px;font-size:13px;"
+          onclick="toggleExclude('${c.id}', event); setTimeout(() => closeModal(), 300);">
+          ${c.phase === 'excluded' ? '↩ 対象に戻す' : '⛔ 対象外にする'}
+        </button>
+      </div>
+    </div>
+
+    <div class="history-section">
+      <div class="section-title">📚 過去のアタック履歴 (${logs.length}件)</div>
+      ${logs.length === 0 
+        ? '<div class="timeline-empty">まだアタック履歴はありません</div>'
+        : `<div class="timeline">
+            ${logs.slice(0, 5).map(log => {
+              const def = RESULT_DEFS[log.result] || { emoji: '📝', label: log.result };
+              return `
+              <div class="timeline-item">
+                <span class="date">${log.date || ''} ${log.time || ''}</span>
+                <span class="result">${def.emoji} ${def.label}</span>
+                ${log.next_date ? `<span style="color:var(--text-sub);margin-left:6px;">→ ${log.next_date}</span>` : ''}
+                ${log.memo ? `<div class="memo">💬 ${escapeHtml(log.memo)}</div>` : ''}
+              </div>`;
+            }).join('')}
+            ${logs.length > 5 ? `<div class="timeline-empty">他 ${logs.length - 5} 件...</div>` : ''}
+          </div>`
+      }
+    </div>
+
+    <div id="script-area">${renderScriptStep()}</div>
+
+    <div class="section-title">✏️ メモ（電話の重要なやりとりを記録）</div>
+    <textarea class="memo-input" id="memo-input" placeholder="例: 受付の田中さん対応、社長は午後在席">${escapeHtml(c.memo || '')}</textarea>
+
+    <div class="section-title">📅 次回予定日（オプション・自動設定もされます）</div>
+    <div class="next-date-row">
+      <input type="date" class="date-input" id="next-date-input" value="${c.next_date || ''}">
+      <button class="date-quick" onclick="setQuickDate(1)">明日</button>
+      <button class="date-quick" onclick="setQuickDate(3)">3日後</button>
+      <button class="date-quick" onclick="setQuickDate(7)">1週間後</button>
+      <button class="date-quick" onclick="setQuickDate(0)">クリア</button>
+    </div>
+
+    <div class="finish-section">
+      <div class="ttl">📞 通話結果を記録して終了</div>
+      <div class="result-grid">
+        ${Object.entries(RESULT_DEFS).map(([key, def]) => `
+          <button class="result-btn" data-result="${key}" onclick="recordResult('${key}')">
+            <span class="emoji">${def.emoji}</span>
+            <span>${def.label}</span>
+          </button>
+        `).join('')}
+      </div>
+    </div>
+    
+    <button class="refresh-btn" style="width:100%;" onclick="closeModal()">閉じる（記録しない）</button>
+  `;
+}
+
+function renderScriptStep() {
+  const script = scripts[0];
+  if (!script || !script.script_json || !script.script_json.steps) {
+    return '<div class="empty"><div class="icon">📝</div>スクリプトが読み込まれていません</div>';
+  }
+  const steps = script.script_json.steps;
+  const step = steps[currentStepKey];
+  if (!step) return '<div class="empty">ステップが見つかりません</div>';
+  
+  // 編集モード
+  if (scriptEditMode) {
+    return `
+      <div class="script-flow">
+        <div class="script-step-header">
+          <div class="script-step-title" style="flex:1;">
+            <span class="emoji">${step.emoji || '📝'}</span>
+            <input type="text" class="script-title-edit" id="edit-title" value="${escapeHtml(step.title)}">
+          </div>
+          <div class="script-header-actions">
+            <button class="script-edit-btn save" onclick="saveScriptStep()">💾 保存</button>
+            <button class="script-edit-btn cancel" onclick="cancelScriptEdit()">❌</button>
+          </div>
+        </div>
+        <div style="padding: 14px;">
+          <div class="edit-hint">
+            💡 ヒント: **テキスト** で太字、改行はそのまま反映されます<br>
+            ⚠️ この変更は全員に反映されます。慎重に！
+          </div>
+          <textarea class="script-speech-edit" id="edit-speech">${escapeHtml(step.speech || '')}</textarea>
+        </div>
+      </div>
+    `;
+  }
+  
+  const backBtn = scriptHistory.length > 0 
+    ? `<button class="script-back-btn" onclick="scriptBack()">⬅ 戻る</button>` 
+    : `<button class="script-back-btn" onclick="scriptReset()">🔄 最初から</button>`;
+  
+  return `
+    <div class="script-flow">
+      <div class="script-step-header">
+        <div class="script-step-title">
+          <span class="emoji">${step.emoji || '📝'}</span>
+          <span>${escapeHtml(step.title)}</span>
+        </div>
+        <div class="script-header-actions">
+          <button class="script-edit-btn" onclick="startScriptEdit()" title="このセリフを編集">✏️</button>
+          ${backBtn}
+        </div>
+      </div>
+      <div class="script-speech">${renderSpeech(step.speech)}</div>
+      ${step.branches && step.branches.length > 0 ? `
+        <div class="script-branches">
+          <div class="script-branches-title">👂 相手の反応はどれに近いですか？</div>
+          <div class="branch-grid">
+            ${step.branches.map(b => {
+              if (b.next && b.next.startsWith('FINISH_')) {
+                return `<button class="branch-btn" data-color="${b.color || 'primary'}" onclick="scriptFinish('${b.next}')">
+                  <span>${escapeHtml(b.label)}</span>
+                  <span class="arrow">▶</span>
+                </button>`;
+              }
+              return `<button class="branch-btn" data-color="${b.color || 'primary'}" onclick="scriptGo('${b.next}')">
+                <span>${escapeHtml(b.label)}</span>
+                <span class="arrow">▶</span>
+              </button>`;
+            }).join('')}
+          </div>
+        </div>` : ''}
+    </div>
+  `;
+}
+
+// スクリプト編集モード
+function startScriptEdit() {
+  scriptEditMode = true;
+  document.getElementById('script-area').innerHTML = renderScriptStep();
+}
+
+function cancelScriptEdit() {
+  if (!confirm('編集内容を破棄しますか？')) return;
+  scriptEditMode = false;
+  document.getElementById('script-area').innerHTML = renderScriptStep();
+}
+
+async function saveScriptStep() {
+  const newTitle = document.getElementById('edit-title').value.trim();
+  const newSpeech = document.getElementById('edit-speech').value;
+  
+  if (!newTitle) { alert('タイトルは空にできません'); return; }
+  
+  const script = scripts[0];
+  if (!script) return;
+  
+  // ローカルでJSONを書き換える
+  const newJson = JSON.parse(JSON.stringify(script.script_json));
+  if (!newJson.steps[currentStepKey]) {
+    alert('ステップが見つかりません');
+    return;
+  }
+  newJson.steps[currentStepKey].title = newTitle;
+  newJson.steps[currentStepKey].speech = newSpeech;
+  
+  try {
+    const { error } = await sb
+      .from('centercall_scripts')
+      .update({ script_json: newJson })
+      .eq('id', script.id);
+    if (error) throw error;
+    
+    // ローカル更新
+    script.script_json = newJson;
+    scriptEditMode = false;
+    document.getElementById('script-area').innerHTML = renderScriptStep();
+    showToast('✅ スクリプトを保存しました', 'success');
+  } catch (e) {
+    console.error(e);
+    showToast(`⚠️ 保存エラー: ${e.message}`, 'error');
+  }
+}
+
+function renderSpeech(text) {
+  if (!text) return '';
+  // 改行を<br>に
+  let html = escapeHtml(text).replace(/\n/g, '<br>');
+  // **太字** 処理
+  html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+  return html;
+}
+
+function scriptGo(nextKey) {
+  scriptHistory.push(currentStepKey);
+  currentStepKey = nextKey;
+  scriptEditMode = false;
+  document.getElementById('script-area').innerHTML = renderScriptStep();
+  document.getElementById('script-area').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function scriptBack() {
+  if (scriptHistory.length === 0) return;
+  currentStepKey = scriptHistory.pop();
+  scriptEditMode = false;
+  document.getElementById('script-area').innerHTML = renderScriptStep();
+}
+
+function scriptReset() {
+  const script = scripts[0];
+  currentStepKey = script?.script_json?.start || 'opening';
+  scriptHistory = [];
+  scriptEditMode = false;
+  document.getElementById('script-area').innerHTML = renderScriptStep();
+}
+
+function scriptFinish(finishKey) {
+  // FINISH_WON → won 等
+  const resultKey = FINISH_TO_RESULT[finishKey];
+  if (resultKey) {
+    // 結果ボタンエリアにスクロールして気づかせる
+    const finishSec = document.querySelector('.finish-section');
+    if (finishSec) finishSec.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    // 該当ボタンを強調
+    const btn = document.querySelector(`.result-btn[data-result="${resultKey}"]`);
+    if (btn) {
+      btn.style.transform = 'scale(1.05)';
+      btn.style.boxShadow = '0 0 0 3px var(--primary)';
+      setTimeout(() => {
+        btn.style.transform = '';
+        btn.style.boxShadow = '';
+      }, 2000);
+    }
+    showToast(`👇 下の「${RESULT_DEFS[resultKey].label}」ボタンを押して記録してください`, 'success');
+  }
+}
+
+function setQuickDate(days) {
+  const input = document.getElementById('next-date-input');
+  if (days === 0) { input.value = ''; return; }
+  const d = new Date();
+  d.setDate(d.getDate() + days);
+  input.value = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+
+async function recordResult(resultKey) {
+  const def = RESULT_DEFS[resultKey];
+  if (!def) return;
+  const memo = document.getElementById('memo-input').value.trim();
+  if (!memo) {
+    if (!confirm('メモが空欄ですが、このまま記録しますか？')) return;
+  }
+  
+  let nextDate = document.getElementById('next-date-input').value || null;
+  if (def.needNext && !nextDate) {
+    const d = new Date();
+    d.setDate(d.getDate() + def.nextDays);
+    nextDate = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  }
+  
+  const now = new Date();
+  const logEntry = {
+    id: 'log_' + Date.now(),
+    date: `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`,
+    time: `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`,
+    result: resultKey,
+    memo: memo,
+    next_date: nextDate,
+  };
+  
+  const newLogs = [...(currentCompany.logs || []), logEntry];
+  
+  try {
+    const { error } = await sb
+      .from('centercall_attacks')
+      .update({
+        phase: def.phase,
+        memo: memo,
+        next_date: nextDate,
+        logs: newLogs,
+      })
+      .eq('id', currentCompany.id);
+    if (error) throw error;
+    
+    currentCompany.phase = def.phase;
+    currentCompany.memo = memo;
+    currentCompany.next_date = nextDate;
+    currentCompany.logs = newLogs;
+    const idx = companies.findIndex(x => x.id === currentCompany.id);
+    if (idx >= 0) companies[idx] = { ...currentCompany };
+    
+    showToast(`✅ ${def.label} を記録しました`, 'success');
+    closeModal(true);
+    renderStats();
+    renderList();
+  } catch (e) {
+    console.error(e);
+    showToast(`⚠️ 保存エラー: ${e.message}`, 'error');
+  }
+}
+
+// ヘルパー
+function todayStr() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+function formatDate(s) {
+  if (!s) return '';
+  return s.substring(5).replace('-', '/');
+}
+function escapeHtml(s) {
+  return (s || '').toString().replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]);
+}
+function showToast(msg, type) {
+  const t = document.getElementById('toast');
+  t.className = 'toast ' + (type || '');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+// イベント
+document.querySelectorAll('.stat-card').forEach(card => {
+  card.addEventListener('click', () => {
+    document.querySelectorAll('.stat-card').forEach(c => c.classList.remove('active'));
+    card.classList.add('active');
+    currentFilter = card.dataset.filter;
+    renderList();
+  });
+});
+
+document.getElementById('search-input').addEventListener('input', e => {
+  searchText = e.target.value;
+  renderList();
+});
+document.getElementById('area-select').addEventListener('change', e => {
+  currentArea = e.target.value;
+  renderList();
+});
+document.getElementById('priority-select').addEventListener('change', e => {
+  currentPriority = e.target.value;
+  renderList();
+});
+document.getElementById('include-excluded').addEventListener('change', e => {
+  includeExcluded = e.target.checked;
+  renderList();
+});
+document.getElementById('sort-select').addEventListener('change', e => {
+  currentSort = e.target.value;
+  renderList();
+});
+document.getElementById('attack-modal').addEventListener('click', e => {
+  // 背景クリックでは閉じない(誤操作で入力内容が消えるのを防ぐ)
+  // 閉じるのは ×ボタン or 「閉じる（記録しない）」ボタンのみ
+});
+document.getElementById('report-modal').addEventListener('click', e => {
+  if (e.target.id === 'report-modal') closeReport();
+});
+
+// ========== レポート機能 ==========
+function openReport() {
+  reportPeriod = 'today';
+  renderReport();
+  document.getElementById('report-modal').classList.add('show');
+}
+function closeReport() {
+  document.getElementById('report-modal').classList.remove('show');
+}
+
+function getPeriodRange(period) {
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const fmt = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  let from, to, label;
+  
+  if (period === 'today') {
+    from = fmt(today); to = fmt(today);
+    label = '今日 (' + from + ')';
+  } else if (period === 'yesterday') {
+    const y = new Date(today); y.setDate(y.getDate() - 1);
+    from = fmt(y); to = fmt(y);
+    label = '昨日 (' + from + ')';
+  } else if (period === 'week') {
+    // 今週（月曜始まり）
+    const d = new Date(today);
+    const day = d.getDay() === 0 ? 7 : d.getDay();
+    const monday = new Date(d); monday.setDate(d.getDate() - (day - 1));
+    from = fmt(monday); to = fmt(today);
+    label = `今週 (${from} 〜 ${to})`;
+  } else if (period === 'lastweek') {
+    const d = new Date(today);
+    const day = d.getDay() === 0 ? 7 : d.getDay();
+    const lastMonday = new Date(d); lastMonday.setDate(d.getDate() - (day - 1) - 7);
+    const lastSunday = new Date(lastMonday); lastSunday.setDate(lastMonday.getDate() + 6);
+    from = fmt(lastMonday); to = fmt(lastSunday);
+    label = `先週 (${from} 〜 ${to})`;
+  } else if (period === 'month') {
+    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    from = fmt(monthStart); to = fmt(today);
+    label = `今月 (${from} 〜 ${to})`;
+  } else if (period === 'lastmonth') {
+    const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    const lastMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0);
+    from = fmt(lastMonthStart); to = fmt(lastMonthEnd);
+    label = `先月 (${from} 〜 ${to})`;
+  } else { // all
+    from = '0000-00-00'; to = '9999-99-99';
+    label = '全期間';
+  }
+  return { from, to, label };
+}
+
+function renderReport() {
+  const range = getPeriodRange(reportPeriod);
+  
+  // ログを期間で絞り込み（企業情報も付与）
+  const calls = [];
+  companies.forEach(c => {
+    (c.logs || []).forEach(log => {
+      if (log.date >= range.from && log.date <= range.to) {
+        calls.push({
+          ...log,
+          company_name: c.company_name,
+          phone: c.phone,
+          address: c.address,
+          company_id: c.id,
+          area: extractArea(c.address),
+        });
+      }
+    });
+  });
+  
+  // 新しい順に並べる
+  calls.sort((a, b) => {
+    const aKey = (a.date || '') + (a.time || '');
+    const bKey = (b.date || '') + (b.time || '');
+    return bKey.localeCompare(aKey);
+  });
+  
+  // 集計
+  const counts = { connected:0, absent:0, callback:0, declined:0, won:0, mailed:0 };
+  calls.forEach(c => { if (counts[c.result] !== undefined) counts[c.result]++; });
+  const total = calls.length;
+  const wonList = calls.filter(c => c.result === 'won');
+  const declinedCount = counts.declined;
+  const contactRate = total > 0 ? Math.round((counts.connected + counts.won + counts.mailed) / total * 100) : 0;
+  
+  // エリア別集計
+  const byArea = {};
+  calls.forEach(c => { byArea[c.area] = (byArea[c.area] || 0) + 1; });
+  const sortedAreas = Object.entries(byArea).sort((a,b) => b[1] - a[1]);
+  
+  // 結果別の表示順
+  const RESULT_DISPLAY = [
+    { key:'won',       emoji:'🎯', label:'商談獲得！',          color:'var(--green)' },
+    { key:'connected', emoji:'😊', label:'担当者つながった',     color:'var(--blue)' },
+    { key:'mailed',    emoji:'✉️', label:'メール送付',          color:'var(--purple)' },
+    { key:'callback',  emoji:'📅', label:'後日かけ直し',         color:'var(--yellow)' },
+    { key:'absent',    emoji:'🏠', label:'不在・留守電',         color:'var(--orange)' },
+    { key:'declined',  emoji:'❌', label:'お断り',              color:'var(--gray)' },
+  ];
+  
+  const body = document.getElementById('report-body');
+  body.innerHTML = `
+    <div class="report-period-row">
+      ${['today','yesterday','week','lastweek','month','lastmonth','all'].map(p => {
+        const labels = { today:'今日', yesterday:'昨日', week:'今週', lastweek:'先週', month:'今月', lastmonth:'先月', all:'全期間' };
+        return `<button class="period-btn ${p === reportPeriod ? 'active' : ''}" onclick="changeReportPeriod('${p}')">${labels[p]}</button>`;
+      }).join('')}
+    </div>
+    
+    <div style="font-size:13px;font-weight:700;margin-bottom:12px;color:var(--text-sub);">📅 ${range.label}</div>
+    
+    <div class="report-summary">
+      <div class="report-stat big">
+        <div class="num">${total}</div>
+        <div class="lbl">📞 総コール数</div>
+      </div>
+      <div class="report-stat">
+        <div class="num" style="color:var(--green);">${counts.won}</div>
+        <div class="lbl">🎯 商談獲得</div>
+      </div>
+      <div class="report-stat">
+        <div class="num" style="color:var(--blue);">${contactRate}%</div>
+        <div class="lbl">😊 接触率</div>
+      </div>
+      <div class="report-stat">
+        <div class="num" style="color:var(--orange);">${counts.callback + counts.absent}</div>
+        <div class="lbl">📅 要フォロー</div>
+      </div>
+    </div>
+    
+    ${total === 0 ? `
+      <div class="report-empty">
+        <div class="icon">📭</div>
+        この期間のアタック実績がありません
+      </div>
+    ` : `
+      <div class="report-section-title">📊 結果別の内訳</div>
+      <div class="report-breakdown">
+        ${RESULT_DISPLAY.map(def => {
+          const cnt = counts[def.key];
+          const pct = total > 0 ? Math.round(cnt / total * 100) : 0;
+          return `
+            <div class="row">
+              <span class="label">${def.emoji} ${def.label}</span>
+              <div class="bar-wrap"><div class="bar" style="width:${pct}%;background:${def.color};"></div></div>
+              <span class="count">${cnt}</span>
+            </div>
+          `;
+        }).join('')}
+      </div>
+      
+      ${wonList.length > 0 ? `
+        <div class="report-section-title">🎉 商談獲得 (${wonList.length}件)</div>
+        <div class="report-list">
+          ${wonList.map(c => `
+            <div class="report-call-item won">
+              <div class="head">
+                <span class="time">${c.date} ${c.time}</span>
+                <span class="name">${escapeHtml(c.company_name)}</span>
+                <span class="result-tag" style="background:var(--green-light);color:#065F46;">🎯 商談獲得</span>
+              </div>
+              ${c.next_date ? `<div style="font-size:11px;color:var(--text-sub);">📅 次回: ${c.next_date}</div>` : ''}
+              ${c.memo ? `<div class="memo">💬 ${escapeHtml(c.memo)}</div>` : ''}
+            </div>
+          `).join('')}
+        </div>
+      ` : ''}
+      
+      ${sortedAreas.length > 1 ? `
+        <div class="report-section-title">🗺️ エリア別の内訳</div>
+        <div class="report-breakdown">
+          ${sortedAreas.slice(0, 8).map(([area, cnt]) => {
+            const pct = total > 0 ? Math.round(cnt / total * 100) : 0;
+            return `
+              <div class="row">
+                <span class="label">${escapeHtml(area)}</span>
+                <div class="bar-wrap"><div class="bar" style="width:${pct}%;"></div></div>
+                <span class="count">${cnt}</span>
+              </div>
+            `;
+          }).join('')}
+        </div>
+      ` : ''}
+      
+      <div class="report-section-title">
+        📋 全コール詳細 (${total}件)
+        <span style="font-size:11px;font-weight:400;color:var(--text-mute);">新しい順</span>
+      </div>
+      <div class="report-list">
+        ${calls.map(c => {
+          const def = (RESULT_DEFS[c.result] || { emoji:'📝', label:c.result });
+          return `
+            <div class="report-call-item ${c.result}" onclick="openModal('${c.company_id}'); closeReport();" style="cursor:pointer;">
+              <div class="head">
+                <span class="time">${c.date.substring(5)} ${c.time}</span>
+                <span class="name">${escapeHtml(c.company_name)}</span>
+                <span class="result-tag">${def.emoji} ${def.label}</span>
+              </div>
+              <div style="font-size:11px;color:var(--text-sub);">🗺️ ${escapeHtml(c.area)} / 📞 ${escapeHtml(c.phone || '電話なし')}</div>
+              ${c.next_date ? `<div style="font-size:11px;color:var(--text-sub);">→ 次回: ${c.next_date}</div>` : ''}
+              ${c.memo ? `<div class="memo">💬 ${escapeHtml(c.memo)}</div>` : ''}
+            </div>
+          `;
+        }).join('')}
+      </div>
+    `}
+  `;
+}
+
+function changeReportPeriod(period) {
+  reportPeriod = period;
+  renderReport();
+}
+
+init();
+</script>
+</body>
+</html>

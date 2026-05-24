@@ -278,14 +278,86 @@ input[type="file"] { display: none; }
   margin-top: 8px;
 }
 .attack-link:hover { background: #059669; }
+
+/* ═══ サービス切替タブ ═══ */
+.service-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+  background: white;
+  padding: 8px;
+  border-radius: 16px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+}
+.service-tab {
+  flex: 1;
+  padding: 14px 18px;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 800;
+  cursor: pointer;
+  border: 2px solid transparent;
+  background: #F9FAFB;
+  color: #6B7280;
+  transition: all 0.2s;
+  text-align: center;
+  font-family: inherit;
+}
+.service-tab:hover { background: #F3F4F6; }
+.service-tab.active.posmane {
+  background: linear-gradient(135deg, #FF6B35, #FF8C42);
+  color: white;
+  border-color: #FF6B35;
+  box-shadow: 0 2px 8px rgba(255,107,53,0.3);
+}
+.service-tab.active.centercall {
+  background: linear-gradient(135deg, #14B8A6, #2DD4BF);
+  color: white;
+  border-color: #14B8A6;
+  box-shadow: 0 2px 8px rgba(20,184,166,0.3);
+}
+.header.centercall-theme {
+  background: linear-gradient(135deg, #14B8A6, #2DD4BF);
+  box-shadow: 0 4px 20px rgba(20,184,166,0.15);
+}
+.header.centercall-theme .step-num,
+.centercall-mode .step-num {
+  background: #14B8A6;
+}
+.centercall-mode .upload-box:hover { border-color: #14B8A6; background: #F0FDFA; }
+.centercall-mode .btn { background: #14B8A6; }
+.centercall-mode .btn:hover { background: #0F9488; }
+.centercall-mode .btn-success { background: #10B981; }
+.cc-cta-row {
+  display: flex;
+  gap: 12px;
+  margin-top: 16px;
+  flex-wrap: wrap;
+}
+.cc-cta-row .btn { flex: 1; min-width: 200px; }
 </style>
 </head>
 <body>
 <div class="container">
-  <div class="header">
-    <h1>🎯 ポスマネ｜アタックリスト作成ツール</h1>
-    <p>FIELDWORKの営業候補からポスマネ既存配布先を除外して、新規アタック対象を抽出します</p>
+
+  <!-- サービス切替タブ -->
+  <div class="service-tabs">
+    <button class="service-tab posmane active" id="tab-posmane" onclick="switchService('posmane')">
+      📦 ポスマネ｜アタックリスト作成
+    </button>
+    <button class="service-tab centercall" id="tab-centercall" onclick="switchService('centercall')">
+      🎧 センターコール｜アタックリスト作成
+    </button>
   </div>
+
+  <!-- ════════════════════════════════════════ -->
+  <!-- 📦 ポスマネ用ブロック -->
+  <!-- ════════════════════════════════════════ -->
+  <div id="service-posmane">
+    <div class="header">
+      <h1>🎯 ポスマネ｜アタックリスト作成ツール</h1>
+      <p>FIELDWORKの営業候補からポスマネ既存配布先を除外して、新規アタック対象を抽出します</p>
+    </div>
 
   <div class="step" id="step1">
     <div class="step-title"><span class="step-num">1</span>CSVをアップロード</div>
@@ -352,7 +424,138 @@ input[type="file"] { display: none; }
     <button class="btn btn-secondary" id="download-excluded-btn">📋 除外リストCSVも欲しい(検証用)</button>
     <div id="upload-status" style="margin-top:12px;"></div>
   </div>
-</div>
+  </div> <!-- /service-posmane -->
+
+  <!-- ════════════════════════════════════════ -->
+  <!-- 🎧 センターコール用ブロック -->
+  <!-- ════════════════════════════════════════ -->
+  <div id="service-centercall" class="centercall-mode" style="display:none">
+    <div class="header centercall-theme">
+      <h1>🎧 センターコール｜アタックリスト作成ツール</h1>
+      <p>テレアポ代行サービス営業用のアタックリストを登録します。FIELDWORK等で集めた企業CSVをアップロードしてSupabaseに保存します</p>
+    </div>
+
+    <div class="step">
+      <div class="step-title"><span class="step-num">1</span>使い方</div>
+      <div style="background:#F0FDFA;border:1.5px solid #14B8A6;border-radius:10px;padding:14px 16px;line-height:1.9;font-size:13px;color:#0F766E">
+        <strong>📋 想定する流れ：</strong><br>
+        ① FIELDWORK で「リフォーム会社」「塗装会社」など、テレアポが必要そうな業種を Google Maps API で収集<br>
+        ② FIELDWORK の「CSVエクスポート」でCSVをダウンロード<br>
+        ③ そのCSVを下の枠にアップロード<br>
+        ④ 「Supabase に登録」を押すと、<code style="background:#fff;padding:2px 6px;border-radius:4px;font-size:11px">centercall_attacks</code> テーブルに保存されます<br>
+        ⑤ <a href="centercall.html" style="color:#14B8A6;font-weight:800">🎧 センターコール｜アタック画面（centercall.html）</a> で電話業務スタート
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-title"><span class="step-num">2</span>CSVをアップロード</div>
+      <div class="upload-row" style="grid-template-columns:1fr">
+        <label class="upload-box" id="cc-box">
+          <input type="file" id="cc-file" accept=".csv">
+          <div class="label">🎯 FIELDWORK 営業候補CSV</div>
+          <div class="sub">電話営業ターゲット企業のリスト</div>
+          <div class="filename" id="cc-name">クリックして選択</div>
+        </label>
+      </div>
+      <div id="cc-preview" style="margin-top:16px;display:none">
+        <div style="background:#fff;border:1.5px solid #14B8A6;border-radius:10px;padding:12px 14px;font-size:13px">
+          <div style="font-weight:800;color:#0F766E;margin-bottom:8px">📊 読み込み内容</div>
+          <div id="cc-preview-content"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="step" id="cc-step3" style="display:none">
+      <div class="step-title"><span class="step-num">3</span>Supabase に登録</div>
+      <div style="background:#FFFBEB;border:1.5px solid #F59E0B;border-radius:10px;padding:10px 14px;margin-bottom:14px;font-size:12px;color:#92400E;font-weight:700;line-height:1.7">
+        💡 既存企業（電話番号一致）はスキップされます。新規企業のみ追加されます。
+      </div>
+      <div class="cc-cta-row">
+        <button class="btn btn-success" id="cc-upload-btn">🚀 Supabase に登録してアタック開始</button>
+        <button class="btn" id="cc-download-btn">💾 整形済CSVをダウンロード</button>
+      </div>
+      <div id="cc-upload-status" style="margin-top:12px;"></div>
+    </div>
+
+    <div class="step">
+      <div class="step-title"><span class="step-num">📝</span>初回利用時のセットアップ</div>
+      <div style="background:#FFF7ED;border:1.5px solid #F97316;border-radius:10px;padding:14px 16px;line-height:1.9;font-size:12px;color:#9A3412">
+        <strong>Supabase で以下のSQLを1回だけ実行してください：</strong>
+        <pre style="background:#1F2937;color:#A7F3D0;padding:12px;border-radius:8px;font-size:11px;margin-top:8px;overflow-x:auto;line-height:1.5">CREATE TABLE IF NOT EXISTS centercall_attacks (
+  id text PRIMARY KEY,
+  company_name text NOT NULL,
+  phone text,
+  address text,
+  website text,
+  industry text,
+  area text,
+  pref text,
+  city text,
+  district text,
+  email text,
+  instagram_url text,
+  facebook_url text,
+  x_url text,
+  tiktok_url text,
+  indeed_url text,
+  job_antenna_url text,
+  agre_url text,
+  mynavi_url text,
+  own_recruit_url text,
+  ceo_name text,
+  founding_date text,
+  established_date text,
+  revenue text,
+  employees text,
+  star_rating int DEFAULT 0,
+  status text DEFAULT 'untouched',
+  next_date date,
+  next_action text,
+  pending_callback boolean DEFAULT false,
+  priority int DEFAULT 0,
+  excluded boolean DEFAULT false,
+  last_called_at timestamptz,
+  used_script_id text,
+  history jsonb DEFAULT '[]'::jsonb,
+  email_history jsonb DEFAULT '[]'::jsonb,
+  memo text,
+  research_notes text,
+  created_at timestamptz DEFAULT now(),
+  updated_at timestamptz DEFAULT now()
+);
+
+ALTER TABLE centercall_attacks ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "cc_select" ON centercall_attacks FOR SELECT USING (true);
+CREATE POLICY "cc_insert" ON centercall_attacks FOR INSERT WITH CHECK (true);
+CREATE POLICY "cc_update" ON centercall_attacks FOR UPDATE USING (true);
+CREATE POLICY "cc_delete" ON centercall_attacks FOR DELETE USING (true);
+
+CREATE INDEX IF NOT EXISTS idx_cc_phone ON centercall_attacks(phone);
+CREATE INDEX IF NOT EXISTS idx_cc_status ON centercall_attacks(status);
+CREATE INDEX IF NOT EXISTS idx_cc_next_date ON centercall_attacks(next_date);
+
+CREATE TABLE IF NOT EXISTS centercall_scripts (
+  id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+  script_id text UNIQUE NOT NULL,
+  name text NOT NULL,
+  variant text,
+  script_json jsonb,
+  is_active boolean DEFAULT true,
+  sort_order integer DEFAULT 0,
+  updated_at timestamptz DEFAULT now()
+);
+
+ALTER TABLE centercall_scripts ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "ccs_select" ON centercall_scripts FOR SELECT USING (true);
+CREATE POLICY "ccs_insert" ON centercall_scripts FOR INSERT WITH CHECK (true);
+CREATE POLICY "ccs_update" ON centercall_scripts FOR UPDATE USING (true);
+CREATE POLICY "ccs_delete" ON centercall_scripts FOR DELETE USING (true);</pre>
+        <div style="margin-top:8px">実行できたら <a href="centercall.html" style="color:#14B8A6;font-weight:800">🎧 センターコール アタック画面へ</a></div>
+      </div>
+    </div>
+  </div> <!-- /service-centercall -->
 
 <script>
 // ========== 正規化関数 ==========
@@ -899,6 +1102,252 @@ async function uploadToSupabase() {
 }
 
 document.getElementById('upload-supabase-btn').addEventListener('click', uploadToSupabase);
+
+// ══════════════════════════════════════════
+// 🎧 センターコール用ロジック
+// ══════════════════════════════════════════
+
+// サービス切替
+function switchService(service) {
+  const tabPm = document.getElementById('tab-posmane');
+  const tabCc = document.getElementById('tab-centercall');
+  const blkPm = document.getElementById('service-posmane');
+  const blkCc = document.getElementById('service-centercall');
+  if (service === 'posmane') {
+    tabPm.classList.add('active'); tabCc.classList.remove('active');
+    blkPm.style.display = ''; blkCc.style.display = 'none';
+  } else {
+    tabCc.classList.add('active'); tabPm.classList.remove('active');
+    blkCc.style.display = ''; blkPm.style.display = 'none';
+  }
+}
+
+// CSV読み込み
+let ccRows = [];
+document.getElementById('cc-file').addEventListener('change', async (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const box = document.getElementById('cc-box');
+  const nameEl = document.getElementById('cc-name');
+  box.classList.add('loaded');
+  nameEl.textContent = '✅ ' + file.name;
+
+  const buf = await file.arrayBuffer();
+  let text;
+  try {
+    text = new TextDecoder('utf-8', { fatal: true }).decode(buf);
+  } catch {
+    text = new TextDecoder('shift-jis').decode(buf);
+  }
+  // 行頭にBOMが混入する事があるので削除
+  text = text.replace(/^\uFEFF/, '');
+
+  const parsed = parseSimpleCSV(text);
+  ccRows = parsed;
+
+  // プレビュー
+  const prev = document.getElementById('cc-preview');
+  const cnt = document.getElementById('cc-preview-content');
+  prev.style.display = 'block';
+  cnt.innerHTML = `
+    <div>📊 読み込み件数: <strong style="color:#0F766E;font-size:16px">${parsed.length}件</strong></div>
+    <div style="margin-top:6px;color:#6B7280;font-size:12px">先頭3件のサンプル：</div>
+    <div style="background:#F9FAFB;padding:8px;border-radius:6px;margin-top:4px;font-size:11px;line-height:1.6">
+      ${parsed.slice(0,3).map(r => `<div>・${escapeHtml(r.name || '')} - ${escapeHtml(r.phone || 'TEL未登録')} - ${escapeHtml((r.address||'').slice(0,30))}...</div>`).join('')}
+    </div>
+  `;
+  document.getElementById('cc-step3').style.display = '';
+});
+
+// シンプルCSVパース
+function parseSimpleCSV(text) {
+  const lines = text.split(/\r?\n/).filter(l => l.trim());
+  if (!lines.length) return [];
+  const headers = parseCSVLine(lines[0]).map(h => h.trim());
+  const rows = [];
+  for (let i = 1; i < lines.length; i++) {
+    const cells = parseCSVLine(lines[i]);
+    if (!cells.length || !cells[0]) continue;
+    const row = {};
+    headers.forEach((h, idx) => {
+      const v = (cells[idx] || '').trim();
+      // 一般的な列名マッピング
+      if (/施設名|会社名|name|企業名/i.test(h)) row.name = v;
+      else if (/電話|tel|phone/i.test(h)) row.phone = v;
+      else if (/住所|address/i.test(h)) row.address = v;
+      else if (/サイト|website|url|ホームページ/i.test(h)) row.website = v;
+      else if (/業種|ジャンル|industry/i.test(h)) row.industry = v;
+      else if (/エリア|area/i.test(h)) row.area = v;
+      else if (/都道府県|pref/i.test(h)) row.pref = v;
+      else if (/市町村|city/i.test(h)) row.city = v;
+      else if (/地区|district/i.test(h)) row.district = v;
+      else if (/instagram/i.test(h)) row.instagram_url = v;
+      else if (/facebook/i.test(h)) row.facebook_url = v;
+      else if (/^x[\-_ ]?url|twitter/i.test(h)) row.x_url = v;
+      else if (/tiktok/i.test(h)) row.tiktok_url = v;
+      else if (/indeed/i.test(h)) row.indeed_url = v;
+      else if (/mynavi|マイナビ/i.test(h)) row.mynavi_url = v;
+      else if (/email|メール/i.test(h)) row.email = v;
+      else if (/代表|ceo/i.test(h)) row.ceo_name = v;
+      else if (/年商|売上|revenue/i.test(h)) row.revenue = v;
+      else if (/従業員|employees/i.test(h)) row.employees = v;
+      row[h] = v;
+    });
+    if (row.name) rows.push(row);
+  }
+  return rows;
+}
+
+function parseCSVLine(line) {
+  const result = []; let current = ''; let inQuotes = false;
+  for (let i = 0; i < line.length; i++) {
+    const c = line[i];
+    if (c === '"') {
+      if (inQuotes && line[i+1] === '"') { current += '"'; i++; }
+      else inQuotes = !inQuotes;
+    } else if (c === ',' && !inQuotes) {
+      result.push(current); current = '';
+    } else {
+      current += c;
+    }
+  }
+  result.push(current);
+  return result.map(s => s.replace(/^"|"$/g, ''));
+}
+
+function escapeHtml(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// CSV ダウンロード
+document.getElementById('cc-download-btn').addEventListener('click', () => {
+  if (!ccRows.length) return;
+  const header = ['name','phone','address','website','industry','area','pref','city','district','email','instagram_url','facebook_url','x_url','tiktok_url','indeed_url','mynavi_url','ceo_name','revenue','employees'];
+  const csv = [header.join(',')].concat(
+    ccRows.map(r => header.map(h => {
+      const v = (r[h] || '').toString().replace(/"/g, '""');
+      return v.includes(',') || v.includes('\n') || v.includes('"') ? `"${v}"` : v;
+    }).join(','))
+  ).join('\r\n');
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(blob);
+  link.download = `centercall_${dateStr()}.csv`;
+  link.click();
+});
+
+// Supabase 登録
+document.getElementById('cc-upload-btn').addEventListener('click', async () => {
+  if (!ccRows.length) return;
+  const btn = document.getElementById('cc-upload-btn');
+  const statusEl = document.getElementById('cc-upload-status');
+  btn.disabled = true;
+  btn.textContent = '登録中...';
+
+  statusEl.innerHTML = `
+    <div class="upload-progress">
+      <div class="msg">📤 ${ccRows.length}件を登録中...</div>
+      <div class="bar-wrap"><div class="bar" id="cc-bar" style="width:0%"></div></div>
+      <div class="msg" id="cc-msg">準備中...</div>
+    </div>
+  `;
+
+  // 既存企業の電話番号を取得して重複チェック
+  let existingPhones = new Set();
+  try {
+    const { data: existing } = await sb.from('centercall_attacks').select('phone');
+    if (existing) existing.forEach(r => r.phone && existingPhones.add(r.phone.replace(/[^\d]/g,'')));
+  } catch (e) {
+    console.warn('既存取得失敗（テーブル未作成？）:', e);
+  }
+
+  // IDを付与＆既存スキップ
+  const toInsert = [];
+  let skipped = 0;
+  for (const r of ccRows) {
+    const normPhone = (r.phone || '').replace(/[^\d]/g,'');
+    if (normPhone && existingPhones.has(normPhone)) {
+      skipped++;
+      continue;
+    }
+    toInsert.push({
+      id: `cc_${Date.now()}_${Math.random().toString(36).slice(2,9)}`,
+      company_name: r.name || '',
+      phone: r.phone || '',
+      address: r.address || '',
+      website: r.website || '',
+      industry: r.industry || '',
+      area: r.area || '',
+      pref: r.pref || '',
+      city: r.city || '',
+      district: r.district || '',
+      email: r.email || null,
+      instagram_url: r.instagram_url || null,
+      facebook_url: r.facebook_url || null,
+      x_url: r.x_url || null,
+      tiktok_url: r.tiktok_url || null,
+      indeed_url: r.indeed_url || null,
+      mynavi_url: r.mynavi_url || null,
+      ceo_name: r.ceo_name || null,
+      revenue: r.revenue || null,
+      employees: r.employees || null,
+      status: 'untouched',
+      star_rating: 0,
+      pending_callback: false,
+      priority: 0,
+      excluded: false,
+      history: [],
+      email_history: [],
+    });
+  }
+
+  // バッチ50
+  const BATCH = 50;
+  let success = 0, errors = 0;
+  const errorMsgs = [];
+  for (let i = 0; i < toInsert.length; i += BATCH) {
+    const chunk = toInsert.slice(i, i + BATCH);
+    try {
+      const { error } = await sb.from('centercall_attacks').insert(chunk);
+      if (error) {
+        errors += chunk.length;
+        errorMsgs.push(error.message);
+      } else {
+        success += chunk.length;
+      }
+    } catch (e) {
+      errors += chunk.length;
+      errorMsgs.push(e.message);
+    }
+    const pct = Math.round(((i + chunk.length) / Math.max(toInsert.length, 1)) * 100);
+    document.getElementById('cc-bar').style.width = pct + '%';
+    document.getElementById('cc-msg').textContent = `${i + chunk.length} / ${toInsert.length} 件処理`;
+  }
+
+  if (errors === 0) {
+    statusEl.innerHTML = `
+      <div class="upload-progress success">
+        <div class="msg">✅ ${success}件 新規登録完了！${skipped > 0 ? ` （${skipped}件は既存のためスキップ）` : ''}</div>
+        <a href="centercall.html" class="attack-link" style="background:#14B8A6">🎧 センターコール アタック画面へ進む</a>
+      </div>
+    `;
+  } else {
+    statusEl.innerHTML = `
+      <div class="upload-progress error">
+        <div class="msg">⚠️ 成功: ${success}件 / エラー: ${errors}件${skipped > 0 ? ` / スキップ: ${skipped}件` : ''}</div>
+        <div class="msg" style="margin-top:6px;font-size:11px;color:var(--text-sub);">${errorMsgs.slice(0,3).join(' / ')}</div>
+        <div style="margin-top:8px;font-size:12px;color:#92400E">💡 「centercall_attacks テーブルが存在しない」エラーの場合は、上の「初回利用時のセットアップ」のSQLを先にSupabaseで実行してください</div>
+      </div>
+    `;
+  }
+  btn.disabled = false;
+  btn.textContent = '🚀 Supabase に登録してアタック開始';
+});
+
+function dateStr() {
+  const d = new Date();
+  return `${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}`;
+}
 </script>
 </body>
 </html>
