@@ -4350,6 +4350,9 @@ function generatePageNumbers(current, total) {
 }
 
 function renderList() {
+  // 業種フィルターのプルダウンをデータから動的生成
+  refreshIndustryFilter();
+
   const search = (document.getElementById('ls-search')?.value || '').toLowerCase();
   const ind = document.getElementById('ls-industry')?.value || '';
   const rank = document.getElementById('ls-rank')?.value || '';
@@ -9132,7 +9135,7 @@ function onIndustryChange() {
   }
 }
 
-// 業種値の取得（プルダウン or 自由入力）
+// 業種選択値の取得（プルダウン or 自由入力）
 function getSelectedIndustry() {
   const sel = document.getElementById('col-ind');
   if (!sel) return '';
@@ -9141,6 +9144,22 @@ function getSelectedIndustry() {
     return custom || '';
   }
   return sel.value || '';
+}
+
+// アタックリストの業種フィルタープルダウンを実データから動的生成
+function refreshIndustryFilter() {
+  const sel = document.getElementById('ls-industry');
+  if (!sel) return;
+  // 現在の選択値を保持
+  const cur = sel.value;
+  // 全企業のユニークな業種を集める
+  const industries = [...new Set(items.map(it => (it.industry || '').trim()).filter(Boolean))].sort();
+  // HTML再生成（全業種＋データから集めた全業種）
+  sel.innerHTML = '<option value="">🏭 全業種（' + industries.length + '種）</option>' +
+    industries.map(g => {
+      const count = items.filter(it => (it.industry || '').trim() === g).length;
+      return `<option value="${g.replace(/"/g,'&quot;')}" ${cur===g?'selected':''}>${g} (${count})</option>`;
+    }).join('');
 }
 
 function setCollectMode(mode) {
@@ -11477,13 +11496,27 @@ function exportCSV() {
 // 🎧 センターコールに送る（Supabase の centercall_attacks に直接登録）
 // ══════════════════════════════════════════
 async function sendToCenterCall() {
-  const list = (typeof getFilteredItems === 'function' ? getFilteredItems() : items);
+  // 現在のアタックリストのフィルター結果を取得
+  let list = [];
+  if (typeof getCurrentFilteredItems === 'function') {
+    list = getCurrentFilteredItems();
+  } else if (typeof getFilteredItems === 'function') {
+    list = getFilteredItems();
+  }
+
+  // フィルターが効いてなくて全件 = items.length と同じなら警告
   if (!list.length) {
     alert('⚠️ 送信対象がありません。フィルターで企業を絞り込んでから送ってください');
     return;
   }
-  if (!confirm(`🎧 センターコールへ ${list.length}件を送信しますか？\n\n※ 電話番号が同じ既存企業はスキップされます\n※ 送信後、centercall.html でアタック開始できます`)) {
-    return;
+  if (list.length === items.length) {
+    if (!confirm(`⚠️ 警告：フィルターが効いていません！\n\n全 ${list.length}件が送信されます。\n本当によろしいですか？\n\n（業種・エリアなどで絞り込んでから送ることを推奨）`)) {
+      return;
+    }
+  } else {
+    if (!confirm(`🎧 センターコールへ ${list.length}件を送信しますか？\n\n（現在のフィルター結果：${list.length}件 / 全企業：${items.length}件）\n\n※ 電話番号が同じ既存企業はスキップされます\n※ 送信後、centercall.html でアタック開始できます`)) {
+      return;
+    }
   }
 
   // 既存モーダル
