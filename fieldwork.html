@@ -1142,6 +1142,9 @@ tr:hover td { background: rgba(255,70,2,0.03); cursor: pointer; }
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
         CSV出力
       </button>
+      <button class="btn btn-sm" onclick="sendToCenterCall()" style="background:linear-gradient(135deg,#14B8A6,#2DD4BF);color:#fff;border:none;font-weight:700;font-size:13px;box-shadow:0 2px 8px rgba(20,184,166,0.3)" title="現在の絞り込み結果をセンターコール（電話アポ）に送る">
+        🎧 センターコールに送る
+      </button>
       <button class="btn btn-sm" onclick="openResearchGuide()" style="background:linear-gradient(135deg,#A78BFA,#7C3AED);color:#fff;border:none;font-weight:700;font-size:13px">
         📋 リサーチ手順書を開く
       </button>
@@ -1373,14 +1376,65 @@ tr:hover td { background: rgba(255,70,2,0.03); cursor: pointer; }
         </div>
         <div id="col-industry-wrap">
           <div style="font-size:13px;font-weight:700;color:#555;margin-bottom:6px">🏭 業種</div>
-          <select class="fsel" id="col-ind" style="font-size:14px;font-weight:600;border-radius:12px;border:2px solid #E5E5E5;padding:10px 12px;width:100%">
-            <option>不動産・建設</option><option>医療・クリニック・介護</option>
-            <option>飲食・食品</option><option>美容・エステ</option>
-            <option>宿泊施設・ホテル・旅館</option><option>観光施設・レジャー</option>
-            <option>行政・公共施設</option><option>学習塾・教育・スクール</option>
-            <option>広告代理店</option><option>WEB制作会社</option>
-            <option>コンサルティング会社</option><option>営業代行会社</option><option>その他</option>
+          <select class="fsel" id="col-ind" onchange="onIndustryChange()" style="font-size:14px;font-weight:600;border-radius:12px;border:2px solid #E5E5E5;padding:10px 12px;width:100%">
+            <optgroup label="🏠 住宅・リフォーム系（BtoBテレアポ向け）">
+              <option>リフォーム会社</option>
+              <option>塗装会社</option>
+              <option>外構・エクステリア</option>
+              <option>屋根・雨とい工事</option>
+              <option>キッチン・水回りリフォーム</option>
+              <option>トイレリフォーム</option>
+              <option>シロアリ駆除・防虫</option>
+              <option>ハウスクリーニング</option>
+              <option>解体工事</option>
+            </optgroup>
+            <optgroup label="🏢 不動産・建設">
+              <option>不動産・建設</option>
+              <option>不動産仲介</option>
+              <option>注文住宅・工務店</option>
+            </optgroup>
+            <optgroup label="🏥 医療・福祉">
+              <option>医療・クリニック・介護</option>
+              <option>歯科クリニック</option>
+              <option>整体・接骨院</option>
+            </optgroup>
+            <optgroup label="🍽 飲食・サービス">
+              <option>飲食・食品</option>
+              <option>美容・エステ</option>
+              <option>宿泊施設・ホテル・旅館</option>
+              <option>観光施設・レジャー</option>
+            </optgroup>
+            <optgroup label="🏫 教育・士業">
+              <option>学習塾・教育・スクール</option>
+              <option>士業（税理士・弁護士・社労士）</option>
+              <option>司法書士事務所</option>
+            </optgroup>
+            <optgroup label="💼 法人・BtoB">
+              <option>広告代理店</option>
+              <option>WEB制作会社</option>
+              <option>コンサルティング会社</option>
+              <option>営業代行会社</option>
+              <option>システム開発会社</option>
+              <option>印刷会社</option>
+              <option>製造業</option>
+            </optgroup>
+            <optgroup label="🚗 その他">
+              <option>自動車整備・板金</option>
+              <option>レンタカー</option>
+              <option>運送・物流</option>
+              <option>その他</option>
+            </optgroup>
+            <optgroup label="🔍 自由キーワード">
+              <option value="__custom__">📝 自由キーワードで検索（下に入力）</option>
+            </optgroup>
           </select>
+          <!-- 自由キーワード入力枠（業種が「自由」のときだけ表示） -->
+          <div id="col-ind-custom-wrap" style="display:none;margin-top:8px">
+            <input type="text" id="col-ind-custom" placeholder="例：ペット美容室、太陽光発電、葬儀社..." 
+                   style="width:100%;font-size:14px;padding:10px 12px;border:2px solid #14B8A6;border-radius:12px;font-family:inherit;outline:none"
+                   onkeydown="if(event.key==='Enter'){event.preventDefault();}">
+            <div style="font-size:11px;color:#0F766E;margin-top:4px;font-weight:700">💡 Google Mapsで通用する業種名を日本語で入力してください</div>
+          </div>
         </div>
       </div>
       <!-- 件数固定の説明 -->
@@ -9002,7 +9056,7 @@ function getNextArea(pref, ind) {
 
 function updateNextAreaPreview() {
   const pref = document.getElementById('col-pref')?.value || 'okinawa';
-  const ind = collectType === 'agency' ? '広告代理店' : (document.getElementById('col-ind')?.value || '');
+  const ind = collectType === 'agency' ? '広告代理店' : getSelectedIndustry();
   const ranking = AREA_RANKINGS[pref] || [];
   const nameEl = document.getElementById('next-area-name');
   const rankEl = document.getElementById('next-area-rank');
@@ -9062,6 +9116,32 @@ const PREF_AREA_GROUPS = {
   okinawa: OKINAWA_AREA_GROUPS,
   // 他県は未定義（必要に応じて追加）
 };
+
+// ══════════════════════════════════════════
+// 🏭 業種選択ヘルパー（自由キーワード対応）
+// ══════════════════════════════════════════
+function onIndustryChange() {
+  const sel = document.getElementById('col-ind');
+  const wrap = document.getElementById('col-ind-custom-wrap');
+  if (!sel || !wrap) return;
+  if (sel.value === '__custom__') {
+    wrap.style.display = '';
+    setTimeout(() => document.getElementById('col-ind-custom')?.focus(), 100);
+  } else {
+    wrap.style.display = 'none';
+  }
+}
+
+// 業種値の取得（プルダウン or 自由入力）
+function getSelectedIndustry() {
+  const sel = document.getElementById('col-ind');
+  if (!sel) return '';
+  if (sel.value === '__custom__') {
+    const custom = document.getElementById('col-ind-custom')?.value?.trim();
+    return custom || '';
+  }
+  return sel.value || '';
+}
 
 function setCollectMode(mode) {
   collectMode = mode;
@@ -9725,7 +9805,7 @@ var autoCollectStats = {added: 0, skipped: 0};
 
 async function startAutoCollect() {
   const pref = document.getElementById('col-pref')?.value || 'okinawa';
-  const ind = collectType === 'agency' ? '広告代理店' : document.getElementById('col-ind').value;
+  const ind = collectType === 'agency' ? '広告代理店' : getSelectedIndustry();
   const ranking = AREA_RANKINGS[pref] || [];
   if (!ranking.length) { toast('この都道府県のエリアデータがありません。'); return; }
 
@@ -9863,7 +9943,7 @@ function stopAutoCollect() {
 
 async function resetCollectedAreas() {
   const pref = document.getElementById('col-pref')?.value || 'okinawa';
-  const ind = collectType === 'agency' ? '広告代理店' : (document.getElementById('col-ind')?.value || '');
+  const ind = collectType === 'agency' ? '広告代理店' : getSelectedIndustry();
   if (!confirm(pref + ' × ' + ind + ' の収集済みエリアをリセットしますか？企業データは削除されません。')) return;
   if (!collectedAreas[pref]) collectedAreas[pref] = [];
   collectedAreas[pref] = collectedAreas[pref].filter(x => !x.startsWith(ind + '|'));
@@ -9875,7 +9955,7 @@ async function resetCollectedAreas() {
 
 async function startCollect() {
   const pref = document.getElementById('col-pref')?.value || 'okinawa';
-  const ind = collectType === 'agency' ? '広告代理店' : document.getElementById('col-ind').value;
+  const ind = collectType === 'agency' ? '広告代理店' : getSelectedIndustry();
   const ranking = AREA_RANKINGS[pref] || [];
   if (!ranking.length) { toast('この都道府県のエリアデータがありません。'); return; }
   const area = getNextArea(pref, ind);
@@ -11391,6 +11471,170 @@ function exportCSV() {
   const a = document.createElement('a'); a.href = url;
   a.download = 'fieldwork_' + todayJST() + '.csv'; a.click();
   toast('CSVエクスポート完了（' + list.length + '件）');
+}
+
+// ══════════════════════════════════════════
+// 🎧 センターコールに送る（Supabase の centercall_attacks に直接登録）
+// ══════════════════════════════════════════
+async function sendToCenterCall() {
+  const list = (typeof getFilteredItems === 'function' ? getFilteredItems() : items);
+  if (!list.length) {
+    alert('⚠️ 送信対象がありません。フィルターで企業を絞り込んでから送ってください');
+    return;
+  }
+  if (!confirm(`🎧 センターコールへ ${list.length}件を送信しますか？\n\n※ 電話番号が同じ既存企業はスキップされます\n※ 送信後、centercall.html でアタック開始できます`)) {
+    return;
+  }
+
+  // 既存モーダル
+  const existing = document.getElementById('m-send-cc');
+  if (existing) existing.remove();
+  const m = document.createElement('div');
+  m.id = 'm-send-cc';
+  m.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:99999';
+  m.innerHTML = `
+    <div style="background:#fff;border-radius:18px;padding:28px;max-width:480px;width:90%;font-family:'Hiragino Maru Gothic ProN','Yu Gothic UI',sans-serif">
+      <div style="font-size:20px;font-weight:900;color:#0F766E;margin-bottom:12px">🎧 センターコールへ送信中</div>
+      <div id="cc-send-progress" style="font-size:13px;color:#374151;line-height:1.8">準備中...</div>
+      <div style="background:#F0FDFA;border-radius:10px;height:10px;margin-top:14px;overflow:hidden">
+        <div id="cc-send-bar" style="background:linear-gradient(90deg,#14B8A6,#2DD4BF);height:100%;width:0%;transition:width 0.3s"></div>
+      </div>
+      <div id="cc-send-result" style="margin-top:14px;display:none"></div>
+    </div>
+  `;
+  document.body.appendChild(m);
+
+  const prog = document.getElementById('cc-send-progress');
+  const bar = document.getElementById('cc-send-bar');
+  const result = document.getElementById('cc-send-result');
+
+  // STEP 1: 既存企業の電話番号を取得（重複スキップ用）
+  prog.textContent = '🔍 既存企業の電話番号を確認中...';
+  let existingPhones = new Set();
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/centercall_attacks?select=phone`, {
+      headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
+    });
+    if (res.ok) {
+      const data = await res.json();
+      data.forEach(r => { if (r.phone) existingPhones.add(r.phone.replace(/[^\d]/g, '')); });
+    } else if (res.status === 404 || res.status === 400) {
+      result.style.display = 'block';
+      result.innerHTML = `
+        <div style="background:#FEE2E2;border:1.5px solid #DC2626;border-radius:10px;padding:14px;color:#991B1B;font-size:12px;line-height:1.7">
+          ⚠️ <strong>centercall_attacks テーブルが存在しません</strong><br>
+          attack.html の「センターコール」タブで一番下の SQL を Supabase で先に実行してください。
+        </div>
+        <div style="margin-top:12px;text-align:center"><button onclick="document.getElementById('m-send-cc').remove()" style="padding:10px 24px;background:#9CA3AF;color:#fff;border:none;border-radius:8px;font-weight:800;cursor:pointer">閉じる</button></div>
+      `;
+      return;
+    }
+  } catch (e) {
+    console.warn('既存取得失敗:', e);
+  }
+
+  // STEP 2: 整形＆スキップ判定
+  const toInsert = [];
+  let skipped = 0;
+  for (const it of list) {
+    const normPhone = (it.phone || '').replace(/[^\d]/g, '');
+    if (normPhone && existingPhones.has(normPhone)) {
+      skipped++;
+      continue;
+    }
+    toInsert.push({
+      id: `cc_${Date.now()}_${Math.random().toString(36).slice(2, 9)}_${toInsert.length}`,
+      company_name: it.company || '',
+      phone: it.phone || '',
+      address: it.addr || '',
+      website: it.website || '',
+      industry: it.industry || '',
+      area: it.area || '',
+      email: it.email || null,
+      instagram_url: it.instaUrl || null,
+      facebook_url: it.fbUrl || null,
+      x_url: it.xUrl || null,
+      tiktok_url: it.tiktokUrl || null,
+      indeed_url: it.indeedUrl || null,
+      mynavi_url: it.mynaviUrl || null,
+      ceo_name: it.ceoName || null,
+      revenue: it.revenue || null,
+      employees: it.employeeCount || null,
+      status: 'untouched',
+      star_rating: 0,
+      pending_callback: false,
+      priority: 0,
+      excluded: false,
+      history: [],
+      email_history: [],
+      memo: it.researchNotes || '',
+    });
+  }
+
+  if (!toInsert.length) {
+    result.style.display = 'block';
+    result.innerHTML = `
+      <div style="background:#FEF3C7;border:1.5px solid #F59E0B;border-radius:10px;padding:14px;color:#92400E;font-size:13px;line-height:1.7">
+        ℹ️ ${list.length}件すべて既存企業（電話番号一致）でした。<br>新規追加はありません。
+      </div>
+      <div style="margin-top:12px;text-align:center"><button onclick="document.getElementById('m-send-cc').remove()" style="padding:10px 24px;background:#14B8A6;color:#fff;border:none;border-radius:8px;font-weight:800;cursor:pointer">閉じる</button></div>
+    `;
+    return;
+  }
+
+  // STEP 3: 50件ずつバッチ insert
+  prog.textContent = `📤 ${toInsert.length}件を送信中...（既存スキップ: ${skipped}件）`;
+  const BATCH = 50;
+  let success = 0, errors = 0;
+  const errorMsgs = [];
+  for (let i = 0; i < toInsert.length; i += BATCH) {
+    const chunk = toInsert.slice(i, i + BATCH);
+    try {
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/centercall_attacks`, {
+        method: 'POST',
+        headers: {
+          'apikey': SUPABASE_KEY,
+          'Authorization': `Bearer ${SUPABASE_KEY}`,
+          'Content-Type': 'application/json',
+          'Prefer': 'return=minimal',
+        },
+        body: JSON.stringify(chunk),
+      });
+      if (res.ok) {
+        success += chunk.length;
+      } else {
+        const txt = await res.text();
+        errors += chunk.length;
+        errorMsgs.push(txt.slice(0, 200));
+      }
+    } catch (e) {
+      errors += chunk.length;
+      errorMsgs.push(e.message);
+    }
+    const pct = Math.round(((i + chunk.length) / toInsert.length) * 100);
+    bar.style.width = pct + '%';
+    prog.textContent = `📤 ${i + chunk.length} / ${toInsert.length} 件処理（成功: ${success} / エラー: ${errors}）`;
+  }
+
+  // 完了
+  result.style.display = 'block';
+  if (errors === 0) {
+    result.innerHTML = `
+      <div style="background:#D1FAE5;border:1.5px solid #10B981;border-radius:10px;padding:14px;color:#065F46;font-size:13px;line-height:1.8">
+        ✅ <strong>${success}件 新規登録完了！</strong>${skipped > 0 ? `（${skipped}件は既存のためスキップ）` : ''}<br>
+        <a href="centercall.html" style="display:inline-block;margin-top:10px;background:#14B8A6;color:#fff;padding:10px 20px;border-radius:8px;text-decoration:none;font-weight:800">🎧 センターコール｜アタック画面へ進む →</a>
+      </div>
+      <div style="margin-top:12px;text-align:center"><button onclick="document.getElementById('m-send-cc').remove()" style="padding:8px 20px;background:#9CA3AF;color:#fff;border:none;border-radius:8px;font-weight:700;cursor:pointer;font-size:12px">閉じる</button></div>
+    `;
+  } else {
+    result.innerHTML = `
+      <div style="background:#FEE2E2;border:1.5px solid #DC2626;border-radius:10px;padding:14px;color:#991B1B;font-size:12px;line-height:1.7">
+        ⚠️ 成功: ${success}件 / エラー: ${errors}件${skipped > 0 ? ` / スキップ: ${skipped}件` : ''}<br>
+        <div style="font-size:11px;margin-top:6px;opacity:0.8">${errorMsgs.slice(0, 2).join(' / ')}</div>
+      </div>
+      <div style="margin-top:12px;text-align:center"><button onclick="document.getElementById('m-send-cc').remove()" style="padding:8px 20px;background:#9CA3AF;color:#fff;border:none;border-radius:8px;font-weight:700;cursor:pointer">閉じる</button></div>
+    `;
+  }
 }
 
 // ══════════════════════════════
