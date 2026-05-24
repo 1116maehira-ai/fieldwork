@@ -802,6 +802,7 @@ body {
       <button class="report-btn" onclick="openReport()" style="cursor:pointer;border:1px solid rgba(255,255,255,0.3);padding:6px 12px;border-radius:8px;font-size:12px;font-weight:700;color:white;background:rgba(255,255,255,0.3);">📊 レポート</button>
       <a href="attack.html">📋 リスト作成</a>
       <a href="fieldwork.html">🔍 FIELDWORK</a>
+      <button onclick="openBulkResearch()" style="cursor:pointer;border:1px solid rgba(255,255,255,0.3);padding:6px 12px;border-radius:8px;font-size:12px;font-weight:700;color:white;background:rgba(255,255,255,0.3);font-family:inherit">🤖 一括リサーチ</button>
     </div>
   </div>
 
@@ -884,6 +885,7 @@ const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 let companies = [];
 let scripts = [];
 let currentScriptIndex = 0; // ★ 現在使ってるスクリプトのインデックス（0=A, 1=B, 2=C）
+let currentTab = 'script'; // ★ モーダル内タブ：'script' | 'info'
 let currentFilter = 'all';
 let currentArea = 'all';
 let currentPriority = 'all';
@@ -1273,6 +1275,7 @@ function openModal(id) {
   if (!c) return;
   currentCompany = c;
   currentScriptIndex = 0; // 開く時は常にA：王道ハートフルに戻す
+  currentTab = 'script'; // タブもスクリプトに戻す
   currentStepKey = (scripts[currentScriptIndex]?.script_json?.start) || 'opening';
   scriptHistory = [];
   scriptEditMode = false;
@@ -1356,6 +1359,23 @@ function renderModal() {
       }
     </div>
 
+    <!-- ★ 大タブ：トークスクリプト / 基本情報 -->
+    <div style="display:flex;gap:0;margin-bottom:14px;background:#F0FDFA;border-radius:14px;padding:6px;border:1.5px solid #99F6E4">
+      <button onclick="switchModalTab('script')" style="
+        flex:1;padding:12px 14px;border:none;border-radius:10px;font-size:14px;font-weight:900;cursor:pointer;font-family:inherit;
+        background:${currentTab === 'script' ? 'linear-gradient(135deg,#14B8A6,#2DD4BF)' : 'transparent'};
+        color:${currentTab === 'script' ? '#fff' : '#6B7280'};
+        transition:all 0.15s;
+      ">📞 トークスクリプト</button>
+      <button onclick="switchModalTab('info')" style="
+        flex:1;padding:12px 14px;border:none;border-radius:10px;font-size:14px;font-weight:900;cursor:pointer;font-family:inherit;
+        background:${currentTab === 'info' ? 'linear-gradient(135deg,#14B8A6,#2DD4BF)' : 'transparent'};
+        color:${currentTab === 'info' ? '#fff' : '#6B7280'};
+        transition:all 0.15s;
+      ">📋 基本情報</button>
+    </div>
+
+    ${currentTab === 'script' ? `
     <!-- ★ トークスクリプトバリエーション切替タブ -->
     <div style="display:flex;gap:6px;margin-bottom:10px;align-items:center;flex-wrap:wrap">
       <span style="font-size:11px;font-weight:700;color:#0F766E">📜 トークパターン：</span>
@@ -1390,6 +1410,7 @@ function renderModal() {
       <button class="date-quick" onclick="setQuickDate(7)">1週間後</button>
       <button class="date-quick" onclick="setQuickDate(0)">クリア</button>
     </div>
+    ` : `<!-- INFOタブ -->${renderInfoTab(c)}`}
 
     <div class="finish-section">
       <div class="ttl">📞 通話結果を記録して終了</div>
@@ -1600,6 +1621,771 @@ function switchScriptVariant(idx) {
   scriptEditMode = false;
   // モーダル全体を再描画（タブのアクティブ表示も更新するため）
   renderModal();
+}
+
+// ★ モーダル内の大タブ切替（script / info）
+function switchModalTab(tab) {
+  currentTab = tab;
+  renderModal();
+}
+
+// ════════════════════════════════════════
+// 📋 基本情報タブのレンダリング
+// ════════════════════════════════════════
+function renderInfoTab(c) {
+  const fields = [
+    { key: 'company_name', label: '🏢 会社名', type: 'text', required: true },
+    { key: 'phone', label: '📞 電話番号', type: 'text' },
+    { key: 'address', label: '📍 住所', type: 'text' },
+    { key: 'website', label: '🌐 公式HP URL', type: 'url' },
+    { key: 'industry', label: '🏷️ 業種', type: 'text' },
+    { key: 'ceo_name', label: '👤 代表者名', type: 'text' },
+    { key: 'founding_date', label: '🌱 創業年月日', type: 'text', placeholder: '例：2015-04' },
+    { key: 'established_date', label: '📅 設立年月日', type: 'text', placeholder: '例：2018-01' },
+    { key: 'email', label: '📧 メールアドレス', type: 'email' },
+    { key: 'revenue', label: '💰 推定年商', type: 'text', placeholder: '例：約5億円' },
+    { key: 'employees', label: '👥 従業員数', type: 'text', placeholder: '例：約30名' },
+    { key: 'instagram_url', label: '📷 Instagram URL', type: 'url' },
+    { key: 'facebook_url', label: '📘 Facebook URL', type: 'url' },
+    { key: 'x_url', label: '🐦 X（Twitter）URL', type: 'url' },
+    { key: 'tiktok_url', label: '🎵 TikTok URL', type: 'url' },
+    { key: 'indeed_url', label: '💼 Indeed URL', type: 'url' },
+    { key: 'mynavi_url', label: '💼 マイナビ URL', type: 'url' },
+    { key: 'agre_url', label: '💼 アグレ URL', type: 'url' },
+    { key: 'job_antenna_url', label: '💼 ジョブアンテナ URL', type: 'url' },
+    { key: 'own_recruit_url', label: '💼 自社採用ページ URL', type: 'url' },
+  ];
+
+  return `
+    <div style="background:#F0FDFA;border:1.5px solid #14B8A6;border-radius:12px;padding:12px 14px;margin-bottom:14px;font-size:12px;color:#0F766E;line-height:1.7">
+      💡 <strong>基本情報を分厚くしていく</strong><br>
+      ① 下のボタンで「公式HP用」「SNS/求人用」のプロンプトを生成<br>
+      ② Claude.ai（webブラウザ版）に貼り付けて実行<br>
+      ③ 返ってきたCSVを下のテキストエリアに貼り付け → 取り込む<br>
+      ④ <strong>既存データは保護</strong>されます（空欄のところだけ自動補完）
+    </div>
+
+    <!-- STEP 1: プロンプト生成 -->
+    <div class="section-title">🤖 STEP 1：AIで情報収集（プロンプト生成）</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px">
+      <button onclick="copyInfoPrompt('hp')" style="padding:14px;background:linear-gradient(135deg,#14B8A6,#2DD4BF);color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:900;cursor:pointer;font-family:inherit;box-shadow:0 2px 8px rgba(20,184,166,0.3)">
+        📋 公式HP用プロンプトをコピー
+        <div style="font-size:10px;font-weight:600;opacity:0.9;margin-top:2px">代表者・創業日・SNS等を公式HPから抽出</div>
+      </button>
+      <button onclick="copyInfoPrompt('sns')" style="padding:14px;background:linear-gradient(135deg,#A855F7,#7C3AED);color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:900;cursor:pointer;font-family:inherit;box-shadow:0 2px 8px rgba(168,85,247,0.3)">
+        📋 SNS/求人用プロンプトをコピー
+        <div style="font-size:10px;font-weight:600;opacity:0.9;margin-top:2px">Instagram・求人サイトをホワイトリスト検索</div>
+      </button>
+    </div>
+
+    <!-- STEP 2: 結果貼り付け -->
+    <div class="section-title">📥 STEP 2：AIの返答（CSV）を貼り付けて取り込む</div>
+    <textarea id="info-csv-paste" placeholder="ここに Claude.ai から返ってきたCSVを貼り付け...&#10;例：&#10;company_name,ceo_name,founding_date,...&#10;&quot;株式会社○○&quot;,&quot;山田太郎&quot;,&quot;2015-04&quot;,..." 
+      style="width:100%;min-height:120px;padding:10px;border:2px solid #14B8A6;border-radius:10px;font-size:12px;font-family:var(--font-mono,monospace);line-height:1.5;outline:none;resize:vertical;margin-bottom:10px"></textarea>
+    <button onclick="applyInfoCsv()" style="width:100%;padding:12px;background:linear-gradient(135deg,#10B981,#059669);color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:900;cursor:pointer;font-family:inherit;margin-bottom:18px">
+      ✨ CSVを取り込む（空欄のみ補完）
+    </button>
+
+    <!-- STEP 3: 表示・編集 -->
+    <div class="section-title">📋 STEP 3：基本情報（手動で編集も可）</div>
+    <div style="display:grid;gap:10px;margin-bottom:14px">
+      ${fields.map(f => `
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+          <label style="font-size:12px;font-weight:800;color:#0F766E;min-width:140px;flex-shrink:0">${f.label}</label>
+          <input type="${f.type}" id="info-${f.key}" value="${escapeHtml(c[f.key] || '')}" 
+            placeholder="${f.placeholder || ''}"
+            style="flex:1;min-width:180px;padding:8px 10px;border:1.5px solid #99F6E4;border-radius:8px;font-size:13px;font-family:inherit;outline:none;background:${c[f.key] ? '#fff' : '#FAFAFB'}">
+        </div>
+      `).join('')}
+    </div>
+    <button onclick="saveInfoFields()" style="width:100%;padding:12px;background:linear-gradient(135deg,#14B8A6,#2DD4BF);color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:900;cursor:pointer;font-family:inherit;box-shadow:0 2px 8px rgba(20,184,166,0.3);margin-bottom:14px">
+      💾 基本情報を保存
+    </button>
+
+    ${c.research_notes ? `
+      <div style="background:#FFFBEB;border:1.5px solid #F59E0B;border-radius:10px;padding:10px 12px;font-size:11px;color:#92400E;line-height:1.7;margin-bottom:14px">
+        <strong>📝 リサーチメモ：</strong><br>
+        ${escapeHtml(c.research_notes).replace(/\\n/g, '<br>')}
+      </div>
+    ` : ''}
+  `;
+}
+
+// プロンプトコピー
+function copyInfoPrompt(type) {
+  const c = currentCompany;
+  if (!c) return;
+  let prompt;
+  if (type === 'hp') {
+    prompt = buildHpPrompt(c);
+  } else {
+    prompt = buildSnsPrompt(c);
+  }
+  navigator.clipboard.writeText(prompt).then(() => {
+    showToast(`📋 ${type === 'hp' ? '公式HP用' : 'SNS/求人用'}プロンプトをコピーしました`, 'success');
+  }).catch(e => {
+    // fallback: 一時的なtextareaに入れて選択
+    const ta = document.createElement('textarea');
+    ta.value = prompt;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    showToast('📋 プロンプトをコピーしました', 'success');
+  });
+}
+
+// 公式HP用プロンプト
+function buildHpPrompt(c) {
+  const name = c.company_name || '';
+  const hp = c.website || '';
+  const domain = hp ? hp.replace(/^https?:\/\//, '').replace(/\/.*$/, '') : '';
+  const urlCandidates = hp ? [
+    hp,
+    hp.replace(/\/$/, '') + '/company',
+    hp.replace(/\/$/, '') + '/company/',
+    hp.replace(/\/$/, '') + '/about',
+    hp.replace(/\/$/, '') + '/about/',
+    hp.replace(/\/$/, '') + '/recruit',
+    hp.replace(/\/$/, '') + '/recruit/',
+    hp.replace(/\/$/, '') + '/info',
+    hp.replace(/\/$/, '') + '/info/',
+  ].map(u => `・${u}`).join('\n') : '（公式サイト未登録 - 検索で見つけてください）';
+
+  return `以下の企業について、指定したURLとそのドメイン内のサブページのみを読み、情報を抽出してください。
+
+【❗ 最重要：ハルシネーション禁止】
+1. あなたの学習データの記憶ではなく、必ず実際にURLにアクセスして読むこと
+2. サイト内に明記されていない項目は必ず N/A
+3. 推測・想像で値を埋めることは絶対禁止
+4. 各値には必ず「出典：原文の引用とURL」を notes に書く
+
+【調査対象企業】
+"${name}"
+公式サイト：${hp || '（不明）'}
+
+【まず最優先で確認すべきURL候補（存在すれば必ず読む）】
+${urlCandidates}
+上記URLが404やリンク切れの場合は無視し、トップページのナビゲーションから「会社概要・About・採用情報」などのページを探して読むこと
+
+【調査ルール】
+・参照可能なドメインは ${domain || '対象企業の公式サイト'} のみ。それ以外は参照禁止
+・他のドメイン（Google検索結果、Wikipedia、SNSの中身、まとめサイト等）は参照禁止
+・「会社概要」「代表挨拶」「私たちについて」「採用情報」「会社情報」「About」などのサブページがあれば必ず巡回
+・サイト内に存在しない情報は必ず N/A（推測禁止）
+
+【出力CSV列】
+company_name,ceo_name,email,founding_date,established_date,instagram_url,facebook_url,x_url,tiktok_url,indeed_url,job_antenna_url,agre_url,mynavi_url,own_recruit_url,revenue,employees,notes
+
+【各列の説明】
+・ceo_name: 代表者名（「代表取締役」「代表」「社長」などの肩書きの直後の氏名のみ）
+・email: サイト内に明記された公開メールアドレス
+・founding_date: 創業年月日（YYYY-MM形式、「創業」と明記されたもの）
+・established_date: 設立年月日（YYYY-MM形式、「設立」と明記されたもの）
+・instagram_url ～ tiktok_url: SNS公式URL（サイト内にリンクがあれば）
+・indeed_url ～ mynavi_url: 求人サイト企業ページURL（サイト内にリンクがあれば）
+・own_recruit_url: 自社の採用ページURL
+・revenue: 年商（サイトに明記がある場合のみ。記載なしは N/A）
+・employees: 従業員数（サイトに明記がある場合のみ。記載なしは N/A）
+・notes: 各項目の出典URLを必ず記載
+
+【出力ルール】
+・1行目はヘッダー行、2行目がデータ行（行と行の間に必ず改行を入れること）
+・各値は必ずダブルクォートで囲む
+・不明な項目は N/A（空白不可）
+・URLは https:// から始まる完全形式
+・Markdownリンク [text](url) は使わない`;
+}
+
+// SNS/求人用プロンプト
+function buildSnsPrompt(c) {
+  const name = c.company_name || '';
+  const hp = c.website || '';
+  const address = c.address || '';
+  const phone = c.phone || '';
+
+  return `以下の企業について、指定された信頼ドメインのみを調査し、SNS・求人URLを抽出してください。
+
+【❗ 最重要：ハルシネーション禁止】
+1. あなたの学習データの記憶ではなく、実際にWeb検索して見つけること
+2. 下記の許可ドメイン以外は一切参照禁止
+3. アカウント名・URLは「実在を確認した」もののみ。「ありそう」「あるはず」は禁止
+4. 同名の別企業のアカウントを混ぜないこと。所在地・電話番号で必ず照合
+5. 見つからない項目は必ず N/A
+6. 各値の出典URLを必ず notes に記載
+
+【許可ドメイン（ホワイトリスト）】
+・SNS: instagram.com, facebook.com, x.com, twitter.com, tiktok.com
+・求人: indeed.com, mynavi.jp, mynavi-agent.jp, agre.co.jp, job-antenna.jp
+※ 上記以外のドメイン（まとめサイト、ブログ、Wikipedia、検索結果ページ等）は禁止
+
+【調査対象企業】
+"${name}"
+公式サイト：${hp || '（不明）'}
+所在地：${address || '（不明）'}
+電話番号：${phone || '（不明）'}
+
+【照合ルール】
+・同名企業が複数ある場合、所在地（住所）または電話番号でこの企業と一致するアカウントのみ採用
+・所在地や電話番号が確認できないアカウントは N/A 扱い
+
+【出力CSV列】
+instagram_url,facebook_url,x_url,tiktok_url,indeed_url,job_antenna_url,agre_url,mynavi_url,notes
+
+【各列の説明】
+・instagram_url: Instagram公式アカウント。site:instagram.com で検索
+・facebook_url: Facebook公式ページ。site:facebook.com で検索
+・x_url: X（旧Twitter）公式アカウント。site:x.com または site:twitter.com で検索
+・tiktok_url: TikTok公式アカウント。site:tiktok.com で検索
+・indeed_url: Indeedの企業ページ。site:indeed.com で検索
+・job_antenna_url: ジョブアンテナの企業ページ。site:job-antenna.jp で検索
+・agre_url: アグレ（沖縄の求人サイト）の企業ページ。site:agre.co.jp で検索
+・mynavi_url: マイナビの企業ページ。site:mynavi.jp で検索
+・notes: 各URLの出典（どのページで実在を確認したか）を必ず記載
+
+【出力ルール】
+・1行目はヘッダー行、2行目がデータ行（行と行の間に必ず改行を入れること）
+・各値はダブルクォートで囲む
+・不明な項目は必ず N/A
+・URLは https:// から始まる完全形式
+・Markdownリンク [text](url) は使わない`;
+}
+
+// CSV取り込み（既存データを保護）
+async function applyInfoCsv() {
+  const ta = document.getElementById('info-csv-paste');
+  if (!ta) return;
+  const text = (ta.value || '').trim();
+  if (!text) { alert('⚠️ CSVを貼り付けてください'); return; }
+
+  try {
+    const parsed = parseInfoCsvText(text);
+    if (!parsed || !Object.keys(parsed).length) {
+      alert('⚠️ CSVを解析できませんでした。ヘッダー行とデータ行があるか確認してください。');
+      return;
+    }
+
+    const c = currentCompany;
+    if (!c) return;
+    const updates = {};
+    const protected_ = []; // 既存があったため上書きしなかった項目
+    const filled = []; // 新規に補完した項目
+
+    // 各フィールドを「空のときだけ補完」
+    const allowedFields = [
+      'ceo_name', 'email', 'founding_date', 'established_date',
+      'instagram_url', 'facebook_url', 'x_url', 'tiktok_url',
+      'indeed_url', 'job_antenna_url', 'agre_url', 'mynavi_url', 'own_recruit_url',
+      'revenue', 'employees',
+    ];
+    for (const key of allowedFields) {
+      const incoming = (parsed[key] || '').trim();
+      if (!incoming || incoming === 'N/A' || incoming.toLowerCase() === 'n/a') continue;
+      const existing = (c[key] || '').toString().trim();
+      if (existing) {
+        protected_.push(key);
+      } else {
+        updates[key] = incoming;
+        filled.push(key);
+      }
+    }
+
+    // notes はリサーチメモに追記
+    if (parsed.notes && parsed.notes !== 'N/A') {
+      const date = new Date().toISOString().slice(0, 10);
+      const prev = c.research_notes || '';
+      const newNote = `[${date}] AIリサーチ結果:\n${parsed.notes}`;
+      updates.research_notes = prev ? prev + '\n\n' + newNote : newNote;
+    }
+
+    if (!Object.keys(updates).length) {
+      alert(`ℹ️ 新規に補完できる項目がありませんでした\n（既存データがあったためスキップ: ${protected_.length}項目）`);
+      return;
+    }
+
+    // Supabase 更新
+    const { error } = await sb
+      .from('centercall_attacks')
+      .update(updates)
+      .eq('id', c.id);
+    if (error) throw error;
+
+    // ローカル更新
+    Object.assign(c, updates);
+    showToast(`✨ ${filled.length}項目を補完しました${protected_.length > 0 ? `（${protected_.length}項目は既存データを保護）` : ''}`, 'success');
+    renderModal();
+  } catch (e) {
+    console.error(e);
+    alert('❌ 取り込みエラー: ' + e.message);
+  }
+}
+
+// CSVテキストをパースして1行目のデータをオブジェクトで返す
+function parseInfoCsvText(text) {
+  const lines = text.split(/\r?\n/).filter(l => l.trim());
+  if (lines.length < 2) return null;
+  // ヘッダー行
+  const headers = parseInfoCsvLine(lines[0]).map(h => h.trim().toLowerCase());
+  // 2行目以降の最初のデータ行
+  for (let i = 1; i < lines.length; i++) {
+    const cells = parseInfoCsvLine(lines[i]);
+    if (cells.length && cells[0] && cells[0].trim()) {
+      const obj = {};
+      headers.forEach((h, idx) => {
+        obj[h] = (cells[idx] || '').trim();
+      });
+      return obj;
+    }
+  }
+  return null;
+}
+
+function parseInfoCsvLine(line) {
+  const result = []; let current = ''; let inQuotes = false;
+  for (let i = 0; i < line.length; i++) {
+    const c = line[i];
+    if (c === '"') {
+      if (inQuotes && line[i+1] === '"') { current += '"'; i++; }
+      else inQuotes = !inQuotes;
+    } else if (c === ',' && !inQuotes) {
+      result.push(current); current = '';
+    } else {
+      current += c;
+    }
+  }
+  result.push(current);
+  return result;
+}
+
+// 手動編集して保存
+async function saveInfoFields() {
+  const c = currentCompany;
+  if (!c) return;
+  const fieldKeys = [
+    'company_name', 'phone', 'address', 'website', 'industry', 'ceo_name',
+    'founding_date', 'established_date', 'email', 'revenue', 'employees',
+    'instagram_url', 'facebook_url', 'x_url', 'tiktok_url',
+    'indeed_url', 'mynavi_url', 'agre_url', 'job_antenna_url', 'own_recruit_url',
+  ];
+  const updates = {};
+  for (const k of fieldKeys) {
+    const el = document.getElementById('info-' + k);
+    if (el) updates[k] = el.value.trim() || null;
+  }
+
+  try {
+    const { error } = await sb
+      .from('centercall_attacks')
+      .update(updates)
+      .eq('id', c.id);
+    if (error) throw error;
+    Object.assign(c, updates);
+    showToast('💾 基本情報を保存しました', 'success');
+    renderModal();
+  } catch (e) {
+    console.error(e);
+    showToast(`⚠️ 保存エラー: ${e.message}`, 'error');
+  }
+}
+
+// ══════════════════════════════════════════
+// 🤖 一括リサーチ機能（10社まとめてプロンプト生成 → CSV取り込み）
+// ══════════════════════════════════════════
+const BULK_BATCH_SIZE = 10;
+
+function openBulkResearch() {
+  // 未調査企業（ceo_name が空 or null）を優先で取得
+  const targets = companies.filter(c => !c.ceo_name || !c.ceo_name.trim());
+  const batch = targets.slice(0, BULK_BATCH_SIZE);
+
+  // 既存モーダルを削除
+  const existing = document.getElementById('m-bulk-research');
+  if (existing) existing.remove();
+
+  const div = document.createElement('div');
+  div.id = 'm-bulk-research';
+  div.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.55);display:flex;align-items:center;justify-content:center;z-index:10000;padding:20px';
+  div.innerHTML = `
+    <div style="background:#fff;border-radius:18px;width:100%;max-width:800px;max-height:92vh;overflow:hidden;display:flex;flex-direction:column;font-family:'Hiragino Maru Gothic ProN','Yu Gothic UI',sans-serif">
+      <div style="background:linear-gradient(135deg,#F0FDFA,#CCFBF1);padding:18px 22px;border-bottom:2px solid #14B8A6;display:flex;justify-content:space-between;align-items:center;flex-shrink:0">
+        <div>
+          <div style="font-size:18px;font-weight:900;color:#0F766E">🤖 一括リサーチ（${BULK_BATCH_SIZE}社まとめて）</div>
+          <div style="font-size:12px;color:#0F766E;font-weight:700;margin-top:2px">未調査の企業を一気に情報補完します</div>
+        </div>
+        <button onclick="document.getElementById('m-bulk-research').remove()" style="background:none;border:none;font-size:22px;cursor:pointer;color:#0F766E">✕</button>
+      </div>
+      <div style="overflow-y:auto;flex:1;padding:18px 22px">
+        ${batch.length === 0 ? `
+          <div style="background:#D1FAE5;border:1.5px solid #10B981;border-radius:10px;padding:16px;color:#065F46;font-weight:700;text-align:center">
+            🎉 すべての企業に代表者名が登録されています！未調査企業はありません。
+          </div>
+        ` : `
+          <div style="background:#FFFBEB;border:1.5px solid #F59E0B;border-radius:10px;padding:12px 14px;margin-bottom:14px;font-size:12px;color:#92400E;font-weight:700;line-height:1.7">
+            📊 <strong>対象企業：${batch.length}社</strong>（未調査の先頭${BULK_BATCH_SIZE}社）<br>
+            ⚠️ <strong>失敗パターンへの対策済み</strong>：<br>
+            　・各値に出典URL必須（無いものは取り込み時に除外）<br>
+            　・CSV形式を超厳格に指定<br>
+            　・取り込みは寛容パーサー（列順入れ替えOK・列名の大小無視）<br>
+            　・既存データは保護（空欄のみ補完）
+          </div>
+
+          <!-- 対象企業リスト -->
+          <div style="font-size:13px;font-weight:900;color:#0F766E;margin-bottom:6px">📋 対象企業（${batch.length}社）</div>
+          <div style="background:#F9FAFB;border:1px solid #E5E7EB;border-radius:8px;padding:8px;max-height:160px;overflow-y:auto;margin-bottom:14px">
+            ${batch.map((c, i) => `
+              <div style="padding:4px 6px;font-size:11px;border-bottom:1px dashed #E5E7EB">
+                ${i+1}. <strong>${escapeHtml(c.company_name)}</strong>
+                ${c.phone ? `<span style="color:#9CA3AF">・${escapeHtml(c.phone)}</span>` : ''}
+                ${c.address ? `<span style="color:#9CA3AF">・${escapeHtml(c.address.slice(0,30))}</span>` : ''}
+                ${c.website ? `<span style="color:#14B8A6">・HP有</span>` : `<span style="color:#9CA3AF">・HP無</span>`}
+              </div>
+            `).join('')}
+          </div>
+
+          <!-- STEP 1: プロンプト -->
+          <div style="font-size:14px;font-weight:900;color:#0F766E;margin-bottom:6px">STEP 1：プロンプトをコピー</div>
+          <textarea id="bulk-prompt" readonly style="width:100%;min-height:180px;padding:12px;border:2px solid #14B8A6;border-radius:10px;font-size:11px;font-family:var(--font-mono,monospace);line-height:1.5;outline:none;resize:vertical;background:#FAFAFB">${escapeHtml(buildBulkPrompt(batch))}</textarea>
+          <button onclick="copyBulkPrompt()" style="margin-top:8px;background:linear-gradient(135deg,#14B8A6,#2DD4BF);color:#fff;border:none;padding:10px 18px;border-radius:10px;font-size:13px;font-weight:900;cursor:pointer;font-family:inherit;width:100%">
+            📋 プロンプトをコピー → Claude.ai に貼り付け
+          </button>
+
+          <!-- STEP 2: CSV貼り付け -->
+          <div style="font-size:14px;font-weight:900;color:#0F766E;margin:18px 0 6px">STEP 2：Claude.ai の返答（CSV）を貼り付け</div>
+          <textarea id="bulk-csv" placeholder="ここにCSVを貼り付け...&#10;company_name,ceo_name,founding_date,...&#10;..." style="width:100%;min-height:180px;padding:12px;border:2px solid #14B8A6;border-radius:10px;font-size:11px;font-family:var(--font-mono,monospace);line-height:1.5;outline:none;resize:vertical"></textarea>
+          <button onclick="previewBulkCsv()" style="margin-top:8px;background:linear-gradient(135deg,#3B82F6,#60A5FA);color:#fff;border:none;padding:10px 18px;border-radius:10px;font-size:13px;font-weight:900;cursor:pointer;font-family:inherit;width:100%">
+            🔍 プレビュー（取り込み前に確認）
+          </button>
+
+          <div id="bulk-preview-area" style="margin-top:14px"></div>
+        `}
+      </div>
+    </div>
+  `;
+  document.body.appendChild(div);
+}
+
+// プロンプトコピー
+function copyBulkPrompt() {
+  const ta = document.getElementById('bulk-prompt');
+  if (!ta) return;
+  ta.select();
+  document.execCommand('copy');
+  showToast('📋 プロンプトをコピーしました。Claude.ai に貼り付けてください', 'success');
+}
+
+// 一括プロンプト生成
+function buildBulkPrompt(batch) {
+  const companyList = batch.map((c, i) => {
+    const parts = [`${i+1}. "${c.company_name}"`];
+    if (c.website) parts.push(`公式サイト: ${c.website}`);
+    if (c.address) parts.push(`所在地: ${c.address}`);
+    if (c.phone) parts.push(`電話: ${c.phone}`);
+    return parts.join(' / ');
+  }).join('\n');
+
+  return `以下の${batch.length}社について、それぞれの企業情報を調査してください。
+
+【❗ 最重要：ハルシネーション禁止】
+1. あなたの学習データの記憶ではなく、必ず実際にWeb検索 & 公式サイトにアクセスして読むこと
+2. サイト内に明記されていない項目は必ず N/A
+3. 推測・想像で値を埋めることは絶対禁止
+4. 各値には必ず「出典URL」を notes に書く（実在を確認したページのみ）
+5. 「ありそう」「あるはず」での記入は禁止
+6. 同名企業の混入を防ぐため、必ず「所在地」または「電話番号」で照合してから情報を採用すること
+
+【調査対象企業】
+${companyList}
+
+【信頼できる情報源（ホワイトリスト）】
+・各社の公式サイト（提供されたURL or そのドメイン内のサブページ）
+・SNS: instagram.com, facebook.com, x.com, twitter.com, tiktok.com
+・求人: indeed.com, mynavi.jp, mynavi-agent.jp, agre.co.jp, job-antenna.jp
+※ 上記以外のドメイン（まとめサイト、ブログ、Wikipedia、Google検索結果ページ等）からの情報採用は禁止
+
+【調査ルール】
+・「会社概要」「代表挨拶」「私たちについて」「採用情報」「About」などのサブページを優先的に巡回
+・SNS や求人サイトのアカウントは、所在地または電話番号で確実に同一企業と確認できたもののみ採用
+・公式サイトに存在しない情報・確認できない情報は必ず N/A
+
+【出力CSV列（厳守）】
+company_name,ceo_name,email,founding_date,established_date,instagram_url,facebook_url,x_url,tiktok_url,indeed_url,job_antenna_url,agre_url,mynavi_url,own_recruit_url,revenue,employees,notes
+
+【各列の説明】
+・company_name: 入力企業名と完全一致させること（マッチング用キー）
+・ceo_name: 代表者名（「代表取締役」「代表」「社長」などの肩書きの直後の氏名のみ）
+・email: サイト内に明記された公開メールアドレス
+・founding_date: 創業年月日（YYYY-MM形式、「創業」と明記されたもの）
+・established_date: 設立年月日（YYYY-MM形式、「設立」と明記されたもの）
+・instagram_url ～ tiktok_url: 各SNS公式URL
+・indeed_url ～ mynavi_url: 各求人サイトの企業ページURL
+・own_recruit_url: 自社の採用ページURL
+・revenue: 年商（サイトに明記がある場合のみ。「資本金」と混同しない）
+・employees: 従業員数（サイトに明記がある場合のみ）
+・notes: 各項目の出典URLを必ず記載（複数項目はセミコロン区切り）
+
+【出力形式の絶対遵守ルール】
+・1行目: ヘッダー行（上記の17列、順序厳守）
+・2行目以降: 1社につき1行
+・各値は必ずダブルクォート " で囲む
+・データ内の改行は \\n エスケープ（実改行は禁止）
+・データ内のダブルクォートは "" にエスケープ
+・Markdown表記（| や \`\`\` ）禁止
+・前置き・後置き・解説文の出力禁止 - CSVのみ出力
+・不明な項目は必ず "N/A"（空白不可）
+・URLは https:// から始まる完全形式
+・Markdownリンク [text](url) は使わない
+
+【出力例】
+company_name,ceo_name,email,founding_date,established_date,instagram_url,...
+"株式会社サンプル","山田 太郎","info@sample.co.jp","2015-04","2018-01","https://instagram.com/sample",...
+"株式会社サンプル2","N/A","N/A","N/A","2020-03","N/A",...`;
+}
+
+// プレビュー（取り込み前に確認）
+function previewBulkCsv() {
+  const ta = document.getElementById('bulk-csv');
+  if (!ta) return;
+  const text = (ta.value || '').trim();
+  if (!text) { alert('⚠️ CSVを貼り付けてください'); return; }
+
+  try {
+    const rows = parseBulkCsv(text);
+    if (!rows.length) {
+      alert('⚠️ CSVを解析できませんでした。\n\n以下を確認してください：\n・ヘッダー行（company_name,ceo_name,...）があるか\n・データ行があるか\n・改行されているか');
+      return;
+    }
+
+    // 各行を企業とマッチング
+    const matches = [];
+    for (const row of rows) {
+      const cname = (row.company_name || '').trim();
+      if (!cname) continue;
+      // 会社名で照合（空白除去後の完全一致 or 部分一致）
+      const target = companies.find(c => {
+        const norm = (s) => (s || '').replace(/\s+/g, '');
+        return norm(c.company_name) === norm(cname);
+      });
+      matches.push({ row, target });
+    }
+
+    const matched = matches.filter(m => m.target);
+    const unmatched = matches.filter(m => !m.target);
+
+    // 各マッチについて補完予定をプレビュー
+    const allowedFields = [
+      'ceo_name', 'email', 'founding_date', 'established_date',
+      'instagram_url', 'facebook_url', 'x_url', 'tiktok_url',
+      'indeed_url', 'job_antenna_url', 'agre_url', 'mynavi_url', 'own_recruit_url',
+      'revenue', 'employees',
+    ];
+
+    let totalFilled = 0;
+    let totalProtected = 0;
+    const previewHtml = matched.slice(0, 10).map(m => {
+      const { row, target } = m;
+      const filled = [];
+      const protected_ = [];
+      for (const key of allowedFields) {
+        const incoming = (row[key] || '').trim();
+        if (!incoming || incoming === 'N/A' || incoming.toLowerCase() === 'n/a') continue;
+        // 怪しい値の検出
+        const isSus = isSuspiciousValue(key, incoming);
+        if (isSus) {
+          protected_.push({ key, reason: isSus });
+          continue;
+        }
+        const existing = (target[key] || '').toString().trim();
+        if (existing) {
+          protected_.push({ key, reason: '既存データあり' });
+        } else {
+          filled.push({ key, value: incoming });
+        }
+      }
+      totalFilled += filled.length;
+      totalProtected += protected_.length;
+      return `
+        <div style="background:#fff;border:1px solid #E5E7EB;border-radius:8px;padding:10px;margin-bottom:8px">
+          <div style="font-size:13px;font-weight:900;color:#0F766E;margin-bottom:6px">${escapeHtml(target.company_name)}</div>
+          ${filled.length ? `
+            <div style="font-size:11px;color:#065F46;background:#D1FAE5;padding:4px 8px;border-radius:6px;margin-bottom:4px">
+              ✨ 補完予定（${filled.length}項目）: ${filled.map(f => f.key).join(', ')}
+            </div>
+          ` : ''}
+          ${protected_.length ? `
+            <div style="font-size:11px;color:#92400E;background:#FFFBEB;padding:4px 8px;border-radius:6px">
+              🛡️ 保護（${protected_.length}項目）: ${protected_.map(p => p.key + (p.reason !== '既存データあり' ? `(${p.reason})` : '')).join(', ')}
+            </div>
+          ` : ''}
+        </div>
+      `;
+    }).join('');
+
+    const area = document.getElementById('bulk-preview-area');
+    if (!area) return;
+    area.innerHTML = `
+      <div style="background:#F0FDFA;border:1.5px solid #14B8A6;border-radius:10px;padding:14px;margin-bottom:12px">
+        <div style="font-size:13px;font-weight:900;color:#0F766E;margin-bottom:8px">📊 取り込みプレビュー</div>
+        <div style="font-size:12px;color:#0F766E;line-height:1.8">
+          ・マッチした企業：<strong>${matched.length}社</strong>${unmatched.length ? `（マッチしなかった ${unmatched.length}社 はスキップ）` : ''}<br>
+          ・補完予定の総項目数：<strong style="color:#10B981">${totalFilled}項目</strong><br>
+          ・既存データ保護・怪しい値スキップ：<strong style="color:#F59E0B">${totalProtected}項目</strong>
+        </div>
+      </div>
+      ${unmatched.length ? `
+        <div style="background:#FEE2E2;border:1.5px solid #DC2626;border-radius:10px;padding:10px;margin-bottom:12px;font-size:11px;color:#991B1B">
+          ⚠️ マッチしなかった企業: ${unmatched.map(m => '"' + (m.row.company_name || '無名') + '"').slice(0, 5).join(', ')}${unmatched.length > 5 ? ` 他${unmatched.length - 5}件` : ''}
+        </div>
+      ` : ''}
+      <div style="margin-bottom:10px">${previewHtml}</div>
+      ${matched.length > 10 ? `<div style="text-align:center;color:#9CA3AF;font-size:11px;margin-bottom:10px">…他 ${matched.length - 10} 社</div>` : ''}
+      <button onclick="commitBulkCsv()" style="width:100%;background:linear-gradient(135deg,#10B981,#059669);color:#fff;border:none;padding:14px;border-radius:10px;font-size:14px;font-weight:900;cursor:pointer;font-family:inherit;box-shadow:0 2px 8px rgba(16,185,129,0.3)">
+        ✨ ${totalFilled}項目を一括取り込みする（${matched.length}社対象）
+      </button>
+    `;
+    // プレビュー領域までスクロール
+    area.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  } catch (e) {
+    console.error(e);
+    alert('❌ プレビューエラー: ' + e.message);
+  }
+}
+
+// 怪しい値の検出（電話番号短すぎ・URLが不正等）
+function isSuspiciousValue(key, value) {
+  const v = value.trim();
+  if (key.endsWith('_url')) {
+    if (!v.match(/^https?:\/\//i)) return 'URL形式が不正';
+    if (v.length < 12) return 'URL短すぎ';
+  }
+  if (key === 'email') {
+    if (!v.match(/^[^@\s]+@[^@\s]+\.[^@\s]+$/)) return 'メール形式が不正';
+  }
+  if (key === 'founding_date' || key === 'established_date') {
+    if (!v.match(/^\d{4}(-\d{1,2})?$/)) return '日付形式が不正（YYYY-MM以外）';
+  }
+  return null;
+}
+
+// 寛容CSVパーサー
+function parseBulkCsv(text) {
+  // Markdownの ``` ブロックを剥がす
+  let cleaned = text.replace(/^```\w*\s*\n?/gm, '').replace(/```\s*$/gm, '');
+  // Markdownの表形式 | xxx | yyy | を CSV に変換
+  if (cleaned.includes('|') && cleaned.match(/\|\s*-+\s*\|/)) {
+    cleaned = cleaned.split(/\r?\n/)
+      .filter(l => !l.match(/^\|\s*-+/))
+      .map(l => {
+        if (l.startsWith('|')) {
+          return l.replace(/^\|/, '').replace(/\|$/, '')
+            .split('|').map(c => c.trim()).join(',');
+        }
+        return l;
+      })
+      .join('\n');
+  }
+
+  const lines = cleaned.split(/\r?\n/).filter(l => l.trim());
+  if (lines.length < 2) return [];
+
+  // ヘッダー行（大文字小文字・空白を正規化）
+  const headers = parseInfoCsvLine(lines[0]).map(h => h.trim().toLowerCase().replace(/\s+/g, '_'));
+
+  // ヘッダー名のエイリアスマッピング
+  const headerAlias = (h) => {
+    if (h === 'name' || h === 'company') return 'company_name';
+    if (h === 'tel' || h === 'phone_number') return 'phone';
+    if (h === 'twitter_url') return 'x_url';
+    return h;
+  };
+  const normHeaders = headers.map(headerAlias);
+
+  const rows = [];
+  for (let i = 1; i < lines.length; i++) {
+    const cells = parseInfoCsvLine(lines[i]);
+    if (!cells.length || !cells.some(c => c.trim())) continue;
+    const obj = {};
+    normHeaders.forEach((h, idx) => {
+      obj[h] = (cells[idx] || '').trim();
+    });
+    if (obj.company_name) rows.push(obj);
+  }
+  return rows;
+}
+
+// 一括取り込み実行
+async function commitBulkCsv() {
+  const ta = document.getElementById('bulk-csv');
+  const text = (ta?.value || '').trim();
+  if (!text) return;
+
+  try {
+    const rows = parseBulkCsv(text);
+    const allowedFields = [
+      'ceo_name', 'email', 'founding_date', 'established_date',
+      'instagram_url', 'facebook_url', 'x_url', 'tiktok_url',
+      'indeed_url', 'job_antenna_url', 'agre_url', 'mynavi_url', 'own_recruit_url',
+      'revenue', 'employees',
+    ];
+
+    let updatedCount = 0;
+    let totalFilled = 0;
+    const errors = [];
+
+    for (const row of rows) {
+      const cname = (row.company_name || '').trim();
+      if (!cname) continue;
+      const target = companies.find(c => {
+        const norm = (s) => (s || '').replace(/\s+/g, '');
+        return norm(c.company_name) === norm(cname);
+      });
+      if (!target) continue;
+
+      const updates = {};
+      for (const key of allowedFields) {
+        const incoming = (row[key] || '').trim();
+        if (!incoming || incoming === 'N/A' || incoming.toLowerCase() === 'n/a') continue;
+        // 怪しい値スキップ
+        if (isSuspiciousValue(key, incoming)) continue;
+        // 既存があれば保護
+        const existing = (target[key] || '').toString().trim();
+        if (existing) continue;
+        updates[key] = incoming;
+      }
+
+      // research_notes に追記
+      if (row.notes && row.notes !== 'N/A') {
+        const date = new Date().toISOString().slice(0, 10);
+        const prev = target.research_notes || '';
+        updates.research_notes = (prev ? prev + '\n\n' : '') + `[${date}] 一括AIリサーチ:\n${row.notes}`;
+      }
+
+      if (!Object.keys(updates).length) continue;
+
+      try {
+        const { error } = await sb.from('centercall_attacks').update(updates).eq('id', target.id);
+        if (error) throw error;
+        Object.assign(target, updates);
+        updatedCount++;
+        totalFilled += Object.keys(updates).filter(k => k !== 'research_notes').length;
+      } catch (e) {
+        errors.push(`${target.company_name}: ${e.message}`);
+      }
+    }
+
+    // 完了
+    const m = document.getElementById('m-bulk-research');
+    if (m) m.remove();
+    if (errors.length) {
+      alert(`⚠️ ${updatedCount}社更新、${totalFilled}項目補完\n\nエラー:\n${errors.slice(0, 3).join('\n')}`);
+    } else {
+      showToast(`✨ ${updatedCount}社更新、${totalFilled}項目を補完しました`, 'success');
+    }
+    // 一覧を再描画
+    if (typeof render === 'function') render();
+  } catch (e) {
+    console.error(e);
+    alert('❌ 取り込みエラー: ' + e.message);
+  }
 }
 
 function scriptFinish(finishKey) {
