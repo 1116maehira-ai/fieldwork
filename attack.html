@@ -520,6 +520,7 @@ input[type="file"] { display: none; }
   email_history jsonb DEFAULT '[]'::jsonb,
   memo text,
   research_notes text,
+  source_data jsonb DEFAULT '{}'::jsonb,
   created_at timestamptz DEFAULT now(),
   updated_at timestamptz DEFAULT now()
 );
