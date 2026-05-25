@@ -508,7 +508,7 @@ input[type="file"] { display: none; }
   revenue text,
   employees text,
   star_rating int DEFAULT 0,
-  status text DEFAULT 'untouched',
+  phase text DEFAULT 'pending',
   next_date date,
   next_action text,
   pending_callback boolean DEFAULT false,
@@ -532,7 +532,7 @@ CREATE POLICY "cc_update" ON centercall_attacks FOR UPDATE USING (true);
 CREATE POLICY "cc_delete" ON centercall_attacks FOR DELETE USING (true);
 
 CREATE INDEX IF NOT EXISTS idx_cc_phone ON centercall_attacks(phone);
-CREATE INDEX IF NOT EXISTS idx_cc_status ON centercall_attacks(status);
+CREATE INDEX IF NOT EXISTS idx_cc_phase ON centercall_attacks(phase);
 CREATE INDEX IF NOT EXISTS idx_cc_next_date ON centercall_attacks(next_date);
 
 CREATE TABLE IF NOT EXISTS centercall_scripts (
@@ -1291,7 +1291,7 @@ document.getElementById('cc-upload-btn').addEventListener('click', async () => {
       ceo_name: r.ceo_name || null,
       revenue: r.revenue || null,
       employees: r.employees || null,
-      status: 'untouched',
+      phase: 'pending',
       star_rating: 0,
       pending_callback: false,
       priority: 0,
