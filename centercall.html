@@ -1146,15 +1146,21 @@ function renderCard(c, today) {
   // ソースデータからSNS等抽出
   const src = c.source_data || {};
   const hp = c.website || src['公式HPURL'] || '';
-  const insta = src['InstagramURL'] || '';
-  const fb = src['FacebookURL'] || '';
-  const tiktok = src['TikTokURL'] || '';
+  const insta = c.instagram_url || src['InstagramURL'] || '';
+  const fb = c.facebook_url || src['FacebookURL'] || '';
+  const x = c.x_url || '';
+  const tiktok = c.tiktok_url || src['TikTokURL'] || '';
+  const indeedUrl = c.indeed_url || '';
+  const mynaviUrl = c.mynavi_url || '';
   const links = [];
   if (c.phone) links.push(`<a class="link-btn tel" href="tel:${escapeHtml(c.phone)}" onclick="event.stopPropagation()">📞 発信</a>`);
   if (hp) links.push(`<a class="link-btn hp" href="${escapeHtml(hp)}" target="_blank" onclick="event.stopPropagation()">🌐 HP</a>`);
   if (insta) links.push(`<a class="link-btn insta" href="${escapeHtml(insta)}" target="_blank" onclick="event.stopPropagation()">📷 IG</a>`);
   if (fb) links.push(`<a class="link-btn fb" href="${escapeHtml(fb)}" target="_blank" onclick="event.stopPropagation()">📘 FB</a>`);
+  if (x) links.push(`<a class="link-btn" href="${escapeHtml(x)}" target="_blank" onclick="event.stopPropagation()" style="background:#1F2937;color:#fff">🐦 X</a>`);
   if (tiktok) links.push(`<a class="link-btn tiktok" href="${escapeHtml(tiktok)}" target="_blank" onclick="event.stopPropagation()">🎵 TT</a>`);
+  if (indeedUrl) links.push(`<a class="link-btn" href="${escapeHtml(indeedUrl)}" target="_blank" onclick="event.stopPropagation()" style="background:#2164F3;color:#fff">💼 IN</a>`);
+  if (mynaviUrl) links.push(`<a class="link-btn" href="${escapeHtml(mynaviUrl)}" target="_blank" onclick="event.stopPropagation()" style="background:#E60012;color:#fff">💼 MY</a>`);
   
   const priorityClass = priority > 0 ? `p${priority} has-priority` : '';
   const isExcluded = c.phase === 'excluded';
@@ -1307,16 +1313,29 @@ function renderModal() {
   
   const src = c.source_data || {};
   const hp = c.website || src['公式HPURL'] || '';
-  const insta = src['InstagramURL'] || '';
-  const fb = src['FacebookURL'] || '';
-  const tiktok = src['TikTokURL'] || '';
-  const jobUrl = src['求人URL'] || '';
+  // ★ センターコール仕様：DB カラム優先、source_data はフォールバック
+  const insta = c.instagram_url || src['InstagramURL'] || '';
+  const fb = c.facebook_url || src['FacebookURL'] || '';
+  const x = c.x_url || '';
+  const tiktok = c.tiktok_url || src['TikTokURL'] || '';
+  const indeedUrl = c.indeed_url || '';
+  const mynaviUrl = c.mynavi_url || '';
+  const agreUrl = c.agre_url || '';
+  const jobAntennaUrl = c.job_antenna_url || '';
+  const ownRecruitUrl = c.own_recruit_url || '';
+  const email = c.email || '';
   const modalLinks = [];
   if (hp) modalLinks.push(`<a class="link-btn hp" href="${escapeHtml(hp)}" target="_blank">🌐 公式HP</a>`);
   if (insta) modalLinks.push(`<a class="link-btn insta" href="${escapeHtml(insta)}" target="_blank">📷 Instagram</a>`);
   if (fb) modalLinks.push(`<a class="link-btn fb" href="${escapeHtml(fb)}" target="_blank">📘 Facebook</a>`);
+  if (x) modalLinks.push(`<a class="link-btn" href="${escapeHtml(x)}" target="_blank" style="background:#1F2937;color:#fff">🐦 X</a>`);
   if (tiktok) modalLinks.push(`<a class="link-btn tiktok" href="${escapeHtml(tiktok)}" target="_blank">🎵 TikTok</a>`);
-  if (jobUrl) modalLinks.push(`<a class="link-btn" href="${escapeHtml(jobUrl)}" target="_blank">💼 求人</a>`);
+  if (indeedUrl) modalLinks.push(`<a class="link-btn" href="${escapeHtml(indeedUrl)}" target="_blank" style="background:#2164F3;color:#fff">💼 Indeed</a>`);
+  if (mynaviUrl) modalLinks.push(`<a class="link-btn" href="${escapeHtml(mynaviUrl)}" target="_blank" style="background:#E60012;color:#fff">💼 マイナビ</a>`);
+  if (agreUrl) modalLinks.push(`<a class="link-btn" href="${escapeHtml(agreUrl)}" target="_blank" style="background:#00A0E9;color:#fff">💼 アグレ</a>`);
+  if (jobAntennaUrl) modalLinks.push(`<a class="link-btn" href="${escapeHtml(jobAntennaUrl)}" target="_blank" style="background:#FF9800;color:#fff">💼 ジョブアンテナ</a>`);
+  if (ownRecruitUrl) modalLinks.push(`<a class="link-btn" href="${escapeHtml(ownRecruitUrl)}" target="_blank" style="background:#10B981;color:#fff">💼 自社採用</a>`);
+  if (email) modalLinks.push(`<a class="link-btn" href="mailto:${escapeHtml(email)}" style="background:#6366F1;color:#fff">📧 ${escapeHtml(email)}</a>`);
   
   document.getElementById('modal-body').innerHTML = `
     <div class="target-card">
