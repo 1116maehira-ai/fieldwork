@@ -1045,10 +1045,16 @@ const RESULT_DEFS = {
 
 // FINISH_*マッピング
 const FINISH_TO_RESULT = {
+  // 旧キー（互換のため残す）
   FINISH_WON: 'won',
   FINISH_MAIL: 'mailed',
   FINISH_CALLBACK: 'callback',
   FINISH_DECLINED: 'declined',
+  // スクリプトJSON（cc_v_warm/passion/hook）で実際に使われているキー
+  FINISH_WIN: 'won',           // 🎉 商談獲得
+  FINISH_EMAIL: 'mailed',      // 📧 メール送付
+  FINISH_AGAIN: 'callback',    // 📭 不在・後日かけ直し
+  FINISH_REFUSE: 'declined',   // 🚫 断られた
 };
 
 // 初期化
