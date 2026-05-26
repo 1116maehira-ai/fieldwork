@@ -1128,6 +1128,14 @@ function renderStats() {
   document.getElementById('cnt-contacted').textContent = counters.contacted;
   document.getElementById('cnt-won').textContent = counters.won;
   document.getElementById('cnt-declined').textContent = counters.declined;
+  // カテゴリ別件数を更新
+  document.getElementById('cat-cnt-all').textContent = counters.catAll;
+  document.getElementById('cat-cnt-reform').textContent = counters.catReform;
+  document.getElementById('cat-cnt-sign').textContent = counters.catSign;
+  document.getElementById('cat-cnt-web').textContent = counters.catWeb;
+  document.getElementById('cat-cnt-ad').textContent = counters.catAd;
+  document.getElementById('cat-cnt-realestate').textContent = counters.catRealestate;
+  document.getElementById('cat-cnt-other').textContent = counters.catOther;
 }
 
 // 一覧描画
