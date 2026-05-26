@@ -961,6 +961,8 @@ body {
     </select>
     <select class="sort-select" id="sort-select">
       <option value="default">並び順: 優先度順</option>
+      <option value="ai_score">🔬 AIスコア順 (S→A→B→C)</option>
+      <option value="data_rich">📊 データ充実度順</option>
       <option value="priority">⭐ 多い順</option>
       <option value="area">エリア順</option>
       <option value="next_date">次回予定日順</option>
@@ -1119,6 +1121,36 @@ function hasResearch(c) {
 function getResearchScore(c) {
   if (c.source_data && c.source_data.ai_score) return c.source_data.ai_score;
   return null;
+}
+
+// AIスコアを数値化（並び順用）
+function aiScoreToNumber(c) {
+  const score = getResearchScore(c);
+  if (score === 'S') return 4;
+  if (score === 'A') return 3;
+  if (score === 'B') return 2;
+  if (score === 'C') return 1;
+  return 0;
+}
+
+// データ充実度カウント（0-10）
+function getDataRichness(c) {
+  let count = 0;
+  if (c.ceo_name && c.ceo_name.trim()) count++;
+  if (c.email && c.email.trim()) count++;
+  if (c.website && c.website.trim()) count++;
+  if ((c.founding_date && c.founding_date.trim()) || (c.established_date && c.established_date.trim())) count++;
+  if (c.revenue && c.revenue.trim() && c.revenue !== '不明') count++;
+  if (c.employees && String(c.employees).trim()) count++;
+  if (c.instagram_url && c.instagram_url.trim()) count++;
+  if (c.facebook_url && c.facebook_url.trim()) count++;
+  if (c.x_url && c.x_url.trim()) count++;
+  if ((c.own_recruit_url && c.own_recruit_url.trim()) || 
+      (c.indeed_url && c.indeed_url.trim()) || 
+      (c.mynavi_url && c.mynavi_url.trim()) ||
+      (c.agre_url && c.agre_url.trim()) ||
+      (c.job_antenna_url && c.job_antenna_url.trim())) count++;
+  return count;
 }
 
 // 業種カテゴリ判定
@@ -1321,6 +1353,20 @@ function renderList() {
       if (pria !== prib) return prib - pria;
       return (a.company_name || '').localeCompare(b.company_name || '');
     });
+  } else if (currentSort === 'ai_score') {
+    list.sort((a, b) => {
+      const sa = aiScoreToNumber(a);
+      const sb = aiScoreToNumber(b);
+      if (sa !== sb) return sb - sa;
+      return (a.company_name || '').localeCompare(b.company_name || '');
+    });
+  } else if (currentSort === 'data_rich') {
+    list.sort((a, b) => {
+      const da = getDataRichness(a);
+      const db = getDataRichness(b);
+      if (da !== db) return db - da;
+      return (a.company_name || '').localeCompare(b.company_name || '');
+    });
   } else if (currentSort === 'area') {
     list.sort((a, b) => {
       const aa = extractArea(a.address);
@@ -1403,6 +1449,7 @@ function renderCard(c, today) {
           <div class="company-meta">
             <span>🗺️ ${escapeHtml(areaTag)}</span>
             <span>📞 ${escapeHtml(c.phone || '電話なし')}</span>
+            ${c.ceo_name && c.ceo_name.trim() ? `<span>👤 ${escapeHtml(c.ceo_name)}</span>` : ''}
             ${visitCount > 0 ? `<span>📝 ${visitCount}回</span>` : ''}
             ${nextDateHtml}
           </div>
