@@ -103,6 +103,56 @@ body {
 .stat-card.won .num { color: var(--green); }
 .stat-card.declined .num { color: var(--text-mute); }
 
+/* 業種カテゴリバー */
+.category-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 10px;
+  background: white;
+  padding: 8px;
+  border-radius: 10px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+}
+.cat-btn {
+  background: #F8FAFC;
+  border: 1.5px solid #E2E8F0;
+  color: var(--text-sub);
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+.cat-btn:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+  background: var(--primary-light);
+}
+.cat-btn.active {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: white;
+}
+.cat-count {
+  background: rgba(0,0,0,0.1);
+  color: inherit;
+  padding: 1px 8px;
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 700;
+  min-width: 24px;
+  text-align: center;
+}
+.cat-btn.active .cat-count {
+  background: rgba(255,255,255,0.25);
+}
+
 /* コントロールバー */
 .control-bar {
   background: white;
@@ -816,6 +866,16 @@ body {
     <div class="stat-card declined" data-filter="declined"><div class="num" id="cnt-declined">-</div><div class="lbl">お断り</div></div>
   </div>
 
+  <div class="category-bar" id="category-bar">
+    <button class="cat-btn active" data-cat="all" onclick="setCategory('all', this)">すべて <span class="cat-count" id="cat-cnt-all">-</span></button>
+    <button class="cat-btn" data-cat="reform" onclick="setCategory('reform', this)">🔨 リフォーム・建設 <span class="cat-count" id="cat-cnt-reform">-</span></button>
+    <button class="cat-btn" data-cat="sign" onclick="setCategory('sign', this)">📋 看板・サイン <span class="cat-count" id="cat-cnt-sign">-</span></button>
+    <button class="cat-btn" data-cat="web" onclick="setCategory('web', this)">💻 WEB・IT <span class="cat-count" id="cat-cnt-web">-</span></button>
+    <button class="cat-btn" data-cat="ad" onclick="setCategory('ad', this)">📺 広告・マーケ <span class="cat-count" id="cat-cnt-ad">-</span></button>
+    <button class="cat-btn" data-cat="realestate" onclick="setCategory('realestate', this)">🏢 不動産 <span class="cat-count" id="cat-cnt-realestate">-</span></button>
+    <button class="cat-btn" data-cat="other" onclick="setCategory('other', this)">その他 <span class="cat-count" id="cat-cnt-other">-</span></button>
+  </div>
+
   <div class="control-bar">
     <input type="text" class="search-input" id="search-input" placeholder="🔍 会社名・住所・電話で検索...">
     <select class="area-select" id="area-select">
@@ -889,6 +949,7 @@ let currentTab = 'script'; // ★ モーダル内タブ：'script' | 'info'
 let currentFilter = 'all';
 let currentArea = 'all';
 let currentPriority = 'all';
+let currentCategory = 'all';
 let currentSort = 'default';
 let searchText = '';
 let includeExcluded = false;
@@ -973,6 +1034,41 @@ async function loadScripts() {
   }
 }
 
+// 業種カテゴリ判定
+function getCategoryByIndustry(industry) {
+  if (!industry) return 'other';
+  const ind = industry.toLowerCase();
+  // リフォーム・建設系
+  if (ind.match(/(リフォーム|塗装|外壁|防水|水回り|解体|大工|軽天|建設|建築|工事|内装|サッシ|屋根|左官|電気工事|配管|設備|住宅|住建|建材|不動産.*建)/)) {
+    return 'reform';
+  }
+  // 看板・サイン系
+  if (ind.match(/(看板|サイン|ディスプレイ|装飾|表示|広告塔)/)) {
+    return 'sign';
+  }
+  // WEB・IT系
+  if (ind.match(/(web|ホームページ|ウェブ|システム|ソフトウェア|アプリ|プログラム|サイト|IT|デジタル|オンライン|EC)/i)) {
+    return 'web';
+  }
+  // 広告・マーケ系
+  if (ind.match(/(広告|マーケ|宣伝|印刷|デザイン|出版|メディア|PR|プロモーション|集客)/)) {
+    return 'ad';
+  }
+  // 不動産系
+  if (ind.match(/(不動産|賃貸|売買|管理|仲介)/)) {
+    return 'realestate';
+  }
+  return 'other';
+}
+
+// カテゴリフィルタ切替
+function setCategory(cat, btn) {
+  currentCategory = cat;
+  document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  renderList();
+}
+
 // 住所からエリア抽出
 function extractArea(addr) {
   if (!addr) return '(住所なし)';
@@ -1016,6 +1112,14 @@ function renderStats() {
     contacted: companies.filter(c => c.phase === 'contacted').length,
     won: companies.filter(c => c.phase === 'won').length,
     declined: companies.filter(c => c.phase === 'declined').length,
+    // 業種カテゴリ別件数
+    catAll: companies.length,
+    catReform: companies.filter(c => getCategoryByIndustry(c.industry) === 'reform').length,
+    catSign: companies.filter(c => getCategoryByIndustry(c.industry) === 'sign').length,
+    catWeb: companies.filter(c => getCategoryByIndustry(c.industry) === 'web').length,
+    catAd: companies.filter(c => getCategoryByIndustry(c.industry) === 'ad').length,
+    catRealestate: companies.filter(c => getCategoryByIndustry(c.industry) === 'realestate').length,
+    catOther: companies.filter(c => getCategoryByIndustry(c.industry) === 'other').length,
   };
   document.getElementById('cnt-all').textContent = counters.all;
   document.getElementById('cnt-today').textContent = counters.today;
@@ -1048,6 +1152,11 @@ function renderList() {
   // エリアフィルタ
   if (currentArea !== 'all') {
     list = list.filter(c => extractArea(c.address) === currentArea);
+  }
+  
+  // 業種カテゴリフィルタ
+  if (currentCategory !== 'all') {
+    list = list.filter(c => getCategoryByIndustry(c.industry) === currentCategory);
   }
   
   // 優先度フィルタ
