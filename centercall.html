@@ -103,6 +103,32 @@ body {
 .stat-card.won .num { color: var(--green); }
 .stat-card.declined .num { color: var(--text-mute); }
 
+/* リサーチ済みバッジ */
+.research-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  background: linear-gradient(135deg, #8B5CF6, #6366F1);
+  color: white;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 10px;
+  margin-left: 6px;
+  vertical-align: middle;
+  box-shadow: 0 1px 3px rgba(139, 92, 246, 0.3);
+}
+.research-badge.scored {
+  background: linear-gradient(135deg, #F59E0B, #EF4444);
+}
+.research-badge .score-letter {
+  background: rgba(255,255,255,0.25);
+  padding: 0 4px;
+  border-radius: 6px;
+  font-size: 9px;
+  margin-left: 2px;
+}
+
 /* 業種カテゴリバー */
 .category-bar {
   display: flex;
@@ -150,6 +176,45 @@ body {
   text-align: center;
 }
 .cat-btn.active .cat-count {
+  background: rgba(255,255,255,0.25);
+}
+
+/* リサーチフィルタバー */
+.research-filter-bar {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 10px;
+  background: white;
+  padding: 8px;
+  border-radius: 10px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+  flex-wrap: wrap;
+}
+.research-filter-btn {
+  background: #F8FAFC;
+  border: 1.5px solid #E2E8F0;
+  color: var(--text-sub);
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.research-filter-btn:hover {
+  border-color: #8B5CF6;
+  color: #8B5CF6;
+  background: #F5F3FF;
+}
+.research-filter-btn.active {
+  background: #8B5CF6;
+  border-color: #8B5CF6;
+  color: white;
+}
+.research-filter-btn.active .cat-count {
   background: rgba(255,255,255,0.25);
 }
 
@@ -876,6 +941,12 @@ body {
     <button class="cat-btn" data-cat="other" onclick="setCategory('other', this)">その他 <span class="cat-count" id="cat-cnt-other">-</span></button>
   </div>
 
+  <div class="research-filter-bar">
+    <button class="research-filter-btn active" data-rf="all" onclick="setResearchFilter('all', this)">🌐 すべて <span class="cat-count" id="rf-cnt-all">-</span></button>
+    <button class="research-filter-btn" data-rf="researched" onclick="setResearchFilter('researched', this)">🔬 リサーチ済 <span class="cat-count" id="rf-cnt-researched">-</span></button>
+    <button class="research-filter-btn" data-rf="unresearched" onclick="setResearchFilter('unresearched', this)">📋 未リサーチ <span class="cat-count" id="rf-cnt-unresearched">-</span></button>
+  </div>
+
   <div class="control-bar">
     <input type="text" class="search-input" id="search-input" placeholder="🔍 会社名・住所・電話で検索...">
     <select class="area-select" id="area-select">
@@ -950,6 +1021,7 @@ let currentFilter = 'all';
 let currentArea = 'all';
 let currentPriority = 'all';
 let currentCategory = 'all';
+let currentResearchFilter = 'all';
 let currentSort = 'default';
 let searchText = '';
 let includeExcluded = false;
@@ -1034,6 +1106,21 @@ async function loadScripts() {
   }
 }
 
+// リサーチ済みかどうか判定
+function hasResearch(c) {
+  // research_notes が空じゃない → 既存Geminiリサーチ済み
+  if (c.research_notes && c.research_notes.trim() !== '') return true;
+  // source_data に AI スコアが入ってる → MCPリサーチ済み
+  if (c.source_data && (c.source_data.ai_score || c.source_data.company_id)) return true;
+  return false;
+}
+
+// リサーチスコア取得 (S/A/B/C or null)
+function getResearchScore(c) {
+  if (c.source_data && c.source_data.ai_score) return c.source_data.ai_score;
+  return null;
+}
+
 // 業種カテゴリ判定
 function getCategoryByIndustry(industry) {
   if (!industry) return 'other';
@@ -1065,6 +1152,14 @@ function getCategoryByIndustry(industry) {
 function setCategory(cat, btn) {
   currentCategory = cat;
   document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  renderList();
+}
+
+// リサーチフィルタ切替
+function setResearchFilter(rf, btn) {
+  currentResearchFilter = rf;
+  document.querySelectorAll('.research-filter-btn').forEach(b => b.classList.remove('active'));
   if (btn) btn.classList.add('active');
   renderList();
 }
@@ -1120,6 +1215,9 @@ function renderStats() {
     catAd: companies.filter(c => getCategoryByIndustry(c.industry) === 'ad').length,
     catRealestate: companies.filter(c => getCategoryByIndustry(c.industry) === 'realestate').length,
     catOther: companies.filter(c => getCategoryByIndustry(c.industry) === 'other').length,
+    rfAll: companies.length,
+    rfResearched: companies.filter(c => hasResearch(c)).length,
+    rfUnresearched: companies.filter(c => !hasResearch(c)).length,
   };
   document.getElementById('cnt-all').textContent = counters.all;
   document.getElementById('cnt-today').textContent = counters.today;
@@ -1136,6 +1234,10 @@ function renderStats() {
   document.getElementById('cat-cnt-ad').textContent = counters.catAd;
   document.getElementById('cat-cnt-realestate').textContent = counters.catRealestate;
   document.getElementById('cat-cnt-other').textContent = counters.catOther;
+  // リサーチ件数を更新
+  document.getElementById('rf-cnt-all').textContent = counters.rfAll;
+  document.getElementById('rf-cnt-researched').textContent = counters.rfResearched;
+  document.getElementById('rf-cnt-unresearched').textContent = counters.rfUnresearched;
 }
 
 // 一覧描画
@@ -1165,6 +1267,13 @@ function renderList() {
   // 業種カテゴリフィルタ
   if (currentCategory !== 'all') {
     list = list.filter(c => getCategoryByIndustry(c.industry) === currentCategory);
+  }
+  
+  // リサーチ済みフィルタ
+  if (currentResearchFilter === 'researched') {
+    list = list.filter(c => hasResearch(c));
+  } else if (currentResearchFilter === 'unresearched') {
+    list = list.filter(c => !hasResearch(c));
   }
   
   // 優先度フィルタ
@@ -1289,6 +1398,7 @@ function renderCard(c, today) {
           <div class="company-name">
             <span class="phase-badge phase-${c.phase}">${phaseLab}</span>
             ${escapeHtml(c.company_name)}
+            ${hasResearch(c) ? `<span class="research-badge ${getResearchScore(c) ? 'scored' : ''}">🔬 リサーチ済${getResearchScore(c) ? `<span class="score-letter">${getResearchScore(c)}</span>` : ''}</span>` : ''}
           </div>
           <div class="company-meta">
             <span>🗺️ ${escapeHtml(areaTag)}</span>
