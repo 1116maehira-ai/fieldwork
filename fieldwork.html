@@ -1148,6 +1148,9 @@ tr:hover td { background: rgba(255,70,2,0.03); cursor: pointer; }
       <button class="btn btn-sm" onclick="openImportFromAttacks()" style="background:linear-gradient(135deg,#1D9E75,#0F6E56);color:#fff;border:none;font-weight:700;font-size:13px;box-shadow:0 2px 8px rgba(15,110,86,0.3)" title="各サービスの電話画面で更新された企業情報をFIELDWORK(中心)に吸い上げる">
         📥 取り込む
       </button>
+      <button class="btn btn-sm" onclick="openDmmBlockImport()" style="background:linear-gradient(135deg,#DC2626,#991B1B);color:#fff;border:none;font-weight:700;font-size:13px;box-shadow:0 2px 8px rgba(220,38,38,0.3)" title="DMM等クライアント預かりリストを照合マスター化し、配布承認アタックから除外する">
+        🚫 使用禁止リスト
+      </button>
       <button class="btn btn-sm" onclick="openResearchGuide()" style="background:linear-gradient(135deg,#A78BFA,#7C3AED);color:#fff;border:none;font-weight:700;font-size:13px">
         📋 リサーチ手順書を開く
       </button>
@@ -11792,6 +11795,7 @@ async function sendToAttack(targetKey) {
   const toInsert = [];
   let skipped = 0;
   for (const it of list) {
+    if (targetKey === 'posmane_distribution' && it.dmmBlocked) { skipped++; continue; }
     const normPhone = (it.phone || '').replace(/[^\d]/g, '');
     if (normPhone && existingPhones.has(normPhone)) {
       skipped++;
@@ -11958,6 +11962,7 @@ async function openImportFromAttacks() {
   const tableSummary = [];
 
   for (const [key, target] of Object.entries(ATTACK_TARGETS)) {
+    if (key === 'posmane_distribution') continue;
     let rows = [];
     try {
       const res = await fetch(`${SUPABASE_URL}/rest/v1/${target.table}?select=*`, {
@@ -12077,6 +12082,132 @@ async function executeImportPlan() {
   if (typeof renderList === 'function') renderList();
   toast(`📥 取り込み完了：更新${updated}件${added ? ` / 新規${added}件` : ''}`);
 }
+
+// ══════════════════════════════════════════
+// 🚫 DMM使用禁止リスト読込（別Supabase → FIELDWORK照合マスター化）
+// ブラウザから別Supabaseを直接読み、blocked_companies に保存＋items照合で dmmBlocked フラグ。
+// 用途: ポスマネ配布承認アタックから除外（クライアント預かりデータの保護）。他サービスは影響なし。
+// ※ _impEsc / _impHasVal / _impNormPhone は取り込み機能で定義済みのものを再利用
+// ══════════════════════════════════════════
+
+function openDmmBlockImport() {
+  const ex = document.getElementById('m-dmm-block');
+  if (ex) ex.remove();
+  const inS = 'width:100%;padding:8px 10px;border:1.5px solid #E5E7EB;border-radius:8px;font-size:13px;margin-top:3px;font-family:inherit;box-sizing:border-box';
+  const lbS = 'display:block;font-size:12px;font-weight:700;color:#374151;margin-bottom:10px';
+  const m = document.createElement('div');
+  m.id = 'm-dmm-block';
+  m.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:99999';
+  m.innerHTML = `
+    <div style="background:#fff;border-radius:18px;padding:26px;max-width:540px;width:92%;font-family:'Hiragino Maru Gothic ProN','Yu Gothic UI',sans-serif;max-height:88vh;overflow:auto">
+      <div style="font-size:18px;font-weight:900;color:#B91C1C;margin-bottom:6px">🚫 DMM使用禁止リストを読み込む</div>
+      <div style="font-size:12px;color:#6B7280;line-height:1.7;margin-bottom:16px">別Supabase（pamphlet-delivery等）の配布先リストを読み、照合マスターに登録します。一致した自社収集企業は<strong>配布承認アタックから自動除外</strong>されます（式典・センターコールはOK）。<br>※ keyはこの画面だけで使用。会話履歴には残りません。</div>
+      <div id="dmm-form">
+        <label style="${lbS}">接続URL（必須）<input id="dmm-url" placeholder="https://xxxxxxxx.supabase.co" style="${inS}"></label>
+        <label style="${lbS}">anon key（必須）<input id="dmm-key" type="password" placeholder="sb_publishable_... または eyJ..." style="${inS}"></label>
+        <label style="${lbS}">テーブル名（必須）<input id="dmm-table" placeholder="facilities" style="${inS}"></label>
+        <div style="font-size:12px;font-weight:700;color:#374151;margin:14px 0 6px">▼ DMMリスト側のカラム名</div>
+        <label style="${lbS}">施設名／会社名（必須）<input id="dmm-col-name" placeholder="name" value="name" style="${inS}"></label>
+        <label style="${lbS}">電話（任意・照合精度UP）<input id="dmm-col-phone" placeholder="phone" value="phone" style="${inS}"></label>
+        <label style="${lbS}">住所（任意）<input id="dmm-col-addr" placeholder="address" value="address" style="${inS}"></label>
+        <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:8px">
+          <button onclick="document.getElementById('m-dmm-block').remove()" style="padding:10px 20px;background:#E5E7EB;color:#374151;border:none;border-radius:8px;font-weight:800;cursor:pointer">キャンセル</button>
+          <button onclick="runDmmBlockImport()" style="padding:10px 22px;background:linear-gradient(135deg,#DC2626,#991B1B);color:#fff;border:none;border-radius:8px;font-weight:900;cursor:pointer">🔍 読み込んで照合</button>
+        </div>
+      </div>
+      <div id="dmm-result" style="margin-top:16px"></div>
+    </div>`;
+  document.body.appendChild(m);
+}
+
+async function runDmmBlockImport() {
+  const g = id => (document.getElementById(id) ? document.getElementById(id).value : '').trim();
+  const url = g('dmm-url').replace(/\/+$/, '');
+  const key = g('dmm-key');
+  const table = g('dmm-table');
+  const colName = g('dmm-col-name');
+  const colPhone = g('dmm-col-phone');
+  const colAddr = g('dmm-col-addr');
+  const result = document.getElementById('dmm-result');
+  if (!url || !key || !table || !colName) { result.innerHTML = '<div style="color:#B91C1C;font-size:13px">URL・key・テーブル名・施設名カラムは必須です</div>'; return; }
+  result.innerHTML = '🔍 別Supabaseから読み込み中...';
+
+  let rows = [];
+  try {
+    const res = await fetch(`${url}/rest/v1/${table}?select=*`, { headers: { 'apikey': key, 'Authorization': `Bearer ${key}` } });
+    if (!res.ok) { const t = await res.text(); result.innerHTML = `<div style="color:#B91C1C;font-size:13px">読込エラー ${res.status}<br><span style="font-size:11px">${_impEsc(t.slice(0, 200))}</span></div>`; return; }
+    rows = await res.json();
+  } catch (e) { result.innerHTML = `<div style="color:#B91C1C;font-size:13px">接続失敗：${_impEsc(e.message)}<br><span style="font-size:11px">URL・keyを確認してください</span></div>`; return; }
+
+  if (!Array.isArray(rows) || !rows.length) { result.innerHTML = '<div style="color:#92400E;font-size:13px">0件でした。テーブル名・RLS（SELECT許可）を確認してください</div>'; return; }
+
+  const blocked = [];
+  for (const r of rows) {
+    const nm = _impHasVal(r[colName]) ? String(r[colName]).trim() : '';
+    const ph = (colPhone && _impHasVal(r[colPhone])) ? String(r[colPhone]).trim() : '';
+    const ad = (colAddr && _impHasVal(r[colAddr])) ? String(r[colAddr]).trim() : '';
+    if (!nm && !ph) continue;
+    blocked.push({ company_name: nm, phone: ph, phone_norm: _impNormPhone(ph), address: ad });
+  }
+
+  const blkPhones = new Set(blocked.map(b => b.phone_norm).filter(Boolean));
+  const blkNames = new Set(blocked.map(b => b.company_name).filter(Boolean));
+  const hits = [];
+  for (const it of items) {
+    const np = _impNormPhone(it.phone);
+    const nm = (it.company || '').trim();
+    if ((np && blkPhones.has(np)) || (nm && blkNames.has(nm))) hits.push(it);
+  }
+
+  window._dmmBlockPlan = { blocked, hits };
+  const sample = hits.slice(0, 6).map(h => `<span style="background:#FEE2E2;color:#991B1B;padding:1px 6px;border-radius:5px;font-size:11px;margin:1px;display:inline-block">${_impEsc(h.company || '(社名なし)')}</span>`).join('');
+  result.innerHTML = `
+    <div style="background:#FEF2F2;border:1.5px solid #FCA5A5;border-radius:10px;padding:14px;line-height:1.9;font-size:13px">
+      <div>📥 DMMリスト取得：<strong>${blocked.length}件</strong></div>
+      <div>⚠️ 自社収集と衝突：<strong>${hits.length}件</strong> → 配布承認から除外</div>
+      ${hits.length ? `<div style="margin-top:6px">${sample}${hits.length > 6 ? `<span style="font-size:11px;color:#9CA3AF"> …他${hits.length - 6}件</span>` : ''}</div>` : ''}
+    </div>
+    <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:14px">
+      <button onclick="document.getElementById('m-dmm-block').remove()" style="padding:10px 20px;background:#E5E7EB;color:#374151;border:none;border-radius:8px;font-weight:800;cursor:pointer">キャンセル</button>
+      <button onclick="executeDmmBlock()" style="padding:10px 22px;background:linear-gradient(135deg,#DC2626,#991B1B);color:#fff;border:none;border-radius:8px;font-weight:900;cursor:pointer">✅ マスター登録＋フラグ</button>
+    </div>`;
+}
+
+async function executeDmmBlock() {
+  const plan = window._dmmBlockPlan;
+  if (!plan) return;
+  const result = document.getElementById('dmm-result');
+  if (result) result.innerHTML = '💾 登録中...';
+
+  const payload = plan.blocked.map((b, i) => ({
+    id: 'dmm_' + Date.now() + '_' + i,
+    company_name: b.company_name, phone: b.phone, phone_norm: b.phone_norm, address: b.address, source: 'dmm',
+  }));
+  try {
+    await fetch(`${SUPABASE_URL}/rest/v1/blocked_companies?source=eq.dmm`, { method: 'DELETE', headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` } });
+    for (let i = 0; i < payload.length; i += 50) {
+      const chunk = payload.slice(i, i + 50);
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/blocked_companies`, {
+        method: 'POST',
+        headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}`, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+        body: JSON.stringify(chunk),
+      });
+      if (!res.ok && (res.status === 404 || res.status === 400)) {
+        const t = await res.text();
+        if (result) result.innerHTML = `<div style="color:#B91C1C;font-size:13px">blocked_companies テーブルが未作成のようです。先に発行したSQLをSupabaseで実行してください。<br><span style="font-size:11px">${_impEsc(t.slice(0, 180))}</span></div>`;
+        return;
+      }
+    }
+  } catch (e) { if (result) result.innerHTML = `<div style="color:#B91C1C;font-size:13px">マスター保存エラー：${_impEsc(e.message)}</div>`; return; }
+
+  for (const it of plan.hits) { it.dmmBlocked = true; }
+  try { await sb.set('items', 'fw_items', items); } catch (e) { if (result) result.innerHTML = '<div style="color:#B91C1C;font-size:13px">itemsフラグ保存エラー</div>'; return; }
+
+  const m = document.getElementById('m-dmm-block'); if (m) m.remove();
+  if (typeof renderList === 'function') renderList();
+  toast(`🚫 DMM使用禁止：マスター${plan.blocked.length}件 / 衝突${plan.hits.length}件にフラグ`);
+}
+
 
 
 // 旧 sendToCenterCall を削除して新しい sendToAttack を使う（以下は旧コードの開始）
