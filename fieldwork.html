@@ -1142,8 +1142,11 @@ tr:hover td { background: rgba(255,70,2,0.03); cursor: pointer; }
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
         CSV出力
       </button>
-      <button class="btn btn-sm" onclick="sendToCenterCall()" style="background:linear-gradient(135deg,#14B8A6,#2DD4BF);color:#fff;border:none;font-weight:700;font-size:13px;box-shadow:0 2px 8px rgba(20,184,166,0.3)" title="現在の絞り込み結果をセンターコール（電話アポ）に送る">
-        🎧 センターコールに送る
+      <button class="btn btn-sm" onclick="openSendToAttackMenu(event)" style="background:linear-gradient(135deg,#6366F1,#8B5CF6);color:#fff;border:none;font-weight:700;font-size:13px;box-shadow:0 2px 8px rgba(99,102,241,0.3);position:relative" title="現在の絞り込み結果を、4つのアタックリストのどれかに送る">
+        🚀 アタックリストに送る ▼
+      </button>
+      <button class="btn btn-sm" onclick="openImportFromAttacks()" style="background:linear-gradient(135deg,#1D9E75,#0F6E56);color:#fff;border:none;font-weight:700;font-size:13px;box-shadow:0 2px 8px rgba(15,110,86,0.3)" title="各サービスの電話画面で更新された企業情報をFIELDWORK(中心)に吸い上げる">
+        📥 取り込む
       </button>
       <button class="btn btn-sm" onclick="openResearchGuide()" style="background:linear-gradient(135deg,#A78BFA,#7C3AED);color:#fff;border:none;font-weight:700;font-size:13px">
         📋 リサーチ手順書を開く
@@ -7485,6 +7488,157 @@ function genDemoItems(ind, area, limit) {
   }));
 }
 
+// ══════════════════════════════════════════
+// 🤖 MCP連携：サービス定義 & リサーチ結果表示
+// ══════════════════════════════════════════
+let MCP_SERVICES = []; // services テーブルから読み込んだサービス定義
+
+async function loadMcpServices() {
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/services?select=*&is_active=eq.true&order=priority`, {
+      headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
+    });
+    if (res.ok) {
+      MCP_SERVICES = await res.json();
+    }
+  } catch(e) { console.warn('services load error:', e); }
+}
+
+// リサーチ結果（research）の表示HTML
+function renderResearchSection(it) {
+  const r = it.research;
+  if (!r) {
+    return `
+      <div style="background:#F9FAFB;border:1.5px dashed #D1D5DB;border-radius:12px;padding:16px;text-align:center;color:#9CA3AF;font-size:13px;font-weight:700">
+        🔍 まだ詳細リサーチされていません<br>
+        <span style="font-size:11px;font-weight:600">「🤖 リサーチパッケージ生成」で情報を分厚くできます</span>
+      </div>`;
+  }
+
+  // 値の取り出しヘルパー（research内は {value, confidence, source_url} 形式の項目がある）
+  const val = (x) => {
+    if (x == null) return null;
+    if (typeof x === 'object') return x.value || null;
+    return x;
+  };
+  const conf = (x) => (x && typeof x === 'object') ? x.confidence : null;
+
+  const rows = [
+    { label: '👤 代表者', v: val(r.representative), c: conf(r.representative) },
+    { label: '🌱 創業年', v: val(r.founded_year), c: conf(r.founded_year) },
+    { label: '📅 設立年', v: val(r.established_year), c: conf(r.established_year) },
+    { label: '📧 メール', v: val(r.email), c: conf(r.email) },
+    { label: '💰 推定年商', v: val(r.estimated_revenue), c: conf(r.estimated_revenue) },
+    { label: '👥 従業員数', v: val(r.employee_count), c: conf(r.employee_count) },
+  ].filter(row => row.v);
+
+  // SNS・求人URL
+  const links = [
+    { label: '📷 Instagram', url: r.instagram_url, color: '#E91E63' },
+    { label: '📘 Facebook', url: r.facebook_url, color: '#1877F2' },
+    { label: '🐦 X', url: r.twitter_url, color: '#1F2937' },
+    { label: '🎵 TikTok', url: r.tiktok_url, color: '#000' },
+    { label: '🔵 Indeed', url: r.indeed_url, color: '#2164F3' },
+    { label: '💼 マイナビ', url: r.mynavi_url, color: '#E60012' },
+    { label: '💼 アグレ', url: r.agre_url, color: '#00A0E9' },
+    { label: '💼 ジョブアンテナ', url: r.jobantenna_url, color: '#FF9800' },
+    { label: '💼 自社採用', url: val(r.own_career_url), color: '#10B981' },
+  ].filter(l => l.url);
+
+  const score = r.ai_score || '';
+  const scoreColor = score === 'S' ? '#DC2626' : score === 'A' ? '#EA580C' : score === 'B' ? '#0891B2' : '#6B7280';
+  const researchedDate = r.researched_at ? r.researched_at.slice(0, 10) : '';
+
+  return `
+    <div style="background:linear-gradient(135deg,#EFF6FF,#DBEAFE);border:1.5px solid #3B82F6;border-radius:12px;padding:16px;margin-bottom:14px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px">
+        <div style="font-size:14px;font-weight:900;color:#1E40AF">🤖 AIリサーチ結果</div>
+        <div style="display:flex;gap:8px;align-items:center">
+          ${score ? `<span style="background:${scoreColor};color:#fff;padding:3px 10px;border-radius:8px;font-size:12px;font-weight:900">AIスコア: ${score}</span>` : ''}
+          ${researchedDate ? `<span style="font-size:10px;color:#6B7280;font-weight:700">${researchedDate} 調査</span>` : ''}
+        </div>
+      </div>
+
+      ${rows.length ? `
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
+          ${rows.map(row => `
+            <div style="background:#fff;border-radius:8px;padding:8px 10px">
+              <div style="font-size:10px;color:#6B7280;font-weight:700">${row.label}${row.c === 'confirmed' ? ' ✅' : row.c === 'unknown' ? '' : ''}</div>
+              <div style="font-size:13px;color:#1F2937;font-weight:800;margin-top:2px">${escapeHtml(String(row.v))}</div>
+            </div>
+          `).join('')}
+        </div>
+      ` : ''}
+
+      ${links.length ? `
+        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px">
+          ${links.map(l => `
+            <a href="${escapeHtml(l.url)}" target="_blank" style="background:#fff;border:1.5px solid ${l.color};color:${l.color};padding:5px 10px;border-radius:8px;font-size:11px;font-weight:800;text-decoration:none">${l.label}</a>
+          `).join('')}
+        </div>
+      ` : ''}
+
+      ${r.research_summary ? `
+        <div style="background:#fff;border-radius:8px;padding:10px 12px;font-size:11px;color:#374151;line-height:1.7">
+          <strong style="color:#1E40AF">📝 調査サマリー：</strong><br>
+          ${escapeHtml(r.research_summary)}
+        </div>
+      ` : ''}
+    </div>`;
+}
+
+// サービス所属（assigned_services）の表示＋トグルHTML
+function renderServicesSection(it) {
+  const assigned = it.assigned_services || [];
+  const auto = it.auto_assigned_services || [];
+
+  if (!MCP_SERVICES.length) {
+    return `
+      <div style="margin-bottom:14px">
+        <div style="font-size:11px;color:#6B7280;font-weight:800;margin-bottom:6px">🎯 サービス振り分け：</div>
+        <div style="font-size:12px;color:#9CA3AF">${assigned.length ? assigned.join(', ') : 'サービス定義を読込中... or 未振り分け'}</div>
+      </div>`;
+  }
+
+  return `
+    <div style="margin-bottom:14px">
+      <div style="font-size:11px;color:#6B7280;font-weight:800;margin-bottom:6px">🎯 どのサービスに提案する？（クリックで切替・複数選択可）</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        ${MCP_SERVICES.map(svc => {
+          const isOn = assigned.includes(svc.id);
+          const isAuto = auto.includes(svc.id);
+          return `
+            <button onclick="toggleAssignedService(${it.id},'${svc.id}')" style="
+              background:${isOn ? '#EFF6FF' : '#fff'};
+              color:${isOn ? '#1E40AF' : '#9CA3AF'};
+              border:2px ${isOn ? 'solid #3B82F6' : 'dashed #D1D5DB'};
+              padding:5px 12px;border-radius:8px;font-size:11px;font-weight:800;cursor:pointer;font-family:inherit
+            " title="${isAuto ? 'AIが自動振り分け' : '手動'}">
+              ${svc.emoji || ''} ${svc.display_name || svc.id} ${isOn ? '✓' : ''}${isAuto && isOn ? ' 🤖' : ''}
+            </button>`;
+        }).join('')}
+      </div>
+    </div>`;
+}
+
+// サービス所属のトグル
+async function toggleAssignedService(itemId, serviceId) {
+  const it = items.find(x => x.id === itemId);
+  if (!it) return;
+  if (!Array.isArray(it.assigned_services)) it.assigned_services = [];
+  const idx = it.assigned_services.indexOf(serviceId);
+  if (idx >= 0) {
+    it.assigned_services.splice(idx, 1);
+  } else {
+    it.assigned_services.push(serviceId);
+  }
+  // 保存（items全体）
+  await sb.set('items', 'fw_items', items);
+  // 再描画
+  openDetail(itemId);
+  showToast(`🎯 サービス振り分けを更新しました`);
+}
+
 // ── DETAIL ──
 function openDetail(id) {
   selId=id;
@@ -7504,23 +7658,8 @@ function openDetail(id) {
         ${it.company}
       </div>
 
-      <!-- ⭐ 見込み度評価 -->
-      <div style="margin-bottom:10px;display:flex;align-items:center;gap:10px;flex-wrap:wrap">
-        <span style="font-size:11px;color:#92400E;font-weight:800">見込み度：</span>
-        ${getStarInteractiveHtml(it.id, it.starRating)}
-        <span style="font-size:11px;color:#92400E;font-weight:700">${STAR_LABELS[it.starRating || 0].label}</span>
-      </div>
-
-      <!-- 🏷️ キャンペーン所属 -->
-      <div style="margin-bottom:14px;display:flex;align-items:center;gap:8px;flex-wrap:wrap">
-        <span style="font-size:11px;color:#6B7280;font-weight:800">キャンペーン：</span>
-        ${hasCampaign(it, 'posumane')
-          ? `<button onclick="toggleItemCampaign(${it.id},'posumane')" style="background:#FFF8E1;color:#E65100;border:2px solid #FFC107;padding:5px 10px;border-radius:8px;font-size:11px;font-weight:800;cursor:pointer;font-family:inherit" title="クリックでポスマネ配布から外す">📦 ポスマネ配布 ✓</button>`
-          : `<button onclick="toggleItemCampaign(${it.id},'posumane')" style="background:#fff;color:#9CA3AF;border:2px dashed #D1D5DB;padding:5px 10px;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit" title="クリックでポスマネ配布候補に追加">＋ 📦 ポスマネ配布に追加</button>`}
-        ${hasCampaign(it, 'posumane_user')
-          ? `<button onclick="toggleItemCampaign(${it.id},'posumane_user')" style="background:#F5F3FF;color:#6D28D9;border:2px solid #A855F7;padding:5px 10px;border-radius:8px;font-size:11px;font-weight:800;cursor:pointer;font-family:inherit" title="クリックでポスマネ利用企業から外す">💼 ポスマネ利用企業 ✓</button>`
-          : `<button onclick="toggleItemCampaign(${it.id},'posumane_user')" style="background:#fff;color:#9CA3AF;border:2px dashed #D1D5DB;padding:5px 10px;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit" title="クリックでポスマネ利用企業候補に追加">＋ 💼 利用企業候補に追加</button>`}
-      </div>
+      <!-- 🎯 サービス振り分け（MCP連携）-->
+      ${renderServicesSection(it)}
 
       <!-- 電話番号（特大）-->
       ${it.phone ? `
@@ -7651,6 +7790,7 @@ function openDetail(id) {
   }
   document.getElementById('dt-letter').innerHTML=letterTemplate(it);
   document.getElementById('dt-info').innerHTML=`
+    ${renderResearchSection(it)}
     <div style="margin-bottom:16px">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
         <div style="font-family:var(--font-mono);font-size:9px;color:var(--accent);letter-spacing:0.15em">// 編集可能フィールド</div>
@@ -11493,9 +11633,454 @@ function exportCSV() {
 }
 
 // ══════════════════════════════════════════
-// 🎧 センターコールに送る（Supabase の centercall_attacks に直接登録）
+// 🚀 アタックリストに送る（4分岐メニュー）
 // ══════════════════════════════════════════
+const ATTACK_TARGETS = {
+  centercall: {
+    label: '🎧 センターコール｜クライアントアタック',
+    desc: 'テレアポ代行サービスの営業先',
+    table: 'centercall_attacks',
+    color: '#14B8A6',
+    bg: '#F0FDFA',
+    href: 'centercall.html',
+  },
+  posmane_distribution: {
+    label: '📦 ポスマネ｜配布承認アタック',
+    desc: 'パンフレット配布先（ホテル等）',
+    table: 'posmane_attacks',
+    color: '#FF6B35',
+    bg: '#FFF8F1',
+    href: 'call.html',
+  },
+  posmane_client: {
+    label: '💼 ポスマネ｜クライアントアタック',
+    desc: 'パンフ広告枠の出稿主候補',
+    table: 'posmane_client_attacks',
+    color: '#A855F7',
+    bg: '#FAF5FF',
+    href: 'posmane_client.html',
+  },
+  ceremony: {
+    label: '🎬 式典映像｜クライアントアタック',
+    desc: '周年・創立記念の法人',
+    table: 'ceremony_attacks',
+    color: '#D97706',
+    bg: '#FFFBEB',
+    href: 'ceremony.html',
+  },
+};
+
+function openSendToAttackMenu(ev) {
+  if (ev) ev.stopPropagation();
+  // 既存メニュー削除
+  const existing = document.getElementById('m-send-attack-menu');
+  if (existing) existing.remove();
+
+  const m = document.createElement('div');
+  m.id = 'm-send-attack-menu';
+  m.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:99999';
+  m.innerHTML = `
+    <div style="background:#fff;border-radius:18px;padding:24px;max-width:540px;width:90%;font-family:'Hiragino Maru Gothic ProN','Yu Gothic UI',sans-serif">
+      <div style="font-size:18px;font-weight:900;color:#1F2937;margin-bottom:6px">🚀 どのアタックリストに送りますか？</div>
+      <div style="font-size:12px;color:#6B7280;font-weight:700;margin-bottom:14px">現在のフィルター結果を、選んだアタックリストに送信します</div>
+      <div style="display:grid;gap:10px">
+        ${Object.entries(ATTACK_TARGETS).map(([key, t]) => `
+          <button onclick="sendToAttack('${key}')" style="
+            background:${t.bg};
+            border:2px solid ${t.color};
+            color:${t.color};
+            padding:14px 16px;
+            border-radius:12px;
+            font-size:13px;
+            font-weight:900;
+            cursor:pointer;
+            font-family:inherit;
+            text-align:left;
+            transition:all 0.15s;
+          " onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 6px 14px rgba(0,0,0,0.1)'" onmouseout="this.style.transform='translateY(0)';this.style.boxShadow='none'">
+            <div style="font-size:14px;font-weight:900">${t.label}</div>
+            <div style="font-size:11px;font-weight:700;opacity:0.8;margin-top:2px">${t.desc}</div>
+          </button>
+        `).join('')}
+      </div>
+      <div style="margin-top:14px;text-align:center">
+        <button onclick="document.getElementById('m-send-attack-menu').remove()" style="padding:8px 22px;background:#9CA3AF;color:#fff;border:none;border-radius:8px;font-weight:700;cursor:pointer;font-size:12px">キャンセル</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(m);
+}
+
+async function sendToAttack(targetKey) {
+  // メニュー閉じる
+  const menu = document.getElementById('m-send-attack-menu');
+  if (menu) menu.remove();
+
+  const target = ATTACK_TARGETS[targetKey];
+  if (!target) return;
+
+  // 現在のアタックリストのフィルター結果を取得
+  let list = [];
+  if (typeof getCurrentFilteredItems === 'function') {
+    list = getCurrentFilteredItems();
+  } else if (typeof getFilteredItems === 'function') {
+    list = getFilteredItems();
+  }
+
+  if (!list.length) {
+    alert('⚠️ 送信対象がありません。フィルターで企業を絞り込んでから送ってください');
+    return;
+  }
+  if (list.length === items.length) {
+    if (!confirm(`⚠️ 警告：フィルターが効いていません！\n\n全 ${list.length}件が送信されます。\n本当によろしいですか？\n\n（業種・エリアなどで絞り込んでから送ることを推奨）`)) {
+      return;
+    }
+  } else {
+    if (!confirm(`${target.label}\n\n${list.length}件を送信しますか？\n\n（現在のフィルター結果：${list.length}件 / 全企業：${items.length}件）\n\n※ 電話番号が同じ既存企業はスキップされます`)) {
+      return;
+    }
+  }
+
+  // 進捗モーダル
+  const existing = document.getElementById('m-send-cc');
+  if (existing) existing.remove();
+  const m = document.createElement('div');
+  m.id = 'm-send-cc';
+  m.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:99999';
+  m.innerHTML = `
+    <div style="background:#fff;border-radius:18px;padding:28px;max-width:480px;width:90%;font-family:'Hiragino Maru Gothic ProN','Yu Gothic UI',sans-serif">
+      <div style="font-size:20px;font-weight:900;color:${target.color};margin-bottom:12px">${target.label}</div>
+      <div id="cc-send-progress" style="font-size:13px;color:#374151;line-height:1.8">準備中...</div>
+      <div style="background:${target.bg};border-radius:10px;height:10px;margin-top:14px;overflow:hidden">
+        <div id="cc-send-bar" style="background:${target.color};height:100%;width:0%;transition:width 0.3s"></div>
+      </div>
+      <div id="cc-send-result" style="margin-top:14px;display:none"></div>
+    </div>
+  `;
+  document.body.appendChild(m);
+
+  const prog = document.getElementById('cc-send-progress');
+  const bar = document.getElementById('cc-send-bar');
+  const result = document.getElementById('cc-send-result');
+
+  // 既存企業の電話番号を取得
+  prog.textContent = '🔍 既存企業の電話番号を確認中...';
+  let existingPhones = new Set();
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/${target.table}?select=phone`, {
+      headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
+    });
+    if (res.ok) {
+      const data = await res.json();
+      data.forEach(r => { if (r.phone) existingPhones.add(r.phone.replace(/[^\d]/g, '')); });
+    } else if (res.status === 404 || res.status === 400) {
+      result.style.display = 'block';
+      result.innerHTML = `
+        <div style="background:#FEE2E2;border:1.5px solid #DC2626;border-radius:10px;padding:14px;color:#991B1B;font-size:12px;line-height:1.7">
+          ⚠️ <strong>${target.table} テーブルが存在しません</strong><br>
+          attack.html の対応するタブで一番下の SQL を Supabase で先に実行してください。
+        </div>
+        <div style="margin-top:12px;text-align:center"><button onclick="document.getElementById('m-send-cc').remove()" style="padding:10px 24px;background:#9CA3AF;color:#fff;border:none;border-radius:8px;font-weight:800;cursor:pointer">閉じる</button></div>
+      `;
+      return;
+    }
+  } catch (e) {
+    console.warn('既存取得失敗:', e);
+  }
+
+  // 整形＆スキップ判定
+  const toInsert = [];
+  let skipped = 0;
+  for (const it of list) {
+    const normPhone = (it.phone || '').replace(/[^\d]/g, '');
+    if (normPhone && existingPhones.has(normPhone)) {
+      skipped++;
+      continue;
+    }
+    toInsert.push({
+      id: `${targetKey}_${Date.now()}_${Math.random().toString(36).slice(2, 9)}_${toInsert.length}`,
+      company_name: it.company || '',
+      phone: it.phone || '',
+      address: it.addr || '',
+      website: it.website || '',
+      industry: it.industry || '',
+      area: it.area || '',
+      email: it.email || null,
+      instagram_url: it.instaUrl || null,
+      facebook_url: it.fbUrl || null,
+      x_url: it.xUrl || null,
+      tiktok_url: it.tiktokUrl || null,
+      indeed_url: it.indeedUrl || null,
+      mynavi_url: it.mynaviUrl || null,
+      ceo_name: it.ceoName || null,
+      revenue: it.revenue || null,
+      employees: it.employeeCount || null,
+      phase: 'pending',
+      star_rating: 0,
+      pending_callback: false,
+      priority: 0,
+      excluded: false,
+      history: [],
+      email_history: [],
+      memo: it.researchNotes || '',
+    });
+  }
+
+  if (!toInsert.length) {
+    result.style.display = 'block';
+    result.innerHTML = `
+      <div style="background:#FEF3C7;border:1.5px solid #F59E0B;border-radius:10px;padding:14px;color:#92400E;font-size:13px;line-height:1.7">
+        ℹ️ ${list.length}件すべて既存企業（電話番号一致）でした。<br>新規追加はありません。
+      </div>
+      <div style="margin-top:12px;text-align:center"><button onclick="document.getElementById('m-send-cc').remove()" style="padding:10px 24px;background:${target.color};color:#fff;border:none;border-radius:8px;font-weight:800;cursor:pointer">閉じる</button></div>
+    `;
+    return;
+  }
+
+  // 50件ずつバッチ insert
+  prog.textContent = `📤 ${toInsert.length}件を送信中...（既存スキップ: ${skipped}件）`;
+  const BATCH = 50;
+  let success = 0, errors = 0;
+  const errorMsgs = [];
+  for (let i = 0; i < toInsert.length; i += BATCH) {
+    const chunk = toInsert.slice(i, i + BATCH);
+    try {
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/${target.table}`, {
+        method: 'POST',
+        headers: {
+          'apikey': SUPABASE_KEY,
+          'Authorization': `Bearer ${SUPABASE_KEY}`,
+          'Content-Type': 'application/json',
+          'Prefer': 'return=minimal',
+        },
+        body: JSON.stringify(chunk),
+      });
+      if (res.ok) {
+        success += chunk.length;
+      } else {
+        const txt = await res.text();
+        errors += chunk.length;
+        errorMsgs.push(txt.slice(0, 200));
+      }
+    } catch (e) {
+      errors += chunk.length;
+      errorMsgs.push(e.message);
+    }
+    const pct = Math.round(((i + chunk.length) / toInsert.length) * 100);
+    bar.style.width = pct + '%';
+    prog.textContent = `📤 ${i + chunk.length} / ${toInsert.length} 件処理（成功: ${success} / エラー: ${errors}）`;
+  }
+
+  // 完了
+  result.style.display = 'block';
+  if (errors === 0) {
+    result.innerHTML = `
+      <div style="background:#D1FAE5;border:1.5px solid #10B981;border-radius:10px;padding:14px;color:#065F46;font-size:13px;line-height:1.8">
+        ✅ <strong>${success}件 新規登録完了！</strong>${skipped > 0 ? `（${skipped}件は既存のためスキップ）` : ''}<br>
+        <a href="${target.href}" style="display:inline-block;margin-top:10px;background:${target.color};color:#fff;padding:10px 20px;border-radius:8px;text-decoration:none;font-weight:800">${target.label.split('｜')[0]} アタック画面へ進む →</a>
+      </div>
+      <div style="margin-top:12px;text-align:center"><button onclick="document.getElementById('m-send-cc').remove()" style="padding:8px 20px;background:#9CA3AF;color:#fff;border:none;border-radius:8px;font-weight:700;cursor:pointer;font-size:12px">閉じる</button></div>
+    `;
+  } else {
+    result.innerHTML = `
+      <div style="background:#FEE2E2;border:1.5px solid #DC2626;border-radius:10px;padding:14px;color:#991B1B;font-size:12px;line-height:1.7">
+        ⚠️ 成功: ${success}件 / エラー: ${errors}件${skipped > 0 ? ` / スキップ: ${skipped}件` : ''}<br>
+        <div style="font-size:11px;margin-top:6px;opacity:0.8">${errorMsgs.slice(0, 2).join(' / ')}</div>
+      </div>
+      <div style="margin-top:12px;text-align:center"><button onclick="document.getElementById('m-send-cc').remove()" style="padding:8px 20px;background:#9CA3AF;color:#fff;border:none;border-radius:8px;font-weight:700;cursor:pointer">閉じる</button></div>
+    `;
+  }
+}
+
+// 旧 sendToCenterCall は互換用にエイリアス
 async function sendToCenterCall() {
+  return sendToAttack('centercall');
+}
+
+// ══════════════════════════════════════════
+// 📥 アタックリストから企業情報を取り込む（逆同期 / 中心へ集約）
+// センターコール等で更新された基本情報・リサーチメモを items(fw_items) に吸い上げる
+// 方針: attack側を最新として上書き（ただし空値では上書きしない / 会社名・電話は照合軸なので保護 / research(MCP)は不可侵）
+// ══════════════════════════════════════════
+
+// attackテーブルのカラム → items キー のマッピング
+const IMPORT_FIELD_MAP = {
+  address: 'addr',
+  website: 'website',
+  industry: 'industry',
+  ceo_name: 'ceoName',
+  founding_date: 'foundingDate',
+  established_date: 'establishedDate',
+  email: 'email',
+  revenue: 'revenue',
+  employees: 'employeeCount',
+  instagram_url: 'instaUrl',
+  facebook_url: 'fbUrl',
+  x_url: 'xUrl',
+  tiktok_url: 'tiktokUrl',
+  indeed_url: 'indeedUrl',
+  mynavi_url: 'mynaviUrl',
+  agre_url: 'agreUrl',
+  job_antenna_url: 'jobAntennaUrl',
+  own_recruit_url: 'ownRecruitUrl',
+  research_notes: 'researchNotes',
+};
+
+function _impNormPhone(p) { return (p || '').toString().replace(/[^\d]/g, ''); }
+function _impEsc(s) { return (s == null ? '' : String(s)).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])); }
+function _impHasVal(v) { return v != null && String(v).trim() !== ''; }
+
+async function openImportFromAttacks() {
+  const existing = document.getElementById('m-import-attacks');
+  if (existing) existing.remove();
+  const m = document.createElement('div');
+  m.id = 'm-import-attacks';
+  m.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:99999';
+  m.innerHTML = `
+    <div style="background:#fff;border-radius:18px;padding:28px;max-width:560px;width:92%;font-family:'Hiragino Maru Gothic ProN','Yu Gothic UI',sans-serif;max-height:85vh;overflow:auto">
+      <div style="font-size:19px;font-weight:900;color:#0F6E56;margin-bottom:6px">📥 アタックリストから取り込む</div>
+      <div style="font-size:12px;color:#6B7280;line-height:1.7;margin-bottom:16px">各サービスの電話画面で更新された基本情報・リサーチメモを、FIELDWORK（中心）に吸い上げます。<br>会社名・電話番号は照合に使うので保護、MCPのリサーチ結果(research)は変更しません。</div>
+      <div id="imp-body" style="font-size:13px;color:#374151;line-height:1.8">🔍 各テーブルをスキャン中...</div>
+    </div>`;
+  document.body.appendChild(m);
+  const body = document.getElementById('imp-body');
+
+  // items を照合用にインデックス化
+  const byId = new Map();
+  const byPhone = new Map();
+  for (const it of items) {
+    if (it.id != null) byId.set(String(it.id), it);
+    const np = _impNormPhone(it.phone);
+    if (np) byPhone.set(np, it);
+  }
+
+  const plan = { updates: [], news: [] };
+  const tableSummary = [];
+
+  for (const [key, target] of Object.entries(ATTACK_TARGETS)) {
+    let rows = [];
+    try {
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/${target.table}?select=*`, {
+        headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
+      });
+      if (res.status === 404 || res.status === 400) { tableSummary.push(`・${target.table}：テーブル無し（スキップ）`); continue; }
+      if (!res.ok) { tableSummary.push(`・${target.table}：読込エラー${res.status}`); continue; }
+      rows = await res.json();
+    } catch (e) { tableSummary.push(`・${target.table}：取得失敗`); continue; }
+
+    let upd = 0, nw = 0;
+    for (const row of rows) {
+      // 照合: source_data.company_id → 電話番号
+      let it = null;
+      const cid = row.source_data && row.source_data.company_id;
+      if (cid != null && byId.has(String(cid))) it = byId.get(String(cid));
+      if (!it) { const np = _impNormPhone(row.phone); if (np && byPhone.has(np)) it = byPhone.get(np); }
+
+      if (it) {
+        // 差分（attack側に値があり、items側と異なる/空）
+        const diffs = [];
+        for (const [col, ikey] of Object.entries(IMPORT_FIELD_MAP)) {
+          const av = row[col];
+          if (!_impHasVal(av)) continue;
+          if (String(it[ikey] == null ? '' : it[ikey]).trim() === String(av).trim()) continue;
+          diffs.push({ ikey, col, from: it[ikey], to: av });
+        }
+        if (diffs.length) { plan.updates.push({ it, row, diffs, table: target.table }); upd++; }
+      } else {
+        plan.news.push({ row, table: target.table, source: key });
+        nw++;
+      }
+    }
+    tableSummary.push(`・${target.label.split('｜')[0]}（${rows.length}件）→ 更新${upd} / 新規${nw}`);
+  }
+
+  window._importPlan = plan;
+
+  // プレビュー描画
+  const upN = plan.updates.length, newN = plan.news.length;
+  let html = `<div style="background:#F0FDFA;border:1.5px solid #5DCAA5;border-radius:10px;padding:12px;margin-bottom:14px">${tableSummary.map(_impEsc).join('<br>')}</div>`;
+
+  if (!upN && !newN) {
+    html += `<div style="background:#F1F5F9;border-radius:10px;padding:14px;color:#475569">差分はありませんでした。FIELDWORKは既に最新です。</div>
+      <div style="margin-top:16px;text-align:center"><button onclick="document.getElementById('m-import-attacks').remove()" style="padding:10px 24px;background:#9CA3AF;color:#fff;border:none;border-radius:8px;font-weight:800;cursor:pointer">閉じる</button></div>`;
+    body.innerHTML = html; return;
+  }
+
+  html += `<div style="font-weight:900;color:#0F6E56;margin-bottom:6px">📝 更新される企業：${upN}件</div>`;
+  if (upN) {
+    const preview = plan.updates.slice(0, 8).map(u => {
+      const fields = u.diffs.map(d => `<span style="background:#E1F5EE;color:#085041;padding:1px 6px;border-radius:5px;font-size:11px;margin:1px;display:inline-block">${_impEsc(d.col)}</span>`).join('');
+      return `<div style="padding:6px 0;border-bottom:1px solid #F1F5F9"><div style="font-weight:700;font-size:12px">${_impEsc(u.it.company || '(社名なし)')}</div><div style="margin-top:2px">${fields}</div></div>`;
+    }).join('');
+    html += `<div style="max-height:200px;overflow:auto;background:#fff;border:1px solid #E5E7EB;border-radius:8px;padding:8px;margin-bottom:14px">${preview}${upN > 8 ? `<div style="font-size:11px;color:#9CA3AF;padding-top:6px">…他 ${upN - 8}件</div>` : ''}</div>`;
+  }
+
+  if (newN) {
+    html += `<label style="display:flex;align-items:flex-start;gap:8px;background:#FFFBEB;border:1.5px solid #FAC775;border-radius:10px;padding:12px;margin-bottom:14px;cursor:pointer">
+      <input type="checkbox" id="imp-add-new" style="margin-top:3px">
+      <span style="font-size:12px;color:#854F0B;line-height:1.6"><strong>FIELDWORKに無い企業：${newN}件</strong><br>これらも新規追加する（チェックしなければ更新のみ実行）</span>
+    </label>`;
+  }
+
+  html += `<div style="display:flex;gap:10px;justify-content:flex-end">
+    <button onclick="document.getElementById('m-import-attacks').remove()" style="padding:10px 20px;background:#E5E7EB;color:#374151;border:none;border-radius:8px;font-weight:800;cursor:pointer">キャンセル</button>
+    <button onclick="executeImportPlan()" style="padding:10px 24px;background:linear-gradient(135deg,#1D9E75,#0F6E56);color:#fff;border:none;border-radius:8px;font-weight:900;cursor:pointer">✅ 取り込む</button>
+  </div>`;
+  body.innerHTML = html;
+}
+
+async function executeImportPlan() {
+  const plan = window._importPlan;
+  if (!plan) return;
+  const addNew = !!(document.getElementById('imp-add-new') && document.getElementById('imp-add-new').checked);
+  const body = document.getElementById('imp-body');
+  if (body) body.innerHTML = '💾 取り込み中...';
+
+  let updated = 0, added = 0;
+  // 更新（itemsは参照同一なので直接書き換え）
+  for (const u of plan.updates) {
+    for (const d of u.diffs) { u.it[d.ikey] = d.to; }
+    u.it.lastUpdatedAt = new Date().toISOString().slice(0, 10);
+    updated++;
+  }
+  // 新規追加（オプション）
+  if (addNew) {
+    for (const n of plan.news) {
+      const row = n.row;
+      const obj = {
+        id: (row.source_data && row.source_data.company_id) || Number(String(Date.now()) + String(Math.floor(Math.random() * 1000))),
+        company: row.company_name || '',
+        phone: row.phone || '',
+        area: row.area || '',
+        phase: 'visit', nextDate: '', logs: [], memo: '', score: null,
+        source: 'imported_from_attack', importedFrom: n.table,
+        createdAt: new Date().toISOString().slice(0, 10),
+        lastUpdatedAt: new Date().toISOString().slice(0, 10),
+      };
+      for (const [col, ikey] of Object.entries(IMPORT_FIELD_MAP)) {
+        if (_impHasVal(row[col])) obj[ikey] = row[col];
+      }
+      items.push(obj);
+      added++;
+    }
+  }
+
+  try {
+    await sb.set('items', 'fw_items', items);
+  } catch (e) {
+    if (body) body.innerHTML = `<div style="color:#B91C1C">保存エラー：${_impEsc(e.message)}</div>`;
+    return;
+  }
+
+  const m = document.getElementById('m-import-attacks');
+  if (m) m.remove();
+  if (typeof renderList === 'function') renderList();
+  toast(`📥 取り込み完了：更新${updated}件${added ? ` / 新規${added}件` : ''}`);
+}
+
+
+// 旧 sendToCenterCall を削除して新しい sendToAttack を使う（以下は旧コードの開始）
+async function __sendToCenterCall_OLD() {
   // 現在のアタックリストのフィルター結果を取得
   let list = [];
   if (typeof getCurrentFilteredItems === 'function') {
@@ -12106,6 +12691,7 @@ document.getElementById('today-label').textContent = (() => {
         ...it
       }));
     }
+    await loadMcpServices(); // MCPのサービス定義を読み込み
     const savedNotices = await sb.get('items', 'fw_notices');
     if (savedNotices) notices = savedNotices;
     // 収集済みエリアを読み込み
