@@ -7816,6 +7816,10 @@ function openDetail(id) {
           <input class="finput ${it.foundingDate?'is-filled':'is-empty'}" id="edit-founding" value="${it.foundingDate||''}" placeholder="（例：未入力 — 例 2005-06-01）">
         </div>
         <div class="fl">
+          <label class="flabel">設立年月日</label>
+          <input class="finput ${it.establishedDate?'is-filled':'is-empty'}" id="edit-established" value="${it.establishedDate||''}" placeholder="（例：未入力 — 例 1991-12）">
+        </div>
+        <div class="fl">
           <label class="flabel">創業記念月</label>
           <select class="fsel ${it.anniversaryMonth?'is-filled':'is-empty'}" id="edit-anniversary">
             <option value="">— 未入力 —</option>
@@ -9004,7 +9008,7 @@ function updateFieldFillState(el) {
   el.classList.toggle('is-empty', !filled);
 }
 function attachFieldFillListeners() {
-  const fields = ['edit-person','edit-phone','edit-founding','edit-anniversary',
+  const fields = ['edit-person','edit-phone','edit-founding','edit-established','edit-anniversary',
     'edit-insta','edit-fb','edit-tiktok','edit-job','edit-notes'];
   fields.forEach(id => {
     const el = document.getElementById(id);
@@ -9022,6 +9026,7 @@ function saveDetailEdit() {
   const person      = document.getElementById('edit-person')?.value.trim();
   const phone       = document.getElementById('edit-phone')?.value.trim();
   const founding    = document.getElementById('edit-founding')?.value.trim();
+  const established = document.getElementById('edit-established')?.value.trim();
   const anniv       = document.getElementById('edit-anniversary')?.value;
   const insta       = document.getElementById('edit-insta')?.value.trim();
   const fb          = document.getElementById('edit-fb')?.value.trim();
@@ -9041,6 +9046,7 @@ function saveDetailEdit() {
   if (person      !== undefined) it.person = person;
   if (phone       !== undefined) it.phone = phone;
   if (founding    !== undefined) it.foundingDate = founding;
+  if (established !== undefined) it.establishedDate = established;
   if (anniv       !== undefined) it.anniversaryMonth = anniv;
   if (insta       !== undefined) it.instaUrl = insta;
   if (fb          !== undefined) it.fbUrl = fb;
