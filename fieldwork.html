@@ -11913,6 +11913,8 @@ async function sendToAttack(targetKey) {
       if (!it.sent_services.includes(targetKey)) it.sent_services.push(targetKey);
     }
     try { await sb.set('items', 'fw_items', items); } catch(e) { console.warn('サービス更新失敗:', e); }
+    // ★ モーダルが開いてたらサービスボタンを即再描画
+    if (selId) openDetail(selId);
   }
   // 完了
   result.style.display = 'block';
