@@ -1194,6 +1194,14 @@ tr:hover td { background: rgba(255,70,2,0.03); cursor: pointer; }
         <option value="has_job">求人あり</option>
         <option value="no_job">求人なし</option>
       </select>
+      <select style="padding:10px 12px;border-radius:12px;border:2px solid #E5E7EB;font-size:13px;font-weight:600;color:#555;background:#fff;outline:none" id="ls-service" onchange="renderListResetPage()">
+        <option value="">🎯 全サービス</option>
+        <option value="centercall">🎧 センターコール送り済み</option>
+        <option value="posmane_distribution">📦 ポスマネ配布承認送り済み</option>
+        <option value="posmane_client">💼 ポスマネクライアント送り済み</option>
+        <option value="ceremony">🎬 式典映像送り済み</option>
+        <option value="none">📭 未送信（どこにも送ってない）</option>
+      </select>
       <select style="padding:10px 12px;border-radius:12px;border:2px solid #E5E7EB;font-size:13px;font-weight:600;color:#555;background:#fff;outline:none" id="ls-pref" onchange="updateAreaOptions();renderListResetPage()">
         <option value="">📍 全都道府県</option>
       </select>
@@ -1238,6 +1246,9 @@ tr:hover td { background: rgba(255,70,2,0.03); cursor: pointer; }
           <option value="company">🔤 会社名順</option>
           <option value="phase">📌 フェーズ順</option>
           <option value="area">📍 エリア順</option>
+        </optgroup>
+        <optgroup label="── アクション優先 ──">
+          <option value="today_first">📅 今日やること優先（次回予定日順）</option>
         </optgroup>
       </select>
       <label style="display:flex;align-items:center;gap:6px;font-size:13px;font-weight:600;color:#888;cursor:pointer" title="🚫営業対象外（手動で「対象外にする」を押した企業）も表示">
@@ -4328,6 +4339,10 @@ function renderList() {
   if (jobF === 'no_job') list = list.filter(it => !it.jobUrl);
   if (prefF) list = list.filter(it => getPrefFromArea(it.area || it.addr || '') === prefF);
   if (areaF) list = list.filter(it => (it.area || '').includes(areaF));
+  // サービス別フィルター（assigned_services）
+  const serviceF = document.getElementById('ls-service')?.value || '';
+  if (serviceF === 'none') list = list.filter(it => !(it.assigned_services || []).length);
+  else if (serviceF) list = list.filter(it => (it.assigned_services || []).includes(serviceF));
 
   // 期間フィルタ
   const periodF = document.getElementById('ls-period')?.value || '';
@@ -4379,7 +4394,18 @@ function renderList() {
     const infoScore = it => [it.person,it.phone,it.foundingDate,it.anniversaryMonth,it.website,it.instaUrl,it.fbUrl,it.xUrl,it.tiktokUrl,it.indeedUrl,it.jobAntennaUrl,it.agreUrl,it.email,it.researchNotes,it.employeeCount].filter(Boolean).length;
     if (sortMode === 'info_asc')  return infoScore(a) - infoScore(b);   // 少ない→多い（追加調査向け）
     if (sortMode === 'info_desc') return infoScore(b) - infoScore(a);   // 多い→少ない
-    if (sortMode === 'phase') return (a.phase||'').localeCompare(b.phase||'');
+    if (sortMode === 'phase') {
+      const order=['tel_first','tel_repeat','visit_ready','visit_done','letter','dormant_2w','dormant_5m','meeting_won','rejected_final'];
+      const pi=x=>{if(!x.approach||!x.approach.started)return 99;const i=order.indexOf(x.approach.currentPhase);return i>=0?i:98;};
+      return pi(a)-pi(b);
+    }
+    if (sortMode === 'today_first') {
+      const _td=todayJST();
+      const sc=x=>{const nd=x.nextDate||'';if(nd&&nd<=_td)return 0;if(nd)return 1;return 2;};
+      const sa=sc(a),sb=sc(b);
+      if(sa!==sb)return sa-sb;
+      return (a.nextDate||'zzz').localeCompare(b.nextDate||'zzz');
+    }
     if (sortMode === 'area') return (a.area||a.addr||'').localeCompare(b.area||b.addr||'');
     if (sortMode === 'industry') return (a.industry||'').localeCompare(b.industry||'');
     if (sortKey==='score' || sortMode === 'score') return sortDir*((b.score?.total||0)-(a.score?.total||0));
@@ -11770,6 +11796,14 @@ async function sendToAttack(targetKey) {
     prog.textContent = `📤 ${i + chunk.length} / ${toInsert.length} 件処理（成功: ${success} / エラー: ${errors}）`;
   }
 
+  // assigned_services を更新（サービス別フィルターのため）
+  if (success > 0) {
+    for (const it of list) {
+      if (!Array.isArray(it.assigned_services)) it.assigned_services = [];
+      if (!it.assigned_services.includes(targetKey)) it.assigned_services.push(targetKey);
+    }
+    try { await sb.set('items', 'fw_items', items); } catch(e) { console.warn('assigned_services更新失敗:', e); }
+  }
   // 完了
   result.style.display = 'block';
   if (errors === 0) {
