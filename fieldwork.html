@@ -7341,7 +7341,7 @@ function renderServicesSection(it) {
             color:${isOn ? t.color : '#9CA3AF'};
             border:2px ${isOn ? 'solid ' + t.color : 'dashed #D1D5DB'};
             padding:5px 12px;border-radius:8px;font-size:11px;font-weight:800;cursor:pointer;font-family:inherit;transition:all .15s
-          ">${t.label.split('｜')[0]} ${isOn ? '✓' : ''}</button>`;
+          ">${t.shortLabel || t.label.split('｜')[0]} ${isOn ? '✓' : ''}</button>`;
         }).join('')}
       </div>
     </div>`;
@@ -11624,6 +11624,7 @@ function exportCSV() {
 const ATTACK_TARGETS = {
   centercall: {
     label: '🎧 センターコール｜クライアントアタック',
+    shortLabel: '🎧 センターコール',
     desc: 'テレアポ代行サービスの営業先',
     table: 'centercall_attacks',
     color: '#14B8A6',
@@ -11632,6 +11633,7 @@ const ATTACK_TARGETS = {
   },
   posmane_distribution: {
     label: '📦 ポスマネ｜配布承認アタック',
+    shortLabel: '📦 ポスマネ配布承認',
     desc: 'パンフレット配布先（ホテル等）',
     table: 'posmane_attacks',
     color: '#FF6B35',
@@ -11640,6 +11642,7 @@ const ATTACK_TARGETS = {
   },
   posmane_client: {
     label: '💼 ポスマネ｜クライアントアタック',
+    shortLabel: '💼 ポスマネ掲載クライアント',
     desc: 'パンフ広告枠の出稿主候補',
     table: 'posmane_client_attacks',
     color: '#A855F7',
@@ -11648,6 +11651,7 @@ const ATTACK_TARGETS = {
   },
   ceremony: {
     label: '🎬 式典映像｜クライアントアタック',
+    shortLabel: '🎬 式典映像',
     desc: '周年・創立記念の法人',
     table: 'ceremony_attacks',
     color: '#D97706',
@@ -11656,6 +11660,7 @@ const ATTACK_TARGETS = {
   },
   indeedhack: {
     label: '💼 インディードハック｜採用代行',
+    shortLabel: '💼 インディードハック',
     desc: 'Indeed等の求人運用支援',
     table: 'indeedhack_attacks',
     color: '#F59E0B',
