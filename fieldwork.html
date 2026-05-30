@@ -1269,21 +1269,7 @@ tr:hover td { background: rgba(255,70,2,0.03); cursor: pointer; }
 
     <!-- テーブル -->
     <div style="background:#fff;border-radius:16px;overflow:hidden;border:2px solid #F3F4F6">
-      <table class="list-table" style="width:100%;border-collapse:collapse">
-        <thead>
-          <tr style="background:#FAFAFA;border-bottom:2px solid #F3F4F6">
-            <th style="padding:12px 16px;text-align:left;font-size:12px;font-weight:700;color:#999;width:40px">#</th>
-            <th style="padding:12px 16px;text-align:left;font-size:12px;font-weight:700;color:#999;cursor:pointer" onclick="setSortMode('company')">会社名 ↕</th>
-            <th style="padding:12px 16px;text-align:left;font-size:12px;font-weight:700;color:#999;cursor:pointer" onclick="setSortMode('area')">住所・電話 ↕</th>
-            <th style="padding:12px 16px;text-align:left;font-size:12px;font-weight:700;color:#999;cursor:pointer" onclick="setSortMode('industry')">業種 ↕</th>
-            <th style="padding:12px 16px;text-align:left;font-size:12px;font-weight:700;color:#999">SNS・求人</th>
-            <th style="padding:12px 16px;text-align:left;font-size:12px;font-weight:700;color:#999">創業年月日</th>
-            <th style="padding:12px 16px;text-align:left;font-size:12px;font-weight:700;color:#999;cursor:pointer" onclick="setSortMode('phase')">フェーズ ↕</th>
-            <th style="padding:12px 16px;width:60px"></th>
-          </tr>
-        </thead>
-        <tbody id="list-tbody"></tbody>
-      </table>
+      <div id="list-tbody"></div>
       <div class="empty" id="list-empty" style="display:none;padding:60px;text-align:center">
         <div style="font-size:48px;margin-bottom:12px">🔍</div>
         <div style="font-size:16px;font-weight:700;color:#999">条件に合う会社が見つかりません</div>
@@ -4466,136 +4452,86 @@ function renderList() {
   };
 
   tbody.innerHTML = pageList.map((it, idx) => {
-    const globalIdx = startIdx + idx; // 通し番号用
-    const ph = PHASE[it.phase];
-    const overdue = it.nextDate && it.nextDate < today;
+    const globalIdx = startIdx + idx;
+    const td = todayJST();
 
-    // SNS・求人バッジ
-    const snsBadges = [];
-    if (it.instaUrl) snsBadges.push('<a href="' + it.instaUrl + '" target="_blank" class="url-badge url-badge-insta" onclick="event.stopPropagation()">IG</a>');
-    if (it.fbUrl)    snsBadges.push('<a href="' + it.fbUrl + '" target="_blank" class="url-badge url-badge-fb" onclick="event.stopPropagation()">FB</a>');
-    if (it.xUrl)     snsBadges.push('<a href="' + it.xUrl + '" target="_blank" class="url-badge" style="border-color:rgba(0,0,0,0.2);color:#333;background:#F5F5F5" onclick="event.stopPropagation()">X</a>');
-    if (it.tiktokUrl) snsBadges.push('<a href="' + it.tiktokUrl + '" target="_blank" class="url-badge" style="border-color:rgba(0,0,0,0.2);color:#333;background:#F5F5F5" onclick="event.stopPropagation()">TikTok</a>');
-    if (it.indeedUrl)    snsBadges.push('<a href="' + it.indeedUrl + '" target="_blank" class="url-badge url-badge-job" onclick="event.stopPropagation()">Indeed</a>');
-    if (it.jobAntennaUrl) snsBadges.push('<a href="' + it.jobAntennaUrl + '" target="_blank" class="url-badge url-badge-job" onclick="event.stopPropagation()">JA</a>');
-    if (it.agreUrl)      snsBadges.push('<a href="' + it.agreUrl + '" target="_blank" class="url-badge url-badge-job" onclick="event.stopPropagation()">アグレ</a>');
-    if (it.mynaviExists === 'あり') snsBadges.push('<span class="url-badge" style="border-color:rgba(37,99,235,0.3);color:var(--blue);background:var(--blue-dim)">マイナビ</span>');
+    // ── フェーズバッジ ──
+    let phaseHtml = '';
+    const ap = it.approach;
+    if (ap && ap.started) {
+      const p = APPROACH_PHASE[ap.currentPhase] || APPROACH_PHASE.not_started;
+      phaseHtml = `<span style="display:inline-block;font-size:10px;font-weight:700;padding:2px 8px;border-radius:6px;background:${p.bg};color:${p.color}">${p.icon} ${p.label}</span>`;
+    } else {
+      phaseHtml = '<span style="display:inline-block;font-size:10px;font-weight:700;padding:2px 8px;border-radius:6px;background:#F3F4F6;color:#9CA3AF">⚪ 未着手</span>';
+    }
 
-    // リサーチステータス
-    const researchStatus = it.researchStatus || 'none';
-    const statusMap = {
-      none:    { label: '未調査',  color: '#9CA3AF', bg: '#F3F4F6' },
-      sent:    { label: '依頼済み', color: '#F59E0B', bg: '#FFFBEB' },
-      done:    { label: '取込済み', color: '#10B981', bg: '#F0FFF4' },
-      excluded:{ label: '除外',    color: '#EF4444', bg: '#FFF0F0' },
-    };
-    const st = statusMap[researchStatus] || statusMap.none;
-
-    // 周年バッジ
+    // ── 周年バッジ ──
     const annBadge = anniversaryBadge(it);
 
-    return '<tr onclick="openDetail(' + it.id + ')" style="' + (it.excluded ? 'opacity:0.4' : '') + '">' +
+    // ── リンクバッジ ──
+    const links = [];
+    if (it.website)   links.push(`<a href="${escapeHtml(it.website)}" target="_blank" class="url-badge url-badge-hp" onclick="event.stopPropagation()">🌐 HP</a>`);
+    if (it.jobUrl)    links.push(`<a href="${escapeHtml(it.jobUrl)}" target="_blank" class="url-badge url-badge-job" onclick="event.stopPropagation()">💼 求人</a>`);
+    if (it.instaUrl)  links.push(`<a href="${escapeHtml(it.instaUrl)}" target="_blank" class="url-badge url-badge-insta" onclick="event.stopPropagation()">📷 IG</a>`);
+    if (it.fbUrl)     links.push(`<a href="${escapeHtml(it.fbUrl)}" target="_blank" class="url-badge url-badge-fb" onclick="event.stopPropagation()">📘 FB</a>`);
+    if (it.xUrl)      links.push(`<a href="${escapeHtml(it.xUrl)}" target="_blank" class="url-badge" style="background:#1F2937;color:#fff;border-color:#1F2937" onclick="event.stopPropagation()">🐦 X</a>`);
+    if (it.tiktokUrl) links.push(`<a href="${escapeHtml(it.tiktokUrl)}" target="_blank" class="url-badge" style="background:#000;color:#fff;border-color:#000" onclick="event.stopPropagation()">🎵 TT</a>`);
+    if (it.indeedUrl) links.push(`<a href="${escapeHtml(it.indeedUrl)}" target="_blank" class="url-badge" style="background:#2164F3;color:#fff;border-color:#2164F3" onclick="event.stopPropagation()">IN</a>`);
+    if (it.mynaviUrl) links.push(`<a href="${escapeHtml(it.mynaviUrl)}" target="_blank" class="url-badge" style="background:#E60012;color:#fff;border-color:#E60012" onclick="event.stopPropagation()">MY</a>`);
 
-      // 番号
-      '<td style="padding:12px 8px 12px 16px;font-size:13px;font-weight:700;color:#CCC;text-align:center">' + (globalIdx+1) + '</td>' +
+    // ── バッジ類 ──
+    const dmmBadge    = it.dmmBlocked ? '<span style="font-size:9px;font-weight:800;padding:2px 6px;border-radius:5px;background:#FEE2E2;color:#991B1B;border:1px solid #FCA5A5">🚫 DMMブロック</span>' : '';
+    const nonBizBadge = (!isLikelyCompany(it) && it.manualCompanyFlag !== 'non_company') ? '<span style="font-size:9px;font-weight:800;padding:2px 6px;border-radius:5px;background:#FEF3C7;color:#92400E;border:1px solid #FCD34D">🏞 非企業</span>' : '';
+    const excludedBadge = (it.manualCompanyFlag === 'non_company') ? '<span style="font-size:9px;font-weight:800;padding:2px 6px;border-radius:5px;background:#FEE2E2;color:#991B1B;border:1px solid #FCA5A5">🚫 対象外</span>' : '';
+    const enrichedBadge = isRecentlyUpdated(it) ? '<span style="font-size:9px;font-weight:800;padding:2px 6px;border-radius:5px;background:#DCFCE7;color:#166534;border:1px solid #86EFAC">✨ リサーチ済</span>' : '';
 
-      // 会社名・HP
-      '<td>' +
-        '<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">' +
-          '<div style="font-weight:700;font-size:13px;color:' + (it.manualCompanyFlag === 'non_company' ? '#9CA3AF' : '#222') + ';' + (it.manualCompanyFlag === 'non_company' ? 'text-decoration:line-through;' : '') + '">' + it.company + '</div>' +
-          // 星評価（小）
-          getStarHtml(it.starRating, 13) +
-          // 状態バッジ（自動判定の非企業）
-          (!isLikelyCompany(it) && it.manualCompanyFlag !== 'non_company' ? '<span title="自動判定：非企業（行政施設・自然地形・地名）" style="font-size:9px;font-weight:800;padding:2px 6px;border-radius:6px;background:#FEF3C7;color:#92400E;border:1px solid #FCD34D">🏞 非企業</span>' : '') +
-          // 状態バッジ（手動で営業対象外にされた企業）
-          (it.manualCompanyFlag === 'non_company'
-            ? '<span title="あなたが営業対象外に設定しました" style="font-size:10px;font-weight:800;padding:3px 8px;border-radius:6px;background:#FEE2E2;color:#991B1B;border:1px solid #FCA5A5">🚫 営業対象外</span>' +
-              '<button onclick="event.stopPropagation();toggleCompanyFlag(' + it.id + ',null)" title="営業対象に戻す" style="background:#fff;border:1px solid #86EFAC;color:#16A34A;border-radius:6px;cursor:pointer;font-size:10px;padding:3px 8px;font-weight:700">✓ 営業対象に戻す</button>'
-            : '') +
-          // 状態バッジ（手動で企業として扱う）
-          (it.manualCompanyFlag === 'company'
-            ? '<span title="手動で企業として扱う設定" style="font-size:9px;font-weight:800;padding:2px 6px;border-radius:6px;background:#E0E7FF;color:#3730A3;border:1px solid #C7D2FE">✋ 手動企業扱い</span>'
-            : '') +
-          (isRecentlyUpdated(it) ? '<span title="' + (it.lastUpdatedAt||'') + ' に情報拡張" style="font-size:9px;font-weight:800;padding:2px 6px;border-radius:6px;background:#DCFCE7;color:#166534;border:1px solid #86EFAC">✨ 拡張</span>' : '') +
-          // ワンクリック営業対象外（営業対象企業のみ表示）
-          (isLikelyCompany(it) && !it.manualCompanyFlag
-            ? '<button onclick="event.stopPropagation();quickExcludeAsNonCompany(' + it.id + ',this)" title="ワンクリックで非企業として除外" style="background:#FEF3C7;border:1px solid #FCD34D;color:#92400E;border-radius:6px;cursor:pointer;font-size:10px;padding:2px 6px;font-weight:700;opacity:0.6" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0.6">🚫 対象外にする</button>'
-            : '') +
-          '<button onclick="event.stopPropagation();showCompanyFlagMenu(event,' + it.id + ')" title="企業/非企業の手動設定" style="background:transparent;border:none;cursor:pointer;font-size:14px;padding:2px 4px;color:#9CA3AF">⚙</button>' +
-        '</div>' +
-        (it.website ? '<a href="' + it.website + '" target="_blank" style="font-size:10px;color:var(--blue);text-decoration:none" onclick="event.stopPropagation()">🌐 HP</a>' : '<span style="font-size:10px;color:#CCC">HP未登録</span>') +
-      '</td>' +
+    // ── 次回予定日 ──
+    const nextDateHtml = it.nextDate
+      ? `<span style="font-size:11px;font-weight:700;color:${it.nextDate < td ? '#EF4444' : '#F59E0B'}">📅 ${it.nextDate}</span>`
+      : '';
 
-      // 住所・電話
-      '<td>' +
-        '<div style="font-size:12px;color:#555">' + (it.addr || it.area || '—') + '</div>' +
-        (it.phone ? '<div style="font-size:12px;color:#333;font-weight:600;margin-top:2px">📞 ' + it.phone + '</div>' : '<div style="font-size:11px;color:#CCC;margin-top:2px">電話番号なし</div>') +
-        (it.person ? '<div style="font-size:11px;color:#888;margin-top:1px">👤 ' + it.person + '</div>' : '') +
-      '</td>' +
+    // ── 創業年月日・周年 ──
+    const foundingHtml = it.foundingDate
+      ? `<span style="font-size:11px;color:#888">🌱 ${escapeHtml(it.foundingDate)}</span>${annBadge}`
+      : '';
 
-      // 業種
-      '<td>' +
-        '<div style="font-size:12px;color:#555">' + (it.industry || '—') + '</div>' +
-      '</td>' +
+    // ── 左ボーダー色（フェーズ連動）──
+    const borderColor = (() => {
+      if (it.dmmBlocked) return '#DC2626';
+      if (it.manualCompanyFlag === 'non_company') return '#9CA3AF';
+      if (!ap || !ap.started) return '#E5E7EB';
+      const p = APPROACH_PHASE[ap.currentPhase];
+      return p ? p.color : '#E5E7EB';
+    })();
 
-      // SNS・求人
-      '<td><div class="url-badges">' + (snsBadges.length ? snsBadges.join('') : '<span style="font-size:11px;color:#CCC">なし</span>') + '</div></td>' +
-
-      // 創業年月日（新規列）
-      '<td>' +
-        (it.foundingDate
-          ? '<div style="font-size:12px;color:#333;font-weight:700">' + it.foundingDate + '</div>' +
-            (it.anniversaryMonth ? '<div style="font-size:10px;color:#FF4602;font-weight:700;margin-top:2px">🎂 ' + it.anniversaryMonth + '月創業</div>' : '') +
-            anniversaryBadge(it)
-          : '<span style="font-size:11px;color:#CCC">未調査</span>') +
-      '</td>' +
-
-      // フェーズ（approachシステム連動。未開始は必ず「未着手」）
-      '<td>' +
-        (() => {
-          const a = it.approach;
-          if (a && a.started) {
-            const p = APPROACH_PHASE[a.currentPhase] || APPROACH_PHASE.not_started;
-            const dormantInfo = a.dormantUntil
-              ? '<div style="font-size:9px;color:' + p.color + ';margin-top:3px;font-weight:600">~ ' + a.dormantUntil + '</div>'
-              : '';
-            const counts = [];
-            if (a.callCount > 0) counts.push('📞' + a.callCount);
-            if (a.visitCount > 0) counts.push('🚶' + a.visitCount);
-            if (a.rejectCount > 0) counts.push('🛑' + a.rejectCount);
-            return '<span style="font-size:11px;padding:3px 8px;border-radius:6px;background:' + p.bg + ';color:' + p.color + ';font-weight:700">' + p.icon + ' ' + p.label + '</span>' +
-              dormantInfo +
-              (counts.length ? '<div style="font-size:9px;color:#9CA3AF;margin-top:3px">' + counts.join(' / ') + '</div>' : '');
-          }
-          // アプローチ未開始：必ず「未着手」表示（旧phaseは無視）
-          return '<span style="font-size:11px;padding:3px 8px;border-radius:6px;background:#F3F4F6;color:#9CA3AF;font-weight:600">⚪ 未着手</span>';
-        })() +
-      '</td>' +
-
-      // アクション：開始ボタン（大きく・丸ゴシック）
-      '<td>' +
-        (() => {
-          const a = it.approach;
-          // 商談獲得済 → 完了マーク
-          if (a && a.currentPhase === 'meeting_won') {
-            return '<div style="background:#16A34A;color:#fff;padding:8px 12px;border-radius:10px;font-size:12px;font-weight:800;text-align:center">🎯 完了</div>';
-          }
-          // 休眠中 → 再開ボタン（無効）
-          if (a && a.dormantUntil && todayJST() < a.dormantUntil) {
-            return '<div style="background:#F3F4F6;color:#6B7280;padding:8px 12px;border-radius:10px;font-size:11px;font-weight:700;text-align:center;line-height:1.3">💤 休眠中<br><span style="font-size:9px">' + a.dormantUntil + '~</span></div>';
-          }
-          // 開始済み → アプローチ実行ボタン（オレンジ）
-          if (a && a.started) {
-            return '<button onclick="event.stopPropagation();openApproachAction(' + it.id + ')" class="approach-go-btn" style="background:linear-gradient(135deg,#FF4602,#FF6B35);color:#fff;border:none;border-radius:14px;padding:12px 18px;font-size:14px;font-weight:900;cursor:pointer;font-family:\'Hiragino Maru Gothic ProN\',\'Yu Gothic UI\',sans-serif;box-shadow:0 4px 12px rgba(255,70,2,0.3);transition:all 0.2s">▶ 続ける</button>';
-          }
-          // 未着手 → 開始ボタン（大きく華やか）
-          return '<button onclick="event.stopPropagation();startApproachNew(' + it.id + ',this)" class="approach-go-btn" style="background:linear-gradient(135deg,#FF4602,#FFB347);color:#fff;border:none;border-radius:16px;padding:14px 22px;font-size:16px;font-weight:900;cursor:pointer;font-family:\'Hiragino Maru Gothic ProN\',\'Yu Gothic UI\',sans-serif;box-shadow:0 6px 16px rgba(255,70,2,0.35);transition:all 0.2s;letter-spacing:0.05em">🚀 開始</button>';
-        })() +
-      '</td>' +
-
-    '</tr>';
+    return `
+      <div onclick="openDetail(${it.id})"
+           style="background:#fff;border-radius:12px;border:1px solid #F3F4F6;border-left:4px solid ${borderColor};padding:14px 18px;margin-bottom:10px;display:flex;align-items:flex-start;gap:14px;cursor:pointer;transition:all 0.15s;${it.excluded||it.manualCompanyFlag==='non_company'?'opacity:0.5;':''}"
+           onmouseover="this.style.boxShadow='0 2px 12px rgba(255,70,2,0.08)';this.style.transform='translateY(-1px)'"
+           onmouseout="this.style.boxShadow='';this.style.transform=''">
+        <div style="font-size:12px;color:#CCC;font-weight:700;min-width:22px;text-align:right;padding-top:3px">${globalIdx + 1}</div>
+        <div style="flex:1;min-width:0">
+          <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:5px">
+            ${phaseHtml}
+            <span style="font-size:14px;font-weight:800;color:${it.manualCompanyFlag==='non_company'?'#9CA3AF':'#222'}">${escapeHtml(it.company)}</span>
+            ${dmmBadge}${nonBizBadge}${excludedBadge}${enrichedBadge}
+          </div>
+          <div style="display:flex;flex-wrap:wrap;gap:10px;font-size:12px;color:#666;margin-bottom:5px">
+            <span>🗺️ ${escapeHtml(it.area || it.addr || '—')}</span>
+            ${it.phone ? `<span style="font-weight:700;color:#333">📞 ${escapeHtml(it.phone)}</span>` : '<span style="color:#CCC">電話なし</span>'}
+            ${it.person ? `<span>👤 ${escapeHtml(it.person)}</span>` : ''}
+            ${nextDateHtml}
+          </div>
+          <div style="display:flex;flex-wrap:wrap;gap:10px;font-size:11px;color:#999;margin-bottom:6px">
+            <span>${escapeHtml(it.industry || '—')}</span>
+            ${foundingHtml}
+          </div>
+          ${links.length ? `<div style="display:flex;flex-wrap:wrap;gap:5px">${links.join('')}</div>` : ''}
+        </div>
+        <button onclick="event.stopPropagation();showCompanyFlagMenu(event,${it.id})" style="background:transparent;border:none;cursor:pointer;font-size:14px;padding:4px;color:#D1D5DB;flex-shrink:0" title="企業設定">⚙</button>
+      </div>`;
   }).join('');
-  
+
 }
 
 // ── RENDER APPROACH ──
