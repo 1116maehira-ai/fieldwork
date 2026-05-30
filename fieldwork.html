@@ -1547,8 +1547,8 @@ tr:hover td { background: rgba(255,70,2,0.03); cursor: pointer; }
 <!-- ═══ PAGE: アプローチ中 ═══ -->
 <div class="page" id="page-approach">
   <div class="topbar" style="font-family:'Hiragino Maru Gothic ProN','Yu Gothic UI',sans-serif">
-    <div class="page-title" style="font-size:20px;font-weight:900;color:#EA580C;letter-spacing:0.05em">🍊 アプローチ中</div>
-    <div class="topbar-sub" style="font-size:12px;color:#92400E;font-weight:700">進行中の企業をビタミン色でPOPに管理！</div>
+    <div class="page-title" style="font-size:20px;font-weight:900;color:#374151;letter-spacing:0.05em">🎯 アプローチ中</div>
+    <div class="topbar-sub" style="font-size:12px;color:#6B7280;font-weight:700">各サービスのリアルタイム進捗を確認</div>
   </div>
   <div class="content">
     <!-- サービス別サマリーカード -->
@@ -1594,99 +1594,6 @@ tr:hover td { background: rgba(255,70,2,0.03); cursor: pointer; }
       <div style="font-size:14px;font-weight:700">各サービスのデータを読み込み中...</div>
     </div>
 
-    <!-- ★ 活動サマリーBOX（ビタミン版） -->
-    <div style="background:linear-gradient(135deg,#FFFBEB 0%,#FEF3C7 100%);border:3px solid #FCD34D;border-radius:18px;padding:18px 22px;margin-bottom:16px;font-family:'Hiragino Maru Gothic ProN','Yu Gothic UI',sans-serif;box-shadow:0 4px 14px rgba(252,211,77,0.2)">
-      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px">
-        <div style="font-size:18px;font-weight:900;color:#D97706;display:flex;align-items:center;gap:6px">
-          <span style="font-size:24px">📊</span>あなたの活動
-        </div>
-        <div style="display:flex;gap:6px;margin-left:auto;flex-wrap:wrap">
-          <button class="ap-period-btn active" data-period="today" onclick="setApPeriod('today')" style="padding:8px 16px;border-radius:12px;border:2px solid #F59E0B;background:#F59E0B;color:#fff;font-size:13px;font-weight:900;cursor:pointer;font-family:inherit">今日</button>
-          <button class="ap-period-btn" data-period="week" onclick="setApPeriod('week')" style="padding:8px 16px;border-radius:12px;border:2px solid #FCD34D;background:#fff;color:#92400E;font-size:13px;font-weight:800;cursor:pointer;font-family:inherit">今週</button>
-          <button class="ap-period-btn" data-period="month" onclick="setApPeriod('month')" style="padding:8px 16px;border-radius:12px;border:2px solid #FCD34D;background:#fff;color:#92400E;font-size:13px;font-weight:800;cursor:pointer;font-family:inherit">今月</button>
-          <button class="ap-period-btn" data-period="custom" onclick="setApPeriod('custom')" style="padding:8px 16px;border-radius:12px;border:2px solid #FCD34D;background:#fff;color:#92400E;font-size:13px;font-weight:800;cursor:pointer;font-family:inherit">📅 日付指定</button>
-        </div>
-      </div>
-      <!-- 日付指定UI（custom時のみ表示） -->
-      <div id="ap-custom-range" style="display:none;margin-bottom:12px;padding:10px 14px;background:rgba(255,255,255,0.8);border-radius:12px;gap:8px;flex-wrap:wrap;align-items:center">
-        <span style="font-size:13px;color:#92400E;font-weight:800">期間：</span>
-        <input type="date" id="ap-activity-from" onchange="renderApActivityBox()" style="padding:6px 10px;border-radius:8px;border:2px solid #FCD34D;font-size:13px;font-family:inherit">
-        <span style="font-size:13px;color:#92400E;font-weight:700">〜</span>
-        <input type="date" id="ap-activity-to" onchange="renderApActivityBox()" style="padding:6px 10px;border-radius:8px;border:2px solid #FCD34D;font-size:13px;font-family:inherit">
-      </div>
-      <div id="ap-activity-cards" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px"></div>
-    </div>
-
-    <!-- 新フェーズサマリー（ビタミンカラー版・コンパクト）-->
-    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(95px,1fr));gap:8px;margin-bottom:14px;font-family:'Hiragino Maru Gothic ProN','Yu Gothic UI',sans-serif">
-      <div class="appr-stat" data-phase="" style="background:linear-gradient(135deg,#FFEDD5,#FED7AA);border:2px solid #FB923C;border-radius:12px;padding:8px;text-align:center;cursor:pointer;transition:all 0.15s" onclick="filterByApprPhase('')" onmouseover="this.style.transform='translateY(-1px)'" onmouseout="this.style.transform='translateY(0)'">
-        <div style="font-size:11px;font-weight:800;color:#EA580C;margin-bottom:2px">📊 ぜんぶ</div>
-        <div id="ap-sum-all" style="font-size:22px;font-weight:900;color:#EA580C;line-height:1">0</div>
-      </div>
-      <div class="appr-stat" data-phase="tel_first" style="background:linear-gradient(135deg,#FEF3C7,#FDE68A);border:2px solid #F59E0B;border-radius:12px;padding:8px;text-align:center;cursor:pointer;transition:all 0.15s" onclick="filterByApprPhase('tel_first')" onmouseover="this.style.transform='translateY(-1px)'" onmouseout="this.style.transform='translateY(0)'">
-        <div style="font-size:11px;font-weight:800;color:#D97706;margin-bottom:2px">📞 電話①</div>
-        <div id="ap-sum-tel1" style="font-size:22px;font-weight:900;color:#D97706;line-height:1">0</div>
-      </div>
-      <div class="appr-stat" data-phase="tel_repeat" style="background:linear-gradient(135deg,#FED7AA,#FDBA74);border:2px solid #FB923C;border-radius:12px;padding:8px;text-align:center;cursor:pointer;transition:all 0.15s" onclick="filterByApprPhase('tel_repeat')" onmouseover="this.style.transform='translateY(-1px)'" onmouseout="this.style.transform='translateY(0)'">
-        <div style="font-size:11px;font-weight:800;color:#C2410C;margin-bottom:2px">🔄 再電</div>
-        <div id="ap-sum-telr" style="font-size:22px;font-weight:900;color:#C2410C;line-height:1">0</div>
-      </div>
-      <div class="appr-stat" data-phase="visit_ready" style="background:linear-gradient(135deg,#D1FAE5,#A7F3D0);border:2px solid #34D399;border-radius:12px;padding:8px;text-align:center;cursor:pointer;transition:all 0.15s" onclick="filterByApprPhase('visit_ready')" onmouseover="this.style.transform='translateY(-1px)'" onmouseout="this.style.transform='translateY(0)'">
-        <div style="font-size:11px;font-weight:800;color:#059669;margin-bottom:2px">🚀 訪問可</div>
-        <div id="ap-sum-vr" style="font-size:22px;font-weight:900;color:#059669;line-height:1">0</div>
-      </div>
-      <div class="appr-stat" data-phase="letter" style="background:linear-gradient(135deg,#EDE9FE,#DDD6FE);border:2px solid #A78BFA;border-radius:12px;padding:8px;text-align:center;cursor:pointer;transition:all 0.15s" onclick="filterByApprPhase('letter')" onmouseover="this.style.transform='translateY(-1px)'" onmouseout="this.style.transform='translateY(0)'">
-        <div style="font-size:11px;font-weight:800;color:#7C3AED;margin-bottom:2px">✉️ 手紙</div>
-        <div id="ap-sum-letter" style="font-size:22px;font-weight:900;color:#7C3AED;line-height:1">0</div>
-      </div>
-      <div class="appr-stat" data-phase="dormant" style="background:linear-gradient(135deg,#E0E7FF,#C7D2FE);border:2px solid #818CF8;border-radius:12px;padding:8px;text-align:center;cursor:pointer;transition:all 0.15s" onclick="filterByApprPhase('dormant')" onmouseover="this.style.transform='translateY(-1px)'" onmouseout="this.style.transform='translateY(0)'">
-        <div style="font-size:11px;font-weight:800;color:#4F46E5;margin-bottom:2px">💤 休眠中</div>
-        <div id="ap-sum-dormant" style="font-size:22px;font-weight:900;color:#4F46E5;line-height:1">0</div>
-      </div>
-      <div class="appr-stat" data-phase="meeting_won" style="background:linear-gradient(135deg,#FCE7F3,#FBCFE8);border:2px solid #F472B6;border-radius:12px;padding:8px;text-align:center;cursor:pointer;transition:all 0.15s" onclick="filterByApprPhase('meeting_won')" onmouseover="this.style.transform='translateY(-1px)'" onmouseout="this.style.transform='translateY(0)'">
-        <div style="font-size:11px;font-weight:800;color:#BE185D;margin-bottom:2px">🎯 アポ獲得</div>
-        <div id="ap-sum-won" style="font-size:22px;font-weight:900;color:#BE185D;line-height:1">0</div>
-      </div>
-    </div>
-
-    <div class="filter-bar" style="font-family:'Hiragino Maru Gothic ProN','Yu Gothic UI',sans-serif;gap:10px;margin-bottom:18px">
-      <input class="fi fi-wide" type="text" id="ap-search" placeholder="🔍 会社名で検索..." oninput="renderApproach()" style="font-family:inherit;font-size:14px;font-weight:600;border:2px solid #FCD34D;border-radius:12px;padding:10px 14px">
-      <select class="fi" id="ap-phase" onchange="renderApproach()" style="font-family:inherit;font-size:14px;font-weight:700;border:2px solid #FCD34D;border-radius:12px;padding:10px 14px;background:#fff">
-        <option value="">全フェーズ</option>
-        <option value="tel_first">📞 電話①</option>
-        <option value="tel_repeat">🔄 再電</option>
-        <option value="visit_ready">🚀 訪問可</option>
-        <option value="visit_done">🚶 訪問済</option>
-        <option value="letter">✉️ 手紙送付</option>
-        <option value="dormant">💤 休眠中（全て）</option>
-        <option value="dormant_2w">💤 2週休眠</option>
-        <option value="dormant_5m">❄️ 5ヶ月休眠</option>
-        <option value="meeting_won">🎯 商談獲得</option>
-      </select>
-      <select class="fi" id="ap-activity-period" onchange="renderApproach()" title="期間内に活動した企業だけ表示" style="font-family:inherit;font-size:14px;font-weight:700;border:2px solid #FCD34D;border-radius:12px;padding:10px 14px;background:#fff">
-        <option value="">活動期間：すべて</option>
-        <option value="today">📅 今日活動</option>
-        <option value="week">📆 今週活動</option>
-        <option value="month">🗓 今月活動</option>
-      </select>
-      <select class="fi" id="ap-activity-type" onchange="renderApproach()" title="特定の活動をした企業だけ" style="font-family:inherit;font-size:14px;font-weight:700;border:2px solid #FCD34D;border-radius:12px;padding:10px 14px;background:#fff">
-        <option value="">活動種別：すべて</option>
-        <option value="tel">📞 電話した</option>
-        <option value="visit">🚶 訪問した</option>
-        <option value="letter_sent">✉️ 手紙を送った</option>
-        <option value="meeting">🎯 商談獲得した</option>
-      </select>
-      <select class="fi" id="ap-sort" onchange="renderApproach()" style="font-family:inherit;font-size:14px;font-weight:700;border:2px solid #FCD34D;border-radius:12px;padding:10px 14px;background:#fff">
-        <option value="recent">直近の行動順</option>
-        <option value="recent_old">直近の行動が古い順</option>
-        <option value="today_active">今日の活動順</option>
-        <option value="week_active">今週の活動順</option>
-        <option value="started">開始日が新しい順</option>
-        <option value="dormant_close">休眠明け間近順</option>
-        <option value="rejects_high">拒否回数多い順</option>
-        <option value="company">会社名順</option>
-      </select>
-    </div>
     <div id="ap-cards-wrap"></div>
     <div class="empty" id="ap-empty" style="display:none;font-family:'Hiragino Maru Gothic ProN','Yu Gothic UI',sans-serif;padding:60px 20px;text-align:center">
         <div class="empty-ico"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"></path><path d="m3.5 11.5 3 3"></path><path d="M12 6l5 5"></path><path d="m6 13 3-3"></path><path d="m13 6-2 2-3.5 3.5"></path><path d="m21 3-5.23 5.23"></path><path d="m15 9 3-3 3-3-3 3"></path></svg></div>
