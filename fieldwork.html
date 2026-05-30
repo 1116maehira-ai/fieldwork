@@ -1094,7 +1094,7 @@ tr:hover td { background: rgba(255,70,2,0.03); cursor: pointer; }
   <div class="topbar">
     <div>
       <div class="page-title" style="font-size:22px">📋 アタックリスト</div>
-      <div class="topbar-sub" style="font-size:13px">集めた会社の一覧です。絞り込んでGeminiに投げよう！</div>
+      <div class="topbar-sub" style="font-size:13px">集めた会社の一覧です。絞り込んでClaudeで調査しよう！</div>
     </div>
     <div class="topbar-actions">
       <button class="btn btn-ghost btn-sm" onclick="exportCSV()">
@@ -1139,7 +1139,7 @@ tr:hover td { background: rgba(255,70,2,0.03); cursor: pointer; }
         <div id="ls-new" style="font-size:36px;font-weight:900;color:#059669;line-height:1">0</div>
         <div style="font-size:12px;color:#6EE7B7;margin-top:4px">件 アプローチ前</div>
       </div>
-      <div style="flex:1;min-width:120px;background:#EEF2FF;border:2px solid #C7D2FE;border-radius:16px;padding:16px 20px;text-align:center" title="収集だけ済んでいて、まだGemini等で情報拡張していない企業数">
+      <div style="flex:1;min-width:120px;background:#EEF2FF;border:2px solid #C7D2FE;border-radius:16px;padding:16px 20px;text-align:center" title="収集だけ済んでいて、まだClaudeで情報拡張していない企業数">
         <div style="font-size:13px;font-weight:700;color:#6366F1;margin-bottom:4px">🌱 未拡張</div>
         <div id="ls-unresearched" style="font-size:36px;font-weight:900;color:#6366F1;line-height:1">0</div>
         <div style="font-size:12px;color:#A5B4FC;margin-top:4px">件 収集のみ</div>
@@ -1220,7 +1220,7 @@ tr:hover td { background: rgba(255,70,2,0.03); cursor: pointer; }
           <option value="collected_week">📥 直近7日 収集</option>
           <option value="collected_month">📥 直近30日 収集</option>
         </optgroup>
-        <optgroup label="── 拡張日（Gemini等で情報が増えた日）──">
+        <optgroup label="── 拡張日（Claudeで情報が増えた日）──">
           <option value="enriched_today">✨ 今日 リサーチ</option>
           <option value="enriched_week">✨ 直近7日 リサーチ</option>
           <option value="enriched_month">✨ 直近30日 リサーチ</option>
@@ -1503,19 +1503,19 @@ tr:hover td { background: rgba(255,70,2,0.03); cursor: pointer; }
         <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px">
           <div style="font-size:24px">2️⃣</div>
           <div style="flex:1">
-            <div style="font-size:15px;font-weight:900">Geminiで情報を厚くしよう！</div>
-            <div style="font-size:11px;opacity:0.85;margin-top:2px">代表者・SNS・創業日などを自動調査</div>
+            <div style="font-size:15px;font-weight:900">Claude Desktopで情報を調査しよう！</div>
+            <div style="font-size:11px;opacity:0.85;margin-top:2px">調査命令文を生成 → Claude Desktopへ</div>
           </div>
-          <button onclick="copyGeminiPromptBatch()" id="step2-btn" style="background:#FF4602;color:#fff;border:none;border-radius:10px;padding:10px 16px;font-size:13px;font-weight:900;cursor:pointer;white-space:nowrap">
-            10件分コピー →
+          <button onclick="openResearchPackageModal()" id="step2-btn" style="background:#FF4602;color:#fff;border:none;border-radius:10px;padding:10px 16px;font-size:13px;font-weight:900;cursor:pointer;white-space:nowrap">
+            🔬 リサーチ生成を開く →
           </button>
         </div>
         <div style="background:rgba(255,255,255,0.1);border-radius:10px;padding:10px 12px;font-size:11px;line-height:1.7;color:#fff;opacity:0.95">
-          📌 <strong>使い方ルール</strong><br>
-          ・ボタンを押すと、今日の収集リスト上から10件分の調査用プロンプトが自動コピーされます<br>
-          ・<strong>Gemini（gemini.google.com）にアクセス → 貼り付け → 送信</strong> で調査が始まります<br>
-          ・Geminiが返した結果（表形式）をコピーして、下の3️⃣に貼り付けてください<br>
-          ・10件処理し終わったら、もう一度ボタンを押すと次の10件分のプロンプトが出ます
+          📌 <strong>使い方</strong><br>
+          ① 「🔬 リサーチ生成を開く」でサービス・業種・エリア・件数を選んで命令文を生成<br>
+          ② コピーして <strong>Claude Desktop（claude.ai/download）</strong>に貼り付け → 送信<br>
+          ③ ClaudeがCSV形式で企業情報を返してくれます<br>
+          ④ そのCSVを下の3️⃣に貼り付けて「取り込む！」で完了
         </div>
       </div>
 
@@ -1524,13 +1524,13 @@ tr:hover td { background: rgba(255,70,2,0.03); cursor: pointer; }
         <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px">
           <div style="font-size:24px">3️⃣</div>
           <div style="flex:1">
-            <div style="font-size:15px;font-weight:900">Geminiの結果を取り込もう！</div>
-            <div style="font-size:11px;opacity:0.85;margin-top:2px">代表者・SNS・創業日・求人情報が自動で追加されます！</div>
+            <div style="font-size:15px;font-weight:900">ClaudeのCSVを取り込もう！</div>
+            <div style="font-size:11px;opacity:0.85;margin-top:2px">既存企業を更新 ＋ 新規企業もまとめて追加！</div>
           </div>
         </div>
-        <textarea id="gemini-result-paste" placeholder="ここにテキストをコピペ！" style="width:100%;min-height:140px;padding:14px;border-radius:12px;border:2px solid rgba(255,255,255,0.4);background:rgba(255,255,255,0.95);color:#333;font-size:13px;font-family:monospace;resize:vertical;outline:none;margin-bottom:10px"></textarea>
-        <button onclick="commitGeminiPaste()" id="commit-paste-btn" style="width:100%;background:#16A34A;color:#fff;border:none;border-radius:12px;padding:14px;font-size:15px;font-weight:900;cursor:pointer;font-family:'Hiragino Maru Gothic ProN','Yu Gothic UI',sans-serif">
-          📝 書き込む！
+        <textarea id="gemini-result-paste" placeholder="ここにClaudeのCSVを貼り付け！（ヘッダー行から）" style="width:100%;min-height:140px;padding:14px;border-radius:12px;border:2px solid rgba(255,255,255,0.4);background:rgba(255,255,255,0.95);color:#333;font-size:13px;font-family:monospace;resize:vertical;outline:none;margin-bottom:10px"></textarea>
+        <button onclick="commitClaudeCSV()" id="commit-paste-btn" style="width:100%;background:#16A34A;color:#fff;border:none;border-radius:12px;padding:14px;font-size:15px;font-weight:900;cursor:pointer;font-family:'Hiragino Maru Gothic ProN','Yu Gothic UI',sans-serif">
+          📥 取り込む！
         </button>
       </div>
     </div>
@@ -5614,7 +5614,7 @@ function renderApprCompanyDetail(it) {
   if (it.researchNotes) rows.push(['📝 備考', it.researchNotes]);
 
   if (!rows.length) {
-    el.innerHTML = '<div style="color:#9CA3AF;font-size:12px">登録情報なし。Geminiで情報拡張してから電話するのも手。</div>';
+    el.innerHTML = '<div style="color:#9CA3AF;font-size:12px">登録情報なし。Claudeでリサーチしてから電話するのも手。</div>';
     return;
   }
   el.innerHTML = '<table style="width:100%;border-collapse:collapse">' +
@@ -9358,6 +9358,243 @@ function showCopyAnimation(message) {
 }
 
 // ③ Geminiペースト → 書き込み
+// ══════════════════════════════════════════
+// 📥 Claude CSVを取り込む（Phase 5）
+// 日本語ヘッダー対応 + 新規企業追加対応
+// ══════════════════════════════════════════
+
+// 日本語カラム名 → 内部キー のマッピング
+const JP_COLUMN_MAP = {
+  '会社名':         'company_name',
+  '施設名':         'company_name',
+  '電話番号':       'phone',
+  '住所':           'address',
+  '代表者名':       'ceo_name',
+  '連絡先':         'ceo_name',
+  '公式サイト':     'website_url',
+  '公式HPURL':      'website_url',
+  'InstagramURL':   'instagram_url',
+  'Instagram':      'instagram_url',
+  'FacebookURL':    'facebook_url',
+  'Facebook':       'facebook_url',
+  '採用ページ':     'own_recruit_url',
+  '商品サービス概要': 'notes',
+  '施設種別':       'industry',
+  '業種':           'industry',
+  '設立年':         'established_date',
+  '従業員数':       'employees',
+  '備考':           'notes',
+  'メモ':           'notes',
+};
+
+function commitClaudeCSV() {
+  const ta = document.getElementById('gemini-result-paste');
+  if (!ta || !ta.value.trim()) {
+    toast('📋 まずClaudeのCSVを貼り付けてね');
+    return;
+  }
+  const text = ta.value.trim();
+  const rawLines = text.split(/\r?\n/).map(r => r.trim()).filter(r => r);
+  if (!rawLines.length) { toast('⚠️ データが見つかりません'); return; }
+
+  // 区切り判定
+  const sample = rawLines.slice(0, 5).join('\n');
+  const pipeCount = (sample.match(/\|/g) || []).length;
+  const isPipe = pipeCount > 3;
+
+  const normVal = (v) => {
+    if (!v) return '';
+    let s = String(v).replace(/^"|"$/g, '').trim();
+    if (['N/A','n/a','不明','—','-','なし'].includes(s)) return '';
+    const md = s.match(/^\[([^\]]+)\]\(([^)]+)\)$/);
+    if (md) { const t = md[1].trim(), u = md[2].trim(); s = /^https?:\/\//.test(t) ? t : u; }
+    return s;
+  };
+
+  let dataRows, parseRow;
+  if (isPipe) {
+    const allRows = rawLines.filter(r => r.includes('|'));
+    dataRows = allRows.filter(r => !/^[\s|:\-]+$/.test(r));
+    parseRow = (r) => r.replace(/^\|\s*/, '').replace(/\s*\|$/, '').split(/\s*\|\s*/).map(normVal);
+  } else {
+    dataRows = rawLines;
+    parseRow = (r) => parseCSVLine(r).map(normVal);
+  }
+
+  if (!dataRows.length) { toast('⚠️ データ行が見つかりません'); return; }
+
+  // ヘッダー判定（英語・日本語両対応）
+  const firstRow = parseRow(dataRows[0]);
+  const hasHeader = firstRow.some(c =>
+    /company_name/i.test(c) || c === '会社名' || c === '施設名'
+  );
+
+  // カラム名を内部キーに正規化
+  const normalizeColName = (c) => {
+    const lc = c.toLowerCase().trim();
+    if (JP_COLUMN_MAP[c.trim()]) return JP_COLUMN_MAP[c.trim()];
+    return lc; // 英語カラムはそのまま
+  };
+
+  const STD_COLS = ['company_name','ceo_name','email','founding_date','anniversary_month','months_until_anniversary','next_anniversary_years','website_url','instagram_url','facebook_url','x_url','tiktok_url','indeed_url','job_antenna_url','agre_url','mynavi_exists','revenue','employees','notes'];
+  let columnOrder = STD_COLS;
+  let startIdx = 0;
+  if (hasHeader) {
+    columnOrder = firstRow.map(normalizeColName);
+    startIdx = 1;
+  }
+
+  // 更新対象・新規候補を収集
+  const updates = [];   // 既存企業の更新
+  const newItems = [];  // 新規追加候補
+  let notFound = 0;
+
+  for (let i = startIdx; i < dataRows.length; i++) {
+    const parts = parseRow(dataRows[i]);
+    if (parts.length < 2) continue;
+    const obj = {};
+    columnOrder.forEach((c, idx) => { obj[c] = parts[idx] || ''; });
+
+    const name = (obj.company_name || '').trim();
+    if (!name) continue;
+
+    // 既存企業を検索（会社名・電話番号両方で）
+    const phone = (obj.phone || '').replace(/\D/g, '');
+    let it = items.find(x => x.company && x.company.replace(/\s+/g,'') === name.replace(/\s+/g,''));
+    if (!it && phone) it = items.find(x => x.phone && x.phone.replace(/\D/g,'') === phone);
+
+    if (it) {
+      updates.push({ it, obj });
+    } else {
+      newItems.push({ name, obj });
+      notFound++;
+    }
+  }
+
+  // 更新確認モーダルを表示
+  showImportPreview(updates, newItems);
+}
+
+function showImportPreview(updates, newItems) {
+  const existing = document.getElementById('m-claude-import');
+  if (existing) existing.remove();
+
+  const m = document.createElement('div');
+  m.id = 'm-claude-import';
+  m.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:99999;padding:20px';
+
+  const updatesHtml = updates.length
+    ? `<div style="font-size:13px;font-weight:800;color:#1D9E75;margin-bottom:8px">✅ 既存企業の情報更新: ${updates.length}件</div>
+       <div style="max-height:120px;overflow-y:auto;font-size:12px;color:#374151;background:#F0FDF4;border-radius:8px;padding:10px;margin-bottom:12px">
+         ${updates.slice(0,20).map(u => `<div>• ${u.it.company}</div>`).join('')}${updates.length>20?`<div style="color:#9CA3AF">…他${updates.length-20}件</div>`:''}
+       </div>`
+    : '';
+
+  const newHtml = newItems.length
+    ? `<div style="font-size:13px;font-weight:800;color:#2563EB;margin-bottom:8px">🆕 新規追加候補: ${newItems.length}件</div>
+       <div style="max-height:120px;overflow-y:auto;font-size:12px;color:#374151;background:#EFF6FF;border-radius:8px;padding:10px;margin-bottom:12px">
+         ${newItems.slice(0,20).map(n => `<div>• ${n.name}</div>`).join('')}${newItems.length>20?`<div style="color:#9CA3AF">…他${newItems.length-20}件</div>`:''}
+       </div>`
+    : '';
+
+  m.innerHTML = `
+    <div style="background:#fff;border-radius:20px;padding:26px;max-width:520px;width:100%;font-family:'Hiragino Maru Gothic ProN','Yu Gothic UI',sans-serif;max-height:90vh;overflow-y:auto">
+      <div style="font-size:18px;font-weight:900;color:#1F2937;margin-bottom:6px">📥 取り込み確認</div>
+      <div style="font-size:12px;color:#6B7280;margin-bottom:18px">内容を確認して「取り込む」を押してください</div>
+      ${updatesHtml}
+      ${newHtml}
+      ${!updates.length && !newItems.length ? '<div style="color:#9CA3AF;font-size:13px;text-align:center;padding:20px">取り込める企業が見つかりませんでした</div>' : ''}
+      <div style="display:flex;gap:10px;margin-top:6px">
+        <button onclick="document.getElementById('m-claude-import').remove()" style="flex:1;padding:12px;background:#F3F4F6;color:#6B7280;border:none;border-radius:10px;font-weight:700;cursor:pointer;font-size:13px">キャンセル</button>
+        ${(updates.length || newItems.length) ? `<button onclick="executeClaudeImport()" style="flex:2;padding:12px;background:linear-gradient(135deg,#1D9E75,#10B981);color:#fff;border:none;border-radius:10px;font-weight:900;cursor:pointer;font-size:14px">📥 取り込む（更新${updates.length}件 + 新規${newItems.length}件）</button>` : ''}
+      </div>
+    </div>`;
+
+  document.body.appendChild(m);
+
+  // 確認用データを window に保持
+  window._importUpdates = updates;
+  window._importNewItems = newItems;
+}
+
+async function executeClaudeImport() {
+  const updates  = window._importUpdates  || [];
+  const newItems = window._importNewItems || [];
+  document.getElementById('m-claude-import')?.remove();
+
+  const FIELD_MAP = {
+    ceo_name:       'person',
+    email:          'email',
+    founding_date:  'foundingDate',
+    established_date:'establishedDate',
+    anniversary_month:'anniversaryMonth',
+    website_url:    'website',
+    instagram_url:  'instaUrl',
+    facebook_url:   'fbUrl',
+    x_url:          'xUrl',
+    tiktok_url:     'tiktokUrl',
+    indeed_url:     'indeedUrl',
+    job_antenna_url:'jobAntennaUrl',
+    agre_url:       'agreUrl',
+    mynavi_url:     'mynaviUrl',
+    own_recruit_url:'jobUrl',
+    revenue:        'revenue',
+    employees:      'employeeCount',
+    notes:          'researchNotes',
+    phone:          'phone',
+    address:        'addr',
+    industry:       'industry',
+  };
+
+  // 既存企業の更新
+  for (const { it, obj } of updates) {
+    Object.entries(FIELD_MAP).forEach(([csvKey, itemKey]) => {
+      const val = (obj[csvKey] || '').trim();
+      if (!val) return;
+      if (!it[itemKey]) it[itemKey] = val; // 空欄のみ埋める
+    });
+    it.lastUpdatedAt = new Date().toISOString().slice(0, 10);
+    if (!it.researchStatus) it.researchStatus = 'done';
+    else it.researchStatus = 'done';
+  }
+
+  // 新規企業の追加
+  for (const { name, obj } of newItems) {
+    const newIt = {
+      id: Date.now() + Math.floor(Math.random() * 1000),
+      company: name,
+      phase: 'new',
+      logs: [],
+      score: null,
+      createdAt: new Date().toISOString().slice(0, 10),
+      lastUpdatedAt: new Date().toISOString().slice(0, 10),
+      researchStatus: 'done',
+    };
+    Object.entries(FIELD_MAP).forEach(([csvKey, itemKey]) => {
+      const val = (obj[csvKey] || '').trim();
+      if (val) newIt[itemKey] = val;
+    });
+    items.push(newIt);
+  }
+
+  try {
+    await sb.set('items', 'fw_items', items);
+    toast(`✅ 取り込み完了！更新${updates.length}件 + 新規${newItems.length}件`);
+  } catch(e) {
+    toast('⚠️ 保存に失敗しました: ' + e.message);
+  }
+
+  // UI更新
+  const ta = document.getElementById('gemini-result-paste');
+  if (ta) ta.value = '';
+  window._importUpdates = [];
+  window._importNewItems = [];
+
+  updateBadges?.();
+  renderList?.();
+}
+
+
 function commitGeminiPaste() {
   const ta = document.getElementById('gemini-result-paste');
   if (!ta || !ta.value.trim()) {
