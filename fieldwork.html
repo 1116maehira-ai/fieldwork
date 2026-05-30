@@ -1196,12 +1196,21 @@ tr:hover td { background: rgba(255,70,2,0.03); cursor: pointer; }
       </select>
       <select style="padding:10px 12px;border-radius:12px;border:2px solid #E5E7EB;font-size:13px;font-weight:600;color:#555;background:#fff;outline:none" id="ls-service" onchange="renderListResetPage()">
         <option value="">🎯 全サービス</option>
-        <option value="centercall">🎧 センターコール送り済み</option>
-        <option value="posmane_distribution">📦 ポスマネ配布承認送り済み</option>
-        <option value="posmane_client">💼 ポスマネクライアント送り済み</option>
-        <option value="ceremony">🎬 式典映像送り済み</option>
-        <option value="indeedhack">💼 インディードハック送り済み</option>
-        <option value="none">📭 未送信（どこにも送ってない）</option>
+        <optgroup label="── 候補（振り分けたがまだ未送信）──">
+          <option value="candidate_centercall">🎧 センターコール候補</option>
+          <option value="candidate_posmane_distribution">📦 ポスマネ配布承認候補</option>
+          <option value="candidate_posmane_client">💼 ポスマネ掲載クライアント候補</option>
+          <option value="candidate_ceremony">🎬 式典映像候補</option>
+          <option value="candidate_indeedhack">💼 インディードハック候補</option>
+        </optgroup>
+        <optgroup label="── 送り済み（attack_tableに送った）──">
+          <option value="sent_centercall">🎧 センターコール送り済み</option>
+          <option value="sent_posmane_distribution">📦 ポスマネ配布承認送り済み</option>
+          <option value="sent_posmane_client">💼 ポスマネ掲載クライアント送り済み</option>
+          <option value="sent_ceremony">🎬 式典映像送り済み</option>
+          <option value="sent_indeedhack">💼 インディードハック送り済み</option>
+        </optgroup>
+        <option value="none">📭 どこにも振り分けていない</option>
       </select>
       <select style="padding:10px 12px;border-radius:12px;border:2px solid #E5E7EB;font-size:13px;font-weight:600;color:#555;background:#fff;outline:none" id="ls-pref" onchange="updateAreaOptions();renderListResetPage()">
         <option value="">📍 全都道府県</option>
@@ -4297,8 +4306,17 @@ function renderList() {
   if (areaF) list = list.filter(it => (it.area || '').includes(areaF));
   // サービス別フィルター（assigned_services）
   const serviceF = document.getElementById('ls-service')?.value || '';
-  if (serviceF === 'none') list = list.filter(it => !(it.assigned_services || []).length);
-  else if (serviceF) list = list.filter(it => (it.assigned_services || []).includes(serviceF));
+  if (serviceF === 'none') {
+    list = list.filter(it => !(it.assigned_services || []).length && !(it.sent_services || []).length);
+  } else if (serviceF.startsWith('candidate_')) {
+    const _svc = serviceF.replace('candidate_', '');
+    list = list.filter(it =>
+      (it.assigned_services || []).includes(_svc) && !(it.sent_services || []).includes(_svc)
+    );
+  } else if (serviceF.startsWith('sent_')) {
+    const _svc = serviceF.replace('sent_', '');
+    list = list.filter(it => (it.sent_services || []).includes(_svc));
+  }
 
   // 期間フィルタ
   const periodF = document.getElementById('ls-period')?.value || '';
@@ -7329,26 +7347,31 @@ function renderResearchSection(it) {
 // サービス所属（assigned_services）の表示＋トグルHTML
 function renderServicesSection(it) {
   const assigned = it.assigned_services || [];
+  const sent = it.sent_services || [];
 
   return `
     <div style="margin-bottom:14px">
-      <div style="font-size:11px;color:#6B7280;font-weight:800;margin-bottom:6px">🎯 どのサービスに提案する？（クリックで切替・複数選択可）</div>
-      <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <div style="font-size:11px;color:#6B7280;font-weight:800;margin-bottom:6px">🎯 どのサービスに提案する？（クリックで切替）</div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap">
         ${Object.entries(ATTACK_TARGETS).map(([key, t]) => {
-          const isOn = assigned.includes(key);
-          return `<button onclick="toggleAssignedService(${it.id},'${key}')" style="
-            background:${isOn ? t.bg : '#fff'};
-            color:${isOn ? t.color : '#9CA3AF'};
-            border:2px ${isOn ? 'solid ' + t.color : 'dashed #D1D5DB'};
+          const isSent     = sent.includes(key);
+          const isCandidate = assigned.includes(key) && !isSent;
+          const bg     = isSent ? t.bg : (isCandidate ? '#FFFBEB' : '#fff');
+          const color  = isSent ? t.color : (isCandidate ? '#D97706' : '#9CA3AF');
+          const border = isSent ? '2px solid ' + t.color : (isCandidate ? '2px solid #FCD34D' : '2px dashed #D1D5DB');
+          const badge  = isSent ? ' ✓送済' : (isCandidate ? ' 候補' : '');
+          return `<button onclick="toggleAssignedService(${it.id},'${key}')" title="${isSent ? '送り済み' : (isCandidate ? '候補（未送信）' : '振り分けなし')}" style="
+            background:${bg};color:${color};border:${border};
             padding:5px 12px;border-radius:8px;font-size:11px;font-weight:800;cursor:pointer;font-family:inherit;transition:all .15s
-          ">${t.shortLabel || t.label.split('｜')[0]} ${isOn ? '✓' : ''}</button>`;
+          ">${t.shortLabel || t.label.split('｜')[0]}${badge}</button>`;
         }).join('')}
       </div>
+      <div style="font-size:10px;color:#9CA3AF;margin-top:6px">グレー点線=未振り分け ／ 黄色実線=候補 ／ カラー実線=送り済み</div>
     </div>`;
 }
 
 // サービス所属のトグル
-async function toggleAssignedService(itemId, serviceId) {
+function toggleAssignedService(itemId, serviceId) {
   const it = items.find(x => x.id === itemId);
   if (!it) return;
   if (!Array.isArray(it.assigned_services)) it.assigned_services = [];
@@ -7358,11 +7381,10 @@ async function toggleAssignedService(itemId, serviceId) {
   } else {
     it.assigned_services.push(serviceId);
   }
-  // 保存（items全体）
-  await sb.set('items', 'fw_items', items);
-  // 再描画
+  // 即座にUI更新（保存はバックグラウンド）
   openDetail(itemId);
-  showToast(`🎯 サービス振り分けを更新しました`);
+  toast('🎯 振り分けを更新しました');
+  sb.set('items', 'fw_items', items).catch(e => console.warn('保存失敗:', e));
 }
 
 // ── DETAIL ──
@@ -11872,13 +11894,17 @@ async function sendToAttack(targetKey) {
     prog.textContent = `📤 ${i + chunk.length} / ${toInsert.length} 件処理（成功: ${success} / エラー: ${errors}）`;
   }
 
-  // assigned_services を更新（サービス別フィルターのため）
+  // サービス振り分け更新（候補 + 送り済み）
   if (success > 0) {
     for (const it of list) {
+      // 候補リスト
       if (!Array.isArray(it.assigned_services)) it.assigned_services = [];
       if (!it.assigned_services.includes(targetKey)) it.assigned_services.push(targetKey);
+      // 送り済みリスト
+      if (!Array.isArray(it.sent_services)) it.sent_services = [];
+      if (!it.sent_services.includes(targetKey)) it.sent_services.push(targetKey);
     }
-    try { await sb.set('items', 'fw_items', items); } catch(e) { console.warn('assigned_services更新失敗:', e); }
+    try { await sb.set('items', 'fw_items', items); } catch(e) { console.warn('サービス更新失敗:', e); }
   }
   // 完了
   result.style.display = 'block';
