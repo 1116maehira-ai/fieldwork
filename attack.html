@@ -3,24 +3,39 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ポスマネ｜アタックリスト作成ツール</title>
+<title>ポスマネ配布承認｜アタック</title>
+<link rel="icon" type="image/x-icon" href="favicon.ico">
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="192x192" href="favicon-192.png">
+<link rel="icon" type="image/png" sizes="512x512" href="favicon-512.png">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 :root {
-  --bg: #FFF8F1;
+  --bg: #FFF7ED;
   --card: #FFFFFF;
-  --primary: #FF6B35;
-  --primary-dark: #E55A2B;
-  --accent: #F7B731;
-  --text: #2D3436;
+  --primary: #F97316;
+  --primary-dark: #0F9488;
+  --primary-light: #FED7AA;
+  --accent: #06B6D4;
+  --text: #134E4A;
   --text-sub: #636E72;
-  --border: #FFE3D0;
-  --green: #10B981;
+  --text-mute: #94A3B8;
+  --border: #99F6E4;
+  --border-soft: #F3F4F6;
+  --green: #F97316;
+  --green-light: #D1FAE5;
   --yellow: #F59E0B;
+  --yellow-light: #FEF3C7;
   --orange: #F97316;
+  --orange-light: #FED7AA;
   --red: #EF4444;
+  --red-light: #FEE2E2;
   --gray: #94A3B8;
   --blue: #3B82F6;
+  --blue-light: #DBEAFE;
+  --purple: #8B5CF6;
+  --purple-light: #EDE9FE;
 }
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body {
@@ -28,1178 +43,1923 @@ body {
   background: var(--bg);
   color: var(--text);
   line-height: 1.6;
-  padding: 16px;
   min-height: 100vh;
+  padding-bottom: 80px;
 }
-.container { max-width: 1100px; margin: 0 auto; }
+.container { max-width: 1100px; margin: 0 auto; padding: 12px; }
 .header {
   background: linear-gradient(135deg, var(--primary), #FF8C42);
   color: white;
-  padding: 24px;
-  border-radius: 16px;
-  margin-bottom: 24px;
+  padding: 16px 20px;
+  border-radius: 14px;
+  margin-bottom: 16px;
   box-shadow: 0 4px 20px rgba(255,107,53,0.15);
+  display:flex; justify-content:space-between; align-items:center; gap: 12px;
+  flex-wrap: wrap;
 }
-.header h1 { font-size: 22px; font-weight: 800; margin-bottom: 4px; }
-.header p { font-size: 13px; opacity: 0.95; }
-.step { background: var(--card); border-radius: 16px; padding: 20px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); }
-.step-title { font-size: 16px; font-weight: 700; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
-.step-num { display: inline-flex; width: 28px; height: 28px; background: var(--primary); color: white; border-radius: 50%; align-items: center; justify-content: center; font-size: 14px; font-weight: 700; }
-.upload-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-@media (max-width: 640px) { .upload-row { grid-template-columns: 1fr; } }
-.upload-box {
-  border: 2px dashed var(--border);
-  border-radius: 12px;
-  padding: 16px;
+.header h1 { font-size: 18px; font-weight: 800; }
+.header .sub { font-size: 11px; opacity: 0.95; }
+.header-nav { display:flex; gap:8px; flex-wrap:wrap; }
+.header-nav a {
+  background: rgba(255,255,255,0.2);
+  color: white;
+  padding: 6px 12px;
+  border-radius: 8px;
+  text-decoration: none;
+  font-size: 12px;
+  font-weight: 700;
+  border: 1px solid rgba(255,255,255,0.3);
+}
+.header-nav a:hover { background: rgba(255,255,255,0.3); }
+
+/* 統計サマリー */
+.stats-row {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 6px;
+  margin-bottom: 12px;
+}
+@media (max-width: 700px) {
+  .stats-row { grid-template-columns: repeat(4, 1fr); }
+}
+.stat-card {
+  background: white;
+  border-radius: 10px;
+  padding: 10px 6px;
   text-align: center;
-  background: #FFFBF7;
   cursor: pointer;
-  transition: all 0.2s;
+  border: 2px solid transparent;
+  transition: all 0.15s;
 }
-.upload-box:hover { border-color: var(--primary); background: #FFF3E8; }
-.upload-box.loaded { border-style: solid; border-color: var(--green); background: #F0FDF4; }
-.upload-box .label { font-size: 13px; font-weight: 700; color: var(--text); margin-bottom: 4px; }
-.upload-box .sub { font-size: 11px; color: var(--text-sub); margin-bottom: 8px; }
-.upload-box .filename { font-size: 12px; color: var(--green); font-weight: 600; word-break: break-all; }
-input[type="file"] { display: none; }
-.btn {
-  background: var(--primary);
+.stat-card:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+.stat-card.active { border-color: var(--primary); background: #FFF3E8; }
+.stat-card .num { font-size: 18px; font-weight: 800; }
+.stat-card .lbl { font-size: 10px; color: var(--text-sub); margin-top: 2px; line-height: 1.3; }
+.stat-card.all .num { color: var(--text); }
+.stat-card.pending .num { color: var(--gray); }
+.stat-card.today .num { color: var(--red); }
+.stat-card.contacted .num { color: var(--blue); }
+.stat-card.callback .num { color: var(--orange); }
+.stat-card.won .num { color: var(--green); }
+.stat-card.declined .num { color: var(--text-mute); }
+
+/* コントロールバー */
+.control-bar {
+  background: white;
+  border-radius: 12px;
+  padding: 12px;
+  margin-bottom: 12px;
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.search-input {
+  flex: 1;
+  min-width: 180px;
+  padding: 8px 12px;
+  border: 2px solid var(--border);
+  border-radius: 8px;
+  font-size: 14px;
+  background: #FFFBF7;
+}
+.search-input:focus { outline: none; border-color: var(--primary); }
+.sort-select, .area-select {
+  padding: 8px 12px;
+  border: 2px solid var(--border);
+  border-radius: 8px;
+  font-size: 13px;
+  background: white;
+  font-weight: 600;
+  cursor: pointer;
+  min-width: 130px;
+}
+.refresh-btn {
+  padding: 8px 14px;
+  background: white;
+  border: 2px solid var(--primary);
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--primary);
+  cursor: pointer;
+}
+.refresh-btn:hover { background: var(--primary); color: white; }
+
+/* 企業カード */
+.company-list { display: flex; flex-direction: column; gap: 8px; }
+.company-card {
+  background: white;
+  border-radius: 12px;
+  padding: 14px;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 12px;
+  align-items: center;
+  border-left: 4px solid var(--border);
+  transition: all 0.15s;
+}
+.company-card:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.06); }
+.company-card.pending { border-left-color: var(--gray); }
+.company-card.contacted { border-left-color: var(--blue); }
+.company-card.pending_callback { border-left-color: var(--orange); }
+.company-card.declined { border-left-color: var(--text-mute); opacity: 0.7; }
+.company-card.won { border-left-color: var(--green); background: #F0FDF4; }
+.company-card.mailed { border-left-color: var(--purple); }
+.company-card.today { background: #FEF2F2; border-left-color: var(--red); }
+.company-info { min-width: 0; }
+.company-name { font-size: 15px; font-weight: 700; word-break: break-all; margin-bottom: 4px; }
+.company-meta { display: flex; gap: 10px; flex-wrap: wrap; font-size: 12px; color: var(--text-sub); margin-bottom: 6px; }
+.company-meta span { display:inline-flex; align-items:center; gap:3px; }
+.phase-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 8px;
+  font-size: 10px;
+  font-weight: 700;
+  margin-right: 6px;
+}
+.phase-pending { background: #F3F4F6; color: #6B7280; }
+.phase-contacted { background: var(--blue-light); color: #1E40AF; }
+.phase-pending_callback { background: var(--orange-light); color: #9A3412; }
+.phase-declined { background: #F3F4F6; color: #9CA3AF; }
+.phase-won { background: var(--green-light); color: #065F46; }
+.phase-mailed { background: var(--purple-light); color: #5B21B6; }
+.next-date-tag {
+  display: inline-block;
+  background: var(--yellow-light);
+  color: #92400E;
+  padding: 2px 8px;
+  border-radius: 8px;
+  font-size: 11px;
+  font-weight: 700;
+}
+.next-date-tag.today { background: var(--red-light); color: #991B1B; }
+.next-date-tag.past { background: #FEE2E2; color: #7F1D1D; }
+
+/* リンクボタン */
+.link-row {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.link-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 4px 8px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-sub);
+  text-decoration: none;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+.link-btn:hover { background: var(--primary); color: white; border-color: var(--primary); transform: translateY(-1px); }
+.link-btn.hp { color: #0EA5E9; border-color: #BAE6FD; }
+.link-btn.hp:hover { background: #0EA5E9; color: white; }
+.link-btn.insta { color: #DB2777; border-color: #FBCFE8; }
+.link-btn.insta:hover { background: linear-gradient(135deg, #F472B6, #DB2777); color: white; }
+.link-btn.fb { color: #2563EB; border-color: #BFDBFE; }
+.link-btn.fb:hover { background: #2563EB; color: white; }
+.link-btn.tiktok { color: #000; border-color: #D4D4D8; }
+.link-btn.tiktok:hover { background: #000; color: white; }
+.link-btn.tel { color: var(--green); border-color: #A7F3D0; }
+.link-btn.tel:hover { background: var(--green); color: white; }
+
+.card-actions { display: flex; flex-direction: column; gap: 6px; align-items: flex-end; }
+.attack-btn {
+  background: linear-gradient(135deg, var(--primary), #FF8C42);
   color: white;
   border: none;
-  padding: 12px 24px;
+  padding: 10px 18px;
   border-radius: 10px;
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+  white-space: nowrap;
+  box-shadow: 0 2px 8px rgba(255,107,53,0.25);
+}
+.attack-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(255,107,53,0.35); }
+
+/* ⭐ 優先度 */
+.priority-btn {
+  background: white;
+  border: 2px solid var(--border);
+  border-radius: 8px;
+  padding: 6px 10px;
+  cursor: pointer;
   font-size: 14px;
   font-weight: 700;
-  cursor: pointer;
-  transition: all 0.2s;
-  width: 100%;
-}
-.btn:hover { background: var(--primary-dark); transform: translateY(-1px); }
-.btn:disabled { background: #CCCCCC; cursor: not-allowed; transform: none; }
-.btn-secondary { background: white; color: var(--primary); border: 2px solid var(--primary); }
-.btn-secondary:hover { background: var(--primary); color: white; }
-.btn-success { background: var(--green); }
-.btn-success:hover { background: #059669; }
-.btn-danger { background: var(--red); }
-.btn-skip { background: var(--gray); }
-.stat-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin: 16px 0; }
-@media (max-width: 640px) { .stat-grid { grid-template-columns: repeat(2, 1fr); } }
-.stat {
-  background: #FFFBF7;
-  border-radius: 10px;
-  padding: 12px 8px;
+  transition: all 0.15s;
+  white-space: nowrap;
+  letter-spacing: -2px;
+  min-width: 60px;
   text-align: center;
-  border: 1px solid var(--border);
 }
-.stat .num { font-size: 22px; font-weight: 800; }
-.stat .label { font-size: 10px; color: var(--text-sub); margin-top: 4px; line-height: 1.3; }
-.stat.confirmed .num { color: var(--green); }
-.stat.high .num { color: var(--yellow); }
-.stat.medium .num { color: var(--orange); }
-.stat.low .num { color: var(--blue); }
-.stat.attack .num { color: var(--text); }
-.review-card {
-  border: 2px solid var(--border);
+.priority-btn:hover { transform: scale(1.05); }
+.priority-btn.p0 { color: #D1D5DB; }
+.priority-btn.p1 { background: #FEF3C7; border-color: #FBBF24; color: #D97706; }
+.priority-btn.p2 { background: #FED7AA; border-color: #FB923C; color: #C2410C; }
+.priority-btn.p3 { background: #FECACA; border-color: #EF4444; color: #B91C1C; box-shadow: 0 2px 8px rgba(239,68,68,0.2); }
+.priority-btn.modal-priority {
+  font-size: 24px;
+  padding: 10px 20px;
+  letter-spacing: 0;
+  min-width: 120px;
+}
+.company-card.has-priority { border-left-width: 6px; }
+.company-card.p1 { background: linear-gradient(to right, #FFFBEB, white 80px); }
+.company-card.p2 { background: linear-gradient(to right, #FFF7ED, white 80px); }
+.company-card.p3 { background: linear-gradient(to right, #FEF2F2, white 80px); }
+.company-card.excluded { opacity: 0.55; background: #F9FAFB; border-left-color: #D1D5DB !important; }
+.company-card.excluded .company-name { text-decoration: line-through; color: var(--text-mute); }
+
+/* 対象外ボタン(右上小さく) */
+.card-top-actions {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  display: flex;
+  gap: 4px;
+}
+.card-wrap { position: relative; }
+.exclude-btn {
+  background: white;
+  border: 1px solid var(--border-soft);
+  border-radius: 6px;
+  width: 26px;
+  height: 26px;
+  cursor: pointer;
+  font-size: 12px;
+  color: #9CA3AF;
+  transition: all 0.15s;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.exclude-btn:hover { background: #FEE2E2; color: #DC2626; border-color: #DC2626; transform: scale(1.1); }
+.exclude-btn.active { background: #DC2626; color: white; border-color: #DC2626; }
+.exclude-btn.active:hover { background: #B91C1C; }
+
+/* 含むチェックボックス */
+.include-excluded-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-sub);
+  cursor: pointer;
+  white-space: nowrap;
+  padding: 4px 8px;
+  background: #F9FAFB;
+  border-radius: 6px;
+  border: 1px solid var(--border-soft);
+}
+.include-excluded-row:hover { background: #F3F4F6; }
+.include-excluded-row input { cursor: pointer; }
+
+/* モーダル */
+.modal-backdrop {
+  display: none;
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.5);
+  z-index: 100;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 12px;
+  overflow-y: auto;
+}
+.modal-backdrop.show { display: flex; }
+.modal {
+  background: white;
+  border-radius: 16px;
+  width: 100%;
+  max-width: 720px;
+  margin-top: 12px;
+  margin-bottom: 12px;
+  overflow: hidden;
+  box-shadow: 0 20px 50px rgba(0,0,0,0.2);
+}
+.modal-header {
+  background: linear-gradient(135deg, var(--primary), #FF8C42);
+  color: white;
+  padding: 16px 20px;
+  display:flex; justify-content:space-between; align-items:center;
+}
+.modal-header h2 { font-size: 16px; font-weight: 700; }
+.modal-close { background: none; border: none; color: white; font-size: 24px; cursor: pointer; line-height: 1; }
+.modal-body { padding: 20px; }
+
+.target-card {
+  background: #FFF3E8;
   border-radius: 12px;
   padding: 16px;
-  margin-bottom: 12px;
+  text-align: center;
+  margin-bottom: 16px;
+  border: 2px solid var(--primary-light);
+}
+.target-card .name { font-size: 20px; font-weight: 800; color: var(--text); margin-bottom: 8px; }
+.target-card .phone { font-size: 22px; font-weight: 800; color: var(--primary); margin-bottom: 6px; }
+.target-card .phone.empty { color: var(--text-mute); font-size: 16px; }
+.target-card .info-row { font-size: 12px; color: var(--text-sub); margin: 2px 0; word-break: break-all; }
+.target-card .modal-links { display: flex; gap: 6px; justify-content: center; margin-top: 10px; flex-wrap: wrap; }
+
+/* 過去履歴タイムライン */
+.history-section { margin-bottom: 20px; }
+.section-title { font-size: 13px; font-weight: 700; color: var(--text-sub); margin-bottom: 8px; display:flex; align-items:center; gap:6px; }
+.timeline {
+  border-left: 2px solid var(--border);
+  padding-left: 14px;
+  margin-left: 6px;
+}
+.timeline-item {
+  position: relative;
+  margin-bottom: 10px;
   background: #FFFBF7;
-}
-.review-progress { font-size: 12px; color: var(--text-sub); margin-bottom: 12px; font-weight: 600; display:flex; justify-content:space-between; align-items:center; }
-.confidence-badge {
-  display: inline-block;
-  font-size: 11px;
-  padding: 3px 10px;
-  border-radius: 12px;
-  font-weight: 700;
-}
-.conf-confirmed { background: #D1FAE5; color: #065F46; }
-.conf-high { background: #FEF3C7; color: #92400E; }
-.conf-medium { background: #FED7AA; color: #9A3412; }
-.conf-low { background: #DBEAFE; color: #1E40AF; }
-.review-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
-@media (max-width: 640px) { .review-pair { grid-template-columns: 1fr; } }
-.review-side {
-  background: white;
-  border-radius: 8px;
-  padding: 12px;
-  border-left: 4px solid var(--primary);
-}
-.review-side.fw { border-left-color: var(--accent); }
-.review-side.pm { border-left-color: var(--primary); }
-.review-side .badge {
-  display: inline-block;
-  font-size: 10px;
-  padding: 2px 8px;
-  border-radius: 6px;
-  font-weight: 700;
-  margin-bottom: 6px;
-}
-.review-side.fw .badge { background: #FEF3C7; color: #B45309; }
-.review-side.pm .badge { background: #FFE3D0; color: #C2410C; }
-.review-side .name { font-size: 14px; font-weight: 700; margin-bottom: 6px; word-break: break-all; }
-.review-side .detail { font-size: 12px; color: var(--text-sub); margin: 2px 0; word-break: break-all; }
-.score-box {
-  background: #FFF3E8;
-  border-radius: 8px;
   padding: 8px 12px;
-  font-size: 12px;
-  color: var(--text-sub);
-  margin-bottom: 12px;
-}
-.score-box .reasons { color: var(--primary); font-weight: 600; }
-.action-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
-.action-grid .btn { padding: 10px; font-size: 13px; }
-.exclude-list, .result-list {
-  max-height: 500px;
-  overflow-y: auto;
-  border: 1px solid var(--border);
   border-radius: 8px;
-  padding: 8px;
-  background: #FFFBF7;
+  font-size: 12px;
 }
-.list-item {
-  background: white;
-  border-radius: 6px;
-  padding: 10px 12px;
-  margin-bottom: 6px;
-  font-size: 13px;
+.timeline-item::before {
+  content: '';
+  position: absolute;
+  left: -19px;
+  top: 12px;
+  width: 10px;
+  height: 10px;
+  background: var(--primary);
+  border-radius: 50%;
+  border: 2px solid white;
+}
+.timeline-item .date { font-weight: 700; color: var(--text); }
+.timeline-item .result { color: var(--primary); font-weight: 600; margin-left: 6px; }
+.timeline-item .memo { color: var(--text-sub); margin-top: 4px; word-break: break-all; }
+.timeline-empty { font-size: 12px; color: var(--text-mute); padding: 8px; text-align: center; }
+
+/* スクリプト分岐 */
+.script-flow {
+  background: #FFFBF7;
+  border: 2px solid var(--border);
+  border-radius: 12px;
+  margin-bottom: 16px;
+  overflow: hidden;
+}
+.script-step-header {
+  background: var(--primary);
+  color: white;
+  padding: 12px 16px;
   display: flex;
   justify-content: space-between;
-  align-items: flex-start;
+  align-items: center;
+}
+.script-step-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 700;
+  font-size: 14px;
+}
+.script-step-title .emoji { font-size: 20px; }
+.script-back-btn {
+  background: rgba(255,255,255,0.2);
+  border: 1px solid rgba(255,255,255,0.4);
+  color: white;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.script-back-btn:hover { background: rgba(255,255,255,0.35); }
+.script-speech {
+  padding: 16px;
+  font-size: 14px;
+  line-height: 1.9;
+  background: white;
+  border-bottom: 1px solid var(--border);
+}
+.script-speech strong { color: var(--primary-dark); font-weight: 700; background: linear-gradient(transparent 60%, #FFE3D0 60%); }
+.script-branches {
+  padding: 14px 16px;
+  background: #FFFBF7;
+}
+.script-branches-title {
+  font-size: 12px;
+  color: var(--text-sub);
+  font-weight: 700;
+  margin-bottom: 10px;
+}
+.branch-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 6px;
+}
+@media (min-width: 600px) {
+  .branch-grid { grid-template-columns: 1fr 1fr; }
+}
+.branch-btn {
+  background: white;
+  border: 2px solid var(--border);
+  border-radius: 10px;
+  padding: 12px 14px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  text-align: left;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.15s;
+  color: var(--text);
+}
+.branch-btn:hover { transform: translateY(-1px); box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+.branch-btn .arrow { margin-left: auto; opacity: 0.5; }
+.branch-btn[data-color="green"]:hover { background: var(--green-light); border-color: var(--green); }
+.branch-btn[data-color="yellow"]:hover { background: var(--yellow-light); border-color: var(--yellow); }
+.branch-btn[data-color="orange"]:hover { background: var(--orange-light); border-color: var(--orange); }
+.branch-btn[data-color="red"]:hover { background: var(--red-light); border-color: var(--red); }
+.branch-btn[data-color="blue"]:hover { background: var(--blue-light); border-color: var(--blue); }
+.branch-btn[data-color="purple"]:hover { background: var(--purple-light); border-color: var(--purple); }
+.branch-btn[data-color="primary"]:hover { background: #FFF3E8; border-color: var(--primary); }
+
+/* スクリプト編集モード */
+.script-edit-btn {
+  background: rgba(255,255,255,0.2);
+  border: 1px solid rgba(255,255,255,0.4);
+  color: white;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  margin-right: 6px;
+}
+.script-edit-btn:hover { background: rgba(255,255,255,0.35); }
+.script-edit-btn.save { background: var(--green); border-color: var(--green); }
+.script-edit-btn.save:hover { background: #059669; }
+.script-edit-btn.cancel { background: rgba(255,255,255,0.15); }
+.script-title-edit {
+  background: rgba(255,255,255,0.95);
+  color: var(--text);
+  border: 1px solid rgba(255,255,255,0.5);
+  border-radius: 6px;
+  padding: 4px 8px;
+  font-size: 14px;
+  font-weight: 700;
+  flex: 1;
+  min-width: 100px;
+}
+.script-speech-edit {
+  width: 100%;
+  border: 2px solid var(--primary);
+  border-radius: 8px;
+  padding: 12px;
+  font-family: inherit;
+  font-size: 14px;
+  line-height: 1.9;
+  resize: vertical;
+  min-height: 200px;
+  background: #FFFBF7;
+  margin-bottom: 8px;
+}
+.script-speech-edit:focus { outline: none; border-color: var(--primary-dark); }
+.edit-hint {
+  font-size: 11px;
+  color: var(--text-sub);
+  background: var(--yellow-light);
+  padding: 6px 10px;
+  border-radius: 6px;
+  margin-bottom: 8px;
+}
+.script-header-actions { display: flex; gap: 4px; align-items: center; }
+
+/* 結果ボタンセクション */
+.finish-section {
+  background: #FFF3E8;
+  border: 2px dashed var(--primary);
+  border-radius: 12px;
+  padding: 14px;
+  margin-bottom: 12px;
+}
+.finish-section .ttl { font-size: 13px; font-weight: 700; margin-bottom: 10px; color: var(--primary-dark); }
+
+/* メモ入力 */
+.memo-input {
+  width: 100%;
+  border: 2px solid var(--border);
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-size: 14px;
+  resize: vertical;
+  min-height: 80px;
+  font-family: inherit;
+  background: #FFFBF7;
+  margin-bottom: 12px;
+}
+.memo-input:focus { outline: none; border-color: var(--primary); background: white; }
+
+/* 結果ボタン */
+.result-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.result-btn {
+  background: white;
+  border: 2px solid var(--border);
+  border-radius: 10px;
+  padding: 12px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.15s;
+  display: flex;
+  align-items: center;
   gap: 8px;
 }
-.list-item .info { flex: 1; min-width: 0; }
-.list-item .name { font-weight: 700; word-break: break-all; }
-.list-item .sub { font-size: 11px; color: var(--text-sub); margin-top: 2px; word-break: break-all; }
-.list-item .reason { font-size: 11px; color: var(--primary); font-weight: 600; margin-top: 2px; }
-.list-item .actions { display: flex; gap: 4px; flex-shrink: 0; }
-.mini-btn {
+.result-btn:hover { transform: translateY(-1px); }
+.result-btn .emoji { font-size: 18px; }
+.result-btn[data-result="connected"]:hover { background: var(--blue-light); border-color: var(--blue); }
+.result-btn[data-result="absent"]:hover { background: var(--orange-light); border-color: var(--orange); }
+.result-btn[data-result="callback"]:hover { background: var(--yellow-light); border-color: var(--yellow); }
+.result-btn[data-result="declined"]:hover { background: var(--red-light); border-color: var(--red); }
+.result-btn[data-result="won"]:hover { background: var(--green-light); border-color: var(--green); }
+.result-btn[data-result="mailed"]:hover { background: var(--purple-light); border-color: var(--purple); }
+
+/* 次回予定 */
+.next-date-row {
+  display: grid;
+  grid-template-columns: 1fr auto auto auto auto;
+  gap: 6px;
+  margin-bottom: 12px;
+  align-items: center;
+}
+.date-input {
+  border: 2px solid var(--border);
+  border-radius: 8px;
+  padding: 6px 10px;
+  font-size: 13px;
+  background: #FFFBF7;
+}
+.date-quick {
   background: white;
   border: 1px solid var(--border);
   border-radius: 6px;
-  padding: 4px 10px;
+  padding: 4px 8px;
   font-size: 11px;
-  cursor: pointer;
   font-weight: 600;
-  white-space: nowrap;
-}
-.mini-btn:hover { background: var(--primary); color: white; border-color: var(--primary); }
-.mini-btn.active-keep { background: var(--green); color: white; border-color: var(--green); }
-.tab-row { display: flex; gap: 4px; margin-bottom: 16px; border-bottom: 2px solid var(--border); overflow-x: auto; }
-.tab {
-  padding: 10px 14px;
-  background: transparent;
-  border: none;
-  font-size: 12px;
-  font-weight: 700;
   cursor: pointer;
   color: var(--text-sub);
-  border-bottom: 3px solid transparent;
-  margin-bottom: -2px;
-  white-space: nowrap;
 }
-.tab.active { color: var(--primary); border-bottom-color: var(--primary); }
-.hidden { display: none !important; }
-.empty-state { text-align: center; padding: 40px 20px; color: var(--text-sub); }
-.empty-state .icon { font-size: 40px; margin-bottom: 12px; }
-.note {
-  background: #FEF3C7;
-  border-left: 4px solid var(--accent);
-  padding: 10px 14px;
-  border-radius: 6px;
-  font-size: 12px;
-  margin-bottom: 16px;
-  color: #92400E;
-}
-.completion {
+.date-quick:hover { background: var(--primary); color: white; border-color: var(--primary); }
+
+/* 状態 */
+.loading {
   text-align: center;
-  padding: 30px 20px;
-  background: linear-gradient(135deg, #10B981, #34D399);
-  border-radius: 12px;
-  color: white;
-  margin-bottom: 16px;
-}
-.completion .icon { font-size: 48px; margin-bottom: 8px; }
-.completion h3 { font-size: 18px; margin-bottom: 4px; }
-.completion p { font-size: 13px; opacity: 0.95; }
-.legend-note {
-  font-size: 11px;
+  padding: 40px 20px;
   color: var(--text-sub);
-  background: #F3F4F6;
-  padding: 10px 14px;
-  border-radius: 6px;
-  margin-bottom: 12px;
-  line-height: 1.7;
 }
-.bulk-actions { display:flex; gap:8px; margin-bottom: 12px; flex-wrap:wrap; }
-.bulk-btn {
-  flex: 1; min-width: 130px;
+.loading .icon { font-size: 36px; margin-bottom: 8px; }
+.empty {
+  text-align: center;
+  padding: 40px 20px;
+  color: var(--text-mute);
+  background: white;
+  border-radius: 12px;
+}
+.empty .icon { font-size: 36px; margin-bottom: 8px; }
+.toast {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--text);
+  color: white;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 700;
+  z-index: 200;
+  opacity: 0;
+  transition: opacity 0.3s;
+  pointer-events: none;
+}
+.toast.show { opacity: 1; }
+.toast.success { background: var(--green); }
+.toast.error { background: var(--red); }
+
+/* レポートモーダル */
+.report-modal {
+  max-width: 800px;
+}
+.report-period-row {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+  padding: 8px;
+  background: #FFFBF7;
+  border-radius: 8px;
+}
+.period-btn {
   background: white;
   border: 2px solid var(--border);
   border-radius: 8px;
-  padding: 8px 12px;
+  padding: 6px 12px;
   font-size: 12px;
   font-weight: 700;
   cursor: pointer;
   color: var(--text);
 }
-.bulk-btn:hover { background: var(--bg); border-color: var(--primary); color: var(--primary); }
-.upload-progress {
-  background: white;
-  border: 2px solid var(--border);
-  border-radius: 10px;
-  padding: 14px;
-  margin-top: 8px;
-}
-.upload-progress .bar-wrap {
-  background: #F3F4F6;
-  border-radius: 6px;
-  height: 10px;
-  overflow: hidden;
-  margin: 8px 0;
-}
-.upload-progress .bar {
-  background: linear-gradient(90deg, var(--primary), var(--accent));
-  height: 100%;
-  transition: width 0.3s;
-}
-.upload-progress .msg { font-size: 13px; }
-.upload-progress.success { border-color: var(--green); background: #F0FDF4; }
-.upload-progress.error { border-color: var(--red); background: #FEF2F2; }
-.attack-link {
-  display: inline-block;
-  background: var(--green);
-  color: white;
-  padding: 10px 20px;
-  border-radius: 8px;
-  text-decoration: none;
-  font-weight: 700;
-  margin-top: 8px;
-}
-.attack-link:hover { background: #059669; }
-
-/* ═══ サービス切替タブ ═══ */
-.service-tabs {
-  display: flex;
+.period-btn:hover { border-color: var(--primary); color: var(--primary); }
+.period-btn.active { background: var(--primary); color: white; border-color: var(--primary); }
+.report-summary {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
   gap: 8px;
   margin-bottom: 16px;
-  background: white;
-  padding: 8px;
-  border-radius: 16px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
 }
-.service-tab {
-  flex: 1;
-  padding: 14px 18px;
-  border-radius: 12px;
-  font-size: 14px;
-  font-weight: 800;
-  cursor: pointer;
-  border: 2px solid transparent;
-  background: #F9FAFB;
-  color: #6B7280;
-  transition: all 0.2s;
+@media (max-width: 600px) {
+  .report-summary { grid-template-columns: repeat(2, 1fr); }
+}
+.report-stat {
+  background: #FFFBF7;
+  border-radius: 10px;
+  padding: 14px;
   text-align: center;
-  font-family: inherit;
+  border: 2px solid var(--border);
 }
-.service-tab:hover { background: #F3F4F6; }
-.service-tab.active.posmane {
-  background: linear-gradient(135deg, #FF6B35, #FF8C42);
-  color: white;
-  border-color: #FF6B35;
-  box-shadow: 0 2px 8px rgba(255,107,53,0.3);
+.report-stat.big { grid-column: 1 / -1; background: linear-gradient(135deg, var(--primary), #FF8C42); color: white; border: none; }
+.report-stat.big .num { color: white !important; }
+.report-stat .num { font-size: 28px; font-weight: 800; }
+.report-stat .lbl { font-size: 11px; color: var(--text-sub); margin-top: 4px; }
+.report-stat.big .lbl { color: white; opacity: 0.95; }
+.report-breakdown {
+  background: #FFFBF7;
+  border-radius: 10px;
+  padding: 14px;
+  margin-bottom: 16px;
 }
-.service-tab.active.centercall {
-  background: linear-gradient(135deg, #14B8A6, #2DD4BF);
-  color: white;
-  border-color: #14B8A6;
-  box-shadow: 0 2px 8px rgba(20,184,166,0.3);
-}
-.header.centercall-theme {
-  background: linear-gradient(135deg, #14B8A6, #2DD4BF);
-  box-shadow: 0 4px 20px rgba(20,184,166,0.15);
-}
-.header.centercall-theme .step-num,
-.centercall-mode .step-num {
-  background: #14B8A6;
-}
-.centercall-mode .upload-box:hover { border-color: #14B8A6; background: #F0FDFA; }
-.centercall-mode .btn { background: #14B8A6; }
-.centercall-mode .btn:hover { background: #0F9488; }
-.centercall-mode .btn-success { background: #10B981; }
-.cc-cta-row {
+.report-breakdown .row {
   display: flex;
-  gap: 12px;
-  margin-top: 16px;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 0;
+  border-bottom: 1px dashed var(--border);
+  font-size: 13px;
+}
+.report-breakdown .row:last-child { border-bottom: none; }
+.report-breakdown .row .label { display:flex; align-items:center; gap:6px; }
+.report-breakdown .row .count { font-weight: 800; color: var(--primary); }
+.report-breakdown .bar-wrap {
+  flex: 1;
+  margin: 0 12px;
+  height: 6px;
+  background: #F3F4F6;
+  border-radius: 3px;
+  overflow: hidden;
+}
+.report-breakdown .bar { height: 100%; background: var(--primary); }
+.report-list {
+  background: #FFFBF7;
+  border-radius: 10px;
+  padding: 8px;
+  margin-bottom: 16px;
+}
+.report-call-item {
+  background: white;
+  border-radius: 8px;
+  padding: 10px 12px;
+  margin-bottom: 6px;
+  font-size: 13px;
+  border-left: 4px solid var(--border);
+}
+.report-call-item.connected { border-left-color: var(--blue); }
+.report-call-item.absent { border-left-color: var(--orange); }
+.report-call-item.callback { border-left-color: var(--yellow); }
+.report-call-item.declined { border-left-color: var(--text-mute); }
+.report-call-item.won { border-left-color: var(--green); background: #F0FDF4; }
+.report-call-item.mailed { border-left-color: var(--purple); }
+.report-call-item .head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
   flex-wrap: wrap;
 }
-.cc-cta-row .btn { flex: 1; min-width: 200px; }
+.report-call-item .time { font-size: 11px; color: var(--text-sub); font-weight: 700; white-space: nowrap; }
+.report-call-item .name { font-weight: 700; font-size: 13px; flex: 1; min-width: 0; }
+.report-call-item .result-tag {
+  font-size: 10px;
+  padding: 2px 8px;
+  border-radius: 8px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.report-call-item .memo { font-size: 12px; color: var(--text-sub); margin-top: 4px; word-break: break-all; }
+.report-section-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-sub);
+  margin: 12px 0 8px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.report-empty {
+  text-align: center;
+  color: var(--text-mute);
+  padding: 40px 20px;
+  font-size: 14px;
+}
+.report-empty .icon { font-size: 36px; margin-bottom: 8px; }
+
+/* ヘッダーのレポートボタン */
+.header-nav .report-btn {
+  background: rgba(255,255,255,0.3);
+  font-weight: 800;
+}
+.header-nav .report-btn:hover { background: rgba(255,255,255,0.45); }
 </style>
 </head>
 <body>
 <div class="container">
-
-  <!-- サービス切替タブ -->
-  <div class="service-tabs">
-    <button class="service-tab posmane active" id="tab-posmane" onclick="switchService('posmane')">
-      📦 ポスマネ｜アタックリスト作成
-    </button>
-    <button class="service-tab centercall" id="tab-centercall" onclick="switchService('centercall')">
-      🎧 センターコール｜アタックリスト作成
-    </button>
-  </div>
-
-  <!-- ════════════════════════════════════════ -->
-  <!-- 📦 ポスマネ用ブロック -->
-  <!-- ════════════════════════════════════════ -->
-  <div id="service-posmane">
-    <div class="header">
-      <h1>🎯 ポスマネ｜アタックリスト作成ツール</h1>
-      <p>FIELDWORKの営業候補からポスマネ既存配布先を除外して、新規アタック対象を抽出します</p>
+  <div class="header">
+    <div>
+      <h1>📦 ポスマネ配布承認｜アタック</h1>
+      <div class="sub">パンフレット設置配布先への配布承認営業</div>
     </div>
-
-  <div class="step" id="step1">
-    <div class="step-title"><span class="step-num">1</span>CSVをアップロード</div>
-    <div class="upload-row">
-      <label class="upload-box" id="pm-box">
-        <input type="file" id="pm-file" accept=".csv">
-        <div class="label">📦 ポスマネ facilities</div>
-        <div class="sub">既存配布先（除外対象）</div>
-        <div class="filename" id="pm-name">クリックして選択</div>
-      </label>
-      <label class="upload-box" id="fw-box">
-        <input type="file" id="fw-file" accept=".csv">
-        <div class="label">🔍 FIELDWORK 営業候補</div>
-        <div class="sub">アタック候補のソース</div>
-        <div class="filename" id="fw-name">クリックして選択</div>
-      </label>
-    </div>
-    <div style="margin-top:16px;">
-      <button class="btn" id="match-btn" disabled>マッチング開始</button>
+    <div class="header-nav">
+      <button class="report-btn" onclick="openReport()" style="cursor:pointer;border:1px solid rgba(255,255,255,0.3);padding:6px 12px;border-radius:8px;font-size:12px;font-weight:700;color:white;background:rgba(255,255,255,0.3);">📊 レポート</button>
+      <a href="attack.html">📋 リスト作成</a>
+      <a href="fieldwork.html">🔍 FIELDWORK</a>
+      <button onclick="openBulkResearch()" style="cursor:pointer;border:1px solid rgba(255,255,255,0.3);padding:6px 12px;border-radius:8px;font-size:12px;font-weight:700;color:white;background:rgba(255,255,255,0.3);font-family:inherit">🤖 一括リサーチ</button>
     </div>
   </div>
 
-  <div class="step hidden" id="step2">
-    <div class="step-title"><span class="step-num">2</span>マッチング結果</div>
-    <div class="stat-grid">
-      <div class="stat confirmed"><div class="num" id="cnt-confirmed">0</div><div class="label">🟢 確定<br>(自動除外)</div></div>
-      <div class="stat high"><div class="num" id="cnt-high">0</div><div class="label">🟡 高確度<br>(自動除外)</div></div>
-      <div class="stat medium"><div class="num" id="cnt-medium">0</div><div class="label">🟠 中確度<br>(要確認)</div></div>
-      <div class="stat low"><div class="num" id="cnt-low">0</div><div class="label">🔵 低確度<br>(要確認)</div></div>
-      <div class="stat attack"><div class="num" id="cnt-attack">0</div><div class="label">⚪ 重複なし<br>(アタック)</div></div>
-    </div>
-    <div class="legend-note">
-      <b>判定基準</b><br>
-      🟢 <b>確定</b>: 電話番号+名前が完全一致 → 確実に同じ施設、自動除外<br>
-      🟡 <b>高確度</b>: 電話番号が一致(名前は表記揺れ) → ほぼ確実に同じ、自動除外<br>
-      🟠 <b>中確度</b>: 名前は完全一致だが電話番号に差(別店舗の可能性) → 1件ずつ確認<br>
-      🔵 <b>低確度</b>: 名前が部分一致のみ → 1件ずつ確認
-    </div>
-    <div class="tab-row">
-      <button class="tab active" data-tab="review">⚠️ 要確認 (<span id="tab-review">0</span>)</button>
-      <button class="tab" data-tab="auto">✅ 自動除外 (<span id="tab-auto">0</span>)</button>
-      <button class="tab" data-tab="attack">⚪ アタック (<span id="tab-attack">0</span>)</button>
-    </div>
-
-    <div class="tab-content" id="tab-content-review">
-      <div id="review-area"></div>
-    </div>
-    <div class="tab-content hidden" id="tab-content-auto">
-      <div id="auto-area"></div>
-    </div>
-    <div class="tab-content hidden" id="tab-content-attack">
-      <div class="result-list" id="attack-area"></div>
-    </div>
+  <div class="stats-row" id="stats-row">
+    <div class="stat-card all active" data-filter="all"><div class="num" id="cnt-all">-</div><div class="lbl">全件</div></div>
+    <div class="stat-card today" data-filter="today"><div class="num" id="cnt-today">-</div><div class="lbl">今日<br>のタスク</div></div>
+    <div class="stat-card pending" data-filter="pending"><div class="num" id="cnt-pending">-</div><div class="lbl">未着手</div></div>
+    <div class="stat-card callback" data-filter="pending_callback"><div class="num" id="cnt-callback">-</div><div class="lbl">後日<br>かけ直し</div></div>
+    <div class="stat-card contacted" data-filter="contacted"><div class="num" id="cnt-contacted">-</div><div class="lbl">担当者<br>つながった</div></div>
+    <div class="stat-card won" data-filter="won"><div class="num" id="cnt-won">-</div><div class="lbl">商談<br>獲得</div></div>
+    <div class="stat-card declined" data-filter="declined"><div class="num" id="cnt-declined">-</div><div class="lbl">お断り</div></div>
   </div>
 
-  <div class="step hidden" id="step3">
-    <div class="step-title"><span class="step-num">3</span>アタックリスト出力</div>
-    <div class="stat-grid" style="grid-template-columns: repeat(2, 1fr);">
-      <div class="stat attack"><div class="num" id="final-count">0</div><div class="label">📋 最終アタック件数</div></div>
-      <div class="stat confirmed"><div class="num" id="exclude-count">0</div><div class="label">🚫 除外確定件数</div></div>
-    </div>
-    <button class="btn btn-success" id="upload-supabase-btn" style="margin-bottom:8px;">🚀 Supabase に登録してアタック開始</button>
-    <button class="btn" id="download-btn" style="margin-bottom:8px;">💾 アタックリストCSVをダウンロード</button>
-    <button class="btn btn-secondary" id="download-excluded-btn">📋 除外リストCSVも欲しい(検証用)</button>
-    <div id="upload-status" style="margin-top:12px;"></div>
+  <div class="control-bar">
+    <input type="text" class="search-input" id="search-input" placeholder="🔍 会社名・住所・電話で検索...">
+    <select class="area-select" id="area-select">
+      <option value="all">エリア: すべて</option>
+    </select>
+    <select class="area-select" id="priority-select" style="min-width:120px;">
+      <option value="all">⭐ すべて</option>
+      <option value="3">⭐⭐⭐ のみ</option>
+      <option value="2plus">⭐⭐ 以上</option>
+      <option value="1plus">⭐ 以上</option>
+      <option value="0">⭐なし</option>
+    </select>
+    <select class="sort-select" id="sort-select">
+      <option value="default">並び順: 優先度順</option>
+      <option value="priority">⭐ 多い順</option>
+      <option value="area">エリア順</option>
+      <option value="next_date">次回予定日順</option>
+      <option value="updated">更新日(新しい順)</option>
+      <option value="name">会社名順</option>
+      <option value="phone">電話あり優先</option>
+    </select>
+    <label class="include-excluded-row">
+      <input type="checkbox" id="include-excluded">
+      ⛔ 対象外を含める
+    </label>
+    <button class="refresh-btn" onclick="loadCompanies()">🔄 更新</button>
   </div>
-  </div> <!-- /service-posmane -->
 
-  <!-- ════════════════════════════════════════ -->
-  <!-- 🎧 センターコール用ブロック -->
-  <!-- ════════════════════════════════════════ -->
-  <div id="service-centercall" class="centercall-mode" style="display:none">
-    <div class="header centercall-theme">
-      <h1>🎧 センターコール｜アタックリスト作成ツール</h1>
-      <p>テレアポ代行サービス営業用のアタックリストを登録します。FIELDWORK等で集めた企業CSVをアップロードしてSupabaseに保存します</p>
+  <div id="list-area">
+    <div class="loading"><div class="icon">⏳</div>読み込み中...</div>
+  </div>
+</div>
+
+<!-- アタックモーダル -->
+<div class="modal-backdrop" id="attack-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <h2>📞 電話アプローチ</h2>
+      <button class="modal-close" onclick="closeModal()">×</button>
     </div>
-
-    <div class="step">
-      <div class="step-title"><span class="step-num">1</span>使い方</div>
-      <div style="background:#F0FDFA;border:1.5px solid #14B8A6;border-radius:10px;padding:14px 16px;line-height:1.9;font-size:13px;color:#0F766E">
-        <strong>📋 想定する流れ：</strong><br>
-        ① FIELDWORK で「リフォーム会社」「塗装会社」など、テレアポが必要そうな業種を Google Maps API で収集<br>
-        ② FIELDWORK の「CSVエクスポート」でCSVをダウンロード<br>
-        ③ そのCSVを下の枠にアップロード<br>
-        ④ 「Supabase に登録」を押すと、<code style="background:#fff;padding:2px 6px;border-radius:4px;font-size:11px">centercall_attacks</code> テーブルに保存されます<br>
-        ⑤ <a href="centercall.html" style="color:#14B8A6;font-weight:800">🎧 センターコール｜アタック画面（centercall.html）</a> で電話業務スタート
-      </div>
+    <div class="modal-body" id="modal-body">
+      <!-- 動的生成 -->
     </div>
+  </div>
+</div>
 
-    <div class="step">
-      <div class="step-title"><span class="step-num">2</span>CSVをアップロード</div>
-      <div class="upload-row" style="grid-template-columns:1fr">
-        <label class="upload-box" id="cc-box">
-          <input type="file" id="cc-file" accept=".csv">
-          <div class="label">🎯 FIELDWORK 営業候補CSV</div>
-          <div class="sub">電話営業ターゲット企業のリスト</div>
-          <div class="filename" id="cc-name">クリックして選択</div>
-        </label>
-      </div>
-      <div id="cc-preview" style="margin-top:16px;display:none">
-        <div style="background:#fff;border:1.5px solid #14B8A6;border-radius:10px;padding:12px 14px;font-size:13px">
-          <div style="font-weight:800;color:#0F766E;margin-bottom:8px">📊 読み込み内容</div>
-          <div id="cc-preview-content"></div>
-        </div>
-      </div>
+<!-- レポートモーダル -->
+<div class="modal-backdrop" id="report-modal">
+  <div class="modal report-modal">
+    <div class="modal-header">
+      <h2>📊 アタックレポート</h2>
+      <button class="modal-close" onclick="closeReport()">×</button>
     </div>
-
-    <div class="step" id="cc-step3" style="display:none">
-      <div class="step-title"><span class="step-num">3</span>Supabase に登録</div>
-      <div style="background:#FFFBEB;border:1.5px solid #F59E0B;border-radius:10px;padding:10px 14px;margin-bottom:14px;font-size:12px;color:#92400E;font-weight:700;line-height:1.7">
-        💡 既存企業（電話番号一致）はスキップされます。新規企業のみ追加されます。
-      </div>
-      <div class="cc-cta-row">
-        <button class="btn btn-success" id="cc-upload-btn">🚀 Supabase に登録してアタック開始</button>
-        <button class="btn" id="cc-download-btn">💾 整形済CSVをダウンロード</button>
-      </div>
-      <div id="cc-upload-status" style="margin-top:12px;"></div>
+    <div class="modal-body" id="report-body">
+      <!-- 動的生成 -->
     </div>
+  </div>
+</div>
 
-    <div class="step">
-      <div class="step-title"><span class="step-num">📝</span>初回利用時のセットアップ</div>
-      <div style="background:#FFF7ED;border:1.5px solid #F97316;border-radius:10px;padding:14px 16px;line-height:1.9;font-size:12px;color:#9A3412">
-        <strong>Supabase で以下のSQLを1回だけ実行してください：</strong>
-        <pre style="background:#1F2937;color:#A7F3D0;padding:12px;border-radius:8px;font-size:11px;margin-top:8px;overflow-x:auto;line-height:1.5">CREATE TABLE IF NOT EXISTS centercall_attacks (
-  id text PRIMARY KEY,
-  company_name text NOT NULL,
-  phone text,
-  address text,
-  website text,
-  industry text,
-  area text,
-  pref text,
-  city text,
-  district text,
-  email text,
-  instagram_url text,
-  facebook_url text,
-  x_url text,
-  tiktok_url text,
-  indeed_url text,
-  job_antenna_url text,
-  agre_url text,
-  mynavi_url text,
-  own_recruit_url text,
-  ceo_name text,
-  founding_date text,
-  established_date text,
-  revenue text,
-  employees text,
-  star_rating int DEFAULT 0,
-  phase text DEFAULT 'pending',
-  next_date date,
-  next_action text,
-  pending_callback boolean DEFAULT false,
-  priority int DEFAULT 0,
-  excluded boolean DEFAULT false,
-  last_called_at timestamptz,
-  used_script_id text,
-  history jsonb DEFAULT '[]'::jsonb,
-  email_history jsonb DEFAULT '[]'::jsonb,
-  memo text,
-  research_notes text,
-  source_data jsonb DEFAULT '{}'::jsonb,
-  created_at timestamptz DEFAULT now(),
-  updated_at timestamptz DEFAULT now()
-);
-
-ALTER TABLE centercall_attacks ENABLE ROW LEVEL SECURITY;
-
-CREATE POLICY "cc_select" ON centercall_attacks FOR SELECT USING (true);
-CREATE POLICY "cc_insert" ON centercall_attacks FOR INSERT WITH CHECK (true);
-CREATE POLICY "cc_update" ON centercall_attacks FOR UPDATE USING (true);
-CREATE POLICY "cc_delete" ON centercall_attacks FOR DELETE USING (true);
-
-CREATE INDEX IF NOT EXISTS idx_cc_phone ON centercall_attacks(phone);
-CREATE INDEX IF NOT EXISTS idx_cc_phase ON centercall_attacks(phase);
-CREATE INDEX IF NOT EXISTS idx_cc_next_date ON centercall_attacks(next_date);
-
-CREATE TABLE IF NOT EXISTS centercall_scripts (
-  id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
-  script_id text UNIQUE NOT NULL,
-  name text NOT NULL,
-  variant text,
-  script_json jsonb,
-  is_active boolean DEFAULT true,
-  sort_order integer DEFAULT 0,
-  updated_at timestamptz DEFAULT now()
-);
-
-ALTER TABLE centercall_scripts ENABLE ROW LEVEL SECURITY;
-
-CREATE POLICY "ccs_select" ON centercall_scripts FOR SELECT USING (true);
-CREATE POLICY "ccs_insert" ON centercall_scripts FOR INSERT WITH CHECK (true);
-CREATE POLICY "ccs_update" ON centercall_scripts FOR UPDATE USING (true);
-CREATE POLICY "ccs_delete" ON centercall_scripts FOR DELETE USING (true);</pre>
-        <div style="margin-top:8px">実行できたら <a href="centercall.html" style="color:#14B8A6;font-weight:800">🎧 センターコール アタック画面へ</a></div>
-      </div>
-    </div>
-  </div> <!-- /service-centercall -->
+<div class="toast" id="toast"></div>
 
 <script>
-// ========== 正規化関数 ==========
-function nStrict(s) {
-  if (!s) return '';
-  s = s.normalize('NFKC').toLowerCase();
-  s = s.replace(/\s+/g, '');
-  ['(配布不要)','(配送不要)','|一旦行かない'].forEach(w => { s = s.split(w).join(''); });
-  s = s.replace(/[ー\-・,()（）&'"\.!\?]/g, '');
-  return s;
-}
-function nLoose(s) {
-  if (!s) return '';
-  s = nStrict(s);
-  ['ホテル','hotel','沖縄','okinawa','那覇','naha'].forEach(w => { s = s.split(w).join(''); });
-  return s;
-}
-function nTel(s) {
-  if (!s) return '';
-  return s.normalize('NFKC').replace(/\D/g, '');
-}
-function nAddr(s) {
-  if (!s) return '';
-  s = s.normalize('NFKC');
-  s = s.replace(/^日本、?/, '').replace(/〒\d{3}-?\d{4}/g, '').replace(/沖縄県/g, '').replace(/\s+/g, '');
-  return s;
-}
-function extractBanchi(s) {
-  if (!s) return '';
-  const m = s.match(/(\d+[-－‐]\d+[-－‐]?\d*)/);
-  return m ? m[1].replace(/[－‐]/g, '-') : '';
-}
-
-// ========== CSV パーサー ==========
-function parseCSV(text) {
-  text = text.replace(/^\uFEFF/, '');
-  const rows = [];
-  let row = [], cell = '', inQuote = false;
-  for (let i = 0; i < text.length; i++) {
-    const c = text[i], n = text[i+1];
-    if (inQuote) {
-      if (c === '"' && n === '"') { cell += '"'; i++; }
-      else if (c === '"') { inQuote = false; }
-      else cell += c;
-    } else {
-      if (c === '"') inQuote = true;
-      else if (c === ',') { row.push(cell); cell = ''; }
-      else if (c === '\n' || c === '\r') {
-        if (c === '\r' && n === '\n') i++;
-        row.push(cell); cell = '';
-        if (row.length > 1 || row[0] !== '') rows.push(row);
-        row = [];
-      } else cell += c;
-    }
-  }
-  if (cell !== '' || row.length > 0) { row.push(cell); rows.push(row); }
-  if (rows.length === 0) return [];
-  const headers = rows[0];
-  return rows.slice(1).map(r => {
-    const obj = {};
-    headers.forEach((h, i) => obj[h] = (r[i] || '').trim());
-    return obj;
-  }).filter(o => Object.values(o).some(v => v !== ''));
-}
-
-// ========== State ==========
-let pmData = null, fwData = null;
-let matchResult = { confirmed: [], high: [], medium: [], low: [], attack: [] };
-let reviewDecisions = {};
-
-function setupUpload(fileId, boxId, nameId, target) {
-  const fileEl = document.getElementById(fileId);
-  const boxEl = document.getElementById(boxId);
-  const nameEl = document.getElementById(nameId);
-  fileEl.addEventListener('change', e => {
-    const f = e.target.files[0];
-    if (!f) return;
-    const reader = new FileReader();
-    reader.onload = ev => {
-      const data = parseCSV(ev.target.result);
-      if (target === 'pm') pmData = data; else fwData = data;
-      nameEl.textContent = `✓ ${f.name} (${data.length}件)`;
-      boxEl.classList.add('loaded');
-      document.getElementById('match-btn').disabled = !(pmData && fwData);
-    };
-    reader.readAsText(f, 'utf-8');
-  });
-}
-setupUpload('pm-file', 'pm-box', 'pm-name', 'pm');
-setupUpload('fw-file', 'fw-box', 'fw-name', 'fw');
-
-function runMatch() {
-  matchResult = { confirmed: [], high: [], medium: [], low: [], attack: [] };
-  reviewDecisions = {};
-  const pmNorm = pmData.map((r, idx) => ({
-    idx, raw: r, name: r.name || '', tel: r.tel || '', addr: r.address || '',
-    isExcluded: (r.name || '').startsWith('(配布不要)') || (r.name || '').startsWith('(配送不要)'),
-    nStrict: nStrict(r.name), nLoose: nLoose(r.name), nTel: nTel(r.tel), nAddr: nAddr(r.address),
-    banchi: extractBanchi(r.address),
-  }));
-  fwData.forEach((fw, fwIdx) => {
-    const fwName = fw['会社名'] || '';
-    const fwTel = fw['電話'] || '';
-    const fwAddr = fw['住所'] || '';
-    const fwNs = nStrict(fwName);
-    const fwNl = nLoose(fwName);
-    const fwNt = nTel(fwTel);
-    const fwNa = nAddr(fwAddr);
-    const fwBanchi = extractBanchi(fwAddr);
-    const candidates = [];
-    pmNorm.forEach(pm => {
-      let score = 0;
-      const reasons = [];
-      if (fwNt && pm.nTel && fwNt === pm.nTel) { score += 100; reasons.push('📞TEL一致'); }
-      if (fwNs && pm.nStrict && fwNs === pm.nStrict) { score += 80; reasons.push('🏷️名称完全一致'); }
-      else if (fwNs && pm.nStrict && fwNs.length >= 4 && pm.nStrict.length >= 4) {
-        const short = fwNs.length < pm.nStrict.length ? fwNs : pm.nStrict;
-        const long = fwNs.length < pm.nStrict.length ? pm.nStrict : fwNs;
-        if (long.includes(short) && short.length / long.length >= 0.5) {
-          score += 40; reasons.push(`🏷️名称部分一致(${short.length}/${long.length})`);
-        } else if (fwNl && pm.nLoose && fwNl.length >= 3 && pm.nLoose.length >= 3) {
-          if (fwNl === pm.nLoose) { score += 35; reasons.push('🏷️名称一致(共通語除去)'); }
-          else if (fwNl.includes(pm.nLoose) || pm.nLoose.includes(fwNl)) {
-            const s2 = fwNl.length < pm.nLoose.length ? fwNl : pm.nLoose;
-            const l2 = fwNl.length < pm.nLoose.length ? pm.nLoose : fwNl;
-            if (s2.length / l2.length >= 0.6) { score += 25; reasons.push(`🏷️部分一致(共通語除去 ${s2.length}/${l2.length})`); }
-          }
-        }
-      }
-      if (fwAddr && pm.addr && fwBanchi && pm.banchi && fwBanchi === pm.banchi) {
-        const preFw = fwNa.includes(fwBanchi) ? fwNa.split(fwBanchi)[0] : '';
-        const prePm = pm.nAddr.includes(pm.banchi) ? pm.nAddr.split(pm.banchi)[0] : '';
-        if (preFw && prePm) {
-          const mFw = preFw.match(/([^0-9]+?(?:市|町|村|区))/);
-          const mPm = prePm.match(/([^0-9]+?(?:市|町|村|区))/);
-          if (mFw && mPm && mFw[1] === mPm[1]) { score += 70; reasons.push(`📍同一番地(${mFw[1]}${fwBanchi})`); }
-          else { score += 30; reasons.push(`📍番地一致(${fwBanchi})`); }
-        }
-      }
-      if (score >= 40) candidates.push({ score, reasons, pm });
-    });
-    candidates.sort((a,b) => b.score - a.score);
-    const best = candidates[0];
-    if (!best) { matchResult.attack.push({ fw, fwIdx }); return; }
-    const m = { fw, fwIdx, pm: best.pm.raw, pmExcluded: best.pm.isExcluded, score: best.score, reasons: best.reasons };
-    if (best.score >= 150) matchResult.confirmed.push(m);
-    else if (best.score >= 100) matchResult.high.push(m);
-    else if (best.score >= 70) matchResult.medium.push(m);
-    else matchResult.low.push(m);
-  });
-  renderResults();
-}
-
-function renderResults() {
-  document.getElementById('step2').classList.remove('hidden');
-  document.getElementById('step3').classList.remove('hidden');
-  document.getElementById('cnt-confirmed').textContent = matchResult.confirmed.length;
-  document.getElementById('cnt-high').textContent = matchResult.high.length;
-  document.getElementById('cnt-medium').textContent = matchResult.medium.length;
-  document.getElementById('cnt-low').textContent = matchResult.low.length;
-  document.getElementById('cnt-attack').textContent = matchResult.attack.length;
-  document.getElementById('tab-review').textContent = matchResult.medium.length + matchResult.low.length;
-  document.getElementById('tab-auto').textContent = matchResult.confirmed.length + matchResult.high.length;
-  document.getElementById('tab-attack').textContent = matchResult.attack.length;
-  renderReview();
-  renderAuto();
-  renderAttack();
-  updateFinalCount();
-  document.getElementById('step2').scrollIntoView({ behavior: 'smooth' });
-}
-
-function renderReview() {
-  const area = document.getElementById('review-area');
-  const items = [
-    ...matchResult.medium.map((m, i) => ({m, key: `med-${i}`, conf: 'medium', label: '🟠 中確度'})),
-    ...matchResult.low.map((m, i) => ({m, key: `low-${i}`, conf: 'low', label: '🔵 低確度'})),
-  ];
-  if (items.length === 0) {
-    area.innerHTML = '<div class="empty-state"><div class="icon">✨</div>要確認の案件はありません</div>';
-    return;
-  }
-  const undecided = items.filter(x => !reviewDecisions[x.key]);
-  const total = items.length;
-  const done = total - undecided.length;
-  let html = `
-    <div class="bulk-actions">
-      <button class="bulk-btn" onclick="bulkDecide('exclude')">▼ 残り全部「同じ(除外)」</button>
-      <button class="bulk-btn" onclick="bulkDecide('keep')">▼ 残り全部「別物(残す)」</button>
-      <button class="bulk-btn" onclick="resetReview()">▼ 判定をリセット</button>
-    </div>
-  `;
-  if (undecided.length === 0) {
-    html += `<div class="completion"><div class="icon">🎉</div><h3>すべての判定が完了！</h3><p>${total}件すべてYES/NO判定されました</p></div>`;
-  } else {
-    const cur = undecided[0];
-    const m = cur.m;
-    const fw = m.fw;
-    const pm = m.pm;
-    const confClass = cur.conf === 'medium' ? 'conf-medium' : 'conf-low';
-    html += `
-      <div class="review-card">
-        <div class="review-progress">
-          <span>📍 ${done + 1} / ${total} 件目</span>
-          <span class="confidence-badge ${confClass}">${cur.label}</span>
-        </div>
-        <div class="score-box">
-          🔍 マッチ理由: <span class="reasons">${m.reasons.join(' / ')}</span> (スコア: ${m.score})
-          ${m.pmExcluded ? '<br>⚠️ ポスマネ側は「(配布不要)」マーク付き' : ''}
-        </div>
-        <div class="review-pair">
-          <div class="review-side fw">
-            <span class="badge">FIELDWORK</span>
-            <div class="name">${escapeHtml(fw['会社名'])}</div>
-            <div class="detail">📞 ${escapeHtml(fw['電話'] || '電話番号なし')}</div>
-            <div class="detail">📍 ${escapeHtml(fw['住所'] || '住所なし')}</div>
-            <div class="detail">🏷️ ${escapeHtml(fw['業種'] || '')}</div>
-          </div>
-          <div class="review-side pm">
-            <span class="badge">ポスマネ既存</span>
-            <div class="name">${escapeHtml(pm.name)}</div>
-            <div class="detail">📞 ${escapeHtml(pm.tel || '電話番号なし')}</div>
-            <div class="detail">📍 ${escapeHtml(pm.address || '住所なし')}</div>
-            <div class="detail">🏷️ ${escapeHtml(pm.genre || '')}</div>
-          </div>
-        </div>
-        <p style="font-size:13px;font-weight:600;margin-bottom:8px;">この2つは同じ施設ですか？</p>
-        <div class="action-grid">
-          <button class="btn btn-danger" onclick="decide('${cur.key}', 'exclude')">✅ 同じ<br>(除外)</button>
-          <button class="btn btn-success" onclick="decide('${cur.key}', 'keep')">❌ 別物<br>(アタック対象)</button>
-          <button class="btn btn-skip" onclick="decide('${cur.key}', 'skip')">⏭️ 後で<br>判断</button>
-        </div>
-      </div>
-    `;
-  }
-  const decided = items.filter(x => reviewDecisions[x.key] && reviewDecisions[x.key] !== 'skip');
-  if (decided.length > 0) {
-    html += `<div style="margin-top:16px;"><b style="font-size:13px;">判定済み (${decided.length}件)</b></div>`;
-    html += '<div class="exclude-list" style="max-height:300px;">';
-    decided.forEach(x => {
-      const d = reviewDecisions[x.key];
-      const label = d === 'exclude' ? '🚫 除外' : '⚪ アタック残す';
-      html += `
-        <div class="list-item">
-          <div class="info">
-            <div class="name">${escapeHtml(x.m.fw['会社名'])}</div>
-            <div class="sub">↔ ${escapeHtml(x.m.pm.name)}</div>
-            <div class="reason">${x.m.reasons.join(', ')}</div>
-          </div>
-          <div class="actions">
-            <button class="mini-btn" onclick="decide('${x.key}', '${d === 'exclude' ? 'keep' : 'exclude'}')">${label} → 反転</button>
-          </div>
-        </div>
-      `;
-    });
-    html += '</div>';
-  }
-  area.innerHTML = html;
-}
-
-function decide(key, decision) {
-  reviewDecisions[key] = decision;
-  renderReview();
-  updateFinalCount();
-}
-function bulkDecide(decision) {
-  const allItems = [
-    ...matchResult.medium.map((m, i) => ({key: `med-${i}`})),
-    ...matchResult.low.map((m, i) => ({key: `low-${i}`})),
-  ];
-  const undecCount = allItems.filter(x => !reviewDecisions[x.key]).length;
-  if (undecCount === 0) { alert('未判定の項目がありません'); return; }
-  if (!confirm(`未判定の ${undecCount}件 を「${decision === 'exclude' ? '同じ(除外)' : '別物(残す)'}」にしますか？`)) return;
-  allItems.forEach(x => { if (!reviewDecisions[x.key]) reviewDecisions[x.key] = decision; });
-  renderReview();
-  updateFinalCount();
-}
-function resetReview() {
-  if (!confirm('全ての判定をリセットしますか？')) return;
-  reviewDecisions = {};
-  renderReview();
-  renderAuto();
-  updateFinalCount();
-}
-
-function renderAuto() {
-  const area = document.getElementById('auto-area');
-  const items = [
-    ...matchResult.confirmed.map((m, i) => ({m, conf: 'confirmed', label: '🟢 確定', key: `conf-${i}`})),
-    ...matchResult.high.map((m, i) => ({m, conf: 'high', label: '🟡 高確度', key: `hi-${i}`})),
-  ];
-  if (items.length === 0) {
-    area.innerHTML = '<div class="empty-state"><div class="icon">○</div>自動除外件数はゼロです</div>';
-    return;
-  }
-  area.innerHTML = `
-    <div class="note">これらは確実に同じ施設として自動除外されます。誤検知を発見したら「アタックに戻す」を押してください。</div>
-    <div class="exclude-list">
-      ${items.map(x => {
-        const m = x.m;
-        const reverted = reviewDecisions[x.key] === 'keep';
-        return `
-        <div class="list-item">
-          <div class="info">
-            <div class="name">
-              <span class="confidence-badge conf-${x.conf}" style="font-size:9px;padding:1px 6px;">${x.label}</span>
-              ${escapeHtml(m.fw['会社名'])}
-            </div>
-            <div class="sub">↔ PM: ${escapeHtml(m.pm.name)}</div>
-            <div class="sub">📞 FW:${escapeHtml(m.fw['電話']||'-')} ↔ PM:${escapeHtml(m.pm.tel||'-')}</div>
-            <div class="sub">📍 FW:${escapeHtml(m.fw['住所']||'-')}</div>
-            <div class="sub">　　 PM:${escapeHtml(m.pm.address||'-')}</div>
-            <div class="reason">${m.reasons.join(', ')} (${m.score})</div>
-          </div>
-          <div class="actions">
-            <button class="mini-btn ${reverted ? 'active-keep' : ''}" onclick="toggleAutoExclude('${x.key}')">
-              ${reverted ? '✅ アタックに戻す中' : '🔄 アタックに戻す'}
-            </button>
-          </div>
-        </div>`;
-      }).join('')}
-    </div>
-  `;
-}
-
-function toggleAutoExclude(key) {
-  if (reviewDecisions[key] === 'keep') delete reviewDecisions[key];
-  else reviewDecisions[key] = 'keep';
-  renderAuto();
-  updateFinalCount();
-}
-
-function renderAttack() {
-  const area = document.getElementById('attack-area');
-  const finalList = getFinalAttackList();
-  if (finalList.length === 0) {
-    area.innerHTML = '<div class="empty-state"><div class="icon">○</div>該当なし</div>';
-    return;
-  }
-  const limit = 100;
-  area.innerHTML = finalList.slice(0, limit).map(fw => `
-    <div class="list-item">
-      <div class="info">
-        <div class="name">${escapeHtml(fw['会社名'])}</div>
-        <div class="sub">📞 ${escapeHtml(fw['電話'] || '電話なし')} / 📍 ${escapeHtml(fw['住所'] || '')}</div>
-      </div>
-    </div>
-  `).join('') + (finalList.length > limit ? `<div class="empty-state">他 ${finalList.length - limit} 件...</div>` : '');
-}
-
-function getFinalAttackList() {
-  let list = matchResult.attack.map(m => m.fw);
-  matchResult.confirmed.forEach((m, i) => { if (reviewDecisions[`conf-${i}`] === 'keep') list.push(m.fw); });
-  matchResult.high.forEach((m, i) => { if (reviewDecisions[`hi-${i}`] === 'keep') list.push(m.fw); });
-  matchResult.medium.forEach((m, i) => { if (reviewDecisions[`med-${i}`] === 'keep') list.push(m.fw); });
-  matchResult.low.forEach((m, i) => { if (reviewDecisions[`low-${i}`] === 'keep') list.push(m.fw); });
-  return list;
-}
-
-function getExcludedList() {
-  const excluded = [];
-  matchResult.confirmed.forEach((m, i) => {
-    if (reviewDecisions[`conf-${i}`] !== 'keep') excluded.push({...m.fw, 除外理由: '🟢確定(自動)', マッチ先: m.pm.name, マッチ詳細: m.reasons.join('/'), スコア: m.score});
-  });
-  matchResult.high.forEach((m, i) => {
-    if (reviewDecisions[`hi-${i}`] !== 'keep') excluded.push({...m.fw, 除外理由: '🟡高確度(自動)', マッチ先: m.pm.name, マッチ詳細: m.reasons.join('/'), スコア: m.score});
-  });
-  matchResult.medium.forEach((m, i) => {
-    if (reviewDecisions[`med-${i}`] === 'exclude') excluded.push({...m.fw, 除外理由: '🟠中確度(手動)', マッチ先: m.pm.name, マッチ詳細: m.reasons.join('/'), スコア: m.score});
-  });
-  matchResult.low.forEach((m, i) => {
-    if (reviewDecisions[`low-${i}`] === 'exclude') excluded.push({...m.fw, 除外理由: '🔵低確度(手動)', マッチ先: m.pm.name, マッチ詳細: m.reasons.join('/'), スコア: m.score});
-  });
-  return excluded;
-}
-
-function updateFinalCount() {
-  document.getElementById('final-count').textContent = getFinalAttackList().length;
-  document.getElementById('exclude-count').textContent = getExcludedList().length;
-  renderAttack();
-}
-
-document.querySelectorAll('.tab').forEach(btn => {
-  btn.addEventListener('click', () => {
-    document.querySelectorAll('.tab').forEach(b => b.classList.remove('active'));
-    document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden'));
-    btn.classList.add('active');
-    document.getElementById('tab-content-' + btn.dataset.tab).classList.remove('hidden');
-  });
-});
-
-function makeCSV(rows, headers) {
-  const head = headers.join(',');
-  const body = rows.map(r => headers.map(h => {
-    const v = (r[h] || '').toString().replace(/"/g, '""');
-    return `"${v}"`;
-  }).join(',')).join('\n');
-  return '\uFEFF' + head + '\n' + body;
-}
-
-document.getElementById('download-btn').addEventListener('click', () => {
-  const list = getFinalAttackList();
-  if (list.length === 0) { alert('アタック対象がありません'); return; }
-  const headers = Object.keys(fwData[0]);
-  const csv = makeCSV(list, headers);
-  download(csv, `posmane_attack_${dateStr()}.csv`);
-});
-
-document.getElementById('download-excluded-btn').addEventListener('click', () => {
-  const excluded = getExcludedList();
-  if (excluded.length === 0) { alert('除外データがありません'); return; }
-  const headers = [...Object.keys(fwData[0]), '除外理由', 'マッチ先', 'マッチ詳細', 'スコア'];
-  const csv = makeCSV(excluded, headers);
-  download(csv, `posmane_excluded_${dateStr()}.csv`);
-});
-
-function download(text, filename) {
-  const blob = new Blob([text], { type: 'text/csv;charset=utf-8' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url; a.download = filename; a.click();
-  URL.revokeObjectURL(url);
-}
-function dateStr() {
-  const d = new Date();
-  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
-}
-function escapeHtml(s) {
-  return (s || '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]);
-}
-
-document.getElementById('match-btn').addEventListener('click', runMatch);
-
-// ========== Supabase 連携 ==========
 const SUPABASE_URL = 'https://osipzwbsfbgbegjowydm.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_yO0lVlOP_r-qhnwjxqq0UQ_qjxSrlnC';
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-// FW企業1件をDB用に整形
-function fwToRow(fw) {
-  const tel = (fw['電話'] || '').normalize('NFKC').replace(/\D/g, '');
-  const name = (fw['会社名'] || '').trim();
-  // ID生成: 電話があれば電話ベース、なければ名前+住所のハッシュ
-  let id;
-  if (tel) {
-    id = 'pa_t' + tel;
-  } else {
-    const seed = (name + (fw['住所'] || '')).replace(/\s+/g, '');
-    let hash = 0;
-    for (let i = 0; i < seed.length; i++) hash = ((hash << 5) - hash + seed.charCodeAt(i)) | 0;
-    id = 'pa_n' + Math.abs(hash);
-  }
-  return {
-    id,
-    company_name: name,
-    phone: fw['電話'] || null,
-    address: fw['住所'] || null,
-    genre: fw['業種'] || null,
-    industry: fw['業種'] || null,
-    website: fw['公式HPURL'] || null,
-    memo: fw['備考'] || null,
-    phase: 'pending',
-    next_date: null,
-    logs: [],
-    source_data: fw,
-  };
+let companies = [];
+let scripts = [];
+let currentScriptIndex = 0; // ★ 現在使ってるスクリプトのインデックス（0=A, 1=B, 2=C）
+let currentTab = 'script'; // ★ モーダル内タブ：'script' | 'info'
+let currentFilter = 'all';
+let currentArea = 'all';
+let currentPriority = 'all';
+let currentSort = 'default';
+let searchText = '';
+let includeExcluded = false;
+let currentCompany = null;
+let currentStepKey = 'opening';
+let scriptHistory = []; // 戻る用
+let scriptEditMode = false; // 編集モード
+let reportPeriod = 'today'; // today/yesterday/week/lastweek/month/lastmonth/all
+
+// 結果定義
+const RESULT_DEFS = {
+  connected: { emoji: '😊', label: '担当者につながった', phase: 'contacted', needNext: false },
+  absent:    { emoji: '🏠', label: '不在・留守電',        phase: 'pending_callback', needNext: true, nextDays: 1 },
+  callback:  { emoji: '📅', label: '後日かけ直し',        phase: 'pending_callback', needNext: true, nextDays: 3 },
+  declined:  { emoji: '❌', label: 'お断り',              phase: 'declined', needNext: false },
+  won:       { emoji: '🎯', label: '商談獲得！',          phase: 'won', needNext: true, nextDays: 7 },
+  mailed:    { emoji: '✉️', label: 'メール送付した',      phase: 'mailed', needNext: true, nextDays: 3 },
+};
+
+// FINISH_*マッピング
+const FINISH_TO_RESULT = {
+  FINISH_WON: 'won',
+  FINISH_MAIL: 'mailed',
+  FINISH_CALLBACK: 'callback',
+  FINISH_DECLINED: 'declined',
+};
+
+// 初期化
+async function init() {
+  await Promise.all([loadCompanies(), loadScripts()]);
 }
 
-async function uploadToSupabase() {
-  const list = getFinalAttackList();
-  if (list.length === 0) { alert('アタック対象がありません'); return; }
-  if (!confirm(`${list.length}件をSupabaseに登録します。既存IDがあれば上書きせずスキップします。よろしいですか？`)) return;
-  
-  const btn = document.getElementById('upload-supabase-btn');
-  const statusEl = document.getElementById('upload-status');
-  btn.disabled = true;
-  btn.textContent = '⏳ 登録中...';
-  
-  // 重複ID対策
-  const rows = [];
-  const seenIds = new Set();
-  for (const fw of list) {
-    const row = fwToRow(fw);
-    if (seenIds.has(row.id)) continue; // 同一IDはスキップ
-    seenIds.add(row.id);
-    rows.push(row);
-  }
-  
-  statusEl.innerHTML = `
-    <div class="upload-progress">
-      <div class="msg">📤 ${rows.length}件を登録中...</div>
-      <div class="bar-wrap"><div class="bar" id="upload-bar" style="width:0%"></div></div>
-      <div class="msg" id="upload-msg">準備中...</div>
-    </div>
-  `;
-  
-  // バッチサイズ50件で分割upsert
-  const BATCH = 50;
-  let success = 0, errors = 0;
-  const errorMsgs = [];
-  
-  for (let i = 0; i < rows.length; i += BATCH) {
-    const chunk = rows.slice(i, i + BATCH);
-    try {
-      // onConflict: 'id' で既存ID は更新ではなく無視するため ignoreDuplicates: true
-      const { data, error } = await sb
-        .from('posmane_attacks')
-        .upsert(chunk, { onConflict: 'id', ignoreDuplicates: true });
-      if (error) {
-        errors += chunk.length;
-        errorMsgs.push(error.message);
-        console.error(error);
-      } else {
-        success += chunk.length;
-      }
-    } catch (e) {
-      errors += chunk.length;
-      errorMsgs.push(e.message);
-      console.error(e);
-    }
-    const pct = Math.round(((i + chunk.length) / rows.length) * 100);
-    document.getElementById('upload-bar').style.width = pct + '%';
-    document.getElementById('upload-msg').textContent = `${i + chunk.length} / ${rows.length} 件処理`;
-  }
-  
-  if (errors === 0) {
-    statusEl.innerHTML = `
-      <div class="upload-progress success">
-        <div class="msg">✅ ${success}件 全て登録完了！</div>
-        <div class="msg" style="margin-top:6px;color:var(--text-sub);">※既に登録済みの企業はスキップされました</div>
-        <a href="call.html" class="attack-link">📞 アタック画面へ進む</a>
-      </div>
-    `;
-  } else {
-    statusEl.innerHTML = `
-      <div class="upload-progress error">
-        <div class="msg">⚠️ 成功: ${success}件 / エラー: ${errors}件</div>
-        <div class="msg" style="margin-top:6px;font-size:11px;color:var(--text-sub);">${errorMsgs.slice(0,3).join(' / ')}</div>
-      </div>
-    `;
-  }
-  
-  btn.disabled = false;
-  btn.textContent = '🚀 Supabase に登録してアタック開始';
-}
-
-document.getElementById('upload-supabase-btn').addEventListener('click', uploadToSupabase);
-
-// ══════════════════════════════════════════
-// 🎧 センターコール用ロジック
-// ══════════════════════════════════════════
-
-// サービス切替
-function switchService(service) {
-  const tabPm = document.getElementById('tab-posmane');
-  const tabCc = document.getElementById('tab-centercall');
-  const blkPm = document.getElementById('service-posmane');
-  const blkCc = document.getElementById('service-centercall');
-  if (service === 'posmane') {
-    tabPm.classList.add('active'); tabCc.classList.remove('active');
-    blkPm.style.display = ''; blkCc.style.display = 'none';
-  } else {
-    tabCc.classList.add('active'); tabPm.classList.remove('active');
-    blkCc.style.display = ''; blkPm.style.display = 'none';
-  }
-}
-
-// CSV読み込み
-let ccRows = [];
-document.getElementById('cc-file').addEventListener('change', async (e) => {
-  const file = e.target.files[0];
-  if (!file) return;
-  const box = document.getElementById('cc-box');
-  const nameEl = document.getElementById('cc-name');
-  box.classList.add('loaded');
-  nameEl.textContent = '✅ ' + file.name;
-
-  const buf = await file.arrayBuffer();
-  let text;
+async function loadCompanies() {
   try {
-    text = new TextDecoder('utf-8', { fatal: true }).decode(buf);
-  } catch {
-    text = new TextDecoder('shift-jis').decode(buf);
+    document.getElementById('list-area').innerHTML = '<div class="loading"><div class="icon">⏳</div>読み込み中...</div>';
+    const { data, error } = await sb
+      .from('posmane_attacks')
+      .select('*')
+      .order('updated_at', { ascending: false });
+    if (error) throw error;
+    companies = data || [];
+    buildAreaOptions();
+    renderStats();
+    renderList();
+  } catch (e) {
+    console.error(e);
+    document.getElementById('list-area').innerHTML = `<div class="empty"><div class="icon">⚠️</div>読み込みエラー: ${e.message}</div>`;
   }
-  // 行頭にBOMが混入する事があるので削除
-  text = text.replace(/^\uFEFF/, '');
-
-  const parsed = parseSimpleCSV(text);
-  ccRows = parsed;
-
-  // プレビュー
-  const prev = document.getElementById('cc-preview');
-  const cnt = document.getElementById('cc-preview-content');
-  prev.style.display = 'block';
-  cnt.innerHTML = `
-    <div>📊 読み込み件数: <strong style="color:#0F766E;font-size:16px">${parsed.length}件</strong></div>
-    <div style="margin-top:6px;color:#6B7280;font-size:12px">先頭3件のサンプル：</div>
-    <div style="background:#F9FAFB;padding:8px;border-radius:6px;margin-top:4px;font-size:11px;line-height:1.6">
-      ${parsed.slice(0,3).map(r => `<div>・${escapeHtml(r.name || '')} - ${escapeHtml(r.phone || 'TEL未登録')} - ${escapeHtml((r.address||'').slice(0,30))}...</div>`).join('')}
-    </div>
-  `;
-  document.getElementById('cc-step3').style.display = '';
-});
-
-// シンプルCSVパース
-function parseSimpleCSV(text) {
-  const lines = text.split(/\r?\n/).filter(l => l.trim());
-  if (!lines.length) return [];
-  const headers = parseCSVLine(lines[0]).map(h => h.trim());
-  const rows = [];
-  for (let i = 1; i < lines.length; i++) {
-    const cells = parseCSVLine(lines[i]);
-    if (!cells.length || !cells[0]) continue;
-    const row = {};
-    headers.forEach((h, idx) => {
-      const v = (cells[idx] || '').trim();
-      // 一般的な列名マッピング
-      if (/施設名|会社名|name|企業名/i.test(h)) row.name = v;
-      else if (/電話|tel|phone/i.test(h)) row.phone = v;
-      else if (/住所|address/i.test(h)) row.address = v;
-      else if (/サイト|website|url|ホームページ/i.test(h)) row.website = v;
-      else if (/業種|ジャンル|industry/i.test(h)) row.industry = v;
-      else if (/エリア|area/i.test(h)) row.area = v;
-      else if (/都道府県|pref/i.test(h)) row.pref = v;
-      else if (/市町村|city/i.test(h)) row.city = v;
-      else if (/地区|district/i.test(h)) row.district = v;
-      else if (/instagram/i.test(h)) row.instagram_url = v;
-      else if (/facebook/i.test(h)) row.facebook_url = v;
-      else if (/^x[\-_ ]?url|twitter/i.test(h)) row.x_url = v;
-      else if (/tiktok/i.test(h)) row.tiktok_url = v;
-      else if (/indeed/i.test(h)) row.indeed_url = v;
-      else if (/mynavi|マイナビ/i.test(h)) row.mynavi_url = v;
-      else if (/email|メール/i.test(h)) row.email = v;
-      else if (/代表|ceo/i.test(h)) row.ceo_name = v;
-      else if (/年商|売上|revenue/i.test(h)) row.revenue = v;
-      else if (/従業員|employees/i.test(h)) row.employees = v;
-      row[h] = v;
-    });
-    if (row.name) rows.push(row);
-  }
-  return rows;
 }
 
-function parseCSVLine(line) {
+const __CC_DEFAULTS__ = [{"script_id": "pm_v_standard", "name": "A：シンプルお願い型", "variant": "A", "sort_order": 1, "is_active": true, "script_json": {"start": "opening", "steps": {"opening": {"emoji": "📦", "title": "ご挨拶（シンプルお願い型）", "speech": "突然のお電話、失礼いたします。\n\nわたくし、株式会社TENOHIRAの**石川**と申します。\n\n沖縄を訪れる観光客向けのパンフレットを、御施設に**無料で設置**させていただきたいと思い、ご連絡いたしました。\n\nご担当の方、いらっしゃいますでしょうか？", "branches": [{"label": "✅ 担当者につながった", "next": "pitch", "color": "green"}, {"label": "💬 内容を聞きたいと言われた", "next": "pitch", "color": "primary"}, {"label": "🚫 断られた", "next": "FINISH_REFUSE", "color": "red"}, {"label": "📭 不在・後日かけ直し", "next": "FINISH_AGAIN", "color": "yellow"}]}, "pitch": {"emoji": "📋", "title": "本題（設置内容の説明）", "speech": "ありがとうございます。\n\n沖縄県内のホテルや観光施設様に、三つ折りパンフレットを**無償で設置**させていただいております。\n\n設置場所は**三つ折り1枚分（幅10cm）**で、ロビーやフロント付近が理想です。\n\nパンフレットは**月1回補充**にお伺いし、管理は全てこちらが行います。御施設の方のお手間は一切かかりません。\n\n一度、サンプルをお持ちしてご確認いただけませんか？", "branches": [{"label": "🎯 設置OKになった！", "next": "close", "color": "green"}, {"label": "📋 サンプルを見てから判断", "next": "close", "color": "primary"}, {"label": "🚫 断られた", "next": "FINISH_REFUSE", "color": "red"}]}, "close": {"emoji": "🤝", "title": "クロージング", "speech": "ありがとうございます！\n\nでは早速、**サンプルをお持ち**してもよろしいでしょうか？\n\nご都合の良い日時、教えていただけますか？", "branches": [{"label": "🎉 訪問日程が決まった！", "next": "FINISH_WIN", "color": "green"}, {"label": "⏰ 後日かけ直し", "next": "FINISH_AGAIN", "color": "yellow"}, {"label": "🚫 やっぱり断られた", "next": "FINISH_REFUSE", "color": "red"}]}}}}, {"script_id": "pm_v_benefit", "name": "B：施設メリット型", "variant": "B", "sort_order": 2, "is_active": true, "script_json": {"start": "opening", "steps": {"opening": {"emoji": "✨", "title": "ご挨拶（施設メリット型）", "speech": "お世話になります、突然のお電話失礼いたします。\n\n沖縄でパンフレット配布事業をやっております、TENOHIRAの**石川**と申します。\n\n御施設のお客様に、もっと沖縄を楽しんでいただける情報を届けたい——そんな思いでご連絡しました。\n\nご担当の方、いらっしゃいますか？", "branches": [{"label": "✅ 担当者につながった", "next": "pitch", "color": "green"}, {"label": "💬 内容を聞かれた", "next": "pitch", "color": "primary"}, {"label": "🚫 断られた", "next": "FINISH_REFUSE", "color": "red"}, {"label": "📭 不在・後日", "next": "FINISH_AGAIN", "color": "yellow"}]}, "pitch": {"emoji": "🏨", "title": "本題（施設側のメリット）", "speech": "ありがとうございます。\n\n御施設のお客様——特に観光客の方に、沖縄の食・体験・お土産情報をまとめたパンフレットを、**無償でお届けしたい**んです。\n\nフロントやロビーに置いていただくだけ。スペースは三つ折り1枚分。\n\n補充も管理も全てこちらが行いますので、御施設のご負担はゼロです。\n\nいかがでしょうか？", "branches": [{"label": "🎯 ぜひお願いしたい！", "next": "close", "color": "green"}, {"label": "📋 サンプルを見てみたい", "next": "close", "color": "primary"}, {"label": "🚫 置く場所がない・不要", "next": "FINISH_REFUSE", "color": "red"}]}, "close": {"emoji": "🤝", "title": "クロージング", "speech": "ありがとうございます！\n\nでは、**一度お伺い**してサンプルをお見せしてもよろしいでしょうか？\n\nご都合の良い日時はいつ頃がよろしいですか？", "branches": [{"label": "🎉 訪問日程決定！", "next": "FINISH_WIN", "color": "green"}, {"label": "⏰ 後日かけ直し", "next": "FINISH_AGAIN", "color": "yellow"}, {"label": "🚫 やはり不要", "next": "FINISH_REFUSE", "color": "red"}]}}}}, {"script_id": "pm_v_quick", "name": "C：クイック確認型", "variant": "C", "sort_order": 3, "is_active": true, "script_json": {"start": "opening", "steps": {"opening": {"emoji": "⚡", "title": "ご挨拶（クイック確認型）", "speech": "お忙しいところすみません、TENOHIRAの**石川**と申します。\n\nひとつだけ確認させてください——\n\n今、フロントやロビーに、**観光パンフレットのスペース**はありますか？", "branches": [{"label": "✅ ある", "next": "pitch", "color": "green"}, {"label": "💬 わからない・確認する", "next": "pitch", "color": "primary"}, {"label": "🚫 ない・置けない", "next": "FINISH_REFUSE", "color": "red"}, {"label": "📭 不在", "next": "FINISH_AGAIN", "color": "yellow"}]}, "pitch": {"emoji": "📦", "title": "本題（シンプル提案）", "speech": "ありがとうございます！\n\n沖縄観光情報をまとめた三つ折りパンフレットを、**無料で設置・補充**させていただいているんです。\n\nお客様に喜ばれて、施設のご負担はゼロ。\n\nサンプルを一度お持ちしてもいいですか？5分で終わります。", "branches": [{"label": "🎯 持ってきていい！", "next": "close", "color": "green"}, {"label": "📋 もう少し聞かせて", "next": "close", "color": "primary"}, {"label": "🚫 不要", "next": "FINISH_REFUSE", "color": "red"}]}, "close": {"emoji": "📅", "title": "訪問日程確認", "speech": "ありがとうございます！\n\nご都合の良い日時を教えていただけますか？\n\nサンプルをお持ちして、置けそうな場所を一緒に確認させてください。", "branches": [{"label": "🎉 日程決定！", "next": "FINISH_WIN", "color": "green"}, {"label": "⏰ 後日かけ直し", "next": "FINISH_AGAIN", "color": "yellow"}, {"label": "🚫 やはり不要", "next": "FINISH_REFUSE", "color": "red"}]}}}}];
+
+async function seedDefaultScripts() {
+  try {
+    const { error } = await sb.from('posmane_scripts').insert(__CC_DEFAULTS__);
+    if (error) console.warn('seed error:', error);
+    else console.log('🎉 デフォルトトークスクリプト3本を投入しました');
+  } catch (e) { console.warn('seed failed:', e); }
+}
+
+async function loadScripts() {
+  try {
+    const { data, error } = await sb
+      .from('posmane_scripts')
+      .select('*')
+      .eq('is_active', true)
+      .order('sort_order');
+    if (error) throw error;
+    scripts = data || [];
+    if (!scripts.length) {
+      await seedDefaultScripts();
+      const { data: d2 } = await sb
+        .from('posmane_scripts')
+        .select('*')
+        .eq('is_active', true)
+        .order('sort_order');
+      scripts = d2 || [];
+    }
+  } catch (e) {
+    console.error('scripts load error:', e);
+    scripts = [];
+  }
+}
+
+// 住所からエリア抽出
+function extractArea(addr) {
+  if (!addr) return '(住所なし)';
+  // 「沖縄県」「日本、〒XXX-XXXX」「〒XXX-XXXX」を除去
+  let s = addr.normalize('NFKC');
+  s = s.replace(/^日本[、,]?\s*/, '');
+  s = s.replace(/〒\d{3}-?\d{4}\s*/g, '');
+  s = s.replace(/^沖縄県\s*/, '');
+  s = s.replace(/^Okinawa[,，]?\s*/i, '');
+  // 市区町村抽出
+  const m = s.match(/^([^0-9０-９]+?(?:市|町|村|区|郡))/);
+  if (m) {
+    let area = m[1];
+    // 「中頭郡北谷町」みたいなのは郡まで含めて整理
+    return area.length > 8 ? area.substring(0, 8) + '…' : area;
+  }
+  return '(その他)';
+}
+
+function buildAreaOptions() {
+  const areas = {};
+  companies.forEach(c => {
+    const a = extractArea(c.address);
+    areas[a] = (areas[a] || 0) + 1;
+  });
+  const sel = document.getElementById('area-select');
+  const sortedAreas = Object.entries(areas).sort((a,b) => b[1] - a[1]);
+  sel.innerHTML = `<option value="all">エリア: すべて (${companies.length})</option>` +
+    sortedAreas.map(([a, n]) => `<option value="${escapeHtml(a)}">${escapeHtml(a)} (${n})</option>`).join('');
+  sel.value = currentArea;
+}
+
+// 統計
+function renderStats() {
+  const today = todayStr();
+  const counters = {
+    all: companies.length,
+    today: companies.filter(c => c.next_date && c.next_date <= today && c.phase !== 'declined' && c.phase !== 'won').length,
+    pending: companies.filter(c => c.phase === 'pending').length,
+    pending_callback: companies.filter(c => c.phase === 'pending_callback').length,
+    contacted: companies.filter(c => c.phase === 'contacted').length,
+    won: companies.filter(c => c.phase === 'won').length,
+    declined: companies.filter(c => c.phase === 'declined').length,
+  };
+  document.getElementById('cnt-all').textContent = counters.all;
+  document.getElementById('cnt-today').textContent = counters.today;
+  document.getElementById('cnt-pending').textContent = counters.pending;
+  document.getElementById('cnt-callback').textContent = counters.pending_callback;
+  document.getElementById('cnt-contacted').textContent = counters.contacted;
+  document.getElementById('cnt-won').textContent = counters.won;
+  document.getElementById('cnt-declined').textContent = counters.declined;
+}
+
+// 一覧描画
+function renderList() {
+  const area = document.getElementById('list-area');
+  const today = todayStr();
+  
+  let list = [...companies];
+  
+  // 対象外フィルタ (デフォルト: 対象外を除外)
+  if (!includeExcluded) {
+    list = list.filter(c => c.phase !== 'excluded');
+  }
+  
+  // ステータスフィルタ
+  if (currentFilter === 'today') {
+    list = list.filter(c => c.next_date && c.next_date <= today && c.phase !== 'declined' && c.phase !== 'won' && c.phase !== 'excluded');
+  } else if (currentFilter !== 'all') {
+    list = list.filter(c => c.phase === currentFilter);
+  }
+  
+  // エリアフィルタ
+  if (currentArea !== 'all') {
+    list = list.filter(c => extractArea(c.address) === currentArea);
+  }
+  
+  // 優先度フィルタ
+  if (currentPriority !== 'all') {
+    if (currentPriority === '3') list = list.filter(c => (c.priority || 0) === 3);
+    else if (currentPriority === '2plus') list = list.filter(c => (c.priority || 0) >= 2);
+    else if (currentPriority === '1plus') list = list.filter(c => (c.priority || 0) >= 1);
+    else if (currentPriority === '0') list = list.filter(c => (c.priority || 0) === 0);
+  }
+  
+  // 検索
+  if (searchText) {
+    const q = searchText.toLowerCase();
+    list = list.filter(c => 
+      (c.company_name || '').toLowerCase().includes(q) ||
+      (c.address || '').toLowerCase().includes(q) ||
+      (c.phone || '').includes(q)
+    );
+  }
+  
+  // ソート
+  if (currentSort === 'default') {
+    const phaseOrder = { pending_callback: 0, contacted: 1, mailed: 2, pending: 3, won: 4, declined: 5 };
+    list.sort((a, b) => {
+      // 優先度高い順を最優先
+      const pria = a.priority || 0;
+      const prib = b.priority || 0;
+      if (pria !== prib) return prib - pria;
+      // 今日タスク
+      const aT = (a.next_date && a.next_date <= today && a.phase !== 'declined' && a.phase !== 'won') ? 0 : 1;
+      const bT = (b.next_date && b.next_date <= today && b.phase !== 'declined' && b.phase !== 'won') ? 0 : 1;
+      if (aT !== bT) return aT - bT;
+      const pa = phaseOrder[a.phase] ?? 99;
+      const pb = phaseOrder[b.phase] ?? 99;
+      if (pa !== pb) return pa - pb;
+      const ta = a.phone ? 0 : 1;
+      const tb = b.phone ? 0 : 1;
+      if (ta !== tb) return ta - tb;
+      return (a.company_name || '').localeCompare(b.company_name || '');
+    });
+  } else if (currentSort === 'priority') {
+    list.sort((a, b) => {
+      const pria = a.priority || 0;
+      const prib = b.priority || 0;
+      if (pria !== prib) return prib - pria;
+      return (a.company_name || '').localeCompare(b.company_name || '');
+    });
+  } else if (currentSort === 'area') {
+    list.sort((a, b) => {
+      const aa = extractArea(a.address);
+      const bb = extractArea(b.address);
+      if (aa !== bb) return aa.localeCompare(bb);
+      return (a.company_name || '').localeCompare(b.company_name || '');
+    });
+  } else if (currentSort === 'next_date') {
+    list.sort((a, b) => (a.next_date || '9999-99-99').localeCompare(b.next_date || '9999-99-99'));
+  } else if (currentSort === 'updated') {
+    list.sort((a, b) => (b.updated_at || '').localeCompare(a.updated_at || ''));
+  } else if (currentSort === 'name') {
+    list.sort((a, b) => (a.company_name || '').localeCompare(b.company_name || ''));
+  } else if (currentSort === 'phone') {
+    list.sort((a, b) => {
+      const ta = a.phone ? 0 : 1;
+      const tb = b.phone ? 0 : 1;
+      if (ta !== tb) return ta - tb;
+      return (a.company_name || '').localeCompare(b.company_name || '');
+    });
+  }
+  
+  if (list.length === 0) {
+    area.innerHTML = `<div class="empty"><div class="icon">○</div>該当する企業がありません</div>`;
+    return;
+  }
+  
+  area.innerHTML = `
+    <div style="font-size:12px;color:var(--text-sub);margin-bottom:8px;">📋 ${list.length}件表示中 / 全${companies.length}件</div>
+    <div class="company-list">
+      ${list.map(c => renderCard(c, today)).join('')}
+    </div>
+  `;
+}
+
+function renderCard(c, today) {
+  const isToday = c.next_date && c.next_date <= today && c.phase !== 'declined' && c.phase !== 'won';
+  const phaseLab = phaseLabel_(c.phase);
+  const areaTag = extractArea(c.address);
+  let nextDateHtml = '';
+  if (c.next_date) {
+    const cls = c.next_date < today ? 'past' : (c.next_date === today ? 'today' : '');
+    nextDateHtml = `<span class="next-date-tag ${cls}">📅 ${formatDate(c.next_date)}</span>`;
+  }
+  const visitCount = (c.logs || []).length;
+  const priority = c.priority || 0;
+  const priorityLabel = priority === 0 ? '☆' : '⭐'.repeat(priority);
+  
+  // ソースデータからSNS等抽出
+  const src = c.source_data || {};
+  const hp = c.website || src['公式HPURL'] || '';
+  const insta = c.instagram_url || src['InstagramURL'] || '';
+  const fb = c.facebook_url || src['FacebookURL'] || '';
+  const x = c.x_url || '';
+  const tiktok = c.tiktok_url || src['TikTokURL'] || '';
+  const indeedUrl = c.indeed_url || '';
+  const mynaviUrl = c.mynavi_url || '';
+  const links = [];
+  if (c.phone) links.push(`<a class="link-btn tel" href="tel:${escapeHtml(c.phone)}" onclick="event.stopPropagation()">📞 発信</a>`);
+  if (hp) links.push(`<a class="link-btn hp" href="${escapeHtml(hp)}" target="_blank" onclick="event.stopPropagation()">🌐 HP</a>`);
+  if (insta) links.push(`<a class="link-btn insta" href="${escapeHtml(insta)}" target="_blank" onclick="event.stopPropagation()">📷 IG</a>`);
+  if (fb) links.push(`<a class="link-btn fb" href="${escapeHtml(fb)}" target="_blank" onclick="event.stopPropagation()">📘 FB</a>`);
+  if (x) links.push(`<a class="link-btn" href="${escapeHtml(x)}" target="_blank" onclick="event.stopPropagation()" style="background:#1F2937;color:#fff">🐦 X</a>`);
+  if (tiktok) links.push(`<a class="link-btn tiktok" href="${escapeHtml(tiktok)}" target="_blank" onclick="event.stopPropagation()">🎵 TT</a>`);
+  if (indeedUrl) links.push(`<a class="link-btn" href="${escapeHtml(indeedUrl)}" target="_blank" onclick="event.stopPropagation()" style="background:#2164F3;color:#fff">💼 IN</a>`);
+  if (mynaviUrl) links.push(`<a class="link-btn" href="${escapeHtml(mynaviUrl)}" target="_blank" onclick="event.stopPropagation()" style="background:#E60012;color:#fff">💼 MY</a>`);
+  
+  const priorityClass = priority > 0 ? `p${priority} has-priority` : '';
+  const isExcluded = c.phase === 'excluded';
+  
+  return `
+    <div class="card-wrap">
+      <div class="company-card ${c.phase} ${isToday ? 'today' : ''} ${priorityClass} ${isExcluded ? 'excluded' : ''}">
+        <div class="company-info" onclick="openModal('${c.id}')" style="cursor:pointer;">
+          <div class="company-name">
+            <span class="phase-badge phase-${c.phase}">${phaseLab}</span>
+            ${escapeHtml(c.company_name)}
+          </div>
+          <div class="company-meta">
+            <span>🗺️ ${escapeHtml(areaTag)}</span>
+            <span>📞 ${escapeHtml(c.phone || '電話なし')}</span>
+            ${visitCount > 0 ? `<span>📝 ${visitCount}回</span>` : ''}
+            ${nextDateHtml}
+          </div>
+          <div class="link-row">
+            ${links.join('')}
+          </div>
+        </div>
+        <div class="card-actions">
+          <button class="priority-btn p${priority}" onclick="cyclePriority('${c.id}', event)" title="クリックで⭐を増減">
+            ${priorityLabel}
+          </button>
+          <button class="attack-btn" onclick="openModal('${c.id}')">${isExcluded ? '👁 詳細' : '📞 開始'}</button>
+        </div>
+      </div>
+      <div class="card-top-actions">
+        <button class="exclude-btn ${isExcluded ? 'active' : ''}" onclick="toggleExclude('${c.id}', event)" 
+          title="${isExcluded ? '対象に戻す' : '対象外にする'}">
+          ${isExcluded ? '↩' : '⛔'}
+        </button>
+      </div>
+    </div>`;
+}
+
+// 対象外にする/戻す
+async function toggleExclude(id, ev) {
+  if (ev) ev.stopPropagation();
+  const c = companies.find(x => x.id === id);
+  if (!c) return;
+  const isExcluded = c.phase === 'excluded';
+  const newPhase = isExcluded ? (c.logs && c.logs.length > 0 ? 'contacted' : 'pending') : 'excluded';
+  
+  if (!isExcluded) {
+    if (!confirm(`「${c.company_name}」を対象外にしますか？\n(再表示するにはオプションで「対象外を含める」をON)`)) return;
+  }
+  
+  // 対象外にする場合、以前のphaseを記録
+  const updates = { phase: newPhase };
+  let newSourceData = { ...(c.source_data || {}) };
+  if (!isExcluded) {
+    newSourceData._previous_phase = c.phase;
+    updates.source_data = newSourceData;
+  } else if (newSourceData._previous_phase) {
+    // 戻すとき、以前のphaseに復元
+    updates.phase = newSourceData._previous_phase;
+    delete newSourceData._previous_phase;
+    updates.source_data = newSourceData;
+  }
+  
+  try {
+    const { error } = await sb
+      .from('posmane_attacks')
+      .update(updates)
+      .eq('id', id);
+    if (error) throw error;
+    c.phase = updates.phase;
+    c.source_data = updates.source_data || c.source_data;
+    renderStats();
+    renderList();
+    showToast(isExcluded ? '✅ 対象に戻しました' : '⛔ 対象外にしました', 'success');
+  } catch (e) {
+    console.error(e);
+    showToast(`⚠️ ${e.message}`, 'error');
+  }
+}
+
+// 優先度サイクル: 0 → 1 → 2 → 3 → 0
+async function cyclePriority(id, ev) {
+  if (ev) ev.stopPropagation();
+  const c = companies.find(x => x.id === id);
+  if (!c) return;
+  const cur = c.priority || 0;
+  const next = (cur + 1) % 4;
+  try {
+    const { error } = await sb
+      .from('posmane_attacks')
+      .update({ priority: next })
+      .eq('id', id);
+    if (error) throw error;
+    c.priority = next;
+    renderList();
+    const label = next === 0 ? '優先度をクリア' : `⭐${next} に設定`;
+    showToast(`${label}しました`, 'success');
+  } catch (e) {
+    console.error(e);
+    showToast(`⚠️ ${e.message}`, 'error');
+  }
+}
+
+function phaseLabel_(p) {
+  return ({
+    pending: '未着手',
+    contacted: '担当者◯',
+    pending_callback: '後日',
+    declined: 'お断り',
+    won: '🎯獲得',
+    mailed: '✉メール',
+  })[p] || p;
+}
+
+// モーダル
+function openModal(id) {
+  const c = companies.find(x => x.id === id);
+  if (!c) return;
+  currentCompany = c;
+  currentScriptIndex = 0; // 開く時は常にA：王道ハートフルに戻す
+  currentTab = 'script'; // タブもスクリプトに戻す
+  currentStepKey = (scripts[currentScriptIndex]?.script_json?.start) || 'opening';
+  scriptHistory = [];
+  scriptEditMode = false;
+  renderModal();
+  document.getElementById('attack-modal').classList.add('show');
+}
+
+function closeModal(force) {
+  if (!force) {
+    // メモ欄に何か入力されてたら確認
+    const memoEl = document.getElementById('memo-input');
+    if (memoEl) {
+      const currentMemo = memoEl.value.trim();
+      const originalMemo = (currentCompany && currentCompany.memo) || '';
+      if (currentMemo && currentMemo !== originalMemo) {
+        if (!confirm('⚠️ メモを記録せずに閉じますか？\n\n入力したメモは保存されません。')) return;
+      }
+    }
+  }
+  document.getElementById('attack-modal').classList.remove('show');
+  currentCompany = null;
+}
+
+function renderModal() {
+  const c = currentCompany;
+  const phone = c.phone || '';
+  const script = scripts[currentScriptIndex];
+  const logs = (c.logs || []).slice().reverse();
+  
+  const src = c.source_data || {};
+  const hp = c.website || src['公式HPURL'] || '';
+  // ★ ポスマネ配布承認仕様：DB カラム優先、source_data はフォールバック
+  const insta = c.instagram_url || src['InstagramURL'] || '';
+  const fb = c.facebook_url || src['FacebookURL'] || '';
+  const x = c.x_url || '';
+  const tiktok = c.tiktok_url || src['TikTokURL'] || '';
+  const indeedUrl = c.indeed_url || '';
+  const mynaviUrl = c.mynavi_url || '';
+  const agreUrl = c.agre_url || '';
+  const jobAntennaUrl = c.job_antenna_url || '';
+  const ownRecruitUrl = c.own_recruit_url || '';
+  const email = c.email || '';
+  const modalLinks = [];
+  if (hp) modalLinks.push(`<a class="link-btn hp" href="${escapeHtml(hp)}" target="_blank">🌐 公式HP</a>`);
+  if (insta) modalLinks.push(`<a class="link-btn insta" href="${escapeHtml(insta)}" target="_blank">📷 Instagram</a>`);
+  if (fb) modalLinks.push(`<a class="link-btn fb" href="${escapeHtml(fb)}" target="_blank">📘 Facebook</a>`);
+  if (x) modalLinks.push(`<a class="link-btn" href="${escapeHtml(x)}" target="_blank" style="background:#1F2937;color:#fff">🐦 X</a>`);
+  if (tiktok) modalLinks.push(`<a class="link-btn tiktok" href="${escapeHtml(tiktok)}" target="_blank">🎵 TikTok</a>`);
+  if (indeedUrl) modalLinks.push(`<a class="link-btn" href="${escapeHtml(indeedUrl)}" target="_blank" style="background:#2164F3;color:#fff">💼 Indeed</a>`);
+  if (mynaviUrl) modalLinks.push(`<a class="link-btn" href="${escapeHtml(mynaviUrl)}" target="_blank" style="background:#E60012;color:#fff">💼 マイナビ</a>`);
+  if (agreUrl) modalLinks.push(`<a class="link-btn" href="${escapeHtml(agreUrl)}" target="_blank" style="background:#00A0E9;color:#fff">💼 アグレ</a>`);
+  if (jobAntennaUrl) modalLinks.push(`<a class="link-btn" href="${escapeHtml(jobAntennaUrl)}" target="_blank" style="background:#FF9800;color:#fff">💼 ジョブアンテナ</a>`);
+  if (ownRecruitUrl) modalLinks.push(`<a class="link-btn" href="${escapeHtml(ownRecruitUrl)}" target="_blank" style="background:#F97316;color:#fff">💼 自社採用</a>`);
+  if (email) modalLinks.push(`<a class="link-btn" href="mailto:${escapeHtml(email)}" style="background:#6366F1;color:#fff">📧 ${escapeHtml(email)}</a>`);
+  
+  document.getElementById('modal-body').innerHTML = `
+    <div class="target-card">
+      <div class="name">${escapeHtml(c.company_name)}</div>
+      ${phone 
+        ? `<div class="phone"><a href="tel:${escapeHtml(phone)}" style="color:inherit;text-decoration:none;">📞 ${escapeHtml(phone)}</a></div>`
+        : `<div class="phone empty">電話番号未登録</div>`}
+      ${c.address ? `<div class="info-row">📍 ${escapeHtml(c.address)}</div>` : ''}
+      ${c.genre ? `<div class="info-row">🏷️ ${escapeHtml(c.genre)}</div>` : ''}
+      ${modalLinks.length > 0 ? `<div class="modal-links">${modalLinks.join('')}</div>` : ''}
+      <div style="margin-top:12px; display:flex; gap:8px; justify-content:center; flex-wrap:wrap;">
+        <button class="priority-btn modal-priority p${c.priority || 0}" onclick="cyclePriority('${c.id}', event); setTimeout(() => renderModal(), 300);">
+          ${(c.priority || 0) === 0 ? '☆ 優先度なし' : '⭐'.repeat(c.priority || 0)}
+        </button>
+        <button class="exclude-btn ${c.phase === 'excluded' ? 'active' : ''}" 
+          style="width:auto;height:auto;padding:8px 14px;font-size:13px;"
+          onclick="toggleExclude('${c.id}', event); setTimeout(() => closeModal(), 300);">
+          ${c.phase === 'excluded' ? '↩ 対象に戻す' : '⛔ 対象外にする'}
+        </button>
+      </div>
+    </div>
+
+    <div class="history-section">
+      <div class="section-title">📚 過去のアタック履歴 (${logs.length}件)</div>
+      ${logs.length === 0 
+        ? '<div class="timeline-empty">まだアタック履歴はありません</div>'
+        : `<div class="timeline">
+            ${logs.slice(0, 5).map(log => {
+              const def = RESULT_DEFS[log.result] || { emoji: '📝', label: log.result };
+              return `
+              <div class="timeline-item">
+                <span class="date">${log.date || ''} ${log.time || ''}</span>
+                <span class="result">${def.emoji} ${def.label}</span>
+                ${log.next_date ? `<span style="color:var(--text-sub);margin-left:6px;">→ ${log.next_date}</span>` : ''}
+                ${log.memo ? `<div class="memo">💬 ${escapeHtml(log.memo)}</div>` : ''}
+              </div>`;
+            }).join('')}
+            ${logs.length > 5 ? `<div class="timeline-empty">他 ${logs.length - 5} 件...</div>` : ''}
+          </div>`
+      }
+    </div>
+
+    <!-- ★ 大タブ：トークスクリプト / 基本情報 -->
+    <div style="display:flex;gap:0;margin-bottom:14px;background:#FFF7ED;border-radius:14px;padding:6px;border:1.5px solid #99F6E4">
+      <button onclick="switchModalTab('script')" style="
+        flex:1;padding:12px 14px;border:none;border-radius:10px;font-size:14px;font-weight:900;cursor:pointer;font-family:inherit;
+        background:${currentTab === 'script' ? 'linear-gradient(135deg,#F97316,#FB923C)' : 'transparent'};
+        color:${currentTab === 'script' ? '#fff' : '#6B7280'};
+        transition:all 0.15s;
+      ">📞 トークスクリプト</button>
+      <button onclick="switchModalTab('info')" style="
+        flex:1;padding:12px 14px;border:none;border-radius:10px;font-size:14px;font-weight:900;cursor:pointer;font-family:inherit;
+        background:${currentTab === 'info' ? 'linear-gradient(135deg,#F97316,#FB923C)' : 'transparent'};
+        color:${currentTab === 'info' ? '#fff' : '#6B7280'};
+        transition:all 0.15s;
+      ">📋 基本情報</button>
+    </div>
+
+    ${currentTab === 'script' ? `
+    <!-- ★ トークスクリプトバリエーション切替タブ -->
+    <div style="display:flex;gap:6px;margin-bottom:10px;align-items:center;flex-wrap:wrap">
+      <span style="font-size:11px;font-weight:700;color:#EA580C">📜 トークパターン：</span>
+      ${scripts.map((s, i) => `
+        <button onclick="switchScriptVariant(${i})" style="
+          padding:6px 12px;
+          border:2px solid ${i === currentScriptIndex ? '#F97316' : '#E5E7EB'};
+          background:${i === currentScriptIndex ? 'linear-gradient(135deg,#F97316,#FB923C)' : '#fff'};
+          color:${i === currentScriptIndex ? '#fff' : '#6B7280'};
+          border-radius:8px;
+          font-size:11px;
+          font-weight:800;
+          cursor:pointer;
+          font-family:inherit;
+          transition:all 0.15s;
+        " onmouseover="if(${i !== currentScriptIndex})this.style.borderColor='#F97316';" onmouseout="if(${i !== currentScriptIndex})this.style.borderColor='#E5E7EB';">
+          ${escapeHtml(s.name || s.variant || 'スクリプト')}
+        </button>
+      `).join('')}
+    </div>
+
+    <div id="script-area">${renderScriptStep()}</div>
+
+    <div class="section-title">✏️ メモ（電話の重要なやりとりを記録）</div>
+    <textarea class="memo-input" id="memo-input" placeholder="例: 受付の田中さん対応、社長は午後在席">${escapeHtml(c.memo || '')}</textarea>
+
+    <div class="section-title">📅 次回予定日（オプション・自動設定もされます）</div>
+    <div class="next-date-row">
+      <input type="date" class="date-input" id="next-date-input" value="${c.next_date || ''}">
+      <button class="date-quick" onclick="setQuickDate(1)">明日</button>
+      <button class="date-quick" onclick="setQuickDate(3)">3日後</button>
+      <button class="date-quick" onclick="setQuickDate(7)">1週間後</button>
+      <button class="date-quick" onclick="setQuickDate(0)">クリア</button>
+    </div>
+    ` : `<!-- INFOタブ -->${renderInfoTab(c)}`}
+
+    <div class="finish-section">
+      <div class="ttl">📞 通話結果を記録して終了</div>
+      <div class="result-grid">
+        ${Object.entries(RESULT_DEFS).map(([key, def]) => `
+          <button class="result-btn" data-result="${key}" onclick="recordResult('${key}')">
+            <span class="emoji">${def.emoji}</span>
+            <span>${def.label}</span>
+          </button>
+        `).join('')}
+      </div>
+    </div>
+    
+    <button class="refresh-btn" style="width:100%;" onclick="closeModal()">閉じる（記録しない）</button>
+  `;
+}
+
+function renderScriptStep() {
+  const script = scripts[currentScriptIndex];
+  if (!script || !script.script_json || !script.script_json.steps) {
+    return '<div class="empty"><div class="icon">📝</div>スクリプトが読み込まれていません</div>';
+  }
+  const steps = script.script_json.steps;
+  const step = steps[currentStepKey];
+  if (!step) return '<div class="empty">ステップが見つかりません</div>';
+  
+  // 編集モード
+  if (scriptEditMode) {
+    return `
+      <div class="script-flow">
+        <div class="script-step-header">
+          <div class="script-step-title" style="flex:1;">
+            <span class="emoji">${step.emoji || '📝'}</span>
+            <input type="text" class="script-title-edit" id="edit-title" value="${escapeHtml(step.title)}">
+          </div>
+          <div class="script-header-actions">
+            <button class="script-edit-btn save" onclick="saveScriptStep()">💾 保存</button>
+            <button class="script-edit-btn cancel" onclick="cancelScriptEdit()">❌</button>
+          </div>
+        </div>
+        <div style="padding: 14px;">
+          <div class="edit-hint">
+            💡 ヒント: **テキスト** で太字、改行はそのまま反映されます<br>
+            ⚠️ この変更は全員に反映されます。慎重に！
+          </div>
+          <textarea class="script-speech-edit" id="edit-speech">${escapeHtml(step.speech || '')}</textarea>
+        </div>
+      </div>
+    `;
+  }
+  
+  const backBtn = scriptHistory.length > 0 
+    ? `<button class="script-back-btn" onclick="scriptBack()">⬅ 戻る</button>` 
+    : `<button class="script-back-btn" onclick="scriptReset()">🔄 最初から</button>`;
+  
+  return `
+    <div class="script-flow">
+      <div class="script-step-header">
+        <div class="script-step-title">
+          <span class="emoji">${step.emoji || '📝'}</span>
+          <span>${escapeHtml(step.title)}</span>
+        </div>
+        <div class="script-header-actions">
+          <button class="script-edit-btn" onclick="startScriptEdit()" title="このセリフを編集">✏️</button>
+          ${backBtn}
+        </div>
+      </div>
+      <div class="script-speech">${renderSpeech(step.speech)}</div>
+      ${step.branches && step.branches.length > 0 ? `
+        <div class="script-branches">
+          <div class="script-branches-title">👂 相手の反応はどれに近いですか？</div>
+          <div class="branch-grid">
+            ${step.branches.map(b => {
+              if (b.next && b.next.startsWith('FINISH_')) {
+                return `<button class="branch-btn" data-color="${b.color || 'primary'}" onclick="scriptFinish('${b.next}')">
+                  <span>${escapeHtml(b.label)}</span>
+                  <span class="arrow">▶</span>
+                </button>`;
+              }
+              return `<button class="branch-btn" data-color="${b.color || 'primary'}" onclick="scriptGo('${b.next}')">
+                <span>${escapeHtml(b.label)}</span>
+                <span class="arrow">▶</span>
+              </button>`;
+            }).join('')}
+          </div>
+        </div>` : ''}
+    </div>
+  `;
+}
+
+// スクリプト編集モード
+function startScriptEdit() {
+  scriptEditMode = true;
+  document.getElementById('script-area').innerHTML = renderScriptStep();
+}
+
+function cancelScriptEdit() {
+  if (!confirm('編集内容を破棄しますか？')) return;
+  scriptEditMode = false;
+  document.getElementById('script-area').innerHTML = renderScriptStep();
+}
+
+async function saveScriptStep() {
+  const newTitle = document.getElementById('edit-title').value.trim();
+  const newSpeech = document.getElementById('edit-speech').value;
+  
+  if (!newTitle) { alert('タイトルは空にできません'); return; }
+  
+  const script = scripts[currentScriptIndex];
+  if (!script) return;
+  
+  // ローカルでJSONを書き換える
+  const newJson = JSON.parse(JSON.stringify(script.script_json));
+  if (!newJson.steps[currentStepKey]) {
+    alert('ステップが見つかりません');
+    return;
+  }
+  newJson.steps[currentStepKey].title = newTitle;
+  newJson.steps[currentStepKey].speech = newSpeech;
+  
+  // UPDATE 実行
+  let result;
+  try {
+    result = await sb
+      .from('posmane_scripts')
+      .update({ script_json: newJson })
+      .eq('id', script.id);
+  } catch (e) {
+    // ネットワーク例外（Realtime切断などのノイズ含む）
+    console.warn('UPDATE 例外（ネットワーク系の可能性）:', e);
+    // 例外が起きても、実は更新できてる場合があるので念のため再取得して確認
+    try {
+      const { data: check } = await sb
+        .from('posmane_scripts')
+        .select('script_json')
+        .eq('id', script.id)
+        .single();
+      const savedSpeech = check?.script_json?.steps?.[currentStepKey]?.speech;
+      if (savedSpeech === newSpeech) {
+        // 実は保存できてた
+        script.script_json = newJson;
+        scriptEditMode = false;
+        document.getElementById('script-area').innerHTML = renderScriptStep();
+        showToast('✅ スクリプトを保存しました', 'success');
+        return;
+      }
+    } catch (e2) {
+      // 取得もダメ → 本当に失敗
+    }
+    showToast(`⚠️ 保存エラー: ${e.message}`, 'error');
+    return;
+  }
+  
+  // 正常終了パス
+  if (result.error) {
+    console.error('保存エラー:', result.error);
+    showToast(`⚠️ 保存エラー: ${result.error.message}`, 'error');
+    return;
+  }
+  
+  // ローカル更新
+  script.script_json = newJson;
+  scriptEditMode = false;
+  document.getElementById('script-area').innerHTML = renderScriptStep();
+  showToast('✅ スクリプトを保存しました', 'success');
+}
+
+function renderSpeech(text) {
+  if (!text) return '';
+  // 改行を<br>に
+  let html = escapeHtml(text).replace(/\n/g, '<br>');
+  // **太字** 処理
+  html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+  return html;
+}
+
+function scriptGo(nextKey) {
+  scriptHistory.push(currentStepKey);
+  currentStepKey = nextKey;
+  scriptEditMode = false;
+  document.getElementById('script-area').innerHTML = renderScriptStep();
+  document.getElementById('script-area').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function scriptBack() {
+  if (scriptHistory.length === 0) return;
+  currentStepKey = scriptHistory.pop();
+  scriptEditMode = false;
+  document.getElementById('script-area').innerHTML = renderScriptStep();
+}
+
+function scriptReset() {
+  const script = scripts[currentScriptIndex];
+  currentStepKey = script?.script_json?.start || 'opening';
+  scriptHistory = [];
+  scriptEditMode = false;
+  document.getElementById('script-area').innerHTML = renderScriptStep();
+}
+
+// ★ トークスクリプトのバリエーション切替（A/B/C）
+function switchScriptVariant(idx) {
+  if (idx < 0 || idx >= scripts.length) return;
+  currentScriptIndex = idx;
+  // 新しいスクリプトの開始ステップに戻す
+  const script = scripts[currentScriptIndex];
+  currentStepKey = script?.script_json?.start || 'opening';
+  scriptHistory = [];
+  scriptEditMode = false;
+  // モーダル全体を再描画（タブのアクティブ表示も更新するため）
+  renderModal();
+}
+
+// ★ モーダル内の大タブ切替（script / info）
+function switchModalTab(tab) {
+  currentTab = tab;
+  renderModal();
+}
+
+// ════════════════════════════════════════
+// 📋 基本情報タブのレンダリング
+// ════════════════════════════════════════
+function renderInfoTab(c) {
+  const fields = [
+    { key: 'company_name', label: '🏢 会社名', type: 'text', required: true },
+    { key: 'phone', label: '📞 電話番号', type: 'text' },
+    { key: 'address', label: '📍 住所', type: 'text' },
+    { key: 'website', label: '🌐 公式HP URL', type: 'url' },
+    { key: 'industry', label: '🏷️ 業種', type: 'text' },
+    { key: 'ceo_name', label: '👤 代表者名', type: 'text' },
+    { key: 'founding_date', label: '🌱 創業年月日', type: 'text', placeholder: '例：2015-04' },
+    { key: 'established_date', label: '📅 設立年月日', type: 'text', placeholder: '例：2018-01' },
+    { key: 'email', label: '📧 メールアドレス', type: 'email' },
+    { key: 'revenue', label: '💰 推定年商', type: 'text', placeholder: '例：約5億円' },
+    { key: 'employees', label: '👥 従業員数', type: 'text', placeholder: '例：約30名' },
+    { key: 'instagram_url', label: '📷 Instagram URL', type: 'url' },
+    { key: 'facebook_url', label: '📘 Facebook URL', type: 'url' },
+    { key: 'x_url', label: '🐦 X（Twitter）URL', type: 'url' },
+    { key: 'tiktok_url', label: '🎵 TikTok URL', type: 'url' },
+    { key: 'indeed_url', label: '💼 Indeed URL', type: 'url' },
+    { key: 'mynavi_url', label: '💼 マイナビ URL', type: 'url' },
+    { key: 'agre_url', label: '💼 アグレ URL', type: 'url' },
+    { key: 'job_antenna_url', label: '💼 ジョブアンテナ URL', type: 'url' },
+    { key: 'own_recruit_url', label: '💼 自社採用ページ URL', type: 'url' },
+  ];
+
+  return `
+    <div style="background:#FFF7ED;border:1.5px solid #F97316;border-radius:12px;padding:12px 14px;margin-bottom:14px;font-size:12px;color:#EA580C;line-height:1.7">
+      💡 <strong>基本情報を分厚くしていく</strong><br>
+      ① 下のボタンで「公式HP用」「SNS/求人用」のプロンプトを生成<br>
+      ② Claude.ai（webブラウザ版）に貼り付けて実行<br>
+      ③ 返ってきたCSVを下のテキストエリアに貼り付け → 取り込む<br>
+      ④ <strong>既存データは保護</strong>されます（空欄のところだけ自動補完）
+    </div>
+
+    <!-- STEP 1: プロンプト生成 -->
+    <div class="section-title">🤖 STEP 1：AIで情報収集（プロンプト生成）</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px">
+      <button onclick="copyInfoPrompt('hp')" style="padding:14px;background:linear-gradient(135deg,#F97316,#FB923C);color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:900;cursor:pointer;font-family:inherit;box-shadow:0 2px 8px rgba(20,184,166,0.3)">
+        📋 公式HP用プロンプトをコピー
+        <div style="font-size:10px;font-weight:600;opacity:0.9;margin-top:2px">代表者・創業日・SNS等を公式HPから抽出</div>
+      </button>
+      <button onclick="copyInfoPrompt('sns')" style="padding:14px;background:linear-gradient(135deg,#A855F7,#7C3AED);color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:900;cursor:pointer;font-family:inherit;box-shadow:0 2px 8px rgba(168,85,247,0.3)">
+        📋 SNS/求人用プロンプトをコピー
+        <div style="font-size:10px;font-weight:600;opacity:0.9;margin-top:2px">Instagram・求人サイトをホワイトリスト検索</div>
+      </button>
+    </div>
+
+    <!-- STEP 2: 結果貼り付け -->
+    <div class="section-title">📥 STEP 2：AIの返答（CSV）を貼り付けて取り込む</div>
+    <textarea id="info-csv-paste" placeholder="ここに Claude.ai から返ってきたCSVを貼り付け...&#10;例：&#10;company_name,ceo_name,founding_date,...&#10;&quot;株式会社○○&quot;,&quot;山田太郎&quot;,&quot;2015-04&quot;,..." 
+      style="width:100%;min-height:120px;padding:10px;border:2px solid #F97316;border-radius:10px;font-size:12px;font-family:var(--font-mono,monospace);line-height:1.5;outline:none;resize:vertical;margin-bottom:10px"></textarea>
+    <button onclick="applyInfoCsv()" style="width:100%;padding:12px;background:linear-gradient(135deg,#F97316,#059669);color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:900;cursor:pointer;font-family:inherit;margin-bottom:18px">
+      ✨ CSVを取り込む（空欄のみ補完）
+    </button>
+
+    <!-- STEP 3: 表示・編集 -->
+    <div class="section-title">📋 STEP 3：基本情報（手動で編集も可）</div>
+    <div style="display:grid;gap:10px;margin-bottom:14px">
+      ${fields.map(f => `
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+          <label style="font-size:12px;font-weight:800;color:#EA580C;min-width:140px;flex-shrink:0">${f.label}</label>
+          <input type="${f.type}" id="info-${f.key}" value="${escapeHtml(c[f.key] || '')}" 
+            placeholder="${f.placeholder || ''}"
+            style="flex:1;min-width:180px;padding:8px 10px;border:1.5px solid #99F6E4;border-radius:8px;font-size:13px;font-family:inherit;outline:none;background:${c[f.key] ? '#fff' : '#FAFAFB'}">
+        </div>
+      `).join('')}
+    </div>
+    <button onclick="saveInfoFields()" style="width:100%;padding:12px;background:linear-gradient(135deg,#F97316,#FB923C);color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:900;cursor:pointer;font-family:inherit;box-shadow:0 2px 8px rgba(20,184,166,0.3);margin-bottom:14px">
+      💾 基本情報を保存
+    </button>
+
+    ${c.research_notes ? `
+      <div style="background:#FFFBEB;border:1.5px solid #F59E0B;border-radius:10px;padding:10px 12px;font-size:11px;color:#92400E;line-height:1.7;margin-bottom:14px">
+        <strong>📝 リサーチメモ：</strong><br>
+        ${escapeHtml(c.research_notes).replace(/\\n/g, '<br>')}
+      </div>
+    ` : ''}
+  `;
+}
+
+// プロンプトコピー
+function copyInfoPrompt(type) {
+  const c = currentCompany;
+  if (!c) return;
+  let prompt;
+  if (type === 'hp') {
+    prompt = buildHpPrompt(c);
+  } else {
+    prompt = buildSnsPrompt(c);
+  }
+  navigator.clipboard.writeText(prompt).then(() => {
+    showToast(`📋 ${type === 'hp' ? '公式HP用' : 'SNS/求人用'}プロンプトをコピーしました`, 'success');
+  }).catch(e => {
+    // fallback: 一時的なtextareaに入れて選択
+    const ta = document.createElement('textarea');
+    ta.value = prompt;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    showToast('📋 プロンプトをコピーしました', 'success');
+  });
+}
+
+// 公式HP用プロンプト
+function buildHpPrompt(c) {
+  const name = c.company_name || '';
+  const hp = c.website || '';
+  const domain = hp ? hp.replace(/^https?:\/\//, '').replace(/\/.*$/, '') : '';
+  const urlCandidates = hp ? [
+    hp,
+    hp.replace(/\/$/, '') + '/company',
+    hp.replace(/\/$/, '') + '/company/',
+    hp.replace(/\/$/, '') + '/about',
+    hp.replace(/\/$/, '') + '/about/',
+    hp.replace(/\/$/, '') + '/recruit',
+    hp.replace(/\/$/, '') + '/recruit/',
+    hp.replace(/\/$/, '') + '/info',
+    hp.replace(/\/$/, '') + '/info/',
+  ].map(u => `・${u}`).join('\n') : '（公式サイト未登録 - 検索で見つけてください）';
+
+  return `以下の企業について、指定したURLとそのドメイン内のサブページのみを読み、情報を抽出してください。
+
+【❗ 最重要：ハルシネーション禁止】
+1. あなたの学習データの記憶ではなく、必ず実際にURLにアクセスして読むこと
+2. サイト内に明記されていない項目は必ず N/A
+3. 推測・想像で値を埋めることは絶対禁止
+4. 各値には必ず「出典：原文の引用とURL」を notes に書く
+
+【調査対象企業】
+"${name}"
+公式サイト：${hp || '（不明）'}
+
+【まず最優先で確認すべきURL候補（存在すれば必ず読む）】
+${urlCandidates}
+上記URLが404やリンク切れの場合は無視し、トップページのナビゲーションから「会社概要・About・採用情報」などのページを探して読むこと
+
+【調査ルール】
+・参照可能なドメインは ${domain || '対象企業の公式サイト'} のみ。それ以外は参照禁止
+・他のドメイン（Google検索結果、Wikipedia、SNSの中身、まとめサイト等）は参照禁止
+・「会社概要」「代表挨拶」「私たちについて」「採用情報」「会社情報」「About」などのサブページがあれば必ず巡回
+・サイト内に存在しない情報は必ず N/A（推測禁止）
+
+【出力CSV列】
+company_name,ceo_name,email,founding_date,established_date,instagram_url,facebook_url,x_url,tiktok_url,indeed_url,job_antenna_url,agre_url,mynavi_url,own_recruit_url,revenue,employees,notes
+
+【各列の説明】
+・ceo_name: 代表者名（「代表取締役」「代表」「社長」などの肩書きの直後の氏名のみ）
+・email: サイト内に明記された公開メールアドレス
+・founding_date: 創業年月日（YYYY-MM形式、「創業」と明記されたもの）
+・established_date: 設立年月日（YYYY-MM形式、「設立」と明記されたもの）
+・instagram_url ～ tiktok_url: SNS公式URL（サイト内にリンクがあれば）
+・indeed_url ～ mynavi_url: 求人サイト企業ページURL（サイト内にリンクがあれば）
+・own_recruit_url: 自社の採用ページURL
+・revenue: 年商（サイトに明記がある場合のみ。記載なしは N/A）
+・employees: 従業員数（サイトに明記がある場合のみ。記載なしは N/A）
+・notes: 各項目の出典URLを必ず記載
+
+【出力ルール】
+・1行目はヘッダー行、2行目がデータ行（行と行の間に必ず改行を入れること）
+・各値は必ずダブルクォートで囲む
+・不明な項目は N/A（空白不可）
+・URLは https:// から始まる完全形式
+・Markdownリンク [text](url) は使わない`;
+}
+
+// SNS/求人用プロンプト
+function buildSnsPrompt(c) {
+  const name = c.company_name || '';
+  const hp = c.website || '';
+  const address = c.address || '';
+  const phone = c.phone || '';
+
+  return `以下の企業について、指定された信頼ドメインのみを調査し、SNS・求人URLを抽出してください。
+
+【❗ 最重要：ハルシネーション禁止】
+1. あなたの学習データの記憶ではなく、実際にWeb検索して見つけること
+2. 下記の許可ドメイン以外は一切参照禁止
+3. アカウント名・URLは「実在を確認した」もののみ。「ありそう」「あるはず」は禁止
+4. 同名の別企業のアカウントを混ぜないこと。所在地・電話番号で必ず照合
+5. 見つからない項目は必ず N/A
+6. 各値の出典URLを必ず notes に記載
+
+【許可ドメイン（ホワイトリスト）】
+・SNS: instagram.com, facebook.com, x.com, twitter.com, tiktok.com
+・求人: indeed.com, mynavi.jp, mynavi-agent.jp, agre.co.jp, job-antenna.jp
+※ 上記以外のドメイン（まとめサイト、ブログ、Wikipedia、検索結果ページ等）は禁止
+
+【調査対象企業】
+"${name}"
+公式サイト：${hp || '（不明）'}
+所在地：${address || '（不明）'}
+電話番号：${phone || '（不明）'}
+
+【照合ルール】
+・同名企業が複数ある場合、所在地（住所）または電話番号でこの企業と一致するアカウントのみ採用
+・所在地や電話番号が確認できないアカウントは N/A 扱い
+
+【出力CSV列】
+instagram_url,facebook_url,x_url,tiktok_url,indeed_url,job_antenna_url,agre_url,mynavi_url,notes
+
+【各列の説明】
+・instagram_url: Instagram公式アカウント。site:instagram.com で検索
+・facebook_url: Facebook公式ページ。site:facebook.com で検索
+・x_url: X（旧Twitter）公式アカウント。site:x.com または site:twitter.com で検索
+・tiktok_url: TikTok公式アカウント。site:tiktok.com で検索
+・indeed_url: Indeedの企業ページ。site:indeed.com で検索
+・job_antenna_url: ジョブアンテナの企業ページ。site:job-antenna.jp で検索
+・agre_url: アグレ（沖縄の求人サイト）の企業ページ。site:agre.co.jp で検索
+・mynavi_url: マイナビの企業ページ。site:mynavi.jp で検索
+・notes: 各URLの出典（どのページで実在を確認したか）を必ず記載
+
+【出力ルール】
+・1行目はヘッダー行、2行目がデータ行（行と行の間に必ず改行を入れること）
+・各値はダブルクォートで囲む
+・不明な項目は必ず N/A
+・URLは https:// から始まる完全形式
+・Markdownリンク [text](url) は使わない`;
+}
+
+// CSV取り込み（既存データを保護）
+async function applyInfoCsv() {
+  const ta = document.getElementById('info-csv-paste');
+  if (!ta) return;
+  const text = (ta.value || '').trim();
+  if (!text) { alert('⚠️ CSVを貼り付けてください'); return; }
+
+  try {
+    const parsed = parseInfoCsvText(text);
+    if (!parsed || !Object.keys(parsed).length) {
+      alert('⚠️ CSVを解析できませんでした。ヘッダー行とデータ行があるか確認してください。');
+      return;
+    }
+
+    const c = currentCompany;
+    if (!c) return;
+    const updates = {};
+    const protected_ = []; // 既存があったため上書きしなかった項目
+    const filled = []; // 新規に補完した項目
+
+    // 各フィールドを「空のときだけ補完」
+    const allowedFields = [
+      'ceo_name', 'email', 'founding_date', 'established_date',
+      'instagram_url', 'facebook_url', 'x_url', 'tiktok_url',
+      'indeed_url', 'job_antenna_url', 'agre_url', 'mynavi_url', 'own_recruit_url',
+      'revenue', 'employees',
+    ];
+    for (const key of allowedFields) {
+      const incoming = (parsed[key] || '').trim();
+      if (!incoming || incoming === 'N/A' || incoming.toLowerCase() === 'n/a') continue;
+      const existing = (c[key] || '').toString().trim();
+      if (existing) {
+        protected_.push(key);
+      } else {
+        updates[key] = incoming;
+        filled.push(key);
+      }
+    }
+
+    // notes はリサーチメモに追記
+    if (parsed.notes && parsed.notes !== 'N/A') {
+      const date = new Date().toISOString().slice(0, 10);
+      const prev = c.research_notes || '';
+      const newNote = `[${date}] AIリサーチ結果:\n${parsed.notes}`;
+      updates.research_notes = prev ? prev + '\n\n' + newNote : newNote;
+    }
+
+    if (!Object.keys(updates).length) {
+      alert(`ℹ️ 新規に補完できる項目がありませんでした\n（既存データがあったためスキップ: ${protected_.length}項目）`);
+      return;
+    }
+
+    // Supabase 更新
+    const { error } = await sb
+      .from('posmane_attacks')
+      .update(updates)
+      .eq('id', c.id);
+    if (error) throw error;
+
+    // ローカル更新
+    Object.assign(c, updates);
+    showToast(`✨ ${filled.length}項目を補完しました${protected_.length > 0 ? `（${protected_.length}項目は既存データを保護）` : ''}`, 'success');
+    renderModal();
+  } catch (e) {
+    console.error(e);
+    alert('❌ 取り込みエラー: ' + e.message);
+  }
+}
+
+// CSVテキストをパースして1行目のデータをオブジェクトで返す
+function parseInfoCsvText(text) {
+  const lines = text.split(/\r?\n/).filter(l => l.trim());
+  if (lines.length < 2) return null;
+  // ヘッダー行
+  const headers = parseInfoCsvLine(lines[0]).map(h => h.trim().toLowerCase());
+  // 2行目以降の最初のデータ行
+  for (let i = 1; i < lines.length; i++) {
+    const cells = parseInfoCsvLine(lines[i]);
+    if (cells.length && cells[0] && cells[0].trim()) {
+      const obj = {};
+      headers.forEach((h, idx) => {
+        obj[h] = (cells[idx] || '').trim();
+      });
+      return obj;
+    }
+  }
+  return null;
+}
+
+function parseInfoCsvLine(line) {
   const result = []; let current = ''; let inQuotes = false;
   for (let i = 0; i < line.length; i++) {
     const c = line[i];
@@ -1213,142 +1973,801 @@ function parseCSVLine(line) {
     }
   }
   result.push(current);
-  return result.map(s => s.replace(/^"|"$/g, ''));
+  return result;
 }
 
-function escapeHtml(s) {
-  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+// 手動編集して保存
+async function saveInfoFields() {
+  const c = currentCompany;
+  if (!c) return;
+  const fieldKeys = [
+    'company_name', 'phone', 'address', 'website', 'industry', 'ceo_name',
+    'founding_date', 'established_date', 'email', 'revenue', 'employees',
+    'instagram_url', 'facebook_url', 'x_url', 'tiktok_url',
+    'indeed_url', 'mynavi_url', 'agre_url', 'job_antenna_url', 'own_recruit_url',
+  ];
+  const updates = {};
+  for (const k of fieldKeys) {
+    const el = document.getElementById('info-' + k);
+    if (el) updates[k] = el.value.trim() || null;
+  }
+
+  try {
+    const { error } = await sb
+      .from('posmane_attacks')
+      .update(updates)
+      .eq('id', c.id);
+    if (error) throw error;
+    Object.assign(c, updates);
+    showToast('💾 基本情報を保存しました', 'success');
+    renderModal();
+  } catch (e) {
+    console.error(e);
+    showToast(`⚠️ 保存エラー: ${e.message}`, 'error');
+  }
 }
 
-// CSV ダウンロード
-document.getElementById('cc-download-btn').addEventListener('click', () => {
-  if (!ccRows.length) return;
-  const header = ['name','phone','address','website','industry','area','pref','city','district','email','instagram_url','facebook_url','x_url','tiktok_url','indeed_url','mynavi_url','ceo_name','revenue','employees'];
-  const csv = [header.join(',')].concat(
-    ccRows.map(r => header.map(h => {
-      const v = (r[h] || '').toString().replace(/"/g, '""');
-      return v.includes(',') || v.includes('\n') || v.includes('"') ? `"${v}"` : v;
-    }).join(','))
-  ).join('\r\n');
-  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
-  const link = document.createElement('a');
-  link.href = URL.createObjectURL(blob);
-  link.download = `centercall_${dateStr()}.csv`;
-  link.click();
-});
+// ══════════════════════════════════════════
+// 🤖 一括リサーチ機能（10社まとめてプロンプト生成 → CSV取り込み）
+// ══════════════════════════════════════════
+const BULK_BATCH_SIZE = 10;
 
-// Supabase 登録
-document.getElementById('cc-upload-btn').addEventListener('click', async () => {
-  if (!ccRows.length) return;
-  const btn = document.getElementById('cc-upload-btn');
-  const statusEl = document.getElementById('cc-upload-status');
-  btn.disabled = true;
-  btn.textContent = '登録中...';
+function openBulkResearch() {
+  // 未調査企業（ceo_name が空 or null）を優先で取得
+  const targets = companies.filter(c => !c.ceo_name || !c.ceo_name.trim());
+  const batch = targets.slice(0, BULK_BATCH_SIZE);
 
-  statusEl.innerHTML = `
-    <div class="upload-progress">
-      <div class="msg">📤 ${ccRows.length}件を登録中...</div>
-      <div class="bar-wrap"><div class="bar" id="cc-bar" style="width:0%"></div></div>
-      <div class="msg" id="cc-msg">準備中...</div>
+  // 既存モーダルを削除
+  const existing = document.getElementById('m-bulk-research');
+  if (existing) existing.remove();
+
+  const div = document.createElement('div');
+  div.id = 'm-bulk-research';
+  div.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.55);display:flex;align-items:center;justify-content:center;z-index:10000;padding:20px';
+  div.innerHTML = `
+    <div style="background:#fff;border-radius:18px;width:100%;max-width:800px;max-height:92vh;overflow:hidden;display:flex;flex-direction:column;font-family:'Hiragino Maru Gothic ProN','Yu Gothic UI',sans-serif">
+      <div style="background:linear-gradient(135deg,#FFF7ED,#FED7AA);padding:18px 22px;border-bottom:2px solid #F97316;display:flex;justify-content:space-between;align-items:center;flex-shrink:0">
+        <div>
+          <div style="font-size:18px;font-weight:900;color:#EA580C">🤖 一括リサーチ（${BULK_BATCH_SIZE}社まとめて）</div>
+          <div style="font-size:12px;color:#EA580C;font-weight:700;margin-top:2px">未調査の企業を一気に情報補完します</div>
+        </div>
+        <button onclick="document.getElementById('m-bulk-research').remove()" style="background:none;border:none;font-size:22px;cursor:pointer;color:#EA580C">✕</button>
+      </div>
+      <div style="overflow-y:auto;flex:1;padding:18px 22px">
+        ${batch.length === 0 ? `
+          <div style="background:#D1FAE5;border:1.5px solid #F97316;border-radius:10px;padding:16px;color:#065F46;font-weight:700;text-align:center">
+            🎉 すべての企業に代表者名が登録されています！未調査企業はありません。
+          </div>
+        ` : `
+          <div style="background:#FFFBEB;border:1.5px solid #F59E0B;border-radius:10px;padding:12px 14px;margin-bottom:14px;font-size:12px;color:#92400E;font-weight:700;line-height:1.7">
+            📊 <strong>対象企業：${batch.length}社</strong>（未調査の先頭${BULK_BATCH_SIZE}社）<br>
+            ⚠️ <strong>失敗パターンへの対策済み</strong>：<br>
+            　・各値に出典URL必須（無いものは取り込み時に除外）<br>
+            　・CSV形式を超厳格に指定<br>
+            　・取り込みは寛容パーサー（列順入れ替えOK・列名の大小無視）<br>
+            　・既存データは保護（空欄のみ補完）
+          </div>
+
+          <!-- 対象企業リスト -->
+          <div style="font-size:13px;font-weight:900;color:#EA580C;margin-bottom:6px">📋 対象企業（${batch.length}社）</div>
+          <div style="background:#F9FAFB;border:1px solid #E5E7EB;border-radius:8px;padding:8px;max-height:160px;overflow-y:auto;margin-bottom:14px">
+            ${batch.map((c, i) => `
+              <div style="padding:4px 6px;font-size:11px;border-bottom:1px dashed #E5E7EB">
+                ${i+1}. <strong>${escapeHtml(c.company_name)}</strong>
+                ${c.phone ? `<span style="color:#9CA3AF">・${escapeHtml(c.phone)}</span>` : ''}
+                ${c.address ? `<span style="color:#9CA3AF">・${escapeHtml(c.address.slice(0,30))}</span>` : ''}
+                ${c.website ? `<span style="color:#F97316">・HP有</span>` : `<span style="color:#9CA3AF">・HP無</span>`}
+              </div>
+            `).join('')}
+          </div>
+
+          <!-- STEP 1: プロンプト -->
+          <div style="font-size:14px;font-weight:900;color:#EA580C;margin-bottom:6px">STEP 1：プロンプトをコピー</div>
+          <textarea id="bulk-prompt" readonly style="width:100%;min-height:180px;padding:12px;border:2px solid #F97316;border-radius:10px;font-size:11px;font-family:var(--font-mono,monospace);line-height:1.5;outline:none;resize:vertical;background:#FAFAFB">${escapeHtml(buildBulkPrompt(batch))}</textarea>
+          <button onclick="copyBulkPrompt()" style="margin-top:8px;background:linear-gradient(135deg,#F97316,#FB923C);color:#fff;border:none;padding:10px 18px;border-radius:10px;font-size:13px;font-weight:900;cursor:pointer;font-family:inherit;width:100%">
+            📋 プロンプトをコピー → Claude.ai に貼り付け
+          </button>
+
+          <!-- STEP 2: CSV貼り付け -->
+          <div style="font-size:14px;font-weight:900;color:#EA580C;margin:18px 0 6px">STEP 2：Claude.ai の返答（CSV）を貼り付け</div>
+          <textarea id="bulk-csv" placeholder="ここにCSVを貼り付け...&#10;company_name,ceo_name,founding_date,...&#10;..." style="width:100%;min-height:180px;padding:12px;border:2px solid #F97316;border-radius:10px;font-size:11px;font-family:var(--font-mono,monospace);line-height:1.5;outline:none;resize:vertical"></textarea>
+          <button onclick="previewBulkCsv()" style="margin-top:8px;background:linear-gradient(135deg,#3B82F6,#60A5FA);color:#fff;border:none;padding:10px 18px;border-radius:10px;font-size:13px;font-weight:900;cursor:pointer;font-family:inherit;width:100%">
+            🔍 プレビュー（取り込み前に確認）
+          </button>
+
+          <div id="bulk-preview-area" style="margin-top:14px"></div>
+        `}
+      </div>
     </div>
   `;
+  document.body.appendChild(div);
+}
 
-  // 既存企業の電話番号を取得して重複チェック
-  let existingPhones = new Set();
+// プロンプトコピー
+function copyBulkPrompt() {
+  const ta = document.getElementById('bulk-prompt');
+  if (!ta) return;
+  ta.select();
+  document.execCommand('copy');
+  showToast('📋 プロンプトをコピーしました。Claude.ai に貼り付けてください', 'success');
+}
+
+// 一括プロンプト生成
+function buildBulkPrompt(batch) {
+  const companyList = batch.map((c, i) => {
+    const parts = [`${i+1}. "${c.company_name}"`];
+    if (c.website) parts.push(`公式サイト: ${c.website}`);
+    if (c.address) parts.push(`所在地: ${c.address}`);
+    if (c.phone) parts.push(`電話: ${c.phone}`);
+    return parts.join(' / ');
+  }).join('\n');
+
+  return `以下の${batch.length}社について、それぞれの企業情報を調査してください。
+
+【❗ 最重要：ハルシネーション禁止】
+1. あなたの学習データの記憶ではなく、必ず実際にWeb検索 & 公式サイトにアクセスして読むこと
+2. サイト内に明記されていない項目は必ず N/A
+3. 推測・想像で値を埋めることは絶対禁止
+4. 各値には必ず「出典URL」を notes に書く（実在を確認したページのみ）
+5. 「ありそう」「あるはず」での記入は禁止
+6. 同名企業の混入を防ぐため、必ず「所在地」または「電話番号」で照合してから情報を採用すること
+
+【調査対象企業】
+${companyList}
+
+【信頼できる情報源（ホワイトリスト）】
+・各社の公式サイト（提供されたURL or そのドメイン内のサブページ）
+・SNS: instagram.com, facebook.com, x.com, twitter.com, tiktok.com
+・求人: indeed.com, mynavi.jp, mynavi-agent.jp, agre.co.jp, job-antenna.jp
+※ 上記以外のドメイン（まとめサイト、ブログ、Wikipedia、Google検索結果ページ等）からの情報採用は禁止
+
+【調査ルール】
+・「会社概要」「代表挨拶」「私たちについて」「採用情報」「About」などのサブページを優先的に巡回
+・SNS や求人サイトのアカウントは、所在地または電話番号で確実に同一企業と確認できたもののみ採用
+・公式サイトに存在しない情報・確認できない情報は必ず N/A
+
+【出力CSV列（厳守）】
+company_name,ceo_name,email,founding_date,established_date,instagram_url,facebook_url,x_url,tiktok_url,indeed_url,job_antenna_url,agre_url,mynavi_url,own_recruit_url,revenue,employees,notes
+
+【各列の説明】
+・company_name: 入力企業名と完全一致させること（マッチング用キー）
+・ceo_name: 代表者名（「代表取締役」「代表」「社長」などの肩書きの直後の氏名のみ）
+・email: サイト内に明記された公開メールアドレス
+・founding_date: 創業年月日（YYYY-MM形式、「創業」と明記されたもの）
+・established_date: 設立年月日（YYYY-MM形式、「設立」と明記されたもの）
+・instagram_url ～ tiktok_url: 各SNS公式URL
+・indeed_url ～ mynavi_url: 各求人サイトの企業ページURL
+・own_recruit_url: 自社の採用ページURL
+・revenue: 年商（サイトに明記がある場合のみ。「資本金」と混同しない）
+・employees: 従業員数（サイトに明記がある場合のみ）
+・notes: 各項目の出典URLを必ず記載（複数項目はセミコロン区切り）
+
+【出力形式の絶対遵守ルール】
+・1行目: ヘッダー行（上記の17列、順序厳守）
+・2行目以降: 1社につき1行
+・各値は必ずダブルクォート " で囲む
+・データ内の改行は \\n エスケープ（実改行は禁止）
+・データ内のダブルクォートは "" にエスケープ
+・Markdown表記（| や \`\`\` ）禁止
+・前置き・後置き・解説文の出力禁止 - CSVのみ出力
+・不明な項目は必ず "N/A"（空白不可）
+・URLは https:// から始まる完全形式
+・Markdownリンク [text](url) は使わない
+
+【出力例】
+company_name,ceo_name,email,founding_date,established_date,instagram_url,...
+"株式会社サンプル","山田 太郎","info@sample.co.jp","2015-04","2018-01","https://instagram.com/sample",...
+"株式会社サンプル2","N/A","N/A","N/A","2020-03","N/A",...`;
+}
+
+// プレビュー（取り込み前に確認）
+function previewBulkCsv() {
+  const ta = document.getElementById('bulk-csv');
+  if (!ta) return;
+  const text = (ta.value || '').trim();
+  if (!text) { alert('⚠️ CSVを貼り付けてください'); return; }
+
   try {
-    const { data: existing } = await sb.from('centercall_attacks').select('phone');
-    if (existing) existing.forEach(r => r.phone && existingPhones.add(r.phone.replace(/[^\d]/g,'')));
-  } catch (e) {
-    console.warn('既存取得失敗（テーブル未作成？）:', e);
-  }
-
-  // IDを付与＆既存スキップ
-  const toInsert = [];
-  let skipped = 0;
-  for (const r of ccRows) {
-    const normPhone = (r.phone || '').replace(/[^\d]/g,'');
-    if (normPhone && existingPhones.has(normPhone)) {
-      skipped++;
-      continue;
+    const rows = parseBulkCsv(text);
+    if (!rows.length) {
+      alert('⚠️ CSVを解析できませんでした。\n\n以下を確認してください：\n・ヘッダー行（company_name,ceo_name,...）があるか\n・データ行があるか\n・改行されているか');
+      return;
     }
-    toInsert.push({
-      id: `cc_${Date.now()}_${Math.random().toString(36).slice(2,9)}`,
-      company_name: r.name || '',
-      phone: r.phone || '',
-      address: r.address || '',
-      website: r.website || '',
-      industry: r.industry || '',
-      area: r.area || '',
-      pref: r.pref || '',
-      city: r.city || '',
-      district: r.district || '',
-      email: r.email || null,
-      instagram_url: r.instagram_url || null,
-      facebook_url: r.facebook_url || null,
-      x_url: r.x_url || null,
-      tiktok_url: r.tiktok_url || null,
-      indeed_url: r.indeed_url || null,
-      mynavi_url: r.mynavi_url || null,
-      ceo_name: r.ceo_name || null,
-      revenue: r.revenue || null,
-      employees: r.employees || null,
-      phase: 'pending',
-      star_rating: 0,
-      pending_callback: false,
-      priority: 0,
-      excluded: false,
-      history: [],
-      email_history: [],
-    });
-  }
 
-  // バッチ50
-  const BATCH = 50;
-  let success = 0, errors = 0;
-  const errorMsgs = [];
-  for (let i = 0; i < toInsert.length; i += BATCH) {
-    const chunk = toInsert.slice(i, i + BATCH);
-    try {
-      const { error } = await sb.from('centercall_attacks').insert(chunk);
-      if (error) {
-        errors += chunk.length;
-        errorMsgs.push(error.message);
-      } else {
-        success += chunk.length;
+    // 各行を企業とマッチング
+    const matches = [];
+    for (const row of rows) {
+      const cname = (row.company_name || '').trim();
+      if (!cname) continue;
+      // 会社名で照合（空白除去後の完全一致 or 部分一致）
+      const target = companies.find(c => {
+        const norm = (s) => (s || '').replace(/\s+/g, '');
+        return norm(c.company_name) === norm(cname);
+      });
+      matches.push({ row, target });
+    }
+
+    const matched = matches.filter(m => m.target);
+    const unmatched = matches.filter(m => !m.target);
+
+    // 各マッチについて補完予定をプレビュー
+    const allowedFields = [
+      'ceo_name', 'email', 'founding_date', 'established_date',
+      'instagram_url', 'facebook_url', 'x_url', 'tiktok_url',
+      'indeed_url', 'job_antenna_url', 'agre_url', 'mynavi_url', 'own_recruit_url',
+      'revenue', 'employees',
+    ];
+
+    let totalFilled = 0;
+    let totalProtected = 0;
+    const previewHtml = matched.slice(0, 10).map(m => {
+      const { row, target } = m;
+      const filled = [];
+      const protected_ = [];
+      for (const key of allowedFields) {
+        const incoming = (row[key] || '').trim();
+        if (!incoming || incoming === 'N/A' || incoming.toLowerCase() === 'n/a') continue;
+        // 怪しい値の検出
+        const isSus = isSuspiciousValue(key, incoming);
+        if (isSus) {
+          protected_.push({ key, reason: isSus });
+          continue;
+        }
+        const existing = (target[key] || '').toString().trim();
+        if (existing) {
+          protected_.push({ key, reason: '既存データあり' });
+        } else {
+          filled.push({ key, value: incoming });
+        }
       }
-    } catch (e) {
-      errors += chunk.length;
-      errorMsgs.push(e.message);
-    }
-    const pct = Math.round(((i + chunk.length) / Math.max(toInsert.length, 1)) * 100);
-    document.getElementById('cc-bar').style.width = pct + '%';
-    document.getElementById('cc-msg').textContent = `${i + chunk.length} / ${toInsert.length} 件処理`;
+      totalFilled += filled.length;
+      totalProtected += protected_.length;
+      return `
+        <div style="background:#fff;border:1px solid #E5E7EB;border-radius:8px;padding:10px;margin-bottom:8px">
+          <div style="font-size:13px;font-weight:900;color:#EA580C;margin-bottom:6px">${escapeHtml(target.company_name)}</div>
+          ${filled.length ? `
+            <div style="font-size:11px;color:#065F46;background:#D1FAE5;padding:4px 8px;border-radius:6px;margin-bottom:4px">
+              ✨ 補完予定（${filled.length}項目）: ${filled.map(f => f.key).join(', ')}
+            </div>
+          ` : ''}
+          ${protected_.length ? `
+            <div style="font-size:11px;color:#92400E;background:#FFFBEB;padding:4px 8px;border-radius:6px">
+              🛡️ 保護（${protected_.length}項目）: ${protected_.map(p => p.key + (p.reason !== '既存データあり' ? `(${p.reason})` : '')).join(', ')}
+            </div>
+          ` : ''}
+        </div>
+      `;
+    }).join('');
+
+    const area = document.getElementById('bulk-preview-area');
+    if (!area) return;
+    area.innerHTML = `
+      <div style="background:#FFF7ED;border:1.5px solid #F97316;border-radius:10px;padding:14px;margin-bottom:12px">
+        <div style="font-size:13px;font-weight:900;color:#EA580C;margin-bottom:8px">📊 取り込みプレビュー</div>
+        <div style="font-size:12px;color:#EA580C;line-height:1.8">
+          ・マッチした企業：<strong>${matched.length}社</strong>${unmatched.length ? `（マッチしなかった ${unmatched.length}社 はスキップ）` : ''}<br>
+          ・補完予定の総項目数：<strong style="color:#F97316">${totalFilled}項目</strong><br>
+          ・既存データ保護・怪しい値スキップ：<strong style="color:#F59E0B">${totalProtected}項目</strong>
+        </div>
+      </div>
+      ${unmatched.length ? `
+        <div style="background:#FEE2E2;border:1.5px solid #DC2626;border-radius:10px;padding:10px;margin-bottom:12px;font-size:11px;color:#991B1B">
+          ⚠️ マッチしなかった企業: ${unmatched.map(m => '"' + (m.row.company_name || '無名') + '"').slice(0, 5).join(', ')}${unmatched.length > 5 ? ` 他${unmatched.length - 5}件` : ''}
+        </div>
+      ` : ''}
+      <div style="margin-bottom:10px">${previewHtml}</div>
+      ${matched.length > 10 ? `<div style="text-align:center;color:#9CA3AF;font-size:11px;margin-bottom:10px">…他 ${matched.length - 10} 社</div>` : ''}
+      <button onclick="commitBulkCsv()" style="width:100%;background:linear-gradient(135deg,#F97316,#059669);color:#fff;border:none;padding:14px;border-radius:10px;font-size:14px;font-weight:900;cursor:pointer;font-family:inherit;box-shadow:0 2px 8px rgba(16,185,129,0.3)">
+        ✨ ${totalFilled}項目を一括取り込みする（${matched.length}社対象）
+      </button>
+    `;
+    // プレビュー領域までスクロール
+    area.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  } catch (e) {
+    console.error(e);
+    alert('❌ プレビューエラー: ' + e.message);
+  }
+}
+
+// 怪しい値の検出（電話番号短すぎ・URLが不正等）
+function isSuspiciousValue(key, value) {
+  const v = value.trim();
+  if (key.endsWith('_url')) {
+    if (!v.match(/^https?:\/\//i)) return 'URL形式が不正';
+    if (v.length < 12) return 'URL短すぎ';
+  }
+  if (key === 'email') {
+    if (!v.match(/^[^@\s]+@[^@\s]+\.[^@\s]+$/)) return 'メール形式が不正';
+  }
+  if (key === 'founding_date' || key === 'established_date') {
+    if (!v.match(/^\d{4}(-\d{1,2})?$/)) return '日付形式が不正（YYYY-MM以外）';
+  }
+  return null;
+}
+
+// 寛容CSVパーサー
+function parseBulkCsv(text) {
+  // Markdownの ``` ブロックを剥がす
+  let cleaned = text.replace(/^```\w*\s*\n?/gm, '').replace(/```\s*$/gm, '');
+  // Markdownの表形式 | xxx | yyy | を CSV に変換
+  if (cleaned.includes('|') && cleaned.match(/\|\s*-+\s*\|/)) {
+    cleaned = cleaned.split(/\r?\n/)
+      .filter(l => !l.match(/^\|\s*-+/))
+      .map(l => {
+        if (l.startsWith('|')) {
+          return l.replace(/^\|/, '').replace(/\|$/, '')
+            .split('|').map(c => c.trim()).join(',');
+        }
+        return l;
+      })
+      .join('\n');
   }
 
-  if (errors === 0) {
-    statusEl.innerHTML = `
-      <div class="upload-progress success">
-        <div class="msg">✅ ${success}件 新規登録完了！${skipped > 0 ? ` （${skipped}件は既存のためスキップ）` : ''}</div>
-        <a href="centercall.html" class="attack-link" style="background:#14B8A6">🎧 センターコール アタック画面へ進む</a>
-      </div>
-    `;
-  } else {
-    statusEl.innerHTML = `
-      <div class="upload-progress error">
-        <div class="msg">⚠️ 成功: ${success}件 / エラー: ${errors}件${skipped > 0 ? ` / スキップ: ${skipped}件` : ''}</div>
-        <div class="msg" style="margin-top:6px;font-size:11px;color:var(--text-sub);">${errorMsgs.slice(0,3).join(' / ')}</div>
-        <div style="margin-top:8px;font-size:12px;color:#92400E">💡 「centercall_attacks テーブルが存在しない」エラーの場合は、上の「初回利用時のセットアップ」のSQLを先にSupabaseで実行してください</div>
-      </div>
-    `;
+  const lines = cleaned.split(/\r?\n/).filter(l => l.trim());
+  if (lines.length < 2) return [];
+
+  // ヘッダー行（大文字小文字・空白を正規化）
+  const headers = parseInfoCsvLine(lines[0]).map(h => h.trim().toLowerCase().replace(/\s+/g, '_'));
+
+  // ヘッダー名のエイリアスマッピング
+  const headerAlias = (h) => {
+    if (h === 'name' || h === 'company') return 'company_name';
+    if (h === 'tel' || h === 'phone_number') return 'phone';
+    if (h === 'twitter_url') return 'x_url';
+    return h;
+  };
+  const normHeaders = headers.map(headerAlias);
+
+  const rows = [];
+  for (let i = 1; i < lines.length; i++) {
+    const cells = parseInfoCsvLine(lines[i]);
+    if (!cells.length || !cells.some(c => c.trim())) continue;
+    const obj = {};
+    normHeaders.forEach((h, idx) => {
+      obj[h] = (cells[idx] || '').trim();
+    });
+    if (obj.company_name) rows.push(obj);
   }
-  btn.disabled = false;
-  btn.textContent = '🚀 Supabase に登録してアタック開始';
+  return rows;
+}
+
+// 一括取り込み実行
+async function commitBulkCsv() {
+  const ta = document.getElementById('bulk-csv');
+  const text = (ta?.value || '').trim();
+  if (!text) return;
+
+  try {
+    const rows = parseBulkCsv(text);
+    const allowedFields = [
+      'ceo_name', 'email', 'founding_date', 'established_date',
+      'instagram_url', 'facebook_url', 'x_url', 'tiktok_url',
+      'indeed_url', 'job_antenna_url', 'agre_url', 'mynavi_url', 'own_recruit_url',
+      'revenue', 'employees',
+    ];
+
+    let updatedCount = 0;
+    let totalFilled = 0;
+    const errors = [];
+
+    for (const row of rows) {
+      const cname = (row.company_name || '').trim();
+      if (!cname) continue;
+      const target = companies.find(c => {
+        const norm = (s) => (s || '').replace(/\s+/g, '');
+        return norm(c.company_name) === norm(cname);
+      });
+      if (!target) continue;
+
+      const updates = {};
+      for (const key of allowedFields) {
+        const incoming = (row[key] || '').trim();
+        if (!incoming || incoming === 'N/A' || incoming.toLowerCase() === 'n/a') continue;
+        // 怪しい値スキップ
+        if (isSuspiciousValue(key, incoming)) continue;
+        // 既存があれば保護
+        const existing = (target[key] || '').toString().trim();
+        if (existing) continue;
+        updates[key] = incoming;
+      }
+
+      // research_notes に追記
+      if (row.notes && row.notes !== 'N/A') {
+        const date = new Date().toISOString().slice(0, 10);
+        const prev = target.research_notes || '';
+        updates.research_notes = (prev ? prev + '\n\n' : '') + `[${date}] 一括AIリサーチ:\n${row.notes}`;
+      }
+
+      if (!Object.keys(updates).length) continue;
+
+      try {
+        const { error } = await sb.from('posmane_attacks').update(updates).eq('id', target.id);
+        if (error) throw error;
+        Object.assign(target, updates);
+        updatedCount++;
+        totalFilled += Object.keys(updates).filter(k => k !== 'research_notes').length;
+      } catch (e) {
+        errors.push(`${target.company_name}: ${e.message}`);
+      }
+    }
+
+    // 完了
+    const m = document.getElementById('m-bulk-research');
+    if (m) m.remove();
+    if (errors.length) {
+      alert(`⚠️ ${updatedCount}社更新、${totalFilled}項目補完\n\nエラー:\n${errors.slice(0, 3).join('\n')}`);
+    } else {
+      showToast(`✨ ${updatedCount}社更新、${totalFilled}項目を補完しました`, 'success');
+    }
+    // 一覧を再描画
+    if (typeof render === 'function') render();
+  } catch (e) {
+    console.error(e);
+    alert('❌ 取り込みエラー: ' + e.message);
+  }
+}
+
+function scriptFinish(finishKey) {
+  // FINISH_WON → won 等
+  const resultKey = FINISH_TO_RESULT[finishKey];
+  if (resultKey) {
+    // 結果ボタンエリアにスクロールして気づかせる
+    const finishSec = document.querySelector('.finish-section');
+    if (finishSec) finishSec.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    // 該当ボタンを強調
+    const btn = document.querySelector(`.result-btn[data-result="${resultKey}"]`);
+    if (btn) {
+      btn.style.transform = 'scale(1.05)';
+      btn.style.boxShadow = '0 0 0 3px var(--primary)';
+      setTimeout(() => {
+        btn.style.transform = '';
+        btn.style.boxShadow = '';
+      }, 2000);
+    }
+    showToast(`👇 下の「${RESULT_DEFS[resultKey].label}」ボタンを押して記録してください`, 'success');
+  }
+}
+
+function setQuickDate(days) {
+  const input = document.getElementById('next-date-input');
+  if (days === 0) { input.value = ''; return; }
+  const d = new Date();
+  d.setDate(d.getDate() + days);
+  input.value = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+
+async function recordResult(resultKey) {
+  const def = RESULT_DEFS[resultKey];
+  if (!def) return;
+  const memo = document.getElementById('memo-input').value.trim();
+  if (!memo) {
+    if (!confirm('メモが空欄ですが、このまま記録しますか？')) return;
+  }
+  
+  let nextDate = document.getElementById('next-date-input').value || null;
+  if (def.needNext && !nextDate) {
+    const d = new Date();
+    d.setDate(d.getDate() + def.nextDays);
+    nextDate = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  }
+  
+  const now = new Date();
+  const logEntry = {
+    id: 'log_' + Date.now(),
+    date: `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`,
+    time: `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`,
+    result: resultKey,
+    memo: memo,
+    next_date: nextDate,
+  };
+  
+  const newLogs = [...(currentCompany.logs || []), logEntry];
+  
+  try {
+    const { error } = await sb
+      .from('posmane_attacks')
+      .update({
+        phase: def.phase,
+        memo: memo,
+        next_date: nextDate,
+        logs: newLogs,
+      })
+      .eq('id', currentCompany.id);
+    if (error) throw error;
+    
+    currentCompany.phase = def.phase;
+    currentCompany.memo = memo;
+    currentCompany.next_date = nextDate;
+    currentCompany.logs = newLogs;
+    const idx = companies.findIndex(x => x.id === currentCompany.id);
+    if (idx >= 0) companies[idx] = { ...currentCompany };
+    
+    showToast(`✅ ${def.label} を記録しました`, 'success');
+    closeModal(true);
+    renderStats();
+    renderList();
+  } catch (e) {
+    console.error(e);
+    showToast(`⚠️ 保存エラー: ${e.message}`, 'error');
+  }
+}
+
+// ヘルパー
+function todayStr() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+function formatDate(s) {
+  if (!s) return '';
+  return s.substring(5).replace('-', '/');
+}
+function escapeHtml(s) {
+  return (s || '').toString().replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]);
+}
+function showToast(msg, type) {
+  const t = document.getElementById('toast');
+  t.className = 'toast ' + (type || '');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+// イベント
+document.querySelectorAll('.stat-card').forEach(card => {
+  card.addEventListener('click', () => {
+    document.querySelectorAll('.stat-card').forEach(c => c.classList.remove('active'));
+    card.classList.add('active');
+    currentFilter = card.dataset.filter;
+    renderList();
+  });
 });
 
-function dateStr() {
-  const d = new Date();
-  return `${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}`;
+document.getElementById('search-input').addEventListener('input', e => {
+  searchText = e.target.value;
+  renderList();
+});
+document.getElementById('area-select').addEventListener('change', e => {
+  currentArea = e.target.value;
+  renderList();
+});
+document.getElementById('priority-select').addEventListener('change', e => {
+  currentPriority = e.target.value;
+  renderList();
+});
+document.getElementById('include-excluded').addEventListener('change', e => {
+  includeExcluded = e.target.checked;
+  renderList();
+});
+document.getElementById('sort-select').addEventListener('change', e => {
+  currentSort = e.target.value;
+  renderList();
+});
+document.getElementById('attack-modal').addEventListener('click', e => {
+  // 背景クリックでは閉じない(誤操作で入力内容が消えるのを防ぐ)
+  // 閉じるのは ×ボタン or 「閉じる（記録しない）」ボタンのみ
+});
+document.getElementById('report-modal').addEventListener('click', e => {
+  if (e.target.id === 'report-modal') closeReport();
+});
+
+// ========== レポート機能 ==========
+function openReport() {
+  reportPeriod = 'today';
+  renderReport();
+  document.getElementById('report-modal').classList.add('show');
 }
+function closeReport() {
+  document.getElementById('report-modal').classList.remove('show');
+}
+
+function getPeriodRange(period) {
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const fmt = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  let from, to, label;
+  
+  if (period === 'today') {
+    from = fmt(today); to = fmt(today);
+    label = '今日 (' + from + ')';
+  } else if (period === 'yesterday') {
+    const y = new Date(today); y.setDate(y.getDate() - 1);
+    from = fmt(y); to = fmt(y);
+    label = '昨日 (' + from + ')';
+  } else if (period === 'week') {
+    // 今週（月曜始まり）
+    const d = new Date(today);
+    const day = d.getDay() === 0 ? 7 : d.getDay();
+    const monday = new Date(d); monday.setDate(d.getDate() - (day - 1));
+    from = fmt(monday); to = fmt(today);
+    label = `今週 (${from} 〜 ${to})`;
+  } else if (period === 'lastweek') {
+    const d = new Date(today);
+    const day = d.getDay() === 0 ? 7 : d.getDay();
+    const lastMonday = new Date(d); lastMonday.setDate(d.getDate() - (day - 1) - 7);
+    const lastSunday = new Date(lastMonday); lastSunday.setDate(lastMonday.getDate() + 6);
+    from = fmt(lastMonday); to = fmt(lastSunday);
+    label = `先週 (${from} 〜 ${to})`;
+  } else if (period === 'month') {
+    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    from = fmt(monthStart); to = fmt(today);
+    label = `今月 (${from} 〜 ${to})`;
+  } else if (period === 'lastmonth') {
+    const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    const lastMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0);
+    from = fmt(lastMonthStart); to = fmt(lastMonthEnd);
+    label = `先月 (${from} 〜 ${to})`;
+  } else { // all
+    from = '0000-00-00'; to = '9999-99-99';
+    label = '全期間';
+  }
+  return { from, to, label };
+}
+
+function renderReport() {
+  const range = getPeriodRange(reportPeriod);
+  
+  // ログを期間で絞り込み（企業情報も付与）
+  const calls = [];
+  companies.forEach(c => {
+    (c.logs || []).forEach(log => {
+      if (log.date >= range.from && log.date <= range.to) {
+        calls.push({
+          ...log,
+          company_name: c.company_name,
+          phone: c.phone,
+          address: c.address,
+          company_id: c.id,
+          area: extractArea(c.address),
+        });
+      }
+    });
+  });
+  
+  // 新しい順に並べる
+  calls.sort((a, b) => {
+    const aKey = (a.date || '') + (a.time || '');
+    const bKey = (b.date || '') + (b.time || '');
+    return bKey.localeCompare(aKey);
+  });
+  
+  // 集計
+  const counts = { connected:0, absent:0, callback:0, declined:0, won:0, mailed:0 };
+  calls.forEach(c => { if (counts[c.result] !== undefined) counts[c.result]++; });
+  const total = calls.length;
+  const wonList = calls.filter(c => c.result === 'won');
+  const declinedCount = counts.declined;
+  const contactRate = total > 0 ? Math.round((counts.connected + counts.won + counts.mailed) / total * 100) : 0;
+  
+  // エリア別集計
+  const byArea = {};
+  calls.forEach(c => { byArea[c.area] = (byArea[c.area] || 0) + 1; });
+  const sortedAreas = Object.entries(byArea).sort((a,b) => b[1] - a[1]);
+  
+  // 結果別の表示順
+  const RESULT_DISPLAY = [
+    { key:'won',       emoji:'🎯', label:'商談獲得！',          color:'var(--green)' },
+    { key:'connected', emoji:'😊', label:'担当者つながった',     color:'var(--blue)' },
+    { key:'mailed',    emoji:'✉️', label:'メール送付',          color:'var(--purple)' },
+    { key:'callback',  emoji:'📅', label:'後日かけ直し',         color:'var(--yellow)' },
+    { key:'absent',    emoji:'🏠', label:'不在・留守電',         color:'var(--orange)' },
+    { key:'declined',  emoji:'❌', label:'お断り',              color:'var(--gray)' },
+  ];
+  
+  const body = document.getElementById('report-body');
+  body.innerHTML = `
+    <div class="report-period-row">
+      ${['today','yesterday','week','lastweek','month','lastmonth','all'].map(p => {
+        const labels = { today:'今日', yesterday:'昨日', week:'今週', lastweek:'先週', month:'今月', lastmonth:'先月', all:'全期間' };
+        return `<button class="period-btn ${p === reportPeriod ? 'active' : ''}" onclick="changeReportPeriod('${p}')">${labels[p]}</button>`;
+      }).join('')}
+    </div>
+    
+    <div style="font-size:13px;font-weight:700;margin-bottom:12px;color:var(--text-sub);">📅 ${range.label}</div>
+    
+    <div class="report-summary">
+      <div class="report-stat big">
+        <div class="num">${total}</div>
+        <div class="lbl">📞 総コール数</div>
+      </div>
+      <div class="report-stat">
+        <div class="num" style="color:var(--green);">${counts.won}</div>
+        <div class="lbl">🎯 商談獲得</div>
+      </div>
+      <div class="report-stat">
+        <div class="num" style="color:var(--blue);">${contactRate}%</div>
+        <div class="lbl">😊 接触率</div>
+      </div>
+      <div class="report-stat">
+        <div class="num" style="color:var(--orange);">${counts.callback + counts.absent}</div>
+        <div class="lbl">📅 要フォロー</div>
+      </div>
+    </div>
+    
+    ${total === 0 ? `
+      <div class="report-empty">
+        <div class="icon">📭</div>
+        この期間のアタック実績がありません
+      </div>
+    ` : `
+      <div class="report-section-title">📊 結果別の内訳</div>
+      <div class="report-breakdown">
+        ${RESULT_DISPLAY.map(def => {
+          const cnt = counts[def.key];
+          const pct = total > 0 ? Math.round(cnt / total * 100) : 0;
+          return `
+            <div class="row">
+              <span class="label">${def.emoji} ${def.label}</span>
+              <div class="bar-wrap"><div class="bar" style="width:${pct}%;background:${def.color};"></div></div>
+              <span class="count">${cnt}</span>
+            </div>
+          `;
+        }).join('')}
+      </div>
+      
+      ${wonList.length > 0 ? `
+        <div class="report-section-title">🎉 商談獲得 (${wonList.length}件)</div>
+        <div class="report-list">
+          ${wonList.map(c => `
+            <div class="report-call-item won">
+              <div class="head">
+                <span class="time">${c.date} ${c.time}</span>
+                <span class="name">${escapeHtml(c.company_name)}</span>
+                <span class="result-tag" style="background:var(--green-light);color:#065F46;">🎯 商談獲得</span>
+              </div>
+              ${c.next_date ? `<div style="font-size:11px;color:var(--text-sub);">📅 次回: ${c.next_date}</div>` : ''}
+              ${c.memo ? `<div class="memo">💬 ${escapeHtml(c.memo)}</div>` : ''}
+            </div>
+          `).join('')}
+        </div>
+      ` : ''}
+      
+      ${sortedAreas.length > 1 ? `
+        <div class="report-section-title">🗺️ エリア別の内訳</div>
+        <div class="report-breakdown">
+          ${sortedAreas.slice(0, 8).map(([area, cnt]) => {
+            const pct = total > 0 ? Math.round(cnt / total * 100) : 0;
+            return `
+              <div class="row">
+                <span class="label">${escapeHtml(area)}</span>
+                <div class="bar-wrap"><div class="bar" style="width:${pct}%;"></div></div>
+                <span class="count">${cnt}</span>
+              </div>
+            `;
+          }).join('')}
+        </div>
+      ` : ''}
+      
+      <div class="report-section-title">
+        📋 全コール詳細 (${total}件)
+        <span style="font-size:11px;font-weight:400;color:var(--text-mute);">新しい順</span>
+      </div>
+      <div class="report-list">
+        ${calls.map(c => {
+          const def = (RESULT_DEFS[c.result] || { emoji:'📝', label:c.result });
+          return `
+            <div class="report-call-item ${c.result}" onclick="openModal('${c.company_id}'); closeReport();" style="cursor:pointer;">
+              <div class="head">
+                <span class="time">${c.date.substring(5)} ${c.time}</span>
+                <span class="name">${escapeHtml(c.company_name)}</span>
+                <span class="result-tag">${def.emoji} ${def.label}</span>
+              </div>
+              <div style="font-size:11px;color:var(--text-sub);">🗺️ ${escapeHtml(c.area)} / 📞 ${escapeHtml(c.phone || '電話なし')}</div>
+              ${c.next_date ? `<div style="font-size:11px;color:var(--text-sub);">→ 次回: ${c.next_date}</div>` : ''}
+              ${c.memo ? `<div class="memo">💬 ${escapeHtml(c.memo)}</div>` : ''}
+            </div>
+          `;
+        }).join('')}
+      </div>
+    `}
+  `;
+}
+
+function changeReportPeriod(period) {
+  reportPeriod = period;
+  renderReport();
+}
+
+init();
 </script>
 </body>
 </html>
