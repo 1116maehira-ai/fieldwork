@@ -1200,6 +1200,7 @@ tr:hover td { background: rgba(255,70,2,0.03); cursor: pointer; }
         <option value="posmane_distribution">📦 ポスマネ配布承認送り済み</option>
         <option value="posmane_client">💼 ポスマネクライアント送り済み</option>
         <option value="ceremony">🎬 式典映像送り済み</option>
+        <option value="indeedhack">💼 インディードハック送り済み</option>
         <option value="none">📭 未送信（どこにも送ってない）</option>
       </select>
       <select style="padding:10px 12px;border-radius:12px;border:2px solid #E5E7EB;font-size:13px;font-weight:600;color:#555;background:#fff;outline:none" id="ls-pref" onchange="updateAreaOptions();renderListResetPage()">
@@ -1563,6 +1564,7 @@ tr:hover td { background: rgba(255,70,2,0.03); cursor: pointer; }
         <option value="posmane_distribution">📦 ポスマネ配布承認</option>
         <option value="posmane_client">💼 ポスマネクライアント</option>
         <option value="ceremony">🎬 式典映像</option>
+        <option value="indeedhack">💼 インディードハック</option>
       </select>
       <select class="fi" id="ap-phase" onchange="renderApproach()" style="font-family:inherit;font-size:13px;font-weight:700;border:2px solid #E5E7EB;border-radius:12px;padding:10px 14px;background:#fff">
         <option value="">全フェーズ</option>
@@ -11644,6 +11646,14 @@ const ATTACK_TARGETS = {
     bg: '#FFFBEB',
     href: 'ceremony.html',
   },
+  indeedhack: {
+    label: '💼 インディードハック｜採用代行',
+    desc: 'Indeed等の求人運用支援',
+    table: 'indeedhack_attacks',
+    color: '#F59E0B',
+    bg: '#FFFBEB',
+    href: 'indeedhack.html',
+  },
 };
 
 function openSendToAttackMenu(ev) {
@@ -12089,6 +12099,12 @@ const RESEARCH_TEMPLATES = {
     color: '#7C3AED',
     prompt: (industry, area, count) =>
       `沖縄の【${area || '全エリア'}】で、【${industry || '全業種'}】を営む企業を対象に、観光パンフレット広告枠（ポスマネ）への掲載営業のためのアタックリストを作成してください。\n\n想定：観光客へのリーチを求める沖縄ローカルビジネス（飲食・体験・土産・美容・アクティビティ等）\n\n【調査してほしい情報（1社ずつ）】\n- 会社名\n- 電話番号（ハイフン付き）\n- 住所\n- 代表者名\n- 公式サイトURL\n- Instagram URL（あれば）\n- 取り扱い商品・サービス概要（1行）\n\n【件数】${count}社\n\n【出力形式】CSV形式。ヘッダー行：会社名,電話番号,住所,代表者名,公式サイト,Instagram,商品サービス概要`
+  },
+  indeedhack: {
+    label: '💼 インディードハック',
+    color: '#F59E0B',
+    prompt: (industry, area, count) =>
+      `${area || '沖縄全域'}の【${industry || '全業種'}】を営む企業で、採用課題を抱えている中小企業を対象に、採用代行サービス（インディードハック）の営業リスト作成のため、${count}社の情報を調査してください。\n\n【特に優先したい企業の特徴】\n- Indeed・Airワーク・エンゲージ等の求人媒体に出稿中または求人掲載経験がある\n- 従業員10〜100名規模\n- 飲食・小売・建設・介護・物流・サービス業など採用ニーズが高い業種\n\n【調査してほしい情報（1社ずつ）】\n- 会社名\n- 電話番号（ハイフン付き）\n- 住所\n- 代表者名\n- 公式サイトURL\n- Indeed求人ページURL（あれば）\n- 採用ページURL（あれば）\n\n【件数】${count}社\n\n【出力形式】CSV形式。ヘッダー行：会社名,電話番号,住所,代表者名,公式サイト,Indeed求人,採用ページ`
   },
   posmane: {
     label: '📦 ポスマネ配布承認',
