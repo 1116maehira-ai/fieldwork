@@ -12166,8 +12166,8 @@ function openResearchPackageModal() {
   if (ex) ex.remove();
 
   const fullList = window._filteredList || [];
-  const top30 = fullList.slice(0, 30);
-  const isOver30 = fullList.length > 30;
+  const top30 = fullList.slice(0, 15);
+  const isOver15 = fullList.length > 15;
   const currentCount = fullList.length;
 
   const companyListHtml = top30.map(it =>
@@ -12190,7 +12190,7 @@ function openResearchPackageModal() {
       <div style="font-size:18px;font-weight:900;color:#1E40AF;margin-bottom:4px">🔬 リサーチパッケージ生成</div>
       <div style="font-size:12px;color:#6B7280;margin-bottom:14px">
         今表示中の <strong style="color:#374151">${currentCount}社</strong> から調査対象を選んで命令文を生成します
-        ${isOver30 ? '<span style="color:#EF4444;font-weight:700">（上限30社のため上位30社を表示）</span>' : ''}
+        ${isOver15 ? '<span style="color:#EF4444;font-weight:700">（上限15社のため上位15社を表示）</span>' : ''}
       </div>
 
       <div style="font-size:12px;font-weight:700;color:#374151;margin-bottom:8px">① サービス用途（任意）</div>
@@ -12273,7 +12273,7 @@ function rpSelectCount(n) {
 function rpGenerate() {
   const checked = [...document.querySelectorAll('.rp-company-cb:checked')];
   if (!checked.length) { toast('調査対象企業を選んでください'); return; }
-  if (checked.length > 30) { toast('30社を超えています。絞り込んでください'); return; }
+  if (checked.length > 15) { toast('15社を超えています。絞り込んでください'); return; }
 
   const sel = checked.map(cb => items.find(it => it.id === parseInt(cb.value))).filter(Boolean);
   const n = sel.length;
