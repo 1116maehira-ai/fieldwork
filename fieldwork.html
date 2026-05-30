@@ -11828,7 +11828,7 @@ async function sendToAttack(targetKey) {
       tiktok_url: it.tiktokUrl || null,
       indeed_url: it.indeedUrl || null,
       mynavi_url: it.mynaviUrl || null,
-      ceo_name: it.ceoName || null,
+      ceo_name: it.person || null,
       revenue: it.revenue || null,
       employees: it.employeeCount || null,
       phase: 'pending',
@@ -11839,6 +11839,7 @@ async function sendToAttack(targetKey) {
       history: [],
       email_history: [],
       memo: it.researchNotes || '',
+      source_data: { company_id: it.id },
     });
   }
 
@@ -12319,7 +12320,7 @@ async function __sendToCenterCall_OLD() {
       tiktok_url: it.tiktokUrl || null,
       indeed_url: it.indeedUrl || null,
       mynavi_url: it.mynaviUrl || null,
-      ceo_name: it.ceoName || null,
+      ceo_name: it.person || null,
       revenue: it.revenue || null,
       employees: it.employeeCount || null,
       phase: 'pending',
