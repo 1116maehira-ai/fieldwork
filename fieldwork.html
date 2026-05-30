@@ -12118,10 +12118,36 @@ function openResearchPackageModal() {
   const ex = document.getElementById('m-research-pkg');
   if (ex) ex.remove();
 
+  // ★ 現在の全フィルター状態を読む
   const currentIndustry = document.getElementById('ls-industry')?.value || '';
-  const currentArea = document.getElementById('ls-area')?.value || '';
+  const currentArea     = document.getElementById('ls-area')?.value || '';
+  const currentPref     = document.getElementById('ls-pref')?.value || '';
+  const currentJob      = document.getElementById('ls-job')?.value || '';
+  const currentSNS      = document.getElementById('ls-sns')?.value || '';
+  const currentAp       = document.getElementById('ls-ap')?.value || '';
+  const currentService  = document.getElementById('ls-service')?.value || '';
+  const currentCount    = parseInt(document.getElementById('ls-filtered-count')?.textContent || '0');
+
+  // フィルター条件をグローバル保存（rpGenerateで使う）
+  window._rpConditions = { currentPref, currentJob, currentSNS, currentAp };
+
   const industries = [...new Set(items.map(it => (it.industry || '').trim()).filter(Boolean))].sort();
   const areas = [...new Set(items.map(it => (it.area || '').trim()).filter(Boolean))].sort();
+
+  // 絞り込み状態のサマリー表示
+  const fLabels = [];
+  if (currentIndustry) fLabels.push('🏭 ' + currentIndustry);
+  if (currentPref) fLabels.push('📍 ' + currentPref);
+  if (currentArea) fLabels.push('🏙 ' + currentArea);
+  if (currentJob === 'has_job') fLabels.push('💼 求人あり');
+  if (currentJob === 'no_job') fLabels.push('求人なし');
+  if (currentSNS === 'has_sns') fLabels.push('📱 SNSあり');
+  if (currentSNS === 'no_sns') fLabels.push('SNSなし');
+  if (currentAp === 'not_started') fLabels.push('⚪ 未着手');
+  if (currentService && ATTACK_TARGETS[currentService]) fLabels.push('🎯 ' + ATTACK_TARGETS[currentService].label.split('｜')[0]);
+  const filterSummary = fLabels.length
+    ? `<div style="background:#EFF6FF;border:1.5px solid #BFDBFE;border-radius:10px;padding:10px 14px;margin-bottom:16px;font-size:12px;color:#1E40AF"><span style="font-weight:800">📌 現在の絞り込み（${currentCount}社）：</span>${fLabels.join(' × ')}</div>`
+    : `<div style="background:#F9FAFB;border:1.5px solid #E5E7EB;border-radius:10px;padding:10px 14px;margin-bottom:16px;font-size:12px;color:#6B7280">絞り込みなし（全${currentCount}社）</div>`;
 
   const svcBtns = Object.entries(RESEARCH_TEMPLATES).map(([key, t]) =>
     `<button type="button" id="rp-svc-${key}" onclick="rpSelectService('${key}')" style="padding:8px 12px;border:2px solid #E5E7EB;border-radius:10px;font-size:12px;font-weight:700;cursor:pointer;background:#fff;color:#374151;transition:all .15s">${t.label}</button>`
@@ -12133,17 +12159,18 @@ function openResearchPackageModal() {
   const areaOpts = `<option value="">📍 全エリア</option>` + areas.map(a =>
     `<option value="${escapeHtml(a)}" ${a === currentArea ? 'selected' : ''}>${escapeHtml(a)}</option>`).join('');
 
+  const defaultCount = currentCount > 0 ? Math.min(currentCount, 500) : 100;
+
   const m = document.createElement('div');
   m.id = 'm-research-pkg';
   m.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:99999';
   m.innerHTML = `
     <div style="background:#fff;border-radius:20px;padding:28px;max-width:580px;width:93%;font-family:'Hiragino Maru Gothic ProN','Yu Gothic UI',sans-serif;max-height:88vh;overflow:auto">
       <div style="font-size:20px;font-weight:900;color:#1E40AF;margin-bottom:4px">🔬 リサーチパッケージ生成</div>
-      <div style="font-size:12px;color:#6B7280;margin-bottom:20px">条件を選んで、Claude Desktopに貼る調査命令文を生成します</div>
-
+      <div style="font-size:12px;color:#6B7280;margin-bottom:14px">現在の絞り込み条件を引き継いで命令文を生成します</div>
+      ${filterSummary}
       <div style="font-size:12px;font-weight:700;color:#374151;margin-bottom:8px">① ターゲットサービス</div>
       <div id="rp-svc-btns" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:18px">${svcBtns}</div>
-
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:18px">
         <div>
           <div style="font-size:12px;font-weight:700;color:#374151;margin-bottom:6px">② 業種</div>
@@ -12154,33 +12181,33 @@ function openResearchPackageModal() {
           <select id="rp-area" style="width:100%;padding:9px 10px;border:1.5px solid #E5E7EB;border-radius:10px;font-size:13px;font-family:inherit">${areaOpts}</select>
         </div>
       </div>
-
       <div style="margin-bottom:18px">
-        <div style="font-size:12px;font-weight:700;color:#374151;margin-bottom:8px">④ 調査件数</div>
+        <div style="font-size:12px;font-weight:700;color:#374151;margin-bottom:8px">④ 調査件数（絞り込み中：${currentCount}社）</div>
         <div style="display:flex;gap:8px;flex-wrap:wrap">
           ${[50,100,200,500].map(n => `<button type="button" class="rp-count-btn" onclick="rpSelectCount(${n})" style="padding:7px 16px;border:2px solid #E5E7EB;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;background:#fff;color:#374151">${n}件</button>`).join('')}
           <input id="rp-count-custom" type="number" min="10" max="2000" placeholder="カスタム" style="width:90px;padding:7px 10px;border:2px solid #E5E7EB;border-radius:8px;font-size:13px;font-family:inherit" oninput="rpSelectCount(null)">
         </div>
       </div>
-
       <button type="button" id="rp-gen-btn" onclick="rpGenerate()" style="width:100%;padding:13px;background:linear-gradient(135deg,#1E40AF,#3B82F6);color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:900;cursor:pointer;margin-bottom:16px">🔬 命令文を生成する</button>
-
       <div id="rp-result" style="display:none">
         <div style="font-size:12px;font-weight:700;color:#374151;margin-bottom:6px">📋 Claude Desktopに貼る命令文</div>
         <textarea id="rp-prompt-text" readonly style="width:100%;height:220px;padding:12px;border:1.5px solid #BFDBFE;border-radius:10px;font-size:12px;line-height:1.7;font-family:'Hiragino Maru Gothic ProN',sans-serif;resize:vertical;box-sizing:border-box;background:#F0F9FF;color:#1E3A5F"></textarea>
         <button type="button" onclick="rpCopy()" style="margin-top:8px;width:100%;padding:11px;background:linear-gradient(135deg,#059669,#10B981);color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:900;cursor:pointer">📋 コピーしてClaudeに貼る</button>
       </div>
-
       <div style="text-align:center;margin-top:14px">
         <button type="button" onclick="document.getElementById('m-research-pkg').remove()" style="padding:8px 24px;background:#F3F4F6;color:#6B7280;border:none;border-radius:8px;font-weight:700;cursor:pointer;font-size:13px">閉じる</button>
       </div>
     </div>`;
   document.body.appendChild(m);
 
-  // デフォルトで最初のサービスを選択
   window._rpService = null;
-  window._rpCount = 100;
-  rpSelectCount(100);
+  window._rpCount = defaultCount;
+  rpSelectCount(defaultCount);
+
+  // ls-serviceが選ばれてたら対応サービスを自動選択
+  if (currentService && RESEARCH_TEMPLATES[currentService]) {
+    rpSelectService(currentService);
+  }
 }
 
 function rpSelectService(key) {
@@ -12219,10 +12246,27 @@ function rpGenerate() {
   const svc = window._rpService;
   if (!svc) { toast('サービスを選んでください'); return; }
   const industry = document.getElementById('rp-industry')?.value || '';
-  const area = document.getElementById('rp-area')?.value || '';
-  const custom = parseInt(document.getElementById('rp-count-custom')?.value) || 0;
-  const count = custom > 0 ? custom : (window._rpCount || 100);
-  const prompt = RESEARCH_TEMPLATES[svc].prompt(industry, area, count);
+  const area     = document.getElementById('rp-area')?.value || '';
+  const custom   = parseInt(document.getElementById('rp-count-custom')?.value) || 0;
+  const count    = custom > 0 ? custom : (window._rpCount || 100);
+
+  // フィルター状態から追加条件を生成
+  const cond = window._rpConditions || {};
+  const extras = [];
+  if (cond.currentPref && !area) extras.push('- 都道府県：' + cond.currentPref + 'の企業');
+  if (cond.currentJob === 'has_job')  extras.push('- 求人媒体（Indeed・Airワーク等）に掲載中または掲載経験がある');
+  if (cond.currentJob === 'no_job')   extras.push('- 求人媒体に掲載していない企業（新規開拓向け）');
+  if (cond.currentSNS === 'has_sns')  extras.push('- Instagram・Facebook等のSNSアカウントがある');
+  if (cond.currentSNS === 'no_sns')   extras.push('- SNSアカウントがない企業');
+  if (cond.currentSNS === 'insta')    extras.push('- Instagramアカウントがある');
+  if (cond.currentSNS === 'fb')       extras.push('- Facebookアカウントがある');
+  if (cond.currentAp === 'not_started') extras.push('- まだ営業アプローチしていない未着手の企業');
+
+  let prompt = RESEARCH_TEMPLATES[svc].prompt(industry, area, count);
+  if (extras.length) {
+    prompt += '\n\n【追加条件（絞り込みフィルターより）】\n' + extras.join('\n');
+  }
+
   const ta = document.getElementById('rp-prompt-text');
   if (ta) ta.value = prompt;
   const res = document.getElementById('rp-result');
