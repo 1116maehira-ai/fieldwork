@@ -1551,6 +1551,49 @@ tr:hover td { background: rgba(255,70,2,0.03); cursor: pointer; }
     <div class="topbar-sub" style="font-size:12px;color:#92400E;font-weight:700">進行中の企業をビタミン色でPOPに管理！</div>
   </div>
   <div class="content">
+    <!-- サービス別サマリーカード -->
+    <div id="ap-service-summary" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:8px;margin-bottom:14px;font-family:'Hiragino Maru Gothic ProN','Yu Gothic UI',sans-serif"></div>
+
+    <!-- フィルターbar -->
+    <div class="filter-bar" style="font-family:'Hiragino Maru Gothic ProN','Yu Gothic UI',sans-serif;gap:10px;margin-bottom:18px;flex-wrap:wrap">
+      <input class="fi fi-wide" type="text" id="ap-search" placeholder="🔍 会社名で検索..." oninput="renderApproach()" style="font-family:inherit;font-size:14px;font-weight:600;border:2px solid #E5E7EB;border-radius:12px;padding:10px 14px">
+      <select class="fi" id="ap-service" onchange="renderApproach()" style="font-family:inherit;font-size:13px;font-weight:700;border:2px solid #E5E7EB;border-radius:12px;padding:10px 14px;background:#fff">
+        <option value="">🎯 全サービス</option>
+        <option value="centercall">🎧 センターコール</option>
+        <option value="posmane_distribution">📦 ポスマネ配布承認</option>
+        <option value="posmane_client">💼 ポスマネクライアント</option>
+        <option value="ceremony">🎬 式典映像</option>
+      </select>
+      <select class="fi" id="ap-phase" onchange="renderApproach()" style="font-family:inherit;font-size:13px;font-weight:700;border:2px solid #E5E7EB;border-radius:12px;padding:10px 14px;background:#fff">
+        <option value="">全フェーズ</option>
+        <option value="pending">⚪ 未着手</option>
+        <option value="contacted">😊 担当者つながった</option>
+        <option value="pending_callback">📅 後日かけ直し</option>
+        <option value="won">🎯 商談獲得</option>
+        <option value="declined">❌ お断り</option>
+        <option value="mailed">📧 メール送付済</option>
+      </select>
+      <select class="fi" id="ap-date-filter" onchange="renderApproach()" style="font-family:inherit;font-size:13px;font-weight:700;border:2px solid #E5E7EB;border-radius:12px;padding:10px 14px;background:#fff">
+        <option value="">📅 日程：すべて</option>
+        <option value="overdue">⚠️ 期限切れ</option>
+        <option value="today">📅 今日予定</option>
+        <option value="week">📆 今週予定</option>
+        <option value="no_date">📭 次回予定なし</option>
+      </select>
+      <select class="fi" id="ap-sort" onchange="renderApproach()" style="font-family:inherit;font-size:13px;font-weight:700;border:2px solid #E5E7EB;border-radius:12px;padding:10px 14px;background:#fff">
+        <option value="next_date">📅 次回予定日順</option>
+        <option value="last_called">📞 最終コール日順</option>
+        <option value="company">🔤 会社名順</option>
+      </select>
+      <button onclick="fetchAttackData(true)" style="padding:10px 16px;background:linear-gradient(135deg,#6366F1,#8B5CF6);color:#fff;border:none;border-radius:12px;font-size:13px;font-weight:800;cursor:pointer;font-family:inherit">🔄 最新を取得</button>
+    </div>
+
+    <!-- ローディング -->
+    <div id="ap-loading" style="display:none;text-align:center;padding:40px;color:#9CA3AF;font-family:'Hiragino Maru Gothic ProN','Yu Gothic UI',sans-serif">
+      <div style="font-size:32px;margin-bottom:10px">🔄</div>
+      <div style="font-size:14px;font-weight:700">各サービスのデータを読み込み中...</div>
+    </div>
+
     <!-- ★ 活動サマリーBOX（ビタミン版） -->
     <div style="background:linear-gradient(135deg,#FFFBEB 0%,#FEF3C7 100%);border:3px solid #FCD34D;border-radius:18px;padding:18px 22px;margin-bottom:16px;font-family:'Hiragino Maru Gothic ProN','Yu Gothic UI',sans-serif;box-shadow:0 4px 14px rgba(252,211,77,0.2)">
       <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px">
@@ -2880,6 +2923,10 @@ function _doGoPage(p, el) {
   if (p === 'settings') {
     renderScriptEditor();
     syncScriptsFromCloud(true).then(() => renderScriptEditor()).catch(() => {});
+  }
+  if (p === 'approach') {
+    if (!window._serviceData) fetchAttackData();
+    else renderApproach();
   }
   if (p === 'posumane') {
     renderPosumane();
@@ -4561,329 +4608,190 @@ function renderList() {
 }
 
 // ── RENDER APPROACH ──
-function renderApproach() {
-  const search = (document.getElementById('ap-search')?.value || '').toLowerCase();
-  const phaseF = document.getElementById('ap-phase')?.value || '';
-  const sortF = document.getElementById('ap-sort')?.value || 'recent';
-  const periodF = document.getElementById('ap-activity-period')?.value || '';
-  const typeF = document.getElementById('ap-activity-type')?.value || '';
-  const today = todayJST();
+// ══════════════════════════════════════════
+// 🎯 アプローチ中ページ（Phase 4刷新版）
+// 各サービスのattack_tablesをリアルタイムfetchして表示
+// ══════════════════════════════════════════
 
-  // 期間範囲を計算
-  const periodRange = getPeriodRange(periodF);
+const SERVICE_PHASE_LABELS = {
+  pending:          { label: '未着手',           icon: '⚪', color: '#9CA3AF', bg: '#F9FAFB' },
+  contacted:        { label: '担当者つながった',  icon: '😊', color: '#16A34A', bg: '#F0FDF4' },
+  pending_callback: { label: '後日かけ直し',      icon: '📅', color: '#F59E0B', bg: '#FFFBEB' },
+  declined:         { label: 'お断り',            icon: '❌', color: '#DC2626', bg: '#FEF2F2' },
+  won:              { label: '商談獲得！',         icon: '🎯', color: '#7C3AED', bg: '#F5F3FF' },
+  mailed:           { label: 'メール送付済',       icon: '📧', color: '#2563EB', bg: '#EFF6FF' },
+};
 
-  // 新フェーズシステム：approachが開始済みの企業を抽出
-  const allApproaching = items.filter(it => it.approach && it.approach.started);
+async function fetchAttackData(forceRender = false) {
+  const loading = document.getElementById('ap-loading');
+  if (loading) loading.style.display = 'block';
+  const wrap = document.getElementById('ap-cards-wrap');
+  const empty = document.getElementById('ap-empty');
+  if (wrap) wrap.innerHTML = '';
+  if (empty) empty.style.display = 'none';
 
-  // フィルタ
-  let list = allApproaching.filter(it => {
-    if (search && !it.company.toLowerCase().includes(search)) return false;
-    if (phaseF) {
-      if (phaseF === 'dormant') {
-        if (!['dormant_2w','dormant_5m'].includes(it.approach.currentPhase)) return false;
-      } else if (it.approach.currentPhase !== phaseF) return false;
-    }
-    // 活動期間フィルタ
-    if (periodRange) {
-      const hasActivityInRange = (it.approach.history || []).some(h =>
-        h.ts && h.ts >= periodRange.from && h.ts < periodRange.to && (
-          h.action === 'tel' || h.action === 'visit' || h.action === 'letter_sent'
-        )
+  window._serviceData = {};
+  const errs = [];
+
+  await Promise.all(Object.entries(ATTACK_TARGETS).map(async ([key, target]) => {
+    try {
+      const res = await fetch(
+        `${SUPABASE_URL}/rest/v1/${target.table}?select=*`,
+        { headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` } }
       );
-      if (!hasActivityInRange) return false;
+      if (res.ok) {
+        window._serviceData[key] = await res.json();
+      } else if (res.status === 404 || res.status === 400) {
+        window._serviceData[key] = [];
+      } else {
+        errs.push(target.table + '(' + res.status + ')');
+        window._serviceData[key] = [];
+      }
+    } catch (e) {
+      errs.push(target.table);
+      window._serviceData[key] = [];
     }
-    // 活動種別フィルタ
-    if (typeF) {
-      const hasType = (it.approach.history || []).some(h => {
-        if (typeF === 'meeting') return h.result === 'meeting';
-        if (typeF === 'tel') return h.action === 'tel';
-        if (typeF === 'visit') return h.action === 'visit';
-        if (typeF === 'letter_sent') return h.action === 'letter_sent';
-        return false;
-      });
-      if (!hasType) return false;
-    }
+  }));
+
+  if (loading) loading.style.display = 'none';
+  if (errs.length) toast('⚠️ 一部テーブルの取得失敗: ' + errs.join(', '));
+  renderApproach();
+}
+
+function renderApproach() {
+  const searchF  = (document.getElementById('ap-search')?.value || '').toLowerCase();
+  const serviceF = document.getElementById('ap-service')?.value || '';
+  const phaseF   = document.getElementById('ap-phase')?.value || '';
+  const dateF    = document.getElementById('ap-date-filter')?.value || '';
+  const sortF    = document.getElementById('ap-sort')?.value || 'next_date';
+  const today    = todayJST();
+
+  // 全エントリをflattening
+  const allEntries = [];
+  const sd = window._serviceData || {};
+
+  Object.entries(ATTACK_TARGETS).forEach(([key, target]) => {
+    (sd[key] || []).forEach(row => {
+      const cid = row.source_data && row.source_data.company_id;
+      const np  = (row.phone || '').replace(/\D/g, '');
+      const item = cid
+        ? items.find(x => String(x.id) === String(cid))
+        : (np ? items.find(x => (x.phone || '').replace(/\D/g, '') === np) : null);
+      allEntries.push({ ...row, _service: key, _target: target, _item: item || null });
+    });
+  });
+
+  // サービス別サマリー
+  const summaryEl = document.getElementById('ap-service-summary');
+  if (summaryEl) {
+    const svcCounts = {};
+    Object.keys(ATTACK_TARGETS).forEach(k => { svcCounts[k] = (sd[k] || []).length; });
+    summaryEl.innerHTML = Object.entries(ATTACK_TARGETS).map(([key, t]) => {
+      const active = serviceF === key;
+      return `<div onclick="document.getElementById('ap-service').value='${key}';renderApproach()"
+        style="background:${active ? t.bg : '#fff'};border:2px solid ${active ? t.color : '#E5E7EB'};border-radius:12px;padding:8px 12px;text-align:center;cursor:pointer;transition:all 0.15s">
+        <div style="font-size:11px;font-weight:800;color:${t.color};margin-bottom:2px">${t.label.split('｜')[0]}</div>
+        <div style="font-size:22px;font-weight:900;color:${t.color}">${svcCounts[key] || 0}</div>
+        <div style="font-size:10px;color:#9CA3AF">件</div>
+      </div>`;
+    }).join('') +
+    `<div onclick="document.getElementById('ap-service').value='';renderApproach()"
+      style="background:${serviceF===''?'#F3F4F6':'#fff'};border:2px solid ${serviceF===''?'#9CA3AF':'#E5E7EB'};border-radius:12px;padding:8px 12px;text-align:center;cursor:pointer;transition:all 0.15s">
+      <div style="font-size:11px;font-weight:800;color:#6B7280;margin-bottom:2px">🎯 全サービス</div>
+      <div style="font-size:22px;font-weight:900;color:#374151">${allEntries.length}</div>
+      <div style="font-size:10px;color:#9CA3AF">件</div>
+    </div>`;
+  }
+
+  // 今週の範囲計算
+  const getWeekEnd = () => {
+    const d = new Date(today);
+    d.setDate(d.getDate() + (7 - d.getDay() || 7));
+    return d.toISOString().slice(0, 10);
+  };
+  const weekEnd = getWeekEnd();
+
+  // フィルター
+  let list = allEntries.filter(e => {
+    if (searchF && !(e.company_name || '').toLowerCase().includes(searchF)) return false;
+    if (serviceF && e._service !== serviceF) return false;
+    if (phaseF && e.phase !== phaseF) return false;
+    const nd = e.next_date || '';
+    if (dateF === 'overdue'  && !(nd && nd < today)) return false;
+    if (dateF === 'today'    && nd !== today) return false;
+    if (dateF === 'week'     && !(nd && nd >= today && nd <= weekEnd)) return false;
+    if (dateF === 'no_date'  && nd) return false;
     return true;
   });
 
   // ソート
   list.sort((a, b) => {
-    const aA = a.approach, bA = b.approach;
-    if (sortF === 'recent')
-      return (bA.lastActionAt || bA.startedAt || '').localeCompare(aA.lastActionAt || aA.startedAt || '');
-    if (sortF === 'recent_old')
-      return (aA.lastActionAt || aA.startedAt || '').localeCompare(bA.lastActionAt || bA.startedAt || '');
-    if (sortF === 'today_active') {
-      const todayRange = getPeriodRange('today');
-      const ac = countActivityInRange(aA, todayRange);
-      const bc = countActivityInRange(bA, todayRange);
-      return bc - ac;
+    if (sortF === 'next_date') {
+      const an = a.next_date || '9999-99-99', bn = b.next_date || '9999-99-99';
+      if (an !== bn) return an.localeCompare(bn);
     }
-    if (sortF === 'week_active') {
-      const wkRange = getPeriodRange('week');
-      const ac = countActivityInRange(aA, wkRange);
-      const bc = countActivityInRange(bA, wkRange);
-      return bc - ac;
+    if (sortF === 'last_called') {
+      return (b.last_called_at || '').localeCompare(a.last_called_at || '');
     }
-    if (sortF === 'started')
-      return (bA.startedAt || '').localeCompare(aA.startedAt || '');
-    if (sortF === 'dormant_close') {
-      const ad = aA.dormantUntil || '9999-99-99';
-      const bd = bA.dormantUntil || '9999-99-99';
-      return ad.localeCompare(bd);
-    }
-    if (sortF === 'rejects_high')
-      return (bA.rejectCount || 0) - (aA.rejectCount || 0);
-    if (sortF === 'company') return a.company.localeCompare(b.company);
-    return 0;
+    return (a.company_name || '').localeCompare(b.company_name || '');
   });
 
-  // 活動サマリーボックス（このページ用）も更新
-  renderApActivityBox();
-
-  // サマリーカード更新
-  const counts = {
-    all: allApproaching.length,
-    tel_first: allApproaching.filter(x => x.approach.currentPhase === 'tel_first').length,
-    tel_repeat: allApproaching.filter(x => x.approach.currentPhase === 'tel_repeat').length,
-    visit_ready: allApproaching.filter(x => x.approach.currentPhase === 'visit_ready').length,
-    letter: allApproaching.filter(x => x.approach.currentPhase === 'letter').length,
-    dormant: allApproaching.filter(x => ['dormant_2w','dormant_5m'].includes(x.approach.currentPhase)).length,
-    won: allApproaching.filter(x => x.approach.currentPhase === 'meeting_won').length,
-  };
-  const setIf = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
-  setIf('ap-sum-all', counts.all);
-  setIf('ap-sum-tel1', counts.tel_first);
-  setIf('ap-sum-telr', counts.tel_repeat);
-  setIf('ap-sum-vr', counts.visit_ready);
-  setIf('ap-sum-letter', counts.letter);
-  setIf('ap-sum-dormant', counts.dormant);
-  setIf('ap-sum-won', counts.won);
-  // 旧サマリ用 (互換)
-  setIf('ap-v', counts.visit_ready);
-  setIf('ap-t', counts.tel_first + counts.tel_repeat);
-  setIf('ap-l', counts.letter);
-  setIf('ap-total', counts.all);
-
-  const tbody = document.getElementById('ap-cards-wrap');
+  const wrap  = document.getElementById('ap-cards-wrap');
   const empty = document.getElementById('ap-empty');
-  if (!tbody) return;
-  if (!list.length) { tbody.innerHTML = ''; if (empty) empty.style.display = 'block'; return; }
+  if (!wrap) return;
+
+  if (!list.length) {
+    wrap.innerHTML = '';
+    if (empty) empty.style.display = 'block';
+    return;
+  }
   if (empty) empty.style.display = 'none';
 
-  tbody.innerHTML = '<div style="display:flex;flex-direction:column;gap:8px;font-family:\'Hiragino Maru Gothic ProN\',\'Yu Gothic UI\',sans-serif">' +
-    list.map(it => {
-    const a = it.approach;
-    const p = APPROACH_PHASE[a.currentPhase] || APPROACH_PHASE.not_started;
-    const isDormantNow = a.dormantUntil && today < a.dormantUntil;
-    const dormantDaysLeft = a.dormantUntil
-      ? Math.max(0, Math.ceil((new Date(a.dormantUntil) - new Date(today)) / (1000*60*60*24)))
-      : 0;
+  wrap.innerHTML = list.map(e => {
+    const t     = e._target;
+    const item  = e._item;
+    const ph    = SERVICE_PHASE_LABELS[e.phase] || { label: e.phase || '未着手', icon: '⚪', color: '#9CA3AF', bg: '#F9FAFB' };
+    const phone = e.phone || item?.phone || '';
+    const person = e.ceo_name || item?.person || '';
+    const logs  = Array.isArray(e.history) ? e.history : [];
+    const nd    = e.next_date || '';
+    const isOverdue = nd && nd < today;
+    const isToday   = nd === today;
+    const ndColor   = isOverdue ? '#EF4444' : isToday ? '#F59E0B' : '#6B7280';
 
-    // フェーズに応じたビタミンカラー（アクセント用）
-    const phaseColors = {
-      tel_first:   { border:'#FBBF24', accent:'#D97706', emoji:'📞' },
-      tel_repeat:  { border:'#FB923C', accent:'#C2410C', emoji:'🔄' },
-      visit_ready: { border:'#34D399', accent:'#059669', emoji:'🚀' },
-      visit_done:  { border:'#22D3EE', accent:'#0E7490', emoji:'🚶' },
-      letter:      { border:'#A78BFA', accent:'#7C3AED', emoji:'✉️' },
-      dormant_2w:  { border:'#818CF8', accent:'#4F46E5', emoji:'💤' },
-      dormant_5m:  { border:'#60A5FA', accent:'#2563EB', emoji:'❄️' },
-      meeting_won: { border:'#F472B6', accent:'#BE185D', emoji:'🎯' },
-      rejected_final: { border:'#FCA5A5', accent:'#B91C1C', emoji:'❌' },
-      not_started: { border:'#D1D5DB', accent:'#6B7280', emoji:'⚪' },
-    };
-    const c = phaseColors[a.currentPhase] || phaseColors.not_started;
+    const lastCalled = e.last_called_at
+      ? e.last_called_at.slice(0, 10)
+      : '';
 
-    // 履歴ドット（直近6件、小さめ）
-    const trailDots = (a.history || []).slice(-6).map(h => {
-      let color = '#9CA3AF', icon = '·';
-      if (h.result === 'meeting') { color = '#16A34A'; icon = '🎯'; }
-      else if (h.result === 'reached' || h.result === 'reached_card') { color = '#06B6D4'; icon = '💌'; }
-      else if (h.result === 'rejected' || h.result === 'rejected_retel') { color = '#DC2626'; icon = '🚪'; }
-      else if (h.result === 'rejected_letter') { color = '#DC2626'; icon = '✉️'; }
-      else if (h.result === 'absent') { color = '#F59E0B'; icon = '🏠'; }
-      else if (h.result === 'reschedule') { color = '#F59E0B'; icon = '📅'; }
-      else if (h.action === 'letter_sent') { color = '#7C3AED'; icon = '✉️'; }
-      else if (h.action === 'dormant_recovered') { color = '#22C55E'; icon = '⏰'; }
-      else if (h.action === 'tel') { color = '#FF4602'; icon = '📞'; }
-      else if (h.action === 'visit') { color = '#0891B2'; icon = '🚶'; }
-      const labelMap = {
-        meeting:'アポ獲得', reached:'つながった', reached_card:'名刺交換',
-        rejected:'お断り', rejected_retel:'門前払い→再電', rejected_letter:'門前払い→手紙',
-        absent:'不在', reschedule:'後日', letter_sent:'手紙送付', dormant_recovered:'休眠復帰'
-      };
-      const tooltipDate = (h.ts||'').slice(0,10);
-      const tooltipResult = labelMap[h.result || h.action] || (h.result || h.action);
-      return '<span title="' + tooltipDate + ' / ' + tooltipResult + '" style="display:inline-block;width:16px;height:16px;border-radius:50%;background:' + color + '22;border:1.5px solid ' + color + ';font-size:8px;line-height:14px;text-align:center">' + icon + '</span>';
-    }).join('');
+    const borderColor = isOverdue ? '#EF4444' : isToday ? '#F59E0B' : t.color;
 
-    // 次のアクション（コンパクト）
-    let nextActionHtml = '';
-    if (a.currentPhase === 'meeting_won') {
-      nextActionHtml = '<div style="background:#F472B6;color:#fff;padding:6px 12px;border-radius:8px;font-size:12px;font-weight:900;white-space:nowrap">🎯 商談獲得</div>';
-    } else if (isDormantNow) {
-      let actionVerb = '再電';
-      let actionIcon = '📞';
-      if (a.dormantReason === 'letter_followup_6w') { actionVerb = '手紙フォロー電話'; actionIcon = '📞'; }
-      else if (a.dormantReason === 'rejected_4times_5m') { actionVerb = '再電'; actionIcon = '🔄'; }
-      const isToday = dormantDaysLeft === 0;
-      const bg = isToday ? '#FCA5A5' : '#FED7AA';
-      const textColor = isToday ? '#fff' : '#92400E';
-      const label = isToday
-        ? '今日 ' + actionIcon + ' ' + actionVerb + '！'
-        : actionIcon + ' ' + dormantDaysLeft + '日後に' + actionVerb;
-      nextActionHtml = '<div style="background:' + bg + ';color:' + textColor + ';padding:6px 12px;border-radius:8px;font-size:12px;font-weight:800;white-space:nowrap">' + label + '</div>';
-    } else {
-      nextActionHtml = '<button onclick="event.stopPropagation();openApproachAction(' + it.id + ')" style="background:linear-gradient(135deg,#FF4602,#FFB347);color:#fff;border:none;border-radius:10px;padding:8px 16px;font-size:13px;font-weight:900;cursor:pointer;font-family:inherit;white-space:nowrap;box-shadow:0 2px 6px rgba(255,70,2,0.25)">▶ ' + p.label + '</button>';
-    }
-
-    // フェーズバッジ（コンパクト）
-    const phaseBadge = '<span style="display:inline-flex;align-items:center;gap:4px;background:' + c.border + ';color:#fff;padding:3px 10px;border-radius:8px;font-size:11px;font-weight:800;white-space:nowrap">' +
-      '<span>' + c.emoji + '</span><span>' + p.label + '</span>' +
-    '</span>';
-
-    return '<div onclick="openDetail(' + it.id + ')" style="background:#fff;border-left:4px solid ' + c.border + ';border-top:1px solid #F3F4F6;border-right:1px solid #F3F4F6;border-bottom:1px solid #F3F4F6;border-radius:10px;padding:10px 14px;cursor:pointer;transition:all 0.15s;display:flex;align-items:center;gap:12px;flex-wrap:wrap" onmouseover="this.style.transform=\'translateX(2px)\';this.style.boxShadow=\'0 2px 8px rgba(0,0,0,0.06)\'" onmouseout="this.style.transform=\'translateX(0)\';this.style.boxShadow=\'none\'">' +
-      // 左：会社名 + サブ情報（縦並び）
-      '<div style="flex:1;min-width:180px">' +
-        '<div style="font-size:14px;font-weight:800;color:#1F2937;line-height:1.3;word-break:break-all;display:flex;align-items:center;gap:6px;flex-wrap:wrap">' + escapeHtml(it.company) + ' ' + getStarHtml(it.starRating, 12) + '</div>' +
-        '<div style="font-size:10px;color:#6B7280;font-weight:600;margin-top:2px">' +
-          (it.industry ? escapeHtml(it.industry) : '') +
-          (it.industry && it.area ? ' · ' : '') +
-          (it.area ? escapeHtml(it.area) : '') +
-          (it.person ? ' · 👤' + escapeHtml(it.person) : '') +
-        '</div>' +
-      '</div>' +
-      // 中央：フェーズバッジ + 拒否
-      '<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">' +
-        phaseBadge +
-        (a.rejectCount > 0 ? '<span style="background:#FEE2E2;color:#DC2626;padding:2px 8px;border-radius:6px;font-size:10px;font-weight:800">🛑 拒否' + a.rejectCount + '</span>' : '') +
-      '</div>' +
-      // 履歴ドット + 件数（コンパクト）
-      '<div style="display:flex;align-items:center;gap:4px;min-width:120px">' +
-        '<span style="font-size:10px;color:#FF4602;font-weight:800">📞' + a.callCount + '</span>' +
-        '<span style="font-size:10px;color:#0891B2;font-weight:800">🚶' + a.visitCount + '</span>' +
-        (trailDots ? '<span style="display:inline-flex;gap:2px;margin-left:4px">' + trailDots + '</span>' : '') +
-      '</div>' +
-      // 右：次のアクション
-      '<div>' + nextActionHtml + '</div>' +
-    '</div>';
-  }).join('') + '</div>';
+    return `<div style="background:#fff;border-radius:12px;border:1px solid #F3F4F6;border-left:4px solid ${borderColor};padding:14px 18px;margin-bottom:10px;display:flex;align-items:flex-start;gap:14px;cursor:pointer;transition:all 0.15s"
+      onclick="openDetail(${item ? item.id : 'null'})"
+      onmouseover="this.style.boxShadow='0 2px 12px rgba(0,0,0,0.08)';this.style.transform='translateY(-1px)'"
+      onmouseout="this.style.boxShadow='';this.style.transform=''">
+      <div style="flex:1;min-width:0">
+        <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:5px">
+          <span style="font-size:10px;font-weight:800;padding:2px 8px;border-radius:6px;background:${t.bg};color:${t.color};border:1px solid ${t.color}">${t.label.split('｜')[0]}</span>
+          <span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:6px;background:${ph.bg};color:${ph.color}">${ph.icon} ${ph.label}</span>
+          ${logs.length ? `<span style="font-size:10px;color:#9CA3AF">📝 ${logs.length}回</span>` : ''}
+        </div>
+        <div style="font-size:14px;font-weight:800;color:#222;margin-bottom:5px">${escapeHtml(e.company_name || '—')}</div>
+        <div style="display:flex;flex-wrap:wrap;gap:10px;font-size:12px;color:#666;margin-bottom:4px">
+          ${phone ? `<span style="font-weight:700;color:#333">📞 ${escapeHtml(phone)}</span>` : ''}
+          ${person ? `<span>👤 ${escapeHtml(person)}</span>` : ''}
+          ${nd ? `<span style="font-weight:700;color:${ndColor}">📅 ${nd}${isOverdue ? ' (期限切れ)' : isToday ? ' (今日！)' : ''}</span>` : '<span style="color:#CCC">次回予定なし</span>'}
+        </div>
+        ${lastCalled ? `<div style="font-size:11px;color:#9CA3AF">最終コール: ${lastCalled}</div>` : ''}
+        ${e.memo ? `<div style="font-size:11px;color:#888;margin-top:4px;white-space:pre-wrap;max-height:40px;overflow:hidden">${escapeHtml(e.memo)}</div>` : ''}
+      </div>
+      <a href="${t.href}" target="_blank" onclick="event.stopPropagation()"
+         style="flex-shrink:0;font-size:11px;font-weight:700;padding:6px 12px;border-radius:8px;background:${t.bg};color:${t.color};border:1px solid ${t.color};text-decoration:none;white-space:nowrap">
+        開く →
+      </a>
+    </div>`;
+  }).join('');
 }
 
-// サマリーカードからのフィルタ切替
-function filterByApprPhase(phase) {
-  const sel = document.getElementById('ap-phase');
-  if (!sel) return;
-  sel.value = phase;
-  renderApproach();
-}
-
-// ══════════════════════════════════════════
-// 活動振り返りユーティリティ
-// ══════════════════════════════════════════
-
-// 期間ラベルから { from: ISO, to: ISO } を返す
-function getPeriodRange(period) {
-  if (!period) return null;
-  const now = new Date();
-  const todayStr = todayJST(); // YYYY-MM-DD
-  if (period === 'today') {
-    return { from: todayStr + 'T00:00:00', to: todayStr + 'T23:59:59' };
-  }
-  if (period === 'week') {
-    // 月曜始まり
-    const d = new Date(now);
-    const dow = d.getDay(); // 0=日
-    const offset = (dow === 0) ? 6 : dow - 1;
-    d.setDate(d.getDate() - offset);
-    const from = d.toISOString().slice(0, 10) + 'T00:00:00';
-    const dEnd = new Date(d);
-    dEnd.setDate(dEnd.getDate() + 7);
-    const to = dEnd.toISOString().slice(0, 10) + 'T00:00:00';
-    return { from, to };
-  }
-  if (period === 'month') {
-    const y = now.getFullYear();
-    const m = (now.getMonth() + 1).toString().padStart(2, '0');
-    const lastDay = new Date(y, now.getMonth() + 1, 0).getDate();
-    return {
-      from: y + '-' + m + '-01T00:00:00',
-      to: y + '-' + m + '-' + String(lastDay).padStart(2,'0') + 'T23:59:59',
-    };
-  }
-  if (period === 'custom') {
-    const f = document.getElementById('activity-from')?.value;
-    const t = document.getElementById('activity-to')?.value;
-    if (f && t) return { from: f + 'T00:00:00', to: t + 'T23:59:59' };
-    return null;
-  }
-  return null;
-}
-
-// 期間内の活動件数（電話/訪問/手紙）
-function countActivityInRange(approach, range) {
-  if (!approach || !range) return 0;
-  return (approach.history || []).filter(h =>
-    h.ts && h.ts >= range.from && h.ts <= range.to &&
-    (h.action === 'tel' || h.action === 'visit' || h.action === 'letter_sent')
-  ).length;
-}
-
-// アクション別カウント
-function countActivityByType(approach, range, type) {
-  if (!approach) return 0;
-  return (approach.history || []).filter(h => {
-    if (range && (!h.ts || h.ts < range.from || h.ts > range.to)) return false;
-    if (type === 'tel') return h.action === 'tel';
-    if (type === 'visit') return h.action === 'visit';
-    if (type === 'letter_sent') return h.action === 'letter_sent';
-    if (type === 'meeting') return h.result === 'meeting';
-    return false;
-  }).length;
-}
-
-// 全企業合計の活動件数
-function totalActivityInRange(range, type) {
-  if (!range) return 0;
-  let total = 0;
-  for (const it of items) {
-    if (!it.approach) continue;
-    total += countActivityByType(it.approach, range, type);
-  }
-  return total;
-}
-
-// ══ ダッシュボード用：活動サマリー ══
-let activityCurrentPeriod = 'today';
-
-function setActivityPeriod(p) {
-  activityCurrentPeriod = p;
-  // ボタンの見た目
-  document.querySelectorAll('.activity-period-btn').forEach(b => {
-    if (b.dataset.period === p) {
-      b.style.cssText = 'padding:7px 14px;border-radius:10px;border:2px solid #FF4602;background:#FF4602;color:#fff;font-size:12px;font-weight:800;cursor:pointer';
-    } else {
-      b.style.cssText = 'padding:7px 14px;border-radius:10px;border:2px solid #E5E7EB;background:#fff;color:#6B7280;font-size:12px;font-weight:700;cursor:pointer';
-    }
-  });
-  // カスタム範囲UIの表示切替
-  const customWrap = document.getElementById('activity-custom-range');
-  if (customWrap) {
-    if (p === 'custom') {
-      customWrap.style.display = 'flex';
-      // デフォルトで今日を入れておく
-      const today = todayJST();
-      const fromEl = document.getElementById('activity-from');
-      const toEl = document.getElementById('activity-to');
-      if (fromEl && !fromEl.value) fromEl.value = today;
-      if (toEl && !toEl.value) toEl.value = today;
-    } else {
-      customWrap.style.display = 'none';
-    }
-  }
-  renderActivitySummary();
-}
 
 function renderActivitySummary() {
   const wrap = document.getElementById('activity-summary-cards');
