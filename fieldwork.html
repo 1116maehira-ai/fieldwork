@@ -1858,7 +1858,7 @@ tr:hover td { background: rgba(255,70,2,0.03); cursor: pointer; }
       <button class="btn btn-ghost btn-sm" onclick="delCompany()" style="color:var(--red);border-color:var(--red)"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg> 削除</button>
       <div style="display:flex;gap:10px;align-items:center">
         <button class="btn btn-ghost btn-sm" onclick="cm(&#39;m-detail&#39;)">閉じる</button>
-        <button onclick="startApproachFromDetail(this)" id="detail-start-btn" class="approach-go-btn" style="background:linear-gradient(135deg,#FF4602,#FFB347);color:#fff;border:none;border-radius:14px;padding:14px 28px;font-size:16px;font-weight:900;cursor:pointer;font-family:'Hiragino Maru Gothic ProN','Yu Gothic UI',sans-serif;box-shadow:0 6px 16px rgba(255,70,2,0.35);letter-spacing:0.05em">🚀 開始</button>
+
       </div>
     </div>
   </div>
@@ -7413,6 +7413,7 @@ function openDetail(id) {
         })()}
         ${it.industry?`<span style="background:#fff;color:#374151;padding:6px 12px;border-radius:10px;font-size:12px;font-weight:700;border:1.5px solid #E5E7EB">🏭 ${it.industry}</span>`:''}
         ${it.area?`<span style="background:#fff;color:#374151;padding:6px 12px;border-radius:10px;font-size:12px;font-weight:700;border:1.5px solid #E5E7EB">📍 ${it.area}</span>`:''}
+        ${it.person?`<span style="background:#FEF3C7;color:#92400E;padding:6px 12px;border-radius:10px;font-size:13px;font-weight:800;border:1.5px solid #FCD34D">👤 ${it.person}</span>`:''}
         ${it.referral?`<span style="background:#F5F3FF;color:#7C3AED;padding:6px 12px;border-radius:10px;font-size:12px;font-weight:700;border:1.5px solid #C4B5FD">🤝 ${it.referral}</span>`:''}
       </div>
 
