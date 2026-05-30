@@ -7885,6 +7885,10 @@ function openDetail(id) {
           <label class="flabel">備考・提案メモ</label>
           <textarea class="ftextarea ${it.researchNotes?'is-filled':'is-empty'}" id="edit-notes" placeholder="（例：未入力 — 提案の切り口、気づきメモなど自由記入）">${it.researchNotes||''}</textarea>
         </div>
+        <div class="fl" style="grid-column:1/-1">
+          <label class="flabel">📞 通話メモ（センターコール由来）</label>
+          <textarea class="ftextarea ${it.callMemo?'is-filled':'is-empty'}" id="edit-callmemo" placeholder="（例：未入力 — 通話の生々しいやりとりメモ）">${it.callMemo||''}</textarea>
+        </div>
       </div>
       <div style="margin-top:12px;display:flex;justify-content:flex-end">
         <button class="btn btn-green" onclick="saveDetailEdit()">
@@ -9042,6 +9046,7 @@ function saveDetailEdit() {
   const revenue     = document.getElementById('edit-revenue')?.value;
   const employees   = document.getElementById('edit-employees')?.value.trim();
   const notes       = document.getElementById('edit-notes')?.value.trim();
+  const callmemo    = document.getElementById('edit-callmemo')?.value.trim();
 
   if (person      !== undefined) it.person = person;
   if (phone       !== undefined) it.phone = phone;
@@ -9067,6 +9072,7 @@ function saveDetailEdit() {
   if (revenue     !== undefined) it.revenue = revenue;
   if (employees   !== undefined) it.employeeCount = employees;
   if (notes       !== undefined) it.researchNotes = notes;
+  if (callmemo    !== undefined) it.callMemo = callmemo;
 
   // 統一ルール：有意義項目が入っていれば拡張済みフラグを更新
   maybeMarkEnriched(it);
@@ -11934,6 +11940,7 @@ const IMPORT_FIELD_MAP = {
   job_antenna_url: 'jobAntennaUrl',
   own_recruit_url: 'ownRecruitUrl',
   research_notes: 'researchNotes',
+  memo: 'callMemo',
 };
 
 function _impNormPhone(p) { return (p || '').toString().replace(/[^\d]/g, ''); }
