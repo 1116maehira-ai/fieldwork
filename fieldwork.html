@@ -12275,48 +12275,165 @@ function rpGenerate() {
   if (!checked.length) { toast('調査対象企業を選んでください'); return; }
   if (checked.length > 30) { toast('30社を超えています。絞り込んでください'); return; }
 
-  const selectedItems = checked
-    .map(cb => items.find(it => it.id === parseInt(cb.value)))
-    .filter(Boolean);
+  const sel = checked.map(cb => items.find(it => it.id === parseInt(cb.value))).filter(Boolean);
+  const n = sel.length;
 
-  const svcHint = window._rpService ? ('【用途】' + (RESEARCH_TEMPLATES[window._rpService]?.label || '') + '\n\n') : '';
+  const subPaths = ['corp','corp/','company','company/','about','about/','profile','profile/',
+                    'recruit','recruit/','info','info/'];
 
-  const companyList = selectedItems.map((it, i) =>
-    `${i + 1}. ${it.company}${it.area ? '（' + it.area + '）' : ''}${it.industry ? '【' + it.industry + '】' : ''}`
-  ).join('\n');
+  const Q = '`';  // バックティック
+  const BQ = Q + Q + Q;
 
-  const prompt = svcHint +
-`以下の${selectedItems.length}社について、ウェブ検索で各社の情報を調査し、CSV形式で返してください。
+  let parts = [];
 
-【調査してほしい情報（1社ずつ）】
-- 代表者名（代表取締役・院長・施設長など）
-- 創業年月日（例：2005年3月）
-- 設立年月日（法人登記日、例：2005年6月）
-- 公式ウェブサイトURL
-- InstagramのURL（なければ空欄）
-- FacebookのURL（なければ空欄）
-- X（旧Twitter）のURL（なければ空欄）
-- TikTokのURL（なければ空欄）
-- Indeed求人ページのURL（なければ空欄）
-- 自社採用ページのURL（なければ空欄）
-- 従業員数（おおよそ、例：30名）
-- 推定年商（おおよそ、例：1億円）
-- 業種（例：飲食業、建設業、介護事業など）
+  parts.push(
+    '# \uD83D\uDD0D TENOHIRAリサーチパッケージ\n\n' +
+    '## \uD83D\uDCCB 使い方\n\n' +
+    '1. このテキストを **claude.ai** の新しいチャットに貼り付け\n' +
+    '2. 各企業のプロンプト①②を順番に実行させる\n' +
+    '3. 最後に統合CSVを1つ返してもらう\n' +
+    '4. そのCSVをFIELDWORKの情報収集ページ → ステップ3に貼り付けて「取り込む！」\n\n' +
+    '---\n\n' +
+    '## ⚙️ 統合CSV指示文\n\n' +
+    BQ + '\n' +
+    '以下の' + n + '社について、各企業ごとに【プロンプト①: HP本文抽出】と【プロンプト②: SNS・求人URL検索】を順次実行してください。\n\n' +
+    '最後に、すべての企業の結果を統合した1つのCSVテーブルとして以下の列構成で出力してください：\n\n' +
+    'company_name,ceo_name,email,founding_date,established_date,instagram_url,facebook_url,x_url,tiktok_url,indeed_url,job_antenna_url,agre_url,mynavi_url,own_recruit_url,revenue,employees,notes\n\n' +
+    '【統合CSV出力ルール】\n' +
+    '- ヘッダー行が1行、データ行が' + n + '行\n' +
+    '- 各値はダブルクォートで囲む\n' +
+    '- 不明はすべて N/A\n' +
+    '- URLは https:// から始まる完全形式\n' +
+    '- Markdownリンク禁止\n' +
+    '- プロンプト①の結果に、プロンプト②の SNS/求人URL を統合（同じcompany_nameでマージ）\n' +
+    BQ + '\n\n---\n\n'
+  );
 
-【調査対象企業リスト（${selectedItems.length}社）】
-${companyList}
+  sel.forEach(function(it, idx) {
+    const num  = idx + 1;
+    const name = escapeHtml(it.company || '');
+    const ph   = it.phone  || '未登録';
+    const addr = it.addr   || it.area || '未登録';
+    const site = it.website || '';
 
-【出力形式】
-CSV形式で出力してください（1行目はヘッダー行）。
-ヘッダー行：会社名,代表者名,創業年月日,設立年月日,公式サイト,Instagram,Facebook,X,TikTok,Indeed,自社採用,従業員数,年商,業種
+    let urlCandidates = '';
+    if (site) {
+      const base = site.replace(/\/$/, '');
+      urlCandidates = subPaths.map(function(p){ return '\u30FB' + base + '/' + p; }).join('\n');
+    } else {
+      urlCandidates = '\uff08\u516c\u5f0f\u30b5\u30a4\u30c8\u672a\u767b\u9332 \u2192 Google\u691c\u7d22\u3067\u516c\u5f0f\u30b5\u30a4\u30c8\u3092\u7279\u5b9a\u3057\u3066\u304b\u3089\u8abf\u67fb\uff09';
+    }
 
-【重要ルール】
-・確認できなかった項目は「要確認」と記入すること（捏造・推測は絶対にしない）
-・URLは https:// から始まる完全なURLで記入すること
-・会社名はリストの表記のまま使用すること`;
+    const p1 =
+      BQ + '\n' +
+      '以下の企業について、指定したURLとそのドメイン内のサブページのみを読み、情報を抽出してください。\n\n' +
+      '【\u2757 最重要：ハルシネーション禁止】\n' +
+      '1. あなたの学習データの記憶ではなく、必ず実際にURLにアクセスして読むこと\n' +
+      '2. サイト内に明記されていない項目は必ず N/A\n' +
+      '3. 推測・想像で値を埋めることは絶対禁止\n' +
+      '4. 各値には必ず「出典：原文の引用とURL」を notes に書く\n\n' +
+      '【調査対象企業】\n' +
+      '"' + name + '"\n' +
+      '公式サイト：' + (site || '（未登録 → まずGoogle検索で特定すること）') + '\n' +
+      '所在地：' + addr + '\n' +
+      '電話番号：' + ph + '\n\n' +
+      '【まず最優先で確認すべきURL候補（存在すれば必ず読む）】\n' +
+      urlCandidates + '\n\n' +
+      '上記URLが404やリンク切れの場合は無視し、トップページのナビゲーションから「会社概要・About・採用情報」などのページを探して読むこと\n\n' +
+      '【調査ルール】\n' +
+      '・参照可能なドメインは公式サイトのみ。それ以外は参照禁止\n' +
+      '・他のドメイン（Google検索結果、Wikipedia、SNSの中身、まとめサイト等）は参照禁止\n' +
+      '・「会社概要」「代表挨拶」「私たちについて」「採用情報」「会社情報」「About」などのサブページがあれば必ず巡回\n' +
+      '・サイト内に存在しない情報は必ず N/A（推測禁止）\n\n' +
+      '【出力CSV列】\n' +
+      'company_name,ceo_name,email,founding_date,established_date,instagram_url,facebook_url,x_url,tiktok_url,indeed_url,job_antenna_url,agre_url,mynavi_url,own_recruit_url,revenue,employees,notes\n\n' +
+      '【各列の説明】\n' +
+      '・ceo_name: 代表者名（「代表取締役」「代表」「社長」などの肩書きの直後の氏名のみ）\n' +
+      '・email: サイト内に明記された公開メールアドレス\n' +
+      '・founding_date: 創業年月日（YYYY-MM形式、「創業」と明記されたもの）\n' +
+      '・established_date: 設立年月日（YYYY-MM形式、「設立」と明記されたもの）\n' +
+      '・instagram_url〜tiktok_url: SNS公式URL（サイト内にリンクがあれば）\n' +
+      '・indeed_url〜mynavi_url: 求人サイト企業ページURL（サイト内にリンクがあれば）\n' +
+      '・own_recruit_url: 自社の採用ページURL\n' +
+      '・revenue: 年商（サイトに明記がある場合のみ。記載なしは N/A）\n' +
+      '・employees: 従業員数（サイトに明記がある場合のみ。記載なしは N/A）\n' +
+      '・notes: 各項目の出典URLを必ず記載\n\n' +
+      '【出力ルール】\n' +
+      '・1行目はヘッダー行、2行目がデータ行（行と行の間に必ず改行を入れること）\n' +
+      '・各値は必ずダブルクォートで囲む\n' +
+      '・不明な項目は N/A（空白不可）\n' +
+      '・URLは https:// から始まる完全形式\n' +
+      '・Markdownリンク [text](url) は使わない\n' +
+      BQ;
 
+    const p2 =
+      BQ + '\n' +
+      '以下の企業について、指定された信頼ドメインのみを調査し、SNS・求人URLを抽出してください。\n\n' +
+      '【\u2757 最重要：ハルシネーション禁止】\n' +
+      '1. あなたの学習データの記憶ではなく、実際にWeb検索して見つけること\n' +
+      '2. 下記の許可ドメイン以外は一切参照禁止\n' +
+      '3. アカウント名・URLは「実在を確認した」もののみ。「ありそう」「あるはず」は禁止\n' +
+      '4. 同名の別企業のアカウントを混ぜないこと。所在地・電話番号で必ず照合\n' +
+      '5. 見つからない項目は必ず N/A\n' +
+      '6. 各値の出典URLを必ず notes に記載\n\n' +
+      '【許可ドメイン（ホワイトリスト）】\n' +
+      '・SNS: instagram.com, facebook.com, x.com, twitter.com, tiktok.com\n' +
+      '・求人: indeed.com, mynavi.jp, mynavi-agent.jp, agre.co.jp, job-antenna.jp\n' +
+      '※ 上記以外のドメインは禁止\n\n' +
+      '【調査対象企業】\n' +
+      '"' + name + '"\n' +
+      '公式サイト：' + (site || '未登録') + '\n' +
+      '所在地：' + addr + '\n' +
+      '電話番号：' + ph + '\n\n' +
+      '【照合ルール】\n' +
+      '・同名企業が複数ある場合、所在地（住所）または電話番号でこの企業と一致するアカウントのみ採用\n' +
+      '・所在地や電話番号が確認できないアカウントは N/A 扱い\n\n' +
+      '【出力CSV列】\n' +
+      'instagram_url,facebook_url,x_url,tiktok_url,indeed_url,job_antenna_url,agre_url,mynavi_url,notes\n\n' +
+      '【各列の説明】\n' +
+      '・instagram_url: Instagram公式アカウント。site:instagram.com で検索\n' +
+      '・facebook_url: Facebook公式ページ。site:facebook.com で検索\n' +
+      '・x_url: X（旧Twitter）公式アカウント。site:x.com または site:twitter.com で検索\n' +
+      '・tiktok_url: TikTok公式アカウント。site:tiktok.com で検索\n' +
+      '・indeed_url: Indeedの企業ページ。site:indeed.com で検索\n' +
+      '・job_antenna_url: ジョブアンテナの企業ページ。site:job-antenna.jp で検索\n' +
+      '・agre_url: アグレ（沖縄の求人サイト）の企業ページ。site:agre.co.jp で検索\n' +
+      '・mynavi_url: マイナビの企業ページ。site:mynavi.jp で検索\n' +
+      '・notes: 各URLの出典（どのページで実在を確認したか）を必ず記載\n\n' +
+      '【出力ルール】\n' +
+      '・1行目はヘッダー行、2行目がデータ行\n' +
+      '・各値はダブルクォートで囲む\n' +
+      '・不明な項目は必ず N/A\n' +
+      '・URLは https:// から始まる完全形式\n' +
+      '・Markdownリンク [text](url) は使わない\n' +
+      BQ;
+
+    parts.push(
+      '## ' + num + '/' + n + ' 「' + name + '」\n\n' +
+      '【企業情報】\n' +
+      '- 会社名: ' + name + '\n' +
+      '- 電話番号: ' + ph + '\n' +
+      '- 住所: ' + addr + '\n' +
+      '- 公式サイト: ' + (site || '未登録') + '\n' +
+      '- 業種: ' + escapeHtml(it.industry || '未登録') + '\n\n' +
+      '【調査プロンプト①：HP本文抽出】\n\n' +
+      p1 + '\n\n' +
+      '【調査プロンプト②：SNS・求人URL検索】\n\n' +
+      p2 + '\n\n---\n\n'
+    );
+  });
+
+  parts.push(
+    '## \u2705 最終確認\n\n' +
+    'すべての企業の結果を統合した1つのCSVを返してください。\n\n' +
+    'ヘッダー行（必ずこの形式で）：\n' +
+    'company_name,ceo_name,email,founding_date,established_date,instagram_url,facebook_url,x_url,tiktok_url,indeed_url,job_antenna_url,agre_url,mynavi_url,own_recruit_url,revenue,employees,notes\n\n' +
+    'コピーしてFIELDWORKの情報収集 → ステップ3に貼り付ければDBに反映されます。'
+  );
+
+  const prompt = parts.join('');
   const ta = document.getElementById('rp-prompt-text');
-  if (ta) ta.value = prompt;
+  if (ta) { ta.value = prompt; ta.style.height = '300px'; }
   const res = document.getElementById('rp-result');
   if (res) res.style.display = 'block';
 }
