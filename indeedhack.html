@@ -1186,7 +1186,7 @@ function renderCard(c, today) {
   
   return `
     <div class="card-wrap">
-      <div class="company-card ${c.phase} ${isToday ? 'today' : ''} ${priorityClass} ${isExcluded ? 'excluded' : ''}">
+      <div class="company-card ${c.phase} ${isToday ? 'today' : ''} ${priorityClass} ${isExcluded ? 'excluded' : ''}" style="${c.phase !== 'pending' ? 'opacity:0.45;filter:grayscale(40%)' : ''}">
         <div class="company-info" onclick="openModal('${c.id}')" style="cursor:pointer;">
           <div class="company-name">
             <span class="phase-badge phase-${c.phase}">${phaseLab}</span>
