@@ -821,6 +821,9 @@ body {
     <select class="area-select" id="area-select">
       <option value="all">エリア: すべて</option>
     </select>
+    <select class="area-select" id="industry-select">
+      <option value="all">業種: すべて</option>
+    </select>
     <select class="area-select" id="priority-select" style="min-width:120px;">
       <option value="all">⭐ すべて</option>
       <option value="3">⭐⭐⭐ のみ</option>
@@ -888,6 +891,7 @@ let currentScriptIndex = 0; // ★ 現在使ってるスクリプトのインデ
 let currentTab = 'script'; // ★ モーダル内タブ：'script' | 'info'
 let currentFilter = 'all';
 let currentArea = 'all';
+let currentIndustry = 'all';
 let currentPriority = 'all';
 let currentSort = 'default';
 let searchText = '';
@@ -1003,6 +1007,18 @@ function buildAreaOptions() {
   sel.innerHTML = `<option value="all">エリア: すべて (${companies.length})</option>` +
     sortedAreas.map(([a, n]) => `<option value="${escapeHtml(a)}">${escapeHtml(a)} (${n})</option>`).join('');
   sel.value = currentArea;
+
+  // 業種select更新
+  const industryCounts = {};
+  companies.forEach(c => { if (c.industry) industryCounts[c.industry] = (industryCounts[c.industry]||0)+1; });
+  const inSel = document.getElementById('industry-select');
+  const currentIndustry = inSel ? inSel.value : 'all';
+  const sortedIndustries = Object.entries(industryCounts).sort((a,b) => b[1]-a[1]);
+  if (inSel) {
+    inSel.innerHTML = `<option value="all">業種: すべて (${companies.length})</option>` +
+      sortedIndustries.map(([g,n]) => `<option value="${escapeHtml(g)}">${escapeHtml(g)} (${n})</option>`).join('');
+    inSel.value = currentIndustry;
+  }
 }
 
 // 統計
@@ -1048,6 +1064,9 @@ function renderList() {
   // エリアフィルタ
   if (currentArea !== 'all') {
     list = list.filter(c => extractArea(c.address) === currentArea);
+  }
+  if (currentIndustry !== 'all') {
+    list = list.filter(c => c.industry === currentIndustry);
   }
   
   // 優先度フィルタ
@@ -2528,6 +2547,10 @@ document.getElementById('search-input').addEventListener('input', e => {
 });
 document.getElementById('area-select').addEventListener('change', e => {
   currentArea = e.target.value;
+  renderList();
+});
+document.getElementById('industry-select').addEventListener('change', e => {
+  currentIndustry = e.target.value;
   renderList();
 });
 document.getElementById('priority-select').addEventListener('change', e => {
