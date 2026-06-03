@@ -2792,43 +2792,55 @@ function changeReportPeriod(period) {
 }
 
 function printReport() {
-  const title = '💼 インディードハック アタックレポート';
-  const bodyHtml = document.getElementById('report-body').innerHTML;
-  // レポートのCSSを収集
-  const styles = [...document.styleSheets].map(ss => {
-    try { return [...ss.cssRules].map(r => r.cssText).join('\n'); } catch(e) { return ''; }
-  }).join('\n');
+  const btn = document.querySelector('[onclick="printReport()"]');
+  const orig = btn ? btn.innerHTML : '';
+  if (btn) { btn.innerHTML = '⏳ 生成中...'; btn.disabled = true; }
 
-  const win = window.open('', '_blank', 'width=800,height=900');
-  win.document.write(`<!DOCTYPE html>
-<html><head>
-<meta charset="UTF-8">
-<title>${title}</title>
-<style>
-${styles}
-body { font-family: 'Hiragino Maru Gothic ProN','Yu Gothic UI',sans-serif; margin: 24px; background: #fff; color: #111; }
-.report-period-row, .modal-header, button { display: none !important; }
-.report-modal, .modal { box-shadow: none !important; border: none !important; max-height: none !important; overflow: visible !important; }
-.report-call-item { cursor: default !important; }
-.report-call-item:hover { background: inherit !important; }
-h1 { font-size: 18px; margin-bottom: 4px; }
-.print-meta { font-size: 12px; color: #666; margin-bottom: 20px; }
-@media print {
-  body { margin: 0; }
-  @page { margin: 15mm; size: A4; }
+  const periodRow = document.querySelector('.report-period-row');
+  if (periodRow) periodRow.style.display = 'none';
+
+  const reportBody = document.getElementById('report-body');
+
+  function restore() {
+    if (btn) { btn.innerHTML = orig; btn.disabled = false; }
+    if (periodRow) periodRow.style.display = '';
+  }
+
+  Promise.all([
+    loadLibrary('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js', 'html2canvas'),
+    loadLibrary('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js', 'jspdf'),
+  ]).then(() => {
+    return html2canvas(reportBody, { scale: 2, useCORS: true, backgroundColor: '#ffffff', logging: false });
+  }).then(canvas => {
+    const { jsPDF } = window.jspdf;
+    const pdf  = new jsPDF('p', 'mm', 'a4');
+    const pdfW = pdf.internal.pageSize.getWidth();
+    const pdfH = pdf.internal.pageSize.getHeight();
+    const imgH = canvas.height * (pdfW / canvas.width);
+    const img  = canvas.toDataURL('image/png');
+    let rem = imgH, off = 0;
+    while (rem > 0) {
+      if (off > 0) pdf.addPage();
+      pdf.addImage(img, 'PNG', 0, -off, pdfW, imgH);
+      off += pdfH; rem -= pdfH;
+    }
+    const d = new Date();
+    const ds = `${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}`;
+    pdf.save(`indeedhack_report_${ds}.pdf`);
+    restore();
+  }).catch(e => { alert('PDF生成エラー: ' + e.message); restore(); });
 }
-</style>
-</head><body>
-<h1>${title}</h1>
-<div class="print-meta">出力日時：${new Date().toLocaleString('ja-JP')}</div>
-${bodyHtml}
-<scr'+'ipt>
-  document.querySelectorAll('.report-period-row, button').forEach(el => el.style.display='none');
-  window.onload = function() { window.print(); };
-</scr'+'ipt>
-</body></html>`);
-  win.document.close();
+
+function loadLibrary(src, prop) {
+  return new Promise((resolve, reject) => {
+    if (window[prop]) { resolve(); return; }
+    const s = document.createElement('script');
+    s.src = src; s.onload = resolve;
+    s.onerror = () => reject(new Error('読み込み失敗: ' + src));
+    document.head.appendChild(s);
+  });
 }
+
 
 init();
 </script>
