@@ -7442,6 +7442,7 @@ function openDetail(id) {
         ${it.industry?`<span style="background:#fff;color:#374151;padding:6px 12px;border-radius:10px;font-size:12px;font-weight:700;border:1.5px solid #E5E7EB">🏭 ${it.industry}</span>`:''}
         ${it.area?`<span style="background:#fff;color:#374151;padding:6px 12px;border-radius:10px;font-size:12px;font-weight:700;border:1.5px solid #E5E7EB">📍 ${it.area}</span>`:''}
         ${it.person?`<span style="background:#FEF3C7;color:#92400E;padding:6px 12px;border-radius:10px;font-size:13px;font-weight:800;border:1.5px solid #FCD34D">👤 ${it.person}</span>`:''}
+        ${it.contactName?`<span style="background:#EFF6FF;color:#1E40AF;padding:6px 12px;border-radius:10px;font-size:13px;font-weight:800;border:1.5px solid #BFDBFE">📋 担当:${it.contactName}</span>`:''}
         ${it.referral?`<span style="background:#F5F3FF;color:#7C3AED;padding:6px 12px;border-radius:10px;font-size:12px;font-weight:700;border:1.5px solid #C4B5FD">🤝 ${it.referral}</span>`:''}
       </div>
 
@@ -7558,6 +7559,10 @@ function openDetail(id) {
         <div class="fl">
           <label class="flabel">代表者名</label>
           <input class="finput ${it.person?'is-filled':'is-empty'}" id="edit-person" value="${it.person||''}" placeholder="（例：未入力 — 例 山田太郎）">
+        </div>
+        <div class="fl">
+          <label class="flabel">担当者名</label>
+          <input class="finput ${it.contactName?'is-filled':'is-empty'}" id="edit-contact" value="${it.contactName||''}" placeholder="（例：未入力 — 例 宮城 / 総務部・オオシロ）">
         </div>
         <div class="fl">
           <label class="flabel">電話番号</label>
@@ -8780,6 +8785,7 @@ function saveDetailEdit() {
   if (!it) return;
 
   const person      = document.getElementById('edit-person')?.value.trim();
+  const contact     = document.getElementById('edit-contact')?.value.trim();
   const phone       = document.getElementById('edit-phone')?.value.trim();
   const founding    = document.getElementById('edit-founding')?.value.trim();
   const established = document.getElementById('edit-established')?.value.trim();
@@ -8801,6 +8807,7 @@ function saveDetailEdit() {
   const callmemo    = document.getElementById('edit-callmemo')?.value.trim();
 
   if (person      !== undefined) it.person = person;
+  if (contact     !== undefined) it.contactName = contact;
   if (phone       !== undefined) it.phone = phone;
   if (founding    !== undefined) it.foundingDate = founding;
   if (established !== undefined) it.establishedDate = established;
@@ -9414,6 +9421,8 @@ const JP_COLUMN_MAP = {
   '従業員数':       'employees',
   '備考':           'notes',
   'メモ':           'notes',
+  '担当者':          'contact_name',
+  '担当者名':        'contact_name',
 };
 
 function commitClaudeCSV() {
@@ -9597,6 +9606,7 @@ async function executeClaudeImport() {
     phone:          'phone',
     address:        'addr',
     industry:       'industry',
+    contact_name:   'contactName',
   };
 
   // 既存企業の更新
@@ -11867,6 +11877,8 @@ async function sendToAttack(targetKey) {
       indeed_url: it.indeedUrl || null,
       mynavi_url: it.mynaviUrl || null,
       ceo_name: it.person || null,
+      contact_name: it.contactName || null,
+      contact_name: it.contactName || null,
       revenue: it.revenue || null,
       employees: it.employeeCount || null,
       phase: 'pending',
@@ -12703,6 +12715,7 @@ async function __sendToCenterCall_OLD() {
       indeed_url: it.indeedUrl || null,
       mynavi_url: it.mynaviUrl || null,
       ceo_name: it.person || null,
+      contact_name: it.contactName || null,
       revenue: it.revenue || null,
       employees: it.employeeCount || null,
       phase: 'pending',
