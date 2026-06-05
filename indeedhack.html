@@ -902,6 +902,7 @@ let currentStepKey = 'opening';
 let scriptHistory = []; // 戻る用
 let scriptEditMode = false; // 編集モード
 let reportPeriod = 'today'; // today/yesterday/week/lastweek/month/lastmonth/all
+let reportSort = 'date_desc'; // date_desc/date_asc/result/area/company
 
 // 結果定義
 const RESULT_DEFS = {
@@ -2647,11 +2648,23 @@ function renderReport() {
     });
   });
   
-  // 新しい順に並べる
+  // ソート
+  const RESULT_ORDER = { won:0, connected:1, mailed:2, callback:3, absent:4, declined:5 };
   calls.sort((a, b) => {
-    const aKey = (a.date || '') + (a.time || '');
-    const bKey = (b.date || '') + (b.time || '');
-    return bKey.localeCompare(aKey);
+    if (reportSort === 'date_asc') {
+      return ((a.date||'')+(a.time||'')).localeCompare((b.date||'')+(b.time||''));
+    } else if (reportSort === 'result') {
+      const ro = (RESULT_ORDER[a.result]??9) - (RESULT_ORDER[b.result]??9);
+      return ro !== 0 ? ro : ((b.date||'')+(b.time||'')).localeCompare((a.date||'')+(a.time||''));
+    } else if (reportSort === 'area') {
+      const ac = (a.area||'').localeCompare(b.area||'');
+      return ac !== 0 ? ac : ((b.date||'')+(b.time||'')).localeCompare((a.date||'')+(a.time||''));
+    } else if (reportSort === 'company') {
+      const cc = (a.company_name||'').localeCompare(b.company_name||'');
+      return cc !== 0 ? cc : ((b.date||'')+(b.time||'')).localeCompare((a.date||'')+(a.time||''));
+    } else { // date_desc (default)
+      return ((b.date||'')+(b.time||'')).localeCompare((a.date||'')+(a.time||''));
+    }
   });
   
   // 集計
@@ -2761,9 +2774,17 @@ function renderReport() {
         </div>
       ` : ''}
       
-      <div class="report-section-title">
-        📋 全コール詳細 (${total}件)
-        <span style="font-size:11px;font-weight:400;color:var(--text-mute);">新しい順</span>
+      <div class="report-section-title" style="display:flex;align-items:center;flex-wrap:wrap;gap:6px">
+        <span>📋 全コール詳細 (${total}件)</span>
+        <div style="display:flex;gap:4px;margin-left:auto;flex-wrap:wrap">
+          ${[
+            ['date_desc','📅 新しい順'],
+            ['date_asc','📅 古い順'],
+            ['result','🎯 結果別'],
+            ['area','🏙 エリア別'],
+            ['company','🏢 会社名順'],
+          ].map(([v,l]) => `<button onclick="changeReportSort('${v}')" style="padding:3px 8px;border:1.5px solid ${reportSort===v?'var(--primary)':'#E5E7EB'};background:${reportSort===v?'var(--primary)':'#fff'};color:${reportSort===v?'#fff':'#374151'};border-radius:6px;font-size:10px;font-weight:700;cursor:pointer">${l}</button>`).join('')}
+        </div>
       </div>
       <div class="report-list">
         ${calls.map(c => {
@@ -2788,6 +2809,11 @@ function renderReport() {
 
 function changeReportPeriod(period) {
   reportPeriod = period;
+  renderReport();
+}
+
+function changeReportSort(sort) {
+  reportSort = sort;
   renderReport();
 }
 
