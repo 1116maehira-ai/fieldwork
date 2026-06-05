@@ -9487,10 +9487,34 @@ function commitClaudeCSV() {
     const name = (obj.company_name || '').trim();
     if (!name) continue;
 
-    // 既存企業を検索（会社名・電話番号両方で）
+    // 既存企業を検索（4段階照合）
     const phone = (obj.phone || '').replace(/\D/g, '');
+    const addr  = (obj.address || obj.addr || '').replace(/\s+/g,'');
+
+    // ① 会社名完全一致（スペース無視）
     let it = items.find(x => x.company && x.company.replace(/\s+/g,'') === name.replace(/\s+/g,''));
+
+    // ② 電話番号完全一致
     if (!it && phone) it = items.find(x => x.phone && x.phone.replace(/\D/g,'') === phone);
+
+    // ③ 企業名のコアネーム一致（法人格・括弧を除いた名前で比較）
+    if (!it) {
+      const normCo = (s) => s
+        .replace(/\s+/g,'')
+        .replace(/株式会社|（株）|\(株\)|有限会社|（有）|\(有\)|合同会社|（同）|\(同\)|一般社団法人|一般財団法人|特定非営利活動法人|NPO法人|社団法人|財団法人|医療法人|学校法人|自治会|協同組合/g,'')
+        .replace(/[Ａ-Ｚａ-ｚ０-９]/g, c => String.fromCharCode(c.charCodeAt(0)-0xFEE0))
+        .toLowerCase();
+      const nameCore = normCo(name);
+      if (nameCore.length >= 3) {
+        it = items.find(x => x.company && normCo(x.company) === nameCore);
+      }
+    }
+
+    // ④ 住所の先頭25文字が一致
+    if (!it && addr.length >= 10) {
+      const addrKey = addr.substring(0,25);
+      it = items.find(x => x.addr && x.addr.replace(/\s+/g,'').startsWith(addrKey));
+    }
 
     if (it) {
       updates.push({ it, obj });
