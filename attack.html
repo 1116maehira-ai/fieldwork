@@ -529,6 +529,11 @@ body {
       <option value="pending">⬜ 未着手のみ</option>
       <option value="called">📞 電話済みのみ</option>
     </select>
+    <select class="area-select" id="phone-filter-select" style="min-width:130px;">
+      <option value="all">📞 電話: すべて</option>
+      <option value="nophone">📵 電話なし</option>
+      <option value="hasphone">📞 電話あり</option>
+    </select>
     <select class="area-select" id="dmm-select" style="min-width:130px;">
       <option value="all">📦 全て表示</option>
       <option value="dmm">📦 DMM記載有のみ</option>
@@ -595,6 +600,7 @@ let currentArea = 'all';
 let currentPriority = 'all';
 let currentDmm = 'all';
 let currentPhaseFilter = 'all';
+let currentPhoneFilter = 'all';
 let currentSort = 'default';
 let searchText = '';
 let includeExcluded = false;
@@ -725,6 +731,8 @@ function renderList() {
     else if (currentPriority === '1plus') list = list.filter(c => (c.priority || 0) >= 1);
     else if (currentPriority === '0') list = list.filter(c => (c.priority || 0) === 0);
   }
+  if (currentPhoneFilter === 'nophone') list = list.filter(c => !c.phone || c.phone.trim() === '');
+  else if (currentPhoneFilter === 'hasphone') list = list.filter(c => c.phone && c.phone.trim() !== '');
   if (currentPhaseFilter === 'pending') list = list.filter(c => c.phase === 'pending');
   else if (currentPhaseFilter === 'called') list = list.filter(c => c.phase !== 'pending' && c.phase !== 'excluded');
   if (currentDmm === 'dmm') list = list.filter(c => isDmmDeployed(c));
@@ -763,6 +771,7 @@ function renderList() {
     list.sort((a, b) => { const ta = a.phone?0:1, tb = b.phone?0:1; return ta !== tb ? ta - tb : (a.company_name||'').localeCompare(b.company_name||''); });
   }
   if (list.length === 0) { area.innerHTML = `<div class="empty"><div class="icon">○</div>該当する企業がありません</div>`; return; }
+  window._filteredAttackList = list.slice();  // ★ フィルター後リストを保存
   area.innerHTML = `
     <div style="font-size:12px;color:var(--text-sub);margin-bottom:8px;">📋 ${list.length}件表示中 / 全${companies.length}件</div>
     <div class="company-list">${list.map(c => renderCard(c, today)).join('')}</div>
@@ -1397,15 +1406,9 @@ function openBulkResearch() {
   const ex = document.getElementById('bulk-research-modal');
   if (ex) ex.remove();
 
-  // 現在表示中リストを取得（フィルター後）
-  const listEls = document.querySelectorAll('.company-card');
-  const visibleIds = [...listEls].map(el => {
-    const btn = el.querySelector('[onclick^="openModal"]');
-    if (!btn) return null;
-    const m = btn.getAttribute('onclick').match(/openModal\('(.+?)'\)/);
-    return m ? m[1] : null;
-  }).filter(Boolean);
-  const top15 = companies.filter(c => visibleIds.includes(c.id)).slice(0, 15);
+  // フィルター後リストを使用
+  const filtered = window._filteredAttackList || companies;
+  const top15 = filtered.slice(0, 15);
 
   if (!top15.length) { showToast('表示中の企業がありません', ''); return; }
 
@@ -1599,6 +1602,7 @@ document.querySelectorAll('.stat-card').forEach(card => {
 document.getElementById('search-input').addEventListener('input', e => { searchText = e.target.value; renderList(); });
 document.getElementById('area-select').addEventListener('change', e => { currentArea = e.target.value; renderList(); });
 document.getElementById('priority-select').addEventListener('change', e => { currentPriority = e.target.value; renderList(); });
+document.getElementById('phone-filter-select').addEventListener('change', e => { currentPhoneFilter = e.target.value; renderList(); });
 document.getElementById('phase-filter-select').addEventListener('change', e => { currentPhaseFilter = e.target.value; renderList(); });
 document.getElementById('dmm-select').addEventListener('change', e => { currentDmm = e.target.value; renderList(); });
 document.getElementById('include-excluded').addEventListener('change', e => { includeExcluded = e.target.checked; renderList(); });
