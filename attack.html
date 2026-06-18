@@ -433,6 +433,8 @@ body {
 .result-btn[data-result="declined"]:hover { background: var(--red-light); border-color: var(--red); }
 .result-btn[data-result="won"]:hover { background: var(--green-light); border-color: var(--green); }
 .result-btn[data-result="mailed"]:hover { background: var(--purple-light); border-color: var(--purple); }
+.result-btn[data-result="bring_ok"]:hover { background: #ECFDF5; border-color: #059669; }
+.result-btn[data-result="bring_maybe"]:hover { background: #EFF6FF; border-color: #3B82F6; }
 .next-date-row { display: grid; grid-template-columns: 1fr auto auto auto auto; gap: 6px; margin-bottom: 12px; align-items: center; }
 .date-input { border: 2px solid var(--border); border-radius: 8px; padding: 6px 10px; font-size: 13px; background: #FFFBF7; }
 .date-quick { background: white; border: 1px solid var(--border); border-radius: 6px; padding: 4px 8px; font-size: 11px; font-weight: 600; cursor: pointer; color: var(--text-sub); }
@@ -603,6 +605,8 @@ const RESULT_DEFS = {
   declined:  { emoji: '❌', label: 'お断り',              phase: 'declined', needNext: false },
   won:       { emoji: '🎯', label: '商談獲得！',          phase: 'won', needNext: true, nextDays: 7 },
   mailed:    { emoji: '✉️', label: 'メール送付した',      phase: 'mailed', needNext: true, nextDays: 3 },
+  bring_ok:  { emoji: '📦', label: '持ってきて良いですよ', phase: 'won',      needNext: true, nextDays: 3 },
+  bring_maybe: { emoji: '👀', label: '持ってきて見て判断', phase: 'contacted', needNext: true, nextDays: 3 },
 };
 
 const FINISH_TO_RESULT = {
