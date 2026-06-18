@@ -1578,15 +1578,13 @@ async function brImportCsv() {
       );
     }
     if (!company) {
-      // ★ 新規企業として追加
+      // ★ 新規企業として追加（logsとtagsはDB側デフォルトに任せる）
       const newRec = {
         id: crypto.randomUUID(),
         company_name: name,
         phase: 'pending',
         star_rating: 0,
-        logs: [],
         import_batch_id: window._currentBatchId,
-        tags: importTags,
       };
       if (ciIdx    !== -1 && cols[ciIdx]    && cols[ciIdx]    !== '要確認') newRec.checkin_time  = cols[ciIdx].trim();
       if (coIdx    !== -1 && cols[coIdx]    && cols[coIdx]    !== '要確認') newRec.checkout_time = cols[coIdx].trim();
@@ -1596,6 +1594,11 @@ async function brImportCsv() {
       try {
         const { error } = await sb.from('posmane_attacks').insert(newRec);
         if (error) throw error;
+        // タグを別途UPDATE（INSERT後に付与）
+        if (importTags.length > 0) {
+          await sb.from('posmane_attacks').update({ tags: importTags }).eq('id', newRec.id);
+          newRec.tags = importTags;
+        }
         companies.push(newRec);
         added++;
       } catch(e) { errors.push('新規:' + name + ': ' + e.message); }
