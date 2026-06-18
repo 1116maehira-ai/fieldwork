@@ -1586,7 +1586,7 @@ async function brImportCsv() {
         star_rating: 0,
         logs: [],
         import_batch_id: window._currentBatchId,
-        tags: importTags,
+        tags: JSON.stringify(importTags),
       };
       if (ciIdx    !== -1 && cols[ciIdx]    && cols[ciIdx]    !== '要確認') newRec.checkin_time  = cols[ciIdx].trim();
       if (coIdx    !== -1 && cols[coIdx]    && cols[coIdx]    !== '要確認') newRec.checkout_time = cols[coIdx].trim();
@@ -1613,7 +1613,7 @@ async function brImportCsv() {
     if (importTags.length > 0) {
       const existing = company.tags || [];
       const merged = [...new Set([...existing, ...importTags])];
-      updates.tags = merged;
+      updates.tags = JSON.stringify(merged);
     }
 
     if (!Object.keys(updates).length) { skipped++; continue; }
