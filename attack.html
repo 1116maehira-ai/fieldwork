@@ -524,6 +524,9 @@ body {
       <option value="1plus">⭐ 以上</option>
       <option value="0">⭐なし</option>
     </select>
+    <select class="area-select" id="batch-filter-select" style="min-width:150px;">
+      <option value="all">📥 取り込み: すべて</option>
+    </select>
     <select class="area-select" id="phase-filter-select" style="min-width:130px;">
       <option value="all">📋 全フェーズ</option>
       <option value="pending">⬜ 未着手のみ</option>
@@ -601,6 +604,7 @@ let currentPriority = 'all';
 let currentDmm = 'all';
 let currentPhaseFilter = 'all';
 let currentPhoneFilter = 'all';
+let currentBatchFilter = 'all';
 let currentSort = 'default';
 let searchText = '';
 let includeExcluded = false;
@@ -731,6 +735,7 @@ function renderList() {
     else if (currentPriority === '1plus') list = list.filter(c => (c.priority || 0) >= 1);
     else if (currentPriority === '0') list = list.filter(c => (c.priority || 0) === 0);
   }
+  if (currentBatchFilter !== 'all') list = list.filter(c => c.import_batch_id === currentBatchFilter);
   if (currentPhoneFilter === 'nophone') list = list.filter(c => !c.phone || c.phone.trim() === '');
   else if (currentPhoneFilter === 'hasphone') list = list.filter(c => c.phone && c.phone.trim() !== '');
   if (currentPhaseFilter === 'pending') list = list.filter(c => c.phase === 'pending');
@@ -1507,6 +1512,9 @@ async function brImportCsv() {
   const raw = document.getElementById('br-csv-paste')?.value.trim();
   if (!raw) { showToast('CSVを貼り付けてください', ''); return; }
 
+  // バッチID生成（この取り込みセッションの識別子）
+  const now = new Date();
+  window._currentBatchId = `${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}_${String(now.getHours()).padStart(2,'0')}${String(now.getMinutes()).padStart(2,'0')}${String(now.getSeconds()).padStart(2,'0')}`;
   const lines = raw.split('\n').map(l => l.trim()).filter(Boolean);
   if (lines.length < 2) { showToast('データが不足しています', ''); return; }
 
@@ -1555,6 +1563,7 @@ async function brImportCsv() {
         phase: 'pending',
         star_rating: 0,
         logs: [],
+        import_batch_id: window._currentBatchId,
       };
       if (ciIdx    !== -1 && cols[ciIdx]    && cols[ciIdx]    !== '要確認') newRec.checkin_time  = cols[ciIdx].trim();
       if (coIdx    !== -1 && cols[coIdx]    && cols[coIdx]    !== '要確認') newRec.checkout_time = cols[coIdx].trim();
@@ -1590,7 +1599,28 @@ async function brImportCsv() {
   const el = document.getElementById('br-import-result');
   if (el) el.textContent = `✅ ${updated}件更新 / 新規${added}件追加 / スキップ${skipped}件${errors.length ? ' / エラー' + errors.length + '件' : ''}`;
   showToast(`✅ ${updated}件更新・${added}件新規追加しました`, 'success');
+  // バッチselectに今回のバッチを追加
+  updateBatchSelect();
   renderList();
+}
+
+function updateBatchSelect() {
+  const sel = document.getElementById('batch-filter-select');
+  if (!sel) return;
+  // 既存のバッチIDを収集
+  const batches = {};
+  companies.forEach(c => {
+    if (c.import_batch_id) batches[c.import_batch_id] = (batches[c.import_batch_id] || 0) + 1;
+  });
+  const sorted = Object.entries(batches).sort((a, b) => b[0].localeCompare(a[0]));
+  const currentVal = sel.value;
+  sel.innerHTML = '<option value="all">📥 取り込み: すべて</option>' +
+    sorted.map(([id, cnt]) => {
+      const y = id.slice(0,4), mo = id.slice(4,6), d = id.slice(6,8);
+      const h = id.slice(9,11), mi = id.slice(11,13);
+      const label = `${mo}/${d} ${h}:${mi}（${cnt}件）`;
+      return `<option value="${id}" ${id === currentVal ? 'selected' : ''}>${label}</option>`;
+    }).join('');
 }
 
 function parseCSVLine_(line) {
@@ -1623,6 +1653,7 @@ document.querySelectorAll('.stat-card').forEach(card => {
 document.getElementById('search-input').addEventListener('input', e => { searchText = e.target.value; renderList(); });
 document.getElementById('area-select').addEventListener('change', e => { currentArea = e.target.value; renderList(); });
 document.getElementById('priority-select').addEventListener('change', e => { currentPriority = e.target.value; renderList(); });
+document.getElementById('batch-filter-select').addEventListener('change', e => { currentBatchFilter = e.target.value; renderList(); });
 document.getElementById('phone-filter-select').addEventListener('change', e => { currentPhoneFilter = e.target.value; renderList(); });
 document.getElementById('phase-filter-select').addEventListener('change', e => { currentPhaseFilter = e.target.value; renderList(); });
 document.getElementById('dmm-select').addEventListener('change', e => { currentDmm = e.target.value; renderList(); });
@@ -1703,7 +1734,7 @@ function renderReport() {
 
 function changeReportPeriod(period) { reportPeriod = period; renderReport(); }
 
-init();
+init().then(() => updateBatchSelect());
 </script>
 </body>
 </html>
