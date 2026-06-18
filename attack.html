@@ -1521,7 +1521,7 @@ async function brImportCsv() {
 
   if (nameIdx === -1) { showToast('company_name列が見つかりません', 'error'); return; }
 
-  let updated = 0, skipped = 0;
+  let updated = 0, added = 0, skipped = 0;
   const errors = [];
 
   for (let i = 1; i < lines.length; i++) {
@@ -1547,14 +1547,35 @@ async function brImportCsv() {
         )
       );
     }
-    if (!company) { skipped++; continue; }
+    if (!company) {
+      // ★ 新規企業として追加
+      const newRec = {
+        id: crypto.randomUUID(),
+        company_name: name,
+        phase: 'pending',
+        star_rating: 0,
+        logs: [],
+      };
+      if (ciIdx    !== -1 && cols[ciIdx]    && cols[ciIdx]    !== '要確認') newRec.checkin_time  = cols[ciIdx].trim();
+      if (coIdx    !== -1 && cols[coIdx]    && cols[coIdx]    !== '要確認') newRec.checkout_time = cols[coIdx].trim();
+      if (phoneIdx !== -1 && cols[phoneIdx] && cols[phoneIdx] !== '要確認') newRec.phone    = cols[phoneIdx].trim();
+      if (addrIdx  !== -1 && cols[addrIdx]  && cols[addrIdx]  !== '要確認') newRec.address  = cols[addrIdx].trim();
+      if (webIdx   !== -1 && cols[webIdx]   && cols[webIdx]   !== '要確認') newRec.website  = cols[webIdx].trim();
+      try {
+        const { error } = await sb.from('posmane_attacks').insert(newRec);
+        if (error) throw error;
+        companies.push(newRec);
+        added++;
+      } catch(e) { errors.push('新規:' + name + ': ' + e.message); }
+      continue;
+    }
 
     const updates = {};
-    if (ciIdx !== -1 && cols[ciIdx] && cols[ciIdx] !== '要確認') updates.checkin_time  = cols[ciIdx].trim();
-    if (coIdx !== -1 && cols[coIdx] && cols[coIdx] !== '要確認') updates.checkout_time = cols[coIdx].trim();
-    if (phoneIdx !== -1 && cols[phoneIdx] && cols[phoneIdx] !== '要確認') updates.phone = cols[phoneIdx].trim();
-    if (addrIdx !== -1 && cols[addrIdx] && cols[addrIdx] !== '要確認') updates.address = cols[addrIdx].trim();
-    if (webIdx  !== -1 && cols[webIdx]  && cols[webIdx]  !== '要確認') updates.website = cols[webIdx].trim();
+    if (ciIdx    !== -1 && cols[ciIdx]    && cols[ciIdx]    !== '要確認') updates.checkin_time  = cols[ciIdx].trim();
+    if (coIdx    !== -1 && cols[coIdx]    && cols[coIdx]    !== '要確認') updates.checkout_time = cols[coIdx].trim();
+    if (phoneIdx !== -1 && cols[phoneIdx] && cols[phoneIdx] !== '要確認') updates.phone    = cols[phoneIdx].trim();
+    if (addrIdx  !== -1 && cols[addrIdx]  && cols[addrIdx]  !== '要確認') updates.address  = cols[addrIdx].trim();
+    if (webIdx   !== -1 && cols[webIdx]   && cols[webIdx]   !== '要確認') updates.website  = cols[webIdx].trim();
 
     if (!Object.keys(updates).length) { skipped++; continue; }
 
@@ -1567,8 +1588,8 @@ async function brImportCsv() {
   }
 
   const el = document.getElementById('br-import-result');
-  if (el) el.textContent = `✅ ${updated}件更新 / スキップ${skipped}件${errors.length ? ' / エラー' + errors.length + '件' : ''}`;
-  showToast(`✅ ${updated}件のチェックイン情報を更新しました`, 'success');
+  if (el) el.textContent = `✅ ${updated}件更新 / 新規${added}件追加 / スキップ${skipped}件${errors.length ? ' / エラー' + errors.length + '件' : ''}`;
+  showToast(`✅ ${updated}件更新・${added}件新規追加しました`, 'success');
   renderList();
 }
 
