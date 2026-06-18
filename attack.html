@@ -1478,7 +1478,7 @@ ${listStr}
 
 【出力形式】
 CSV形式で出力してください（1行目はヘッダー行）。
-ヘッダー行：company_name,checkin_time,checkout_time,phone,address
+ヘッダー行：company_name,checkin_time,checkout_time,phone,address,website
 
 【各列の説明】
 ・company_name  : 施設名（リストの表記のまま使用）
@@ -1486,6 +1486,7 @@ CSV形式で出力してください（1行目はヘッダー行）。
 ・checkout_time : チェックアウト時間（例：11:00）
 ・phone         : 代表電話番号（ハイフン付き、例：098-XXX-XXXX）
 ・address       : 正確な住所（〒番号から）
+・website       : 公式サイトURL（https://から始まる完全形式）
 
 【重要ルール】
 ・確認できなかった項目は「要確認」と記入（捏造・推測は禁止）
@@ -1513,6 +1514,7 @@ async function brImportCsv() {
   const coIdx      = headers.indexOf('checkout_time');
   const phoneIdx   = headers.indexOf('phone');
   const addrIdx    = headers.indexOf('address');
+  const webIdx     = headers.indexOf('website');
 
   if (nameIdx === -1) { showToast('company_name列が見つかりません', 'error'); return; }
 
@@ -1535,6 +1537,7 @@ async function brImportCsv() {
     if (coIdx !== -1 && cols[coIdx] && cols[coIdx] !== '要確認') updates.checkout_time = cols[coIdx].trim();
     if (phoneIdx !== -1 && cols[phoneIdx] && cols[phoneIdx] !== '要確認') updates.phone = cols[phoneIdx].trim();
     if (addrIdx !== -1 && cols[addrIdx] && cols[addrIdx] !== '要確認') updates.address = cols[addrIdx].trim();
+    if (webIdx  !== -1 && cols[webIdx]  && cols[webIdx]  !== '要確認') updates.website = cols[webIdx].trim();
 
     if (!Object.keys(updates).length) { skipped++; continue; }
 
