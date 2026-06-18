@@ -1578,27 +1578,26 @@ async function brImportCsv() {
       );
     }
     if (!company) {
-      // ★ 新規企業として追加（logsとtagsはDB側デフォルトに任せる）
-      const newRec = {
-        id: crypto.randomUUID(),
-        company_name: name,
-        phase: 'pending',
-        star_rating: 0,
-        import_batch_id: window._currentBatchId,
-      };
-      if (ciIdx    !== -1 && cols[ciIdx]    && cols[ciIdx]    !== '要確認') newRec.checkin_time  = cols[ciIdx].trim();
-      if (coIdx    !== -1 && cols[coIdx]    && cols[coIdx]    !== '要確認') newRec.checkout_time = cols[coIdx].trim();
-      if (phoneIdx !== -1 && cols[phoneIdx] && cols[phoneIdx] !== '要確認') newRec.phone    = cols[phoneIdx].trim();
-      if (addrIdx  !== -1 && cols[addrIdx]  && cols[addrIdx]  !== '要確認') newRec.address  = cols[addrIdx].trim();
-      if (webIdx   !== -1 && cols[webIdx]   && cols[webIdx]   !== '要確認') newRec.website  = cols[webIdx].trim();
+      // ★ 新規企業として追加（最小限でINSERT→残りをUPDATE）
+      const newId = crypto.randomUUID();
       try {
-        const { error } = await sb.from('posmane_attacks').insert(newRec);
-        if (error) throw error;
-        // タグを別途UPDATE（INSERT後に付与）
-        if (importTags.length > 0) {
-          await sb.from('posmane_attacks').update({ tags: importTags }).eq('id', newRec.id);
-          newRec.tags = importTags;
-        }
+        // Step1: 最小限でINSERT
+        const { error: e1 } = await sb.from('posmane_attacks').insert({
+          id: newId, company_name: name, phase: 'pending'
+        });
+        if (e1) throw e1;
+
+        // Step2: 追加情報をUPDATE
+        const upd = { import_batch_id: window._currentBatchId };
+        if (ciIdx    !== -1 && cols[ciIdx]    && cols[ciIdx]    !== '要確認') upd.checkin_time  = cols[ciIdx].trim();
+        if (coIdx    !== -1 && cols[coIdx]    && cols[coIdx]    !== '要確認') upd.checkout_time = cols[coIdx].trim();
+        if (phoneIdx !== -1 && cols[phoneIdx] && cols[phoneIdx] !== '要確認') upd.phone    = cols[phoneIdx].trim();
+        if (addrIdx  !== -1 && cols[addrIdx]  && cols[addrIdx]  !== '要確認') upd.address  = cols[addrIdx].trim();
+        if (webIdx   !== -1 && cols[webIdx]   && cols[webIdx]   !== '要確認') upd.website  = cols[webIdx].trim();
+        if (importTags.length > 0) upd.tags = importTags;
+        await sb.from('posmane_attacks').update(upd).eq('id', newId);
+
+        const newRec = { id: newId, company_name: name, phase: 'pending', ...upd };
         companies.push(newRec);
         added++;
       } catch(e) { errors.push('新規:' + name + ': ' + e.message); }
