@@ -526,6 +526,8 @@ body {
       <option value="all">📦 全て表示</option>
       <option value="dmm">📦 DMM記載有のみ</option>
       <option value="nodmm">DMM記載なし</option>
+      <option value="no_rental">🚗 協会加盟を除外</option>
+      <option value="exclude_flags">🚫 DMM＋協会加盟を除外</option>
     </select>
     <select class="sort-select" id="sort-select">
       <option value="default">並び順: 優先度順</option>
@@ -715,6 +717,8 @@ function renderList() {
   }
   if (currentDmm === 'dmm') list = list.filter(c => isDmmDeployed(c));
   else if (currentDmm === 'nodmm') list = list.filter(c => !isDmmDeployed(c));
+  else if (currentDmm === 'no_rental') list = list.filter(c => !(c.source_data && c.source_data.rental_association));
+  else if (currentDmm === 'exclude_flags') list = list.filter(c => !isDmmDeployed(c) && !(c.source_data && c.source_data.rental_association));
   if (searchText) {
     const q = searchText.toLowerCase();
     list = list.filter(c => (c.company_name||'').toLowerCase().includes(q) || (c.address||'').toLowerCase().includes(q) || (c.phone||'').includes(q));
