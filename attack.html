@@ -605,6 +605,8 @@ let currentDmm = 'all';
 let currentPhaseFilter = 'all';
 let currentPhoneFilter = 'all';
 let currentBatchFilter = 'all';
+let reportCallFilter = 'all';
+let reportSort = 'date_desc';
 let currentSort = 'default';
 let searchText = '';
 let includeExcluded = false;
@@ -1663,7 +1665,7 @@ document.getElementById('include-excluded').addEventListener('change', e => { in
 document.getElementById('sort-select').addEventListener('change', e => { currentSort = e.target.value; renderList(); });
 document.getElementById('report-modal').addEventListener('click', e => { if (e.target.id === 'report-modal') closeReport(); });
 
-function openReport() { reportPeriod = 'today'; renderReport(); document.getElementById('report-modal').classList.add('show'); }
+function openReport() { reportPeriod = 'today'; reportCallFilter = 'all'; reportSort = 'date_desc'; renderReport(); document.getElementById('report-modal').classList.add('show'); }
 function closeReport() { document.getElementById('report-modal').classList.remove('show'); }
 
 function getPeriodRange(period) {
@@ -1682,22 +1684,78 @@ function renderReport() {
   const calls = [];
   companies.forEach(c => {
     (c.logs||[]).forEach(log => {
-      if (log.date >= range.from && log.date <= range.to) calls.push({ ...log, company_name: c.company_name, phone: c.phone, company_id: c.id, area: extractArea(c.address) });
+      if (log.date >= range.from && log.date <= range.to)
+        calls.push({ ...log, company_name: c.company_name, phone: c.phone, address: c.address, checkin_time: c.checkin_time, checkout_time: c.checkout_time, company_id: c.id, area: extractArea(c.address) });
     });
   });
-  calls.sort((a,b) => ((b.date||'')+(b.time||'')).localeCompare((a.date||'')+(a.time||'')));
-  const counts = { connected:0, absent:0, callback:0, declined:0, won:0, mailed:0 };
+
+  // ソート
+  const RESULT_ORDER = { bring_ok:0, bring_maybe:1, won:2, connected:3, mailed:4, callback:5, absent:6, declined:7 };
+  calls.sort((a,b) => {
+    if (reportSort === 'result') {
+      const ro = (RESULT_ORDER[a.result]??9) - (RESULT_ORDER[b.result]??9);
+      return ro !== 0 ? ro : ((b.date||'')+(b.time||'')).localeCompare((a.date||'')+(a.time||''));
+    } else if (reportSort === 'date_asc') {
+      return ((a.date||'')+(a.time||'')).localeCompare((b.date||'')+(b.time||''));
+    } else if (reportSort === 'company') {
+      const cc = (a.company_name||'').localeCompare(b.company_name||'');
+      return cc !== 0 ? cc : ((b.date||'')+(b.time||'')).localeCompare((a.date||'')+(a.time||''));
+    } else {
+      return ((b.date||'')+(b.time||'')).localeCompare((a.date||'')+(a.time||''));
+    }
+  });
+
+  const counts = { connected:0, absent:0, callback:0, declined:0, won:0, mailed:0, bring_ok:0, bring_maybe:0 };
   calls.forEach(c => { if (counts[c.result] !== undefined) counts[c.result]++; });
   const total = calls.length;
-  const contactRate = total > 0 ? Math.round((counts.connected + counts.won + counts.mailed) / total * 100) : 0;
+  const contactRate = total > 0 ? Math.round((counts.connected + counts.won + counts.mailed + counts.bring_ok + counts.bring_maybe) / total * 100) : 0;
+
   const RESULT_DISPLAY = [
-    { key:'won', emoji:'🎯', label:'商談獲得！', color:'var(--green)' },
-    { key:'connected', emoji:'😊', label:'担当者つながった', color:'var(--blue)' },
-    { key:'mailed', emoji:'✉️', label:'メール送付', color:'var(--purple)' },
-    { key:'callback', emoji:'📅', label:'後日かけ直し', color:'var(--yellow)' },
-    { key:'absent', emoji:'🏠', label:'不在・留守電', color:'var(--orange)' },
-    { key:'declined', emoji:'❌', label:'お断り', color:'var(--gray)' },
+    { key:'bring_ok',    emoji:'📦', label:'持ってきて良いですよ', color:'#059669' },
+    { key:'bring_maybe', emoji:'👀', label:'持ってきて見て判断',   color:'#3B82F6' },
+    { key:'won',         emoji:'🎯', label:'商談獲得！',            color:'var(--green)' },
+    { key:'connected',   emoji:'😊', label:'担当者つながった',      color:'var(--blue)' },
+    { key:'mailed',      emoji:'✉️', label:'メール送付',           color:'var(--purple)' },
+    { key:'callback',    emoji:'📅', label:'後日かけ直し',          color:'var(--yellow)' },
+    { key:'absent',      emoji:'🏠', label:'不在・留守電',          color:'var(--orange)' },
+    { key:'declined',    emoji:'❌', label:'お断り',               color:'var(--gray)' },
   ];
+
+  // 訪問すべき施設リスト（bring_ok / bring_maybe の直近ログがある企業）
+  const visitList = [];
+  companies.forEach(c => {
+    const recentLog = [...(c.logs||[])].reverse().find(l => l.result === 'bring_ok' || l.result === 'bring_maybe');
+    if (recentLog && recentLog.date >= range.from && recentLog.date <= range.to) {
+      visitList.push({ ...c, _result: recentLog.result, _memo: recentLog.memo, _date: recentLog.date });
+    }
+  });
+  visitList.sort((a,b) => (RESULT_ORDER[a._result]??9) - (RESULT_ORDER[b._result]??9));
+
+  const visitHtml = visitList.length === 0 ? '' : `
+    <div class="report-section-title" style="background:linear-gradient(135deg,#059669,#3B82F6);color:#fff;padding:10px 16px;border-radius:10px;margin-bottom:12px">
+      🚀 次に訪問すべき施設 (${visitList.length}件)
+    </div>
+    <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:20px">
+      ${visitList.map(c => `
+        <div onclick="openModal('${c.id}');closeReport();" style="cursor:pointer;background:${c._result==='bring_ok'?'#ECFDF5':'#EFF6FF'};border:1.5px solid ${c._result==='bring_ok'?'#6EE7B7':'#BFDBFE'};border-radius:10px;padding:10px 14px">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+            <span style="font-size:14px">${c._result==='bring_ok'?'📦':'👀'}</span>
+            <span style="font-weight:800;font-size:13px">${escapeHtml(c.company_name)}</span>
+            <span style="font-size:11px;background:${c._result==='bring_ok'?'#059669':'#3B82F6'};color:#fff;padding:2px 8px;border-radius:6px;margin-left:auto">${c._result==='bring_ok'?'持ってきてOK':'見て判断'}</span>
+          </div>
+          <div style="font-size:11px;color:#6B7280;display:flex;flex-wrap:wrap;gap:8px">
+            ${c.phone ? `<span>📞 ${escapeHtml(c.phone)}</span>` : ''}
+            ${c.checkin_time ? `<span>⏰ IN ${escapeHtml(c.checkin_time)} / OUT ${escapeHtml(c.checkout_time||'?')}</span>` : ''}
+            ${c.address ? `<span>📍 ${escapeHtml(c.address)}</span>` : ''}
+          </div>
+          ${c._memo ? `<div style="font-size:11px;color:#374151;margin-top:4px">💬 ${escapeHtml(c._memo)}</div>` : ''}
+        </div>`
+      ).join('')}
+    </div>`;
+
+  // フィルタリング（全コール詳細用）
+  const filteredCalls = reportCallFilter === 'all' ? calls : calls.filter(c => c.result === reportCallFilter);
+
   document.getElementById('report-body').innerHTML = `
     <div class="report-period-row">
       ${['today','yesterday','week','month','all'].map(p => {
@@ -1708,24 +1766,39 @@ function renderReport() {
     <div style="font-size:13px;font-weight:700;margin-bottom:12px;color:var(--text-sub);">📅 ${range.label}</div>
     <div class="report-summary">
       <div class="report-stat big"><div class="num">${total}</div><div class="lbl">📞 総コール数</div></div>
-      <div class="report-stat"><div class="num" style="color:var(--green);">${counts.won}</div><div class="lbl">🎯 商談獲得</div></div>
+      <div class="report-stat"><div class="num" style="color:#059669;">${counts.bring_ok}</div><div class="lbl">📦 持ってきてOK</div></div>
+      <div class="report-stat"><div class="num" style="color:#3B82F6;">${counts.bring_maybe}</div><div class="lbl">👀 見て判断</div></div>
       <div class="report-stat"><div class="num" style="color:var(--blue);">${contactRate}%</div><div class="lbl">😊 接触率</div></div>
       <div class="report-stat"><div class="num" style="color:var(--orange);">${counts.callback+counts.absent}</div><div class="lbl">📅 要フォロー</div></div>
     </div>
     ${total === 0 ? '<div class="report-empty"><div class="icon">📭</div>この期間のアタック実績がありません</div>' : `
+      ${visitHtml}
       <div class="report-section-title">📊 結果別の内訳</div>
       <div class="report-breakdown">
         ${RESULT_DISPLAY.map(def => {
-          const cnt = counts[def.key], pct = total > 0 ? Math.round(cnt/total*100) : 0;
+          const cnt = counts[def.key]||0, pct = total > 0 ? Math.round(cnt/total*100) : 0;
           return `<div class="row"><span class="label">${def.emoji} ${def.label}</span><div class="bar-wrap"><div class="bar" style="width:${pct}%;background:${def.color};"></div></div><span class="count">${cnt}</span></div>`;
         }).join('')}
       </div>
-      <div class="report-section-title">📋 全コール詳細 (${total}件)</div>
+      <div class="report-section-title" style="display:flex;align-items:center;flex-wrap:wrap;gap:6px">
+        <span>📋 全コール詳細 (${total}件)</span>
+        <div style="display:flex;gap:4px;margin-left:auto;flex-wrap:wrap">
+          ${[['all','すべて'],['bring_ok','📦 持ってきてOK'],['bring_maybe','👀 見て判断'],['won','🎯 商談獲得'],['connected','😊 接続'],['callback','📅 後日'],['declined','❌ お断り']].map(([v,l]) =>
+            `<button onclick="reportCallFilter='${v}';renderReport();" style="padding:3px 8px;border:1.5px solid ${reportCallFilter===v?'var(--primary)':'#E5E7EB'};background:${reportCallFilter===v?'var(--primary)':'#fff'};color:${reportCallFilter===v?'#fff':'#374151'};border-radius:6px;font-size:10px;font-weight:700;cursor:pointer">${l}</button>`
+          ).join('')}
+        </div>
+      </div>
+      <div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:10px">
+        ${[['date_desc','📅 新しい順'],['date_asc','📅 古い順'],['result','🎯 結果別'],['company','🏢 施設名順']].map(([v,l]) =>
+          `<button onclick="reportSort='${v}';renderReport();" style="padding:3px 8px;border:1.5px solid ${reportSort===v?'#6366F1':'#E5E7EB'};background:${reportSort===v?'#6366F1':'#fff'};color:${reportSort===v?'#fff':'#374151'};border-radius:6px;font-size:10px;font-weight:700;cursor:pointer">${l}</button>`
+        ).join('')}
+      </div>
       <div class="report-list">
-        ${calls.map(c => {
+        ${filteredCalls.map(c => {
           const def = RESULT_DEFS[c.result] || { emoji:'📝', label:c.result };
           return `<div class="report-call-item ${c.result}" onclick="openModal('${c.company_id}');closeReport();" style="cursor:pointer;">
             <div class="head"><span class="time">${(c.date||'').substring(5)} ${c.time||''}</span><span class="name">${escapeHtml(c.company_name)}</span><span class="result-tag">${def.emoji} ${def.label}</span></div>
+            ${c.checkin_time ? `<div style="font-size:10px;color:#6B7280;margin-top:2px">⏰ IN ${c.checkin_time} / OUT ${c.checkout_time||'?'} ｜ 📞 ${c.phone||'電話なし'}</div>` : ''}
             ${c.memo ? `<div class="memo">💬 ${escapeHtml(c.memo)}</div>` : ''}
           </div>`;
         }).join('')}
