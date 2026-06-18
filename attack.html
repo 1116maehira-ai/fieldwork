@@ -527,6 +527,9 @@ body {
     <select class="area-select" id="batch-filter-select" style="min-width:150px;">
       <option value="all">📥 取り込み: すべて</option>
     </select>
+    <select class="area-select" id="tag-filter-select" style="min-width:140px;">
+      <option value="all">🏷 タグ: すべて</option>
+    </select>
     <select class="area-select" id="phase-filter-select" style="min-width:130px;">
       <option value="all">📋 全フェーズ</option>
       <option value="pending">⬜ 未着手のみ</option>
@@ -606,6 +609,7 @@ let currentDmm = 'all';
 let currentPhaseFilter = 'all';
 let currentPhoneFilter = 'all';
 let currentBatchFilter = 'all';
+let currentTagFilter = 'all';
 let reportCallFilter = 'all';
 let reportSort = 'date_desc';
 let currentSort = 'default';
@@ -747,6 +751,7 @@ function renderList() {
     else if (currentPriority === '0') list = list.filter(c => (c.priority || 0) === 0);
   }
   if (currentBatchFilter !== 'all') list = list.filter(c => c.import_batch_id === currentBatchFilter);
+  if (currentTagFilter !== 'all') list = list.filter(c => Array.isArray(c.tags) && c.tags.includes(currentTagFilter));
   if (currentPhoneFilter === 'nophone') list = list.filter(c => !c.phone || c.phone.trim() === '');
   else if (currentPhoneFilter === 'hasphone') list = list.filter(c => c.phone && c.phone.trim() !== '');
   if (currentPhaseFilter === 'pending') list = list.filter(c => c.phase === 'pending');
@@ -843,6 +848,7 @@ function renderCard(c, today) {
             ${(c.source_data && c.source_data.kyodaku_result) ? `<span style="display:inline-block;background:${{'S':'#D1FAE5','A':'#DBEAFE','B':'#FFF7ED','C':'#FEF3C7','NG':'#FEE2E2'}[c.source_data.kyodaku_result]||'#F3F4F6'};color:${{'S':'#065F46','A':'#1E40AF','B':'#9A3412','C':'#92400E','NG':'#991B1B'}[c.source_data.kyodaku_result]||'#374151'};padding:2px 8px;border-radius:6px;font-size:10px;font-weight:800;white-space:nowrap;">${{'S':'✅ S：即開始可','A':'✅ A：口頭OK','B':'📝 B：書面申請','C':'💰 C：要検討','NG':'⛔ NG'}[c.source_data.kyodaku_result]||c.source_data.kyodaku_result}</span>` : ''}
             ${(c.source_data && c.source_data.blanket_approval) ? '<span style="display:inline-block;background:#D1FAE5;color:#065F46;padding:2px 8px;border-radius:6px;font-size:10px;font-weight:800;white-space:nowrap;">🎯 一括承認済み</span>' : ''}
             ${isRentalAssoc ? '<span style="display:inline-block;background:#DBEAFE;color:#1E40AF;padding:2px 8px;border-radius:6px;font-size:10px;font-weight:800;border:1px solid #93C5FD;white-space:nowrap;">🚗 協会加盟</span>' : ''}
+            ${(c.tags||[]).map(t => `<span style="display:inline-block;background:#FEF3C7;color:#92400E;padding:2px 8px;border-radius:6px;font-size:10px;font-weight:800;border:1px solid #FDE68A;white-space:nowrap;">🏷 ${escapeHtml(t)}</span>`).join('')}
             <span>🗺️ ${escapeHtml(areaTag)}</span>
             <span>📞 ${escapeHtml(c.phone || '電話なし')}</span>
             ${visitCount > 0 ? `<span>📝 ${visitCount}回</span>` : ''}
@@ -1459,7 +1465,9 @@ function openBulkResearch() {
         <textarea id="br-prompt" readonly style="width:100%;height:220px;padding:12px;border:1.5px solid #FED7AA;border-radius:10px;font-size:12px;line-height:1.7;resize:vertical;box-sizing:border-box;background:#FFF7ED;font-family:inherit"></textarea>
         <button onclick="navigator.clipboard.writeText(document.getElementById('br-prompt').value).then(()=>showToast('📋 コピーしました！','success'))" style="margin-top:8px;width:100%;padding:11px;background:linear-gradient(135deg,#059669,#10B981);color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:900;cursor:pointer">📋 コピーしてclaude.aiに貼る</button>
 
-        <div style="font-size:12px;font-weight:700;margin-top:16px;margin-bottom:6px">📥 Claude回答のCSVをここに貼り付けて取り込む</div>
+        <div style="font-size:12px;font-weight:700;margin-top:16px;margin-bottom:6px">🏷 タグを設定（任意・複数はカンマ区切り）</div>
+        <input id="br-tag-input" type="text" placeholder="例：大型ホテル優先、恩納村リスト" style="width:100%;padding:9px 12px;border:1.5px solid #E5E7EB;border-radius:8px;font-size:13px;font-family:inherit;box-sizing:border-box;margin-bottom:12px">
+        <div style="font-size:12px;font-weight:700;margin-bottom:6px">📥 Claude回答のCSVをここに貼り付けて取り込む</div>
         <textarea id="br-csv-paste" style="width:100%;height:120px;padding:12px;border:1.5px solid #E5E7EB;border-radius:10px;font-size:12px;line-height:1.7;resize:vertical;box-sizing:border-box;font-family:inherit" placeholder="company_name,checkin_time,checkout_time,phone,address&#10;&quot;ホテルXX&quot;,&quot;15:00&quot;,&quot;11:00&quot;,..."></textarea>
         <button onclick="brImportCsv()" style="margin-top:8px;width:100%;padding:11px;background:linear-gradient(135deg,#1E40AF,#3B82F6);color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:900;cursor:pointer">📥 取り込む！</button>
         <div id="br-import-result" style="margin-top:8px;font-size:12px;font-weight:700;color:#059669"></div>
@@ -1526,6 +1534,9 @@ async function brImportCsv() {
   // バッチID生成（この取り込みセッションの識別子）
   const now = new Date();
   window._currentBatchId = `${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}_${String(now.getHours()).padStart(2,'0')}${String(now.getMinutes()).padStart(2,'0')}${String(now.getSeconds()).padStart(2,'0')}`;
+  // タグを取得
+  const tagRaw = document.getElementById('br-tag-input')?.value.trim() || '';
+  const importTags = tagRaw ? tagRaw.split(',').map(t => t.trim()).filter(Boolean) : [];
   const lines = raw.split('\n').map(l => l.trim()).filter(Boolean);
   if (lines.length < 2) { showToast('データが不足しています', ''); return; }
 
@@ -1575,6 +1586,7 @@ async function brImportCsv() {
         star_rating: 0,
         logs: [],
         import_batch_id: window._currentBatchId,
+        tags: importTags,
       };
       if (ciIdx    !== -1 && cols[ciIdx]    && cols[ciIdx]    !== '要確認') newRec.checkin_time  = cols[ciIdx].trim();
       if (coIdx    !== -1 && cols[coIdx]    && cols[coIdx]    !== '要確認') newRec.checkout_time = cols[coIdx].trim();
@@ -1598,6 +1610,11 @@ async function brImportCsv() {
     if (webIdx   !== -1 && cols[webIdx]   && cols[webIdx]   !== '要確認') updates.website  = cols[webIdx].trim();
 
     updates.import_batch_id = window._currentBatchId;  // 更新分にもバッチID付与
+    if (importTags.length > 0) {
+      const existing = company.tags || [];
+      const merged = [...new Set([...existing, ...importTags])];
+      updates.tags = merged;
+    }
 
     if (!Object.keys(updates).length) { skipped++; continue; }
 
@@ -1614,7 +1631,21 @@ async function brImportCsv() {
   showToast(`✅ ${updated}件更新・${added}件新規追加しました`, 'success');
   // バッチselectに今回のバッチを追加
   updateBatchSelect();
+  updateTagSelect();
   renderList();
+}
+
+function updateTagSelect() {
+  const sel = document.getElementById('tag-filter-select');
+  if (!sel) return;
+  const tagCounts = {};
+  companies.forEach(c => {
+    (c.tags||[]).forEach(t => { tagCounts[t] = (tagCounts[t]||0) + 1; });
+  });
+  const currentVal = sel.value;
+  const sorted = Object.entries(tagCounts).sort((a,b) => b[1]-a[1]);
+  sel.innerHTML = '<option value="all">🏷 タグ: すべて</option>' +
+    sorted.map(([t, n]) => `<option value="${escapeHtml(t)}" ${t===currentVal?'selected':''}>${escapeHtml(t)} (${n})</option>`).join('');
 }
 
 function updateBatchSelect() {
@@ -1667,6 +1698,7 @@ document.getElementById('search-input').addEventListener('input', e => { searchT
 document.getElementById('area-select').addEventListener('change', e => { currentArea = e.target.value; renderList(); });
 document.getElementById('priority-select').addEventListener('change', e => { currentPriority = e.target.value; renderList(); });
 document.getElementById('batch-filter-select').addEventListener('change', e => { currentBatchFilter = e.target.value; renderList(); });
+document.getElementById('tag-filter-select').addEventListener('change', e => { currentTagFilter = e.target.value; renderList(); });
 document.getElementById('phone-filter-select').addEventListener('change', e => { currentPhoneFilter = e.target.value; renderList(); });
 document.getElementById('phase-filter-select').addEventListener('change', e => { currentPhaseFilter = e.target.value; renderList(); });
 document.getElementById('dmm-select').addEventListener('change', e => { currentDmm = e.target.value; renderList(); });
@@ -1864,7 +1896,7 @@ function renderReport() {
 
 function changeReportPeriod(period) { reportPeriod = period; renderReport(); }
 
-init().then(() => updateBatchSelect());
+init().then(() => { updateBatchSelect(); updateTagSelect(); });
 </script>
 </body>
 </html>
