@@ -1526,10 +1526,24 @@ async function brImportCsv() {
     const name = cols[nameIdx]?.trim();
     if (!name || name === '要確認') { skipped++; continue; }
 
-    // 会社名で照合
-    const company = companies.find(c =>
-      c.company_name && c.company_name.replace(/\s+/g,'') === name.replace(/\s+/g,'')
+    // 会社名で照合（括弧内の場所情報を除去してから比較）
+    const normName = (s) => s
+      .replace(/[（(（][^）)）]*[）)）]/g, '')  // 括弧と中身を除去
+      .replace(/\s+/g, '')
+      .toLowerCase();
+    const nameNorm = normName(name);
+    let company = companies.find(c =>
+      c.company_name && normName(c.company_name) === nameNorm
     );
+    // 部分一致フォールバック（DB名がCSV名に含まれる or その逆）
+    if (!company && nameNorm.length >= 4) {
+      company = companies.find(c =>
+        c.company_name && (
+          normName(c.company_name).includes(nameNorm) ||
+          nameNorm.includes(normName(c.company_name))
+        )
+      );
+    }
     if (!company) { skipped++; continue; }
 
     const updates = {};
