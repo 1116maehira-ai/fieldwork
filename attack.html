@@ -581,6 +581,7 @@ body {
   <div class="modal report-modal">
     <div class="modal-header">
       <h2>📊 アタックレポート</h2>
+      <button onclick="printAttackReport()" style="padding:6px 14px;background:#1E40AF;color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;margin-right:8px">📄 PDF出力</button>
       <button class="modal-close" onclick="closeReport()">×</button>
     </div>
     <div class="modal-body" id="report-body"></div>
@@ -652,7 +653,7 @@ async function loadCompanies() {
   }
 }
 
-const __CC_DEFAULTS__ = [{"script_id":"pm_v_standard","name":"A：シンプルお願い型","variant":"A","sort_order":1,"is_active":true,"script_json":{"start":"opening","steps":{"opening":{"emoji":"📦","title":"ご挨拶（シンプルお願い型）","speech":"突然のお電話、失礼いたします。\n\nわたくし、株式会社TENOHIRAの**石川**と申します。\n\n沖縄を訪れる観光客向けのパンフレットを、御施設に**無料で設置**させていただきたいと思い、ご連絡いたしました。\n\nご担当の方、いらっしゃいますでしょうか？","branches":[{"label":"✅ 担当者につながった","next":"pitch","color":"green"},{"label":"💬 内容を聞きたいと言われた","next":"pitch","color":"primary"},{"label":"🚫 断られた","next":"FINISH_REFUSE","color":"red"},{"label":"📭 不在・後日かけ直し","next":"FINISH_AGAIN","color":"yellow"}]},"pitch":{"emoji":"📋","title":"本題（設置内容の説明）","speech":"ありがとうございます。\n\n沖縄県内のホテルや観光施設様に、三つ折りパンフレットを**無償で設置**させていただいております。\n\n設置場所は**三つ折り1枚分（幅10cm）**で、ロビーやフロント付近が理想です。\n\nパンフレットは**月1回補充**にお伺いし、管理は全てこちらが行います。御施設の方のお手間は一切かかりません。\n\n一度、サンプルをお持ちしてご確認いただけませんか？","branches":[{"label":"🎯 設置OKになった！","next":"close","color":"green"},{"label":"📋 サンプルを見てから判断","next":"close","color":"primary"},{"label":"🚫 断られた","next":"FINISH_REFUSE","color":"red"}]},"close":{"emoji":"🤝","title":"クロージング","speech":"ありがとうございます！\n\nでは早速、**サンプルをお持ち**してもよろしいでしょうか？\n\nご都合の良い日時、教えていただけますか？","branches":[{"label":"🎉 訪問日程が決まった！","next":"FINISH_WIN","color":"green"},{"label":"⏰ 後日かけ直し","next":"FINISH_AGAIN","color":"yellow"},{"label":"🚫 やっぱり断られた","next":"FINISH_REFUSE","color":"red"}]}}}},{"script_id":"pm_v_benefit","name":"B：施設メリット型","variant":"B","sort_order":2,"is_active":true,"script_json":{"start":"opening","steps":{"opening":{"emoji":"✨","title":"ご挨拶（施設メリット型）","speech":"お世話になります、突然のお電話失礼いたします。\n\n沖縄でパンフレット配布事業をやっております、TENOHIRAの**石川**と申します。\n\n御施設のお客様に、もっと沖縄を楽しんでいただける情報を届けたい——そんな思いでご連絡しました。\n\nご担当の方、いらっしゃいますか？","branches":[{"label":"✅ 担当者につながった","next":"pitch","color":"green"},{"label":"💬 内容を聞かれた","next":"pitch","color":"primary"},{"label":"🚫 断られた","next":"FINISH_REFUSE","color":"red"},{"label":"📭 不在・後日","next":"FINISH_AGAIN","color":"yellow"}]},"pitch":{"emoji":"🏨","title":"本題（施設側のメリット）","speech":"ありがとうございます。\n\n御施設のお客様——特に観光客の方に、沖縄の食・体験・お土産情報をまとめたパンフレットを、**無償でお届けしたい**んです。\n\nフロントやロビーに置いていただくだけ。スペースは三つ折り1枚分。\n\n補充も管理も全てこちらが行いますので、御施設のご負担はゼロです。\n\nいかがでしょうか？","branches":[{"label":"🎯 ぜひお願いしたい！","next":"close","color":"green"},{"label":"📋 サンプルを見てみたい","next":"close","color":"primary"},{"label":"🚫 置く場所がない・不要","next":"FINISH_REFUSE","color":"red"}]},"close":{"emoji":"🤝","title":"クロージング","speech":"ありがとうございます！\n\nでは、**一度お伺い**してサンプルをお見せしてもよろしいでしょうか？\n\nご都合の良い日時はいつ頃がよろしいですか？","branches":[{"label":"🎉 訪問日程決定！","next":"FINISH_WIN","color":"green"},{"label":"⏰ 後日かけ直し","next":"FINISH_AGAIN","color":"yellow"},{"label":"🚫 やはり不要","next":"FINISH_REFUSE","color":"red"}]}}}},{"script_id":"pm_v_quick","name":"C：クイック確認型","variant":"C","sort_order":3,"is_active":true,"script_json":{"start":"opening","steps":{"opening":{"emoji":"⚡","title":"ご挨拶（クイック確認型）","speech":"お忙しいところすみません、TENOHIRAの**石川**と申します。\n\nひとつだけ確認させてください——\n\n今、フロントやロビーに、**観光パンフレットのスペース**はありますか？","branches":[{"label":"✅ ある","next":"pitch","color":"green"},{"label":"💬 わからない・確認する","next":"pitch","color":"primary"},{"label":"🚫 ない・置けない","next":"FINISH_REFUSE","color":"red"},{"label":"📭 不在","next":"FINISH_AGAIN","color":"yellow"}]},"pitch":{"emoji":"📦","title":"本題（シンプル提案）","speech":"ありがとうございます！\n\n沖縄観光情報をまとめた三つ折りパンフレットを、**無料で設置・補充**させていただいているんです。\n\nお客様に喜ばれて、施設のご負担はゼロ。\n\nサンプルを一度お持ちしてもいいですか？5分で終わります。","branches":[{"label":"🎯 持ってきていい！","next":"close","color":"green"},{"label":"📋 もう少し聞かせて","next":"close","color":"primary"},{"label":"🚫 不要","next":"FINISH_REFUSE","color":"red"}]},"close":{"emoji":"📅","title":"訪問日程確認","speech":"ありがとうございます！\n\nご都合の良い日時を教えていただけますか？\n\nサンプルをお持ちして、置けそうな場所を一緒に確認させてください。","branches":[{"label":"🎉 日程決定！","next":"FINISH_WIN","color":"green"},{"label":"⏰ 後日かけ直し","next":"FINISH_AGAIN","color":"yellow"},{"label":"🚫 やはり不要","next":"FINISH_REFUSE","color":"red"}]}}}}];
+const __CC_DEFAULTS__ = [{"script_id":"pm_v_standard","name":"A：シンプルお願い型","variant":"A","sort_order":1,"is_active":true,"script_json":{"start":"opening","steps":{"opening":{"emoji":"📦","title":"ご挨拶（シンプルお願い型）","speech":"突然のお電話、失礼いたします。\n\nわたくし、株式会社TENOHIRAの**石川**と申します。\n\n沖縄を訪れる観光客向けのパンフレットを、御施設に**無料で設置**させていただきたいと思い、ご連絡いたしました。\n\nご担当の方、いらっしゃいますでしょうか？","branches":[{"label":"✅ 担当者につながった","next":"pitch","color":"green"},{"label":"💬 内容を聞きたいと言われた","next":"pitch","color":"primary"},{"label":"🚫 断られた","next":"FINISH_REFUSE","color":"red"},{"label":"📭 不在・後日かけ直し","next":"FINISH_AGAIN","color":"yellow"}]},"pitch":{"emoji":"📋","title":"本題（設置内容の説明）","speech":"ありがとうございます。\n\n沖縄県内のホテルや観光施設様に、三つ折りパンフレットを**無償で設置**させていただいております。\n\n設置場所は**三つ折り1枚分（幅10cm）**で、ロビーやフロント付近が理想です。\n\nパンフレットは**月1回補充**にお伺いし、管理は全てこちらが行います。御施設の方のお手間は一切かかりません。\n\n一度、サンプルをお持ちしてご確認いただけませんか？","branches":[{"label":"🎯 設置OKになった！","next":"close","color":"green"},{"label":"📋 サンプルを見てから判断","next":"close","color":"primary"},{"label":"🚫 断られた","next":"FINISH_REFUSE","color":"red"}]},"close":{"emoji":"🤝","title":"クロージング","speech":"ありがとうございます！\n\nでは早速、**サンプルをお持ち**してもよろしいでしょうか？\n\nご都合の良い日時、教えていただけますか？","branches":[{"label":"🎉 訪問日程が決まった！","next":"FINISH_WIN","color":"green"},{"label":"⏰ 後日かけ直し","next":"FINISH_AGAIN","color":"yellow"},{"label":"🚫 やっぱり断られた","next":"FINISH_REFUSE","color":"red"}]}}}},{"script_id":"pm_v_benefit","name":"B：施設メリット型","variant":"B","sort_order":2,"is_active":true,"script_json":{"start":"opening","steps":{"opening":{"emoji":"✨","title":"ご挨拶（施設メリット型）","speech":"お世話になります、突然のお電話失礼いたします。\n\n沖縄でパンフレット配布事業をやっております、TENOHIRAの**石川**と申します。\n\n御施設のお客様に、もっと沖縄を楽しんでいただける情報を届けたい——そんな思いでご連絡しました。\n\nご担当の方、いらっしゃいますか？","branches":[{"label":"✅ 担当者につながった","next":"pitch","color":"green"},{"label":"💬 内容を聞かれた","next":"pitch","color":"primary"},{"label":"🚫 断られた","next":"FINISH_REFUSE","color":"red"},{"label":"📭 不在・後日","next":"FINISH_AGAIN","color":"yellow"}]},"pitch":{"emoji":"🏨","title":"本題（施設側のメリット）","speech":"ありがとうございます。\n\n御施設のお客様——特に観光客の方に、沖縄の食・体験・お土産情報をまとめたパンフレットを、**無償でお届けしたい**んです。\n\nフロントやロビーに置いていただくだけ。スペースは三つ折り1枚分。\n\n補充も管理も全てこちらが行いますので、御施設のご負担はゼロです。\n\nいかがでしょうか？","branches":[{"label":"🎯 ぜひお願いしたい！","next":"close","color":"green"},{"label":"📋 サンプルを見てみたい","next":"close","color":"primary"},{"label":"🚫 置く場所がない・不要","next":"FINISH_REFUSE","color":"red"}]},"close":{"emoji":"🤝","title":"クロージング","speech":"ありがとうございます！\n\nでは、**一度お伺い**してサンプルをお見せしてもよろしいでしょうか？\n\nご都合の良い日時はいつ頃がよろしいですか？","branches":[{"label":"🎉 訪問日程決定！","next":"FINISH_WIN","color":"green"},{"label":"⏰ 後日かけ直し","next":"FINISH_AGAIN","color":"yellow"},{"label":"🚫 やはり不要","next":"FINISH_REFUSE","color":"red"}]}}}},{"script_id":"pm_v_quick","name":"C：クイック確認型","variant":"C","sort_order":3,"is_active":true,"script_json":{"start":"opening","steps":{"opening":{"emoji":"⚡","title":"ご挨拶（クイック確認型）","speech":"お忙しいところすみません、TENOHIRAの**石川**と申します。\n\nひとつだけ確認させてください——\n\n今、フロントやロビーに、**観光パンフレットのスペース**はありますか？","branches":[{"label":"✅ ある","next":"pitch","color":"green"},{"label":"💬 わからない・確認する","next":"pitch","color":"primary"},{"label":"🚫 ない・置けない","next":"FINISH_REFUSE","color":"red"},{"label":"📭 不在","next":"FINISH_AGAIN","color":"yellow"}]},"pitch":{"emoji":"📦","title":"本題（シンプル提案）","speech":"ありがとうございます！\n\n沖縄観光情報をまとめた三つ折りパンフレットを、**無料で設置・補充**させていただいているんです。\n\nお客様に喜ばれて、施設のご負担はゼロ。\n\nサンプルを一度お持ちしてもいいですか？5分で終わります。","branches":[{"label":"🎯 持ってきていい！","next":"close","color":"green"},{"label":"📋 もう少し聞かせて","next":"close","color":"primary"},{"label":"🚫 不要","next":"FINISH_REFUSE","color":"red"}]},"close":{"emoji":"📅","title":"訪問日程確認","speech":"ありがとうございます！\n\nご都合の良い日時を教えていただけますか？\n\nサンプルをお持ちして、置けそうな場所を一緒に確認させてください。","branches":[{"label":"🎉 日程決定！","next":"FINISH_WIN","color":"green"},{"label":"⏰ 後日かけ直し","next":"FINISH_AGAIN","color":"yellow"},{"label":"🚫 やはり不要","next":"FINISH_REFUSE","color":"red"}]}}}},{"script_id": "pm_v_reactive", "name": "D：反応別対応型（実践版）", "variant": "D", "sort_order": 4, "is_active": true, "script_json": {"start": "opening", "steps": {"opening": {"emoji": "🎯", "title": "オープニング", "speech": "お世話になります。私、株式会社TENOHIRAの**石川**と申します。突然のお電話失礼いたします。\n\n沖縄県内の観光施設や飲食店のパンフレットを、ホテル様のフロントやロビーに**無料で補充・配布**させていただくサービスを展開しておりまして、本日はご相談のご連絡をさせていただきました。\n\n今、少々お時間よろしいでしょうか？", "branches": [{"label": "❓ どんなパンフですか？（A）", "next": "reaction_a", "color": "green"}, {"label": "🚫 スペースがない（B）", "next": "reaction_b", "color": "primary"}, {"label": "👤 担当がいない（C）", "next": "reaction_c", "color": "yellow"}, {"label": "❌ お断りします（D）", "next": "reaction_d", "color": "red"}, {"label": "📭 不在・後日", "next": "FINISH_AGAIN", "color": "yellow"}]}, "reaction_a": {"emoji": "❓", "title": "反応A：どんなパンフですか？", "speech": "はい、現在**DMM沖縄水族館様のパンフレット**をお預かりしておりまして、ご宿泊のお客様に観光情報としてお届けできればと思っております。\n\n料金は一切いただかず、補充も全て私どもが対応いたします。", "branches": [{"label": "🎯 見てみてもいいですよ", "next": "close_a", "color": "green"}, {"label": "🚫 うちは置けない", "next": "reaction_b", "color": "red"}, {"label": "💭 検討する・後日", "next": "FINISH_AGAIN", "color": "yellow"}]}, "close_a": {"emoji": "📅", "title": "訪問日程（反応A）", "speech": "ありがとうございます！\n\nでは一度**サンプルをお持ち**してご挨拶に伺えますか？\n\n来週**__曜日の午前中**はいかがでしょうか。", "branches": [{"label": "🎉 日程決定！", "next": "FINISH_WIN", "color": "green"}, {"label": "⏰ 別の日程で", "next": "FINISH_AGAIN", "color": "yellow"}]}, "reaction_b": {"emoji": "🏨", "title": "反応B：スペースがない", "speech": "そうでしたか、承知いたしました。\n\nちなみにお客様からご要望があった際に、**従業員様が手渡しでパンフをお渡しする**ようなことはございますか？", "branches": [{"label": "✅ それはやっています", "next": "reaction_b_ok", "color": "green"}, {"label": "🚫 それも難しいです", "next": "reaction_b_ng", "color": "red"}]}, "reaction_b_ok": {"emoji": "📦", "title": "手渡し用として提案", "speech": "でしたら、**手渡し用としてサンプルだけ**お持ちするのはいかがでしょうか？\n\n一度ご覧いただいてからご判断いただければ十分です。\n\n来週**__曜日**はご都合いかがでしょう？", "branches": [{"label": "🎉 来てもいいですよ！", "next": "FINISH_WIN", "color": "green"}, {"label": "⏰ 後日改めて", "next": "FINISH_AGAIN", "color": "yellow"}, {"label": "🚫 やはり難しい", "next": "FINISH_REFUSE", "color": "red"}]}, "reaction_b_ng": {"emoji": "🔄", "title": "次につなぐ", "speech": "わかりました。\n\nまたパンフレットが変わったタイミングで改めてご連絡してもよろしいでしょうか？", "branches": [{"label": "✅ また連絡してください", "next": "FINISH_AGAIN", "color": "yellow"}, {"label": "🚫 不要です", "next": "FINISH_REFUSE", "color": "red"}]}, "reaction_c": {"emoji": "👤", "title": "反応C：担当がいない", "speech": "承知いたしました。\n\n担当の方の**お名前**を教えていただけますか？\n\n改めてご連絡させていただきます。**いつ頃**がよろしいでしょうか？", "branches": [{"label": "📝 名前と時間を確認できた", "next": "FINISH_AGAIN", "color": "green"}, {"label": "💭 わからない・また後で", "next": "FINISH_AGAIN", "color": "yellow"}]}, "reaction_d": {"emoji": "❌", "title": "反応D：お断り", "speech": "承知いたしました。お時間いただきありがとうございました。\n\nまたパンフレットの内容が変わった際に、改めてご連絡させていただいてもよろしいでしょうか？", "branches": [{"label": "✅ またいつか連絡して", "next": "FINISH_AGAIN", "color": "yellow"}, {"label": "🚫 完全にお断り", "next": "FINISH_REFUSE", "color": "red"}]}}}}];
 
 async function seedDefaultScripts() {
   try {
@@ -664,6 +665,14 @@ async function seedDefaultScripts() {
 async function loadScripts() {
   try {
     const { data, error } = await sb.from('posmane_scripts').select('*').eq('is_active', true).order('sort_order');
+    // ★ DBにないscript_idがあれば自動追加
+    if (data && data.length > 0) {
+      const existingIds = data.map(s => s.script_id);
+      const missing = __CC_DEFAULTS__.filter(s => !existingIds.includes(s.script_id));
+      if (missing.length > 0) {
+        await sb.from('posmane_scripts').insert(missing);
+      }
+    }
     if (error) throw error;
     scripts = data || [];
     if (!scripts.length) {
@@ -1664,6 +1673,52 @@ document.getElementById('dmm-select').addEventListener('change', e => { currentD
 document.getElementById('include-excluded').addEventListener('change', e => { includeExcluded = e.target.checked; renderList(); });
 document.getElementById('sort-select').addEventListener('change', e => { currentSort = e.target.value; renderList(); });
 document.getElementById('report-modal').addEventListener('click', e => { if (e.target.id === 'report-modal') closeReport(); });
+
+function printAttackReport() {
+  const btn = document.querySelector('[onclick="printAttackReport()"]');
+  const orig = btn ? btn.innerHTML : '';
+  if (btn) { btn.innerHTML = '⏳ 生成中...'; btn.disabled = true; }
+  const periodRow = document.querySelector('.report-period-row');
+  if (periodRow) periodRow.style.display = 'none';
+  const reportBody = document.getElementById('report-body');
+  function restore() {
+    if (btn) { btn.innerHTML = orig; btn.disabled = false; }
+    if (periodRow) periodRow.style.display = '';
+  }
+  Promise.all([
+    loadLibrary_('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js', 'html2canvas'),
+    loadLibrary_('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js', 'jspdf'),
+  ]).then(() => {
+    return html2canvas(reportBody, { scale: 2, useCORS: true, backgroundColor: '#ffffff', logging: false });
+  }).then(canvas => {
+    const { jsPDF } = window.jspdf;
+    const pdf  = new jsPDF('p', 'mm', 'a4');
+    const pdfW = pdf.internal.pageSize.getWidth();
+    const pdfH = pdf.internal.pageSize.getHeight();
+    const imgH = canvas.height * (pdfW / canvas.width);
+    const img  = canvas.toDataURL('image/png');
+    let rem = imgH, off = 0;
+    while (rem > 0) {
+      if (off > 0) pdf.addPage();
+      pdf.addImage(img, 'PNG', 0, -off, pdfW, imgH);
+      off += pdfH; rem -= pdfH;
+    }
+    const d = new Date();
+    const ds = `${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}`;
+    pdf.save(`posmane_report_${ds}.pdf`);
+    restore();
+  }).catch(e => { alert('PDF生成エラー: ' + e.message); restore(); });
+}
+
+function loadLibrary_(src, prop) {
+  return new Promise((resolve, reject) => {
+    if (window[prop]) { resolve(); return; }
+    const s = document.createElement('script');
+    s.src = src; s.onload = resolve;
+    s.onerror = () => reject(new Error('読み込み失敗: ' + src));
+    document.head.appendChild(s);
+  });
+}
 
 function openReport() { reportPeriod = 'today'; reportCallFilter = 'all'; reportSort = 'date_desc'; renderReport(); document.getElementById('report-modal').classList.add('show'); }
 function closeReport() { document.getElementById('report-modal').classList.remove('show'); }
