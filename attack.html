@@ -1586,6 +1586,8 @@ async function brImportCsv() {
     if (addrIdx  !== -1 && cols[addrIdx]  && cols[addrIdx]  !== '要確認') updates.address  = cols[addrIdx].trim();
     if (webIdx   !== -1 && cols[webIdx]   && cols[webIdx]   !== '要確認') updates.website  = cols[webIdx].trim();
 
+    updates.import_batch_id = window._currentBatchId;  // 更新分にもバッチID付与
+
     if (!Object.keys(updates).length) { skipped++; continue; }
 
     try {
