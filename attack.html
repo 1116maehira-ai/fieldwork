@@ -848,11 +848,12 @@ function renderCard(c, today) {
             ${(c.source_data && c.source_data.kyodaku_result) ? `<span style="display:inline-block;background:${{'S':'#D1FAE5','A':'#DBEAFE','B':'#FFF7ED','C':'#FEF3C7','NG':'#FEE2E2'}[c.source_data.kyodaku_result]||'#F3F4F6'};color:${{'S':'#065F46','A':'#1E40AF','B':'#9A3412','C':'#92400E','NG':'#991B1B'}[c.source_data.kyodaku_result]||'#374151'};padding:2px 8px;border-radius:6px;font-size:10px;font-weight:800;white-space:nowrap;">${{'S':'✅ S：即開始可','A':'✅ A：口頭OK','B':'📝 B：書面申請','C':'💰 C：要検討','NG':'⛔ NG'}[c.source_data.kyodaku_result]||c.source_data.kyodaku_result}</span>` : ''}
             ${(c.source_data && c.source_data.blanket_approval) ? '<span style="display:inline-block;background:#D1FAE5;color:#065F46;padding:2px 8px;border-radius:6px;font-size:10px;font-weight:800;white-space:nowrap;">🎯 一括承認済み</span>' : ''}
             ${isRentalAssoc ? '<span style="display:inline-block;background:#DBEAFE;color:#1E40AF;padding:2px 8px;border-radius:6px;font-size:10px;font-weight:800;border:1px solid #93C5FD;white-space:nowrap;">🚗 協会加盟</span>' : ''}
-            ${getTags(c).map(t => `<span style="display:inline-block;background:#FEF3C7;color:#92400E;padding:2px 8px;border-radius:6px;font-size:10px;font-weight:800;border:1px solid #FDE68A;white-space:nowrap;">🏷 ${escapeHtml(t)}</span>`).join('')}
+            ${getTags(c).map(t => `<span style="display:inline-flex;align-items:center;gap:3px;background:#FEF3C7;color:#92400E;padding:2px 8px;border-radius:6px;font-size:10px;font-weight:800;border:1px solid #FDE68A;white-space:nowrap;">🏷 ${escapeHtml(t)}<button onclick="event.stopPropagation();removeTag('${c.id}','${escapeHtml(t)}')" style="background:none;border:none;cursor:pointer;color:#92400E;font-size:11px;padding:0;line-height:1;margin-left:2px">×</button></span>`).join('')}
             <span>🗺️ ${escapeHtml(areaTag)}</span>
             <span>📞 ${escapeHtml(c.phone || '電話なし')}</span>
             ${visitCount > 0 ? `<span>📝 ${visitCount}回</span>` : ''}
             ${(c.checkin_time || c.checkout_time) ? `<span style="font-size:10px;background:#F0FDF4;color:#166534;padding:2px 8px;border-radius:6px;font-weight:800;border:1px solid #BBF7D0">⏰ IN ${c.checkin_time||'?'} / OUT ${c.checkout_time||'?'}</span>` : ''}
+            ${c.rooms ? `<span style="font-size:10px;background:#EFF6FF;color:#1E40AF;padding:2px 8px;border-radius:6px;font-weight:800;border:1px solid #BFDBFE">🏨 ${escapeHtml(c.rooms)}</span>` : ''}
             ${nextDateHtml}
           </div>
           <div class="link-row">${links.join('')}</div>
@@ -1498,28 +1499,41 @@ function brGenerate() {
   ).join('\n');
 
   const prompt =
-`以下の${n}施設について、各施設のチェックイン時間・チェックアウト時間・正確な電話番号・正確な住所をWeb検索で調査し、CSV形式で返してください。
+`以下の${n}施設について、各施設の情報をWeb検索で調査し、CSV形式で返してください。
+
+【❗ 最重要：ハルシネーション禁止】
+1. 記憶・推測・想像で値を埋めることは絶対禁止
+2. 必ず実際にWeb検索して確認した情報のみ記載すること
+3. 確認できない項目は必ず「要確認」と記入
+4. URLは実際にアクセスして存在を確認したもののみ記載
 
 【調査対象施設リスト（${n}件）】
 ${listStr}
 
+【調査手順（1施設ずつ実施）】
+① 施設名でGoogle検索 → 公式サイトを特定
+② 公式サイトの「アクセス」「会社概要」「ご利用案内」ページで電話・住所・客室数を確認
+③ 公式サイトまたはじゃらん・楽天トラベルでチェックイン/アウト時間を確認
+④ 確認できた情報のみCSVに記入（推測は禁止）
+
 【出力形式】
 CSV形式で出力してください（1行目はヘッダー行）。
-ヘッダー行：company_name,checkin_time,checkout_time,phone,address,website
+ヘッダー行：company_name,checkin_time,checkout_time,phone,address,website,rooms
 
 【各列の説明】
 ・company_name  : 施設名（リストの表記のまま使用）
-・checkin_time  : チェックイン時間（例：15:00）
-・checkout_time : チェックアウト時間（例：11:00）
-・phone         : 代表電話番号（ハイフン付き、例：098-XXX-XXXX）
-・address       : 正確な住所（〒番号から）
-・website       : 公式サイトURL（https://から始まる完全形式）
+・checkin_time  : チェックイン時間（例：15:00）公式サイトまたは予約サイトで確認
+・checkout_time : チェックアウト時間（例：11:00）公式サイトまたは予約サイトで確認
+・phone         : 代表電話番号（ハイフン付き、例：098-XXX-XXXX）公式サイト優先
+・address       : 正確な住所（〒番号から）公式サイトの「アクセス」ページ優先
+・website       : 公式サイトURL（https://から始まる完全形式）実在確認済みのもののみ
+・rooms         : 客室数（例：150室）公式サイトまたは施設概要ページで確認
 
-【重要ルール】
-・確認できなかった項目は「要確認」と記入（捏造・推測は禁止）
-・チェックイン/アウト時間は公式サイトまたは予約サイト（じゃらん・楽天トラベル等）で確認
-・電話番号・住所は公式サイトの「アクセス」「お問い合わせ」ページを優先
-・各値はダブルクォートで囲む`;
+【出力ルール】
+・確認できなかった項目は必ず「要確認」（空白・推測・想像は禁止）
+・各値はダブルクォートで囲む
+・1行目はヘッダー行、2行目以降がデータ行
+・施設名はリストの表記のまま使用（変えない）`;
 
   const ta = document.getElementById('br-prompt');
   if (ta) ta.value = prompt;
@@ -1548,6 +1562,7 @@ async function brImportCsv() {
   const phoneIdx   = headers.indexOf('phone');
   const addrIdx    = headers.indexOf('address');
   const webIdx     = headers.indexOf('website');
+  const roomsIdx   = headers.indexOf('rooms');
 
   if (nameIdx === -1) { showToast('company_name列が見つかりません', 'error'); return; }
 
@@ -1594,6 +1609,7 @@ async function brImportCsv() {
         if (phoneIdx !== -1 && cols[phoneIdx] && cols[phoneIdx] !== '要確認') upd.phone    = cols[phoneIdx].trim();
         if (addrIdx  !== -1 && cols[addrIdx]  && cols[addrIdx]  !== '要確認') upd.address  = cols[addrIdx].trim();
         if (webIdx   !== -1 && cols[webIdx]   && cols[webIdx]   !== '要確認') upd.website  = cols[webIdx].trim();
+        if (roomsIdx !== -1 && cols[roomsIdx] && cols[roomsIdx] !== '要確認') upd.rooms    = cols[roomsIdx].trim();
         if (importTags.length > 0) upd.tags = importTags;
         await sb.from('posmane_attacks').update(upd).eq('id', newId);
 
@@ -1610,6 +1626,7 @@ async function brImportCsv() {
     if (phoneIdx !== -1 && cols[phoneIdx] && cols[phoneIdx] !== '要確認') updates.phone    = cols[phoneIdx].trim();
     if (addrIdx  !== -1 && cols[addrIdx]  && cols[addrIdx]  !== '要確認') updates.address  = cols[addrIdx].trim();
     if (webIdx   !== -1 && cols[webIdx]   && cols[webIdx]   !== '要確認') updates.website  = cols[webIdx].trim();
+    if (roomsIdx !== -1 && cols[roomsIdx] && cols[roomsIdx] !== '要確認') updates.rooms    = cols[roomsIdx].trim();
 
     updates.import_batch_id = window._currentBatchId;  // 更新分にもバッチID付与
     if (importTags.length > 0) {
@@ -1635,6 +1652,20 @@ async function brImportCsv() {
   updateBatchSelect();
   updateTagSelect();
   renderList();
+}
+
+async function removeTag(companyId, tagToRemove) {
+  const c = companies.find(x => x.id === companyId);
+  if (!c) return;
+  const newTags = getTags(c).filter(t => t !== tagToRemove);
+  try {
+    const { error } = await sb.from('posmane_attacks').update({ tags: newTags }).eq('id', companyId);
+    if (error) throw error;
+    c.tags = newTags;
+    updateTagSelect();
+    renderList();
+    toast('🏷 タグを削除しました');
+  } catch(e) { toast('タグ削除エラー: ' + e.message); }
 }
 
 function getTags(c) {
