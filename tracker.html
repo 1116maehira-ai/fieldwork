@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>TENOHIRA 行動トラッカー</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,600;0,700;0,900;1,900&family=Noto+Sans+JP:wght@400;500;700&display=swap');
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+:root{
+  --red:#FF3B1E;--ink:#141414;--g80:#444;--g60:#777;--g30:#B5B5B5;--g10:#F2F2F2;--g05:#F9F9F9;
+  --white:#fff;--border:#E8E8E8;
+  --posu:#0055CC;--cc:#FF3B1E;--hojo:#E07000;--green:#00873A;--warn:#C89000;
+  --green-pale:#E9F9F0;--warn-pale:#FFFBE6;
+}
+body{background:var(--white);color:var(--ink);font-family:'Noto Sans JP',sans-serif;font-size:14px;line-height:1.7;padding-bottom:60px;}
+
+.hero{padding:36px 20px 28px;border-bottom:3px solid var(--red);}
+.hero-tag{display:inline-block;background:var(--red);color:#fff;font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;letter-spacing:3px;padding:3px 10px;margin-bottom:18px;}
+.hero-title{font-family:'Barlow Condensed',sans-serif;font-size:40px;font-weight:900;line-height:1.18;letter-spacing:0px;}
+.hero-title em{font-style:italic;color:var(--red);}
+
+.dash{margin:20px;border:2px solid var(--border);border-left:6px solid var(--red);padding:20px;}
+.dash-label{font-size:11px;letter-spacing:1px;color:var(--g30);text-transform:uppercase;}
+.dash-big{font-family:'Barlow Condensed',sans-serif;font-size:42px;font-weight:900;line-height:1;color:var(--red);}
+.dash-big small{font-size:18px;}
+.dash-divider{height:1px;background:var(--border);margin:16px 0;}
+.db-title{font-size:11px;color:var(--g30);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;}
+.db-row{display:flex;align-items:baseline;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--g10);}
+.db-row:last-child{border-bottom:none;}
+.db-name{font-size:12px;color:var(--g80);}
+.db-name b{font-weight:700;}
+.db-calc{font-size:10px;color:var(--g30);margin-left:4px;}
+.db-val{font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:900;}
+.db-total{display:flex;align-items:baseline;justify-content:space-between;border-top:2px solid var(--ink);padding-top:10px;margin-top:6px;}
+.db-total .db-name{font-weight:700;color:var(--ink);font-size:13px;}
+.db-total .db-val{font-size:30px;}
+.dash-pct{display:flex;align-items:center;gap:8px;margin-top:14px;}
+.dash-pct-bar{flex:1;height:10px;background:var(--g10);position:relative;overflow:hidden;}
+.dash-pct-fill{position:absolute;left:0;top:0;bottom:0;background:var(--red);}
+.dash-pct-num{font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:900;color:var(--red);}
+.dash-pct-note{font-size:10px;color:var(--g30);margin-top:2px;}
+
+.monthnav{position:sticky;top:0;z-index:20;background:var(--white);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:12px 20px;}
+.monthnav button{border:none;background:var(--ink);color:#fff;width:40px;height:40px;font-size:20px;font-weight:700;border-radius:50%;cursor:pointer;}
+.monthnav button:disabled{background:var(--g30);}
+.monthnav-m{font-family:'Barlow Condensed',sans-serif;font-size:28px;font-weight:900;line-height:1;text-align:center;}
+.monthnav-sub{font-size:10px;color:var(--g60);text-align:center;}
+
+.sec{padding:22px 20px;}
+.sec-head{display:flex;align-items:center;gap:10px;margin-bottom:14px;}
+.sec-dot{width:10px;height:10px;border-radius:50%;}
+.sec-name{font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:900;}
+.sec-target{margin-left:auto;font-size:11px;color:var(--g60);font-weight:700;}
+
+/* funnel step */
+.fstep{background:var(--g05);border:1px solid var(--border);padding:12px 14px;margin-bottom:6px;position:relative;}
+.fstep-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;}
+.fstep-label{font-size:13px;font-weight:700;}
+.fstep-conv{font-size:10px;color:var(--g30);}
+.fstep-cols{display:flex;gap:10px;align-items:flex-end;}
+.fcol{flex:1;}
+.fcol-lab{font-size:9px;color:var(--g30);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:3px;}
+.fcol-hyp{font-family:'Barlow Condensed',sans-serif;font-size:24px;font-weight:900;color:var(--g60);line-height:1;padding:6px 0;text-align:center;}
+.fcol input{width:100%;border:2px solid var(--border);background:#fff;padding:8px;font-size:18px;font-weight:900;font-family:'Barlow Condensed',sans-serif;text-align:center;-webkit-appearance:none;border-radius:0;}
+.fcol input:focus{outline:none;border-color:var(--red);}
+.fcol input.over{border-color:var(--green);background:var(--green-pale);color:var(--green);}
+.fcol input.under{border-color:var(--warn);background:var(--warn-pale);color:var(--warn);}
+.fstep-arrow{text-align:center;color:var(--g30);font-size:14px;line-height:0.5;margin:2px 0;}
+
+.result-box{background:var(--green-pale);border:1px solid #BCE8CE;padding:12px 14px;margin-top:8px;font-size:12px;color:var(--g80);line-height:1.8;}
+.result-box b{color:var(--green);font-family:'Barlow Condensed',sans-serif;font-size:15px;}
+.result-box .rb-hyp{color:var(--g60);}
+
+.chartsec{padding:22px 20px;}
+.chart-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;border:1px solid var(--border);padding:16px 12px 8px;}
+.barchart{display:flex;align-items:flex-end;gap:5px;height:200px;min-width:820px;position:relative;}
+.bar-col{flex:1;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;height:100%;position:relative;min-width:34px;}
+.bar-val{font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:900;margin-bottom:2px;}
+.bar{width:80%;display:flex;flex-direction:column;justify-content:flex-end;}
+.bar-seg{width:100%;}
+.bar-label{font-size:9px;color:var(--g30);margin-top:3px;}
+.goalline{position:absolute;left:0;right:0;border-top:2px dashed var(--red);z-index:5;}
+.goalline-label{position:absolute;right:0;font-size:9px;color:var(--red);font-weight:700;background:#fff;padding:0 4px;top:-8px;}
+.legend{display:flex;gap:14px;margin-top:12px;flex-wrap:wrap;}
+.legend-item{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--g60);}
+.legend-dot{width:10px;height:10px;}
+
+.note{margin:0 20px;background:var(--g05);border:1px solid var(--border);border-left:4px solid var(--red);padding:16px 18px;font-size:12px;line-height:1.9;color:var(--g80);}
+.note strong{display:block;color:var(--ink);margin-top:10px;}
+.note strong:first-child{margin-top:0;}
+</style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+// ===== Supabase 自動取得 =====
+const SB_URL='https://osipzwbsfbgbegjowydm.supabase.co';
+const SB_KEY='sb_publishable_yO0lVlOP_r-qhnwjxqq0UQ_qjxSrlnC';
+let sb=null;
+try{ if(window.supabase) sb=window.supabase.createClient(SB_URL,SB_KEY); }catch(e){ console.warn('sb init',e); }
+let AUTO={}; // {month:{calls,wons}}
+function monthYM(m){ let y=2026,mo=7+(m-1); while(mo>12){mo-=12;y++;} return {y,mo}; }
+async function loadAuto(){
+  if(!sb){ return; }
+  try{
+    const {data,error}=await sb.from('posmane_attacks').select('logs,phase,updated_at');
+    if(error){ console.warn(error); return; }
+    const callsByMonth={}, wonsByMonth={};
+    data.forEach(row=>{
+      if(Array.isArray(row.logs)){
+        row.logs.forEach(lg=>{
+          const dt=lg.date||(lg.timestamp?String(lg.timestamp).slice(0,10):null);
+          if(dt){ const ym=dt.slice(0,7); callsByMonth[ym]=(callsByMonth[ym]||0)+1; }
+        });
+      }
+      if(row.phase==='won' && row.updated_at){
+        const ym=row.updated_at.slice(0,7); wonsByMonth[ym]=(wonsByMonth[ym]||0)+1;
+      }
+    });
+    for(let m=1;m<=20;m++){
+      const {y,mo}=monthYM(m);
+      const ym=`${y}-${String(mo).padStart(2,'0')}`;
+      AUTO[m]={calls:callsByMonth[ym]||0, wons:wonsByMonth[ym]||0};
+    }
+    render();
+  }catch(e){ console.warn('loadAuto',e); }
+}
+</script>
+</head>
+<body>
+
+<div class="hero">
+  <div class="hero-tag">TENOHIRA ACTION TRACKER</div>
+  <div class="hero-title">行動が<em>すべて</em>を<br>決める</div>
+</div>
+
+<div class="dash">
+  <div class="dash-label">最終目標（代理店なしの固定粗利）</div>
+  <div class="dash-big">300<small>万円/月</small></div>
+  <div class="dash-divider"></div>
+  <div>
+    <div class="db-title">今月の累計成約（サービス別）</div>
+    <div class="db-row"><span class="db-name"><b>ポスマネ</b> クライアント</span><span class="db-val" style="color:var(--posu)" id="d_posu_cl">0社</span></div>
+    <div class="db-row"><span class="db-name"><b>センターコール</b> 受注</span><span class="db-val" style="color:var(--cc)" id="d_cc_cl">0社</span></div>
+    <div class="db-row"><span class="db-name"><b>補助金</b> 申請代行</span><span class="db-val" style="color:var(--hojo)" id="d_hojo_cl">0件</span></div>
+  </div>
+  <div class="dash-divider"></div>
+  <div>
+    <div class="db-title">今月の月次粗利（根拠つき）</div>
+    <div class="db-row"><span class="db-name">ポスマネ<span class="db-calc" id="d_posu_calc"></span></span><span class="db-val" style="color:var(--posu)" id="d_posu_p">0万</span></div>
+    <div class="db-row"><span class="db-name">センターコール<span class="db-calc" id="d_cc_calc"></span></span><span class="db-val" style="color:var(--cc)" id="d_cc_p">0万</span></div>
+    <div class="db-total"><span class="db-name">固定粗利合計</span><span class="db-val" id="d_total">0万</span></div>
+  </div>
+  <div class="dash-pct">
+    <div class="dash-pct-bar"><div class="dash-pct-fill" id="d_pctbar" style="width:0%"></div></div>
+    <div class="dash-pct-num" id="d_pct">0%</div>
+  </div>
+  <div class="dash-pct-note">最終目標300万円/月に対する今月の達成率</div>
+</div>
+
+<div class="monthnav">
+  <button id="prevBtn" onclick="changeMonth(-1)">‹</button>
+  <div><div class="monthnav-m" id="navMonth">M1</div><div class="monthnav-sub" id="navSub">2026年7月</div></div>
+  <button id="nextBtn" onclick="changeMonth(1)">›</button>
+</div>
+
+<div class="sec">
+  <div class="sec-head"><div class="sec-dot" style="background:var(--posu)"></div><div class="sec-name" style="color:var(--posu)">POSUMANE</div><div class="sec-target" id="posu_target"></div></div>
+  <div id="posu_body"></div>
+</div>
+
+<div class="sec">
+  <div class="sec-head"><div class="sec-dot" style="background:var(--cc)"></div><div class="sec-name" style="color:var(--cc)">CENTER CALL</div><div class="sec-target" id="cc_target"></div></div>
+  <div id="cc_body"></div>
+</div>
+
+<div class="sec">
+  <div class="sec-head"><div class="sec-dot" style="background:var(--hojo)"></div><div class="sec-name" style="color:var(--hojo)">補助金代行</div><div class="sec-target" id="hojo_target"></div></div>
+  <div id="hojo_body"></div>
+</div>
+
+<div class="chartsec">
+  <div class="sec-head"><div class="sec-name">20ヶ月 粗利推移</div></div>
+  <div class="chart-scroll"><div class="barchart" id="chart"></div></div>
+  <div class="legend">
+    <div class="legend-item"><span class="legend-dot" style="background:var(--posu)"></span>ポスマネ</div>
+    <div class="legend-item"><span class="legend-dot" style="background:var(--cc)"></span>センターコール</div>
+    <div class="legend-item"><span class="legend-dot" style="border-top:2px dashed var(--red);width:16px;height:0"></span>300万ライン</div>
+  </div>
+</div>
+
+<div class="note">
+  <strong>補助金代行：会合フック</strong>「補助金を自動で探すシステムを作りました。御社に使えそうな補助金、もう見つけてきました」
+  <strong>センターコール：直クライアント</strong>「大手は月30万固定＋アポ1万。うちは1日1.6万、必要な日だけ。レポートAI自動出力」
+  <strong>ポスマネ：クライアント</strong>「観光客が毎日手に取る場所に御社のパンフを置き続けます。補充も全部うちが」
+</div>
+
+<script>
+// 単価
+const POSU_PER = (20000-15000/3)*20; // 30万/社/月
+const CC_PER = 6000*20; // 12万/社/月
+
+// 月次プラン（電話・メール等の目標アクション数）
+function buildPlan(){
+  const p=[];
+  for(let m=1;m<=20;m++){
+    p.push({
+      m,
+      p_call: m<=3?282:m<=6?140:m<=10?70:30, // ポスマネ施設電話
+      pc_call:m<=1?0:80, pc_tobi:m<=1?0:10, pc_mail:m<=1?0:500,
+      cc_call:120, cc_tobi:30, cc_mail:500,
+      hj_call:120, hj_card:30, hj_tobi:30, hj_mail:500
+    });
+  }
+  return p;
+}
+const PLAN=buildPlan();
+let ACT={}; for(let m=1;m<=20;m++)ACT[m]={};
+let curMonth=1;
+const MN=[];(function(){let y=2026,mo=7;for(let i=0;i<20;i++){MN.push(`${y}年${mo}月`);mo++;if(mo>12){mo=1;y++;}}})();
+
+// 値取得：実数があれば実数、なければ仮説（プラン）
+function gv(m,k){ const a=actVal(m,k); return a!=null?a:PLAN[m-1][k]; }
+function av(m,k){ return actVal(m,k); } // 実数のみ（手入力 or 自動）
+
+// 手入力優先、なければSupabase自動取得値
+function actVal(m,k){
+  const a=ACT[m][k];
+  if(a!=null&&a!=='') return parseFloat(a);
+  // 自動取得：ポスマネ電話とwon
+  if(AUTO[m]){
+    if(k==='p_call' && AUTO[m].calls>0) return AUTO[m].calls;
+    if(k==='p_permit' && AUTO[m].wons>0) return AUTO[m].wons;
+  }
+  return null;
+}
+
+// ===== ポスマネ施設：電話→来てOK(÷3)→訪問→許可(×85%) =====
+function posuSiteFunnel(m){
+  const call_hyp = PLAN[m-1].p_call;
+  const call_act = av(m,'p_call');
+  const call = call_act!=null?call_act:call_hyp;
+  // 来てOK = 電話÷3
+  const okcome_hyp = Math.floor(call/3);
+  const okcome_act = av(m,'p_okcome');
+  const okcome = okcome_act!=null?okcome_act:okcome_hyp;
+  // 訪問（実際行った数）
+  const visit_hyp = okcome; // 来てOKもらった分は行ける
+  const visit_act = av(m,'p_visit');
+  const visit = visit_act!=null?visit_act:visit_hyp;
+  // 許可OK = 訪問×85%
+  const permit_hyp = Math.round(visit*0.85);
+  const permit_act = av(m,'p_permit');
+  const permit = permit_act!=null?permit_act:permit_hyp;
+  return {call_hyp,call_act,okcome_hyp,okcome_act,visit_hyp,visit_act,permit_hyp,permit_act,permit};
+}
+
+// 累計施設
+function cumSites(upto){ let t=0; for(let m=1;m<=upto;m++){ t+=posuSiteFunnel(m).permit; } return Math.min(t,200); }
+
+// ===== 商談ファネル（汎用）=====
+// アクション群→商談（各レート）→成約
+function funnelTalks(m, defs){
+  // defs: [{key, rate}] 商談 = Σ(value × rate)
+  let talks_hyp=0, talks_act_has=false, talks_act=0;
+  for(const d of defs){
+    talks_hyp += PLAN[m-1][d.key]*d.rate;
+    const a=av(m,d.key);
+    if(a!=null){ talks_act_has=true; talks_act += a*d.rate; }
+    else { talks_act += PLAN[m-1][d.key]*d.rate; }
+  }
+  return {talks_hyp, talks_act};
+}
+
+function monthOrders(m){
+  // ポスマネクライアント
+  const pcT = funnelTalks(m,[{key:'pc_call',rate:1/80},{key:'pc_tobi',rate:1/10},{key:'pc_mail',rate:1/500}]);
+  // 商談実数があれば優先
+  const pcTalks_act = av(m,'pc_talks');
+  const pcTalks = pcTalks_act!=null?pcTalks_act:pcT.talks_act;
+  const pcClose_act = av(m,'pc_close');
+  const pcOrders = pcClose_act!=null?pcClose_act:pcTalks*(0.5/3);
+
+  const ccT = funnelTalks(m,[{key:'cc_call',rate:1/120},{key:'cc_tobi',rate:1/30},{key:'cc_mail',rate:1/500}]);
+  const ccTalks_act = av(m,'cc_talks');
+  const ccTalks = ccTalks_act!=null?ccTalks_act:ccT.talks_act;
+  const ccClose_act = av(m,'cc_close');
+  const ccOrders = ccClose_act!=null?ccClose_act:ccTalks*(2/12);
+
+  const hjT = funnelTalks(m,[{key:'hj_call',rate:1/120},{key:'hj_card',rate:1/30},{key:'hj_tobi',rate:1/30},{key:'hj_mail',rate:1/500}]);
+  const hjTalks_act = av(m,'hj_talks');
+  const hjTalks = hjTalks_act!=null?hjTalks_act:hjT.talks_act;
+  const hjClose_act = av(m,'hj_close');
+  const hjOrders = hjClose_act!=null?hjClose_act:hjTalks*(1/5);
+
+  return {pcT,pcTalks,pcOrders,ccT,ccTalks,ccOrders,hjT,hjTalks,hjOrders};
+}
+
+function cumOrders(upto){
+  let pm=0,cc=0,hj=0;
+  for(let m=1;m<=upto;m++){
+    const o=monthOrders(m);
+    if(cumSites(m)>=150||m>=2) pm+=o.pcOrders;
+    cc+=o.ccOrders; hj+=o.hjOrders;
+  }
+  return {pm:Math.min(pm,6),cc:Math.min(cc,10),hj};
+}
+function monthData(upto){
+  const o=cumOrders(upto);
+  return {...o, pmP:o.pm*POSU_PER, ccP:o.cc*CC_PER, total:o.pm*POSU_PER+o.cc*CC_PER};
+}
+function man(n){return Math.round(n/10000)+'万';}
+
+// ===== UI builder =====
+// 仮説→実数2列ステップ
+function stepHypAct(label, conv, hyp, actKey, unit){
+  const manual=ACT[curMonth][actKey];
+  const hasManual=manual!=null&&manual!=='';
+  // 自動取得値
+  let autoVal=null;
+  if(AUTO[curMonth]){
+    if(actKey==='p_call' && AUTO[curMonth].calls>0) autoVal=AUTO[curMonth].calls;
+    if(actKey==='p_permit' && AUTO[curMonth].wons>0) autoVal=AUTO[curMonth].wons;
+  }
+  const shownVal = hasManual ? manual : (autoVal!=null?autoVal:'');
+  const isAuto = !hasManual && autoVal!=null;
+  let cls='';
+  if(shownVal!==''){ cls = parseFloat(shownVal)>=hyp?'over':'under'; }
+  const autoBadge = isAuto ? '<span style="font-size:9px;color:var(--posu);font-weight:700;margin-left:4px">自動</span>' : '';
+  return `<div class="fstep">
+    <div class="fstep-top"><span class="fstep-label">${label}${autoBadge}</span><span class="fstep-conv">${conv}</span></div>
+    <div class="fstep-cols">
+      <div class="fcol"><div class="fcol-lab">机上（仮説）</div><div class="fcol-hyp">${hyp}<span style="font-size:11px">${unit}</span></div></div>
+      <div class="fcol"><div class="fcol-lab">実数${isAuto?'（自動）':''}</div><input type="number" inputmode="numeric" data-key="${actKey}" data-hyp="${hyp}" class="${cls}" placeholder="${autoVal!=null?autoVal:'入力'}" value="${hasManual?manual:''}"></div>
+    </div>
+  </div>`;
+}
+
+function render(preserveFocus){
+  const focusKey = document.activeElement && document.activeElement.dataset ? document.activeElement.dataset.key : null;
+
+  document.getElementById('navMonth').textContent='M'+curMonth;
+  document.getElementById('navSub').textContent=MN[curMonth-1];
+  document.getElementById('prevBtn').disabled=curMonth<=1;
+  document.getElementById('nextBtn').disabled=curMonth>=20;
+
+  const pl=PLAN[curMonth-1];
+  const o=monthOrders(curMonth);
+  const sf=posuSiteFunnel(curMonth);
+  const sites=cumSites(curMonth);
+  const md=monthData(curMonth);
+
+  // POSUMANE
+  document.getElementById('posu_target').textContent=`累計施設 ${sites}/200`;
+  let ph='';
+  ph+=stepHypAct('① 施設 許可取り電話','1日50本が限界',sf.call_hyp,'p_call','本');
+  ph+='<div class="fstep-arrow">▼ 電話3本で1施設が「来てOK」</div>';
+  ph+=stepHypAct('② 「来てOK」もらえた数','電話÷3',sf.okcome_hyp,'p_okcome','件');
+  ph+='<div class="fstep-arrow">▼ 実際に訪問</div>';
+  ph+=stepHypAct('③ 実際に訪問した数','来てOK分は行ける',sf.visit_hyp,'p_visit','件');
+  ph+='<div class="fstep-arrow">▼ 行けば85%が許可OK</div>';
+  ph+=stepHypAct('④ 許可OKもらった施設','訪問×85%',sf.permit_hyp,'p_permit','件');
+  // クライアント営業
+  if(pl.pc_call>0){
+    ph+='<div style="height:14px"></div>';
+    ph+=stepHypAct('⑤ クライアント電話','80本→商談1',pl.pc_call,'pc_call','本');
+    ph+=stepHypAct('⑥ クライアント飛び込み','10件→商談1',pl.pc_tobi,'pc_tobi','件');
+    ph+=stepHypAct('⑦ 問い合わせメール','500通→商談1',pl.pc_mail,'pc_mail','通');
+    ph+='<div class="fstep-arrow">▼ 商談数</div>';
+    ph+=stepHypAct('⑧ 対面商談','上記の合計から',Math.round(o.pcT.talks_hyp*10)/10,'pc_talks','件');
+    ph+='<div class="fstep-arrow">▼ 商談3→成約0.5</div>';
+    ph+=stepHypAct('⑨ 成約（受注クライアント）','商談×0.5/3',Math.round(o.pcT.talks_hyp*(0.5/3)*10)/10,'pc_close','社');
+  }
+  ph+=`<div class="result-box">この月の新規受注 <b>${o.pcOrders.toFixed(2)}社</b> ／ 累計 <b>${md.pm.toFixed(1)}社</b> × 1社粗利 <b>30万</b>（売上2万/日−原価分×20日）＝ <b>${man(md.pmP)}</b>/月</div>`;
+  document.getElementById('posu_body').innerHTML=ph;
+
+  // CENTER CALL
+  const cumO=cumOrders(curMonth);
+  document.getElementById('cc_target').textContent=`累計受注 ${cumO.cc.toFixed(1)}/10社`;
+  let ch='';
+  ch+=stepHypAct('① 直クライアント電話','120本→商談1',pl.cc_call,'cc_call','本');
+  ch+=stepHypAct('② 飛び込み訪問','30件→商談1',pl.cc_tobi,'cc_tobi','件');
+  ch+=stepHypAct('③ 問い合わせメール','500通→商談1',pl.cc_mail,'cc_mail','通');
+  ch+='<div class="fstep-arrow">▼ 商談数</div>';
+  ch+=stepHypAct('④ 対面商談','上記の合計から',Math.round(o.ccT.talks_hyp*10)/10,'cc_talks','件');
+  ch+='<div class="fstep-arrow">▼ 商談12→成約2</div>';
+  ch+=stepHypAct('⑤ 成約（受注社数）','商談×2/12',Math.round(o.ccT.talks_hyp*(2/12)*10)/10,'cc_close','社');
+  ch+=`<div class="result-box">この月の新規受注 <b>${o.ccOrders.toFixed(2)}社</b> ／ 累計 <b>${cumO.cc.toFixed(1)}社</b> × 1社粗利 <b>12万</b>（6,000円/日×20日）＝ <b>${man(md.ccP)}</b>/月</div>`;
+  document.getElementById('cc_body').innerHTML=ch;
+
+  // 補助金
+  document.getElementById('hojo_target').textContent='手数料無料・受託で収益';
+  let hh='';
+  hh+=stepHypAct('① 営業電話','120本→商談1',pl.hj_call,'hj_call','本');
+  hh+=stepHypAct('② 名刺交換（会合）','30枚→商談1',pl.hj_card,'hj_card','枚');
+  hh+=stepHypAct('③ 飛び込み訪問','30件→商談1',pl.hj_tobi,'hj_tobi','件');
+  hh+=stepHypAct('④ 問い合わせメール','500通→商談1',pl.hj_mail,'hj_mail','通');
+  hh+='<div class="fstep-arrow">▼ 商談数</div>';
+  hh+=stepHypAct('⑤ 対面商談','上記の合計から',Math.round(o.hjT.talks_hyp*10)/10,'hj_talks','件');
+  hh+='<div class="fstep-arrow">▼ 商談5→成約1（採択は約50%）</div>';
+  hh+=stepHypAct('⑥ 申請代行 受注','商談×1/5',Math.round(o.hjT.talks_hyp*(1/5)*10)/10,'hj_close','件');
+  hh+=`<div class="result-box">申請代行は手数料無料。受託したシステム開発・研修が収益。この月 <b>${o.hjOrders.toFixed(2)}件</b> 申請ペース（採択率約50%想定）</div>`;
+  document.getElementById('hojo_body').innerHTML=hh;
+
+  // DASHBOARD
+  document.getElementById('d_posu_cl').textContent=md.pm.toFixed(1)+'社';
+  document.getElementById('d_cc_cl').textContent=cumO.cc.toFixed(1)+'社';
+  document.getElementById('d_hojo_cl').textContent=cumO.hj.toFixed(1)+'件';
+  document.getElementById('d_posu_p').textContent=man(md.pmP);
+  document.getElementById('d_cc_p').textContent=man(md.ccP);
+  document.getElementById('d_posu_calc').textContent=`(${md.pm.toFixed(1)}社×30万)`;
+  document.getElementById('d_cc_calc').textContent=`(${cumO.cc.toFixed(1)}社×12万)`;
+  document.getElementById('d_total').textContent=man(md.total);
+  const pct=Math.round(md.total/3000000*100);
+  document.getElementById('d_pct').textContent=pct+'%';
+  document.getElementById('d_pctbar').style.width=Math.min(pct,100)+'%';
+
+  attachInputs();
+  renderChart();
+
+  // フォーカス復元
+  if(preserveFocus && focusKey){
+    const el=document.querySelector(`input[data-key="${focusKey}"]`);
+    if(el){ el.focus(); const len=el.value.length; try{el.setSelectionRange(len,len);}catch(e){} }
+  }
+}
+
+function attachInputs(){
+  document.querySelectorAll('input[data-key]').forEach(el=>{
+    el.oninput=function(){
+      ACT[curMonth][this.dataset.key] = this.value===''?null:this.value;
+      updateCalc(); // 入力欄は再描画せず、計算結果だけ更新
+    };
+    el.onblur=function(){
+      render(false); // フォーカス外れたら全描画して仮説を再計算
+    };
+  });
+}
+
+// 入力欄に触れず、計算結果（ダッシュボード・結果ボックス・チャート）だけ更新
+function updateCalc(){
+  const o=monthOrders(curMonth);
+  const md=monthData(curMonth);
+  const cumO=cumOrders(curMonth);
+  const sites=cumSites(curMonth);
+
+  document.getElementById('posu_target').textContent=`累計施設 ${sites}/200`;
+  document.getElementById('cc_target').textContent=`累計受注 ${cumO.cc.toFixed(1)}/10社`;
+
+  // 結果ボックス更新
+  const pb=document.querySelector('#posu_body .result-box');
+  if(pb) pb.innerHTML=`この月の新規受注 <b>${o.pcOrders.toFixed(2)}社</b> ／ 累計 <b>${md.pm.toFixed(1)}社</b> × 1社粗利 <b>30万</b>（売上2万/日−原価分×20日）＝ <b>${man(md.pmP)}</b>/月`;
+  const cb=document.querySelector('#cc_body .result-box');
+  if(cb) cb.innerHTML=`この月の新規受注 <b>${o.ccOrders.toFixed(2)}社</b> ／ 累計 <b>${cumO.cc.toFixed(1)}社</b> × 1社粗利 <b>12万</b>（6,000円/日×20日）＝ <b>${man(md.ccP)}</b>/月`;
+  const hb=document.querySelector('#hojo_body .result-box');
+  if(hb) hb.innerHTML=`申請代行は手数料無料。受託したシステム開発・研修が収益。この月 <b>${o.hjOrders.toFixed(2)}件</b> 申請ペース（採択率約50%想定）`;
+
+  // 入力欄の色（over/under）だけ更新
+  document.querySelectorAll('input[data-key]').forEach(el=>{
+    const v=el.value;
+    el.classList.remove('over','under');
+    if(v!==''){
+      const hyp=parseFloat(el.dataset.hyp);
+      if(!isNaN(hyp)){ el.classList.add(parseFloat(v)>=hyp?'over':'under'); }
+    }
+  });
+
+  // ダッシュボード
+  document.getElementById('d_posu_cl').textContent=md.pm.toFixed(1)+'社';
+  document.getElementById('d_cc_cl').textContent=cumO.cc.toFixed(1)+'社';
+  document.getElementById('d_hojo_cl').textContent=cumO.hj.toFixed(1)+'件';
+  document.getElementById('d_posu_p').textContent=man(md.pmP);
+  document.getElementById('d_cc_p').textContent=man(md.ccP);
+  document.getElementById('d_posu_calc').textContent=`(${md.pm.toFixed(1)}社×30万)`;
+  document.getElementById('d_cc_calc').textContent=`(${cumO.cc.toFixed(1)}社×12万)`;
+  document.getElementById('d_total').textContent=man(md.total);
+  const pct=Math.round(md.total/3000000*100);
+  document.getElementById('d_pct').textContent=pct+'%';
+  document.getElementById('d_pctbar').style.width=Math.min(pct,100)+'%';
+
+  renderChart();
+}
+
+function renderChart(){
+  const chart=document.getElementById('chart');
+  const maxV=3500000;
+  let html='';
+  const goalH=3000000/maxV*100;
+  html+=`<div class="goalline" style="bottom:${goalH}%"><span class="goalline-label">300万</span></div>`;
+  for(let m=1;m<=20;m++){
+    const md=monthData(m);
+    const pmH=md.pmP/maxV*100, ccH=md.ccP/maxV*100, totalH=pmH+ccH;
+    const isCur=m===curMonth;
+    html+=`<div class="bar-col">
+      <div class="bar-val" style="color:${md.total>=3000000?'var(--green)':'var(--ink)'}">${md.total>0?man(md.total):''}</div>
+      <div class="bar" style="height:${totalH}%;${isCur?'outline:2px solid var(--ink);outline-offset:1px;':''}">
+        <div class="bar-seg" style="background:var(--cc);height:${ccH/(totalH+0.001)*100}%"></div>
+        <div class="bar-seg" style="background:var(--posu);height:${pmH/(totalH+0.001)*100}%"></div>
+      </div>
+      <div class="bar-label">M${m}</div>
+    </div>`;
+  }
+  chart.innerHTML=html;
+}
+
+function changeMonth(d){
+  const y=window.scrollY;
+  curMonth=Math.max(1,Math.min(20,curMonth+d));
+  render();
+  window.scrollTo(0,y); // 見てる位置キープ
+}
+render();
+loadAuto(); // Supabaseから電話本数・won数を自動取得
+
+</script>
+</body>
+</html>
