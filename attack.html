@@ -485,6 +485,31 @@ body {
 .report-empty .icon { font-size: 36px; margin-bottom: 8px; }
 .header-nav .report-btn { background: rgba(255,255,255,0.3); font-weight: 800; }
 .header-nav .report-btn:hover { background: rgba(255,255,255,0.45); }
+
+/* ジャンルタブ */
+.genre-tabs {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+.genre-tab {
+  padding: 7px 18px;
+  border-radius: 100px;
+  border: 2px solid #F3F4F6;
+  background: white;
+  color: #636E72;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s;
+  font-family: inherit;
+}
+.genre-tab:hover { border-color: #F97316; color: #F97316; }
+.genre-tab.active { background: #F97316; color: white; border-color: #F97316; }
+.genre-tab.active.hotel { background: #1E40AF; border-color: #1E40AF; }
+.genre-tab.active.rental { background: #065F46; border-color: #065F46; }
+.genre-tab.active.other { background: #6B21A8; border-color: #6B21A8; }
 </style>
 </head>
 <body>
@@ -510,6 +535,14 @@ body {
     <div class="stat-card contacted" data-filter="contacted"><div class="num" id="cnt-contacted">-</div><div class="lbl">担当者<br>つながった</div></div>
     <div class="stat-card won" data-filter="won"><div class="num" id="cnt-won">-</div><div class="lbl">商談<br>獲得</div></div>
     <div class="stat-card declined" data-filter="declined"><div class="num" id="cnt-declined">-</div><div class="lbl">お断り</div></div>
+  </div>
+
+  <!-- ジャンルタブ -->
+  <div class="genre-tabs" id="genre-tabs">
+    <button class="genre-tab active" data-genre="all" onclick="setGenre('all')">📋 全部</button>
+    <button class="genre-tab hotel" data-genre="hotel" onclick="setGenre('hotel')">🏨 ホテル</button>
+    <button class="genre-tab rental" data-genre="rental" onclick="setGenre('rental')">🚗 レンタカー</button>
+    <button class="genre-tab other" data-genre="other" onclick="setGenre('other')">🔹 その他</button>
   </div>
 
   <div class="control-bar">
@@ -614,7 +647,27 @@ let reportCallFilter = 'all';
 let reportSort = 'date_desc';
 let currentSort = 'default';
 let searchText = '';
+let currentGenre = 'all';
 let includeExcluded = false;
+
+function getGenre(c) {
+  const sd = c.source_data || {};
+  if (sd.genre) return sd.genre;
+  const name = (c.company_name || '').toLowerCase();
+  const rentalKeywords = ['レンタカー', 'レンタ', 'rent', 'rental'];
+  const hotelKeywords = ['ホテル', 'hotel', '旅館', 'リゾート', 'resort', 'inn', 'ヴィラ', 'villa', 'ゲストハウス', 'ペンション'];
+  if (rentalKeywords.some(k => name.includes(k))) return 'rental';
+  if (hotelKeywords.some(k => name.includes(k))) return 'hotel';
+  return 'other';
+}
+
+function setGenre(genre) {
+  currentGenre = genre;
+  document.querySelectorAll('.genre-tab').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.genre === genre);
+  });
+  renderList();
+}
 let currentCompany = null;
 let currentStepKey = 'opening';
 let scriptHistory = [];
@@ -760,6 +813,7 @@ function renderList() {
   else if (currentDmm === 'nodmm') list = list.filter(c => !isDmmDeployed(c));
   else if (currentDmm === 'no_rental') list = list.filter(c => !(c.source_data && c.source_data.rental_association));
   else if (currentDmm === 'exclude_flags') list = list.filter(c => !isDmmDeployed(c) && !(c.source_data && c.source_data.rental_association));
+  if (currentGenre !== 'all') list = list.filter(c => getGenre(c) === currentGenre);
   if (searchText) {
     const q = searchText.toLowerCase();
     list = list.filter(c => (c.company_name||'').toLowerCase().includes(q) || (c.address||'').toLowerCase().includes(q) || (c.phone||'').includes(q));
