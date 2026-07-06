@@ -538,12 +538,14 @@ body {
   </div>
 
   <!-- ジャンルタブ -->
-  <div class="genre-tabs" id="genre-tabs">
-    <button class="genre-tab active" data-genre="all" onclick="setGenre('all')">📋 全部</button>
-    <button class="genre-tab hotel" data-genre="hotel" onclick="setGenre('hotel')">🏨 ホテル</button>
-    <button class="genre-tab rental" data-genre="rental" onclick="setGenre('rental')">🚗 レンタカー</button>
-    <button class="genre-tab other" data-genre="other" onclick="setGenre('other')">🔹 その他</button>
-    <button class="genre-tab" data-genre="today_import" onclick="setGenre('today_import')" style="background:#FEF3C7;border-color:#F59E0B;color:#92400E;">📥 今日取り込み</button>
+  <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:6px;">
+    <div class="genre-tabs" id="genre-tabs" style="margin-bottom:0;">
+      <button class="genre-tab active" data-genre="all" onclick="setGenre('all')">📋 全部</button>
+      <button class="genre-tab hotel" data-genre="hotel" onclick="setGenre('hotel')">🏨 ホテル</button>
+      <button class="genre-tab rental" data-genre="rental" onclick="setGenre('rental')">🚗 レンタカー</button>
+      <button class="genre-tab other" data-genre="other" onclick="setGenre('other')">🔹 その他</button>
+    </div>
+    <button id="today-import-btn" onclick="toggleTodayFilter()" style="padding:7px 18px;border-radius:100px;border:2px solid #F59E0B;background:white;color:#92400E;font-size:13px;font-weight:700;cursor:pointer;transition:all 0.15s;font-family:inherit;">📥 今日取り込み</button>
   </div>
 
   <div class="control-bar">
@@ -652,6 +654,7 @@ let reportSort = 'date_desc';
 let currentSort = 'default';
 let searchText = '';
 let currentGenre = 'all';
+let currentTodayFilter = false;
 let includeExcluded = false;
 
 function isTodayImport(c) {
@@ -677,6 +680,23 @@ function setGenre(genre) {
   document.querySelectorAll('.genre-tab').forEach(btn => {
     btn.classList.toggle('active', btn.dataset.genre === genre);
   });
+  renderList();
+}
+
+function toggleTodayFilter() {
+  currentTodayFilter = !currentTodayFilter;
+  const btn = document.getElementById('today-import-btn');
+  if (btn) {
+    if (currentTodayFilter) {
+      btn.style.background = '#F59E0B';
+      btn.style.color = 'white';
+      btn.style.borderColor = '#F59E0B';
+    } else {
+      btn.style.background = 'white';
+      btn.style.color = '#92400E';
+      btn.style.borderColor = '#F59E0B';
+    }
+  }
   renderList();
 }
 let currentCompany = null;
@@ -824,9 +844,10 @@ function renderList() {
   else if (currentDmm === 'nodmm') list = list.filter(c => !isDmmDeployed(c));
   else if (currentDmm === 'no_rental') list = list.filter(c => !(c.source_data && c.source_data.rental_association));
   else if (currentDmm === 'exclude_flags') list = list.filter(c => !isDmmDeployed(c) && !(c.source_data && c.source_data.rental_association));
-  if (currentGenre === 'today_import') {
+  if (currentTodayFilter) {
     list = list.filter(c => isTodayImport(c));
-  } else if (currentGenre !== 'all') {
+  }
+  if (currentGenre !== 'all') {
     list = list.filter(c => getGenre(c) === currentGenre);
   }
   if (searchText) {
@@ -1863,11 +1884,24 @@ function exportPDF() {
   const dmmBadges = document.querySelectorAll('.dmm-badge');
   dmmBadges.forEach(el => el.style.display = 'none');
 
+  // グレーアウトを一時的に解除
+  const grayedCards = document.querySelectorAll('.company-card');
+  grayedCards.forEach(el => {
+    el.dataset._origOpacity = el.style.opacity;
+    el.dataset._origFilter = el.style.filter;
+    el.style.opacity = '1';
+    el.style.filter = 'none';
+  });
+
   const target = document.getElementById('list-container') || document.querySelector('.company-list')?.parentElement || document.body;
 
   function restore() {
     if (btn) { btn.innerHTML = orig; btn.disabled = false; }
     dmmBadges.forEach(el => el.style.display = '');
+    grayedCards.forEach(el => {
+      el.style.opacity = el.dataset._origOpacity || '';
+      el.style.filter = el.dataset._origFilter || '';
+    });
   }
 
   Promise.all([
