@@ -543,6 +543,7 @@ body {
     <button class="genre-tab hotel" data-genre="hotel" onclick="setGenre('hotel')">🏨 ホテル</button>
     <button class="genre-tab rental" data-genre="rental" onclick="setGenre('rental')">🚗 レンタカー</button>
     <button class="genre-tab other" data-genre="other" onclick="setGenre('other')">🔹 その他</button>
+    <button class="genre-tab" data-genre="today_import" onclick="setGenre('today_import')" style="background:#FEF3C7;border-color:#F59E0B;color:#92400E;">📥 今日取り込み</button>
   </div>
 
   <div class="control-bar">
@@ -588,12 +589,15 @@ body {
       <option value="updated">更新日(新しい順)</option>
       <option value="name">会社名順</option>
       <option value="phone">電話あり優先</option>
+      <option value="rooms_desc">🏨 客室数（多い順）</option>
+      <option value="rooms_asc">🏨 客室数（少ない順）</option>
     </select>
     <label class="include-excluded-row">
       <input type="checkbox" id="include-excluded">
       ⛔ 対象外を含める
     </label>
     <button class="refresh-btn" onclick="loadCompanies()">🔄 更新</button>
+    <button class="refresh-btn" onclick="exportPDF()" style="background:#6B21A8;color:white;border:none;">📄 PDF出力</button>
   </div>
 
   <div id="list-area">
@@ -649,6 +653,13 @@ let currentSort = 'default';
 let searchText = '';
 let currentGenre = 'all';
 let includeExcluded = false;
+
+function isTodayImport(c) {
+  const sd = c.source_data || {};
+  if (!sd.rooms_updated_at) return false;
+  const today = new Date().toISOString().slice(0, 10);
+  return sd.rooms_updated_at === today;
+}
 
 function getGenre(c) {
   const sd = c.source_data || {};
@@ -813,7 +824,11 @@ function renderList() {
   else if (currentDmm === 'nodmm') list = list.filter(c => !isDmmDeployed(c));
   else if (currentDmm === 'no_rental') list = list.filter(c => !(c.source_data && c.source_data.rental_association));
   else if (currentDmm === 'exclude_flags') list = list.filter(c => !isDmmDeployed(c) && !(c.source_data && c.source_data.rental_association));
-  if (currentGenre !== 'all') list = list.filter(c => getGenre(c) === currentGenre);
+  if (currentGenre === 'today_import') {
+    list = list.filter(c => isTodayImport(c));
+  } else if (currentGenre !== 'all') {
+    list = list.filter(c => getGenre(c) === currentGenre);
+  }
   if (searchText) {
     const q = searchText.toLowerCase();
     list = list.filter(c => (c.company_name||'').toLowerCase().includes(q) || (c.address||'').toLowerCase().includes(q) || (c.phone||'').includes(q));
@@ -844,6 +859,10 @@ function renderList() {
     list.sort((a, b) => (a.company_name||'').localeCompare(b.company_name||''));
   } else if (currentSort === 'phone') {
     list.sort((a, b) => { const ta = a.phone?0:1, tb = b.phone?0:1; return ta !== tb ? ta - tb : (a.company_name||'').localeCompare(b.company_name||''); });
+  } else if (currentSort === 'rooms_desc') {
+    list.sort((a, b) => { const ra = parseInt((a.rooms||'0').replace(/\D/g,''))||0, rb = parseInt((b.rooms||'0').replace(/\D/g,''))||0; return rb - ra; });
+  } else if (currentSort === 'rooms_asc') {
+    list.sort((a, b) => { const ra = parseInt((a.rooms||'0').replace(/\D/g,''))||0, rb = parseInt((b.rooms||'0').replace(/\D/g,''))||0; return ra - rb || (a.company_name||'').localeCompare(b.company_name||''); });
   }
   if (list.length === 0) { area.innerHTML = `<div class="empty"><div class="icon">○</div>該当する企業がありません</div>`; return; }
   window._filteredAttackList = list.slice();  // ★ フィルター後リストを保存
@@ -1831,6 +1850,47 @@ function printAttackReport() {
     const d = new Date();
     const ds = `${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}`;
     pdf.save(`posmane_report_${ds}.pdf`);
+    restore();
+  }).catch(e => { alert('PDF生成エラー: ' + e.message); restore(); });
+}
+
+function exportPDF() {
+  const btn = document.querySelector('[onclick="exportPDF()"]');
+  const orig = btn ? btn.innerHTML : '';
+  if (btn) { btn.innerHTML = '⏳ 生成中...'; btn.disabled = true; }
+
+  // DMMバッジを一時的に非表示
+  const dmmBadges = document.querySelectorAll('.dmm-badge');
+  dmmBadges.forEach(el => el.style.display = 'none');
+
+  const target = document.getElementById('list-container') || document.querySelector('.company-list')?.parentElement || document.body;
+
+  function restore() {
+    if (btn) { btn.innerHTML = orig; btn.disabled = false; }
+    dmmBadges.forEach(el => el.style.display = '');
+  }
+
+  Promise.all([
+    loadLibrary_('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js', 'html2canvas'),
+    loadLibrary_('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js', 'jspdf'),
+  ]).then(() => {
+    return html2canvas(target, { scale: 2, useCORS: true, backgroundColor: '#ffffff', logging: false });
+  }).then(canvas => {
+    const { jsPDF } = window.jspdf;
+    const pdf = new jsPDF('p', 'mm', 'a4');
+    const pdfW = pdf.internal.pageSize.getWidth();
+    const pdfH = pdf.internal.pageSize.getHeight();
+    const imgH = canvas.height * (pdfW / canvas.width);
+    const img = canvas.toDataURL('image/png');
+    let rem = imgH, off = 0;
+    while (rem > 0) {
+      if (off > 0) pdf.addPage();
+      pdf.addImage(img, 'PNG', 0, -off, pdfW, imgH);
+      off += pdfH; rem -= pdfH;
+    }
+    const d = new Date();
+    const ds = `${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}`;
+    pdf.save(`attack_list_${ds}.pdf`);
     restore();
   }).catch(e => { alert('PDF生成エラー: ' + e.message); restore(); });
 }
