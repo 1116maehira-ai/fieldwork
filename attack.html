@@ -1880,9 +1880,19 @@ function exportPDF() {
   const orig = btn ? btn.innerHTML : '';
   if (btn) { btn.innerHTML = '⏳ 生成中...'; btn.disabled = true; }
 
-  // DMMバッジを一時的に非表示
+  // DMMバッジをPDF用に変換（文字なし・ショッキングピンク）
   const dmmBadges = document.querySelectorAll('.dmm-badge');
-  dmmBadges.forEach(el => el.style.display = 'none');
+  dmmBadges.forEach(el => {
+    el.dataset._origText = el.innerHTML;
+    el.dataset._origBg = el.style.background;
+    el.dataset._origColor = el.style.color;
+    el.innerHTML = '●';
+    el.style.background = '#FF1493';
+    el.style.color = '#FF1493';
+    el.style.border = 'none';
+    el.style.fontSize = '8px';
+    el.style.padding = '2px 4px';
+  });
 
   // グレーアウトを一時的に解除
   const grayedCards = document.querySelectorAll('.company-card');
@@ -1897,7 +1907,14 @@ function exportPDF() {
 
   function restore() {
     if (btn) { btn.innerHTML = orig; btn.disabled = false; }
-    dmmBadges.forEach(el => el.style.display = '');
+    dmmBadges.forEach(el => {
+      el.innerHTML = el.dataset._origText || el.innerHTML;
+      el.style.background = el.dataset._origBg || '';
+      el.style.color = el.dataset._origColor || '';
+      el.style.border = '';
+      el.style.fontSize = '';
+      el.style.padding = '';
+    });
     grayedCards.forEach(el => {
       el.style.opacity = el.dataset._origOpacity || '';
       el.style.filter = el.dataset._origFilter || '';
