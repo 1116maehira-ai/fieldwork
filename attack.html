@@ -593,6 +593,8 @@ body {
       <option value="phone">電話あり優先</option>
       <option value="rooms_desc">🏨 客室数（多い順）</option>
       <option value="rooms_asc">🏨 客室数（少ない順）</option>
+      <option value="last_call_asc">📅 最終電話日（古い順）</option>
+      <option value="last_call_desc">📅 最終電話日（新しい順）</option>
     </select>
     <label class="include-excluded-row">
       <input type="checkbox" id="include-excluded">
@@ -885,6 +887,12 @@ function renderList() {
     list.sort((a, b) => { const ta = a.phone?0:1, tb = b.phone?0:1; return ta !== tb ? ta - tb : (a.company_name||'').localeCompare(b.company_name||''); });
   } else if (currentSort === 'rooms_desc') {
     list.sort((a, b) => { const ra = parseInt((a.rooms||'0').replace(/\D/g,''))||0, rb = parseInt((b.rooms||'0').replace(/\D/g,''))||0; return rb - ra; });
+  } else if (currentSort === 'last_call_asc') {
+    const getLastCall = c => { const logs = c.logs || []; return logs.length ? (logs[logs.length-1].date || '') : ''; };
+    list.sort((a, b) => getLastCall(a).localeCompare(getLastCall(b)));
+  } else if (currentSort === 'last_call_desc') {
+    const getLastCall = c => { const logs = c.logs || []; return logs.length ? (logs[logs.length-1].date || '') : ''; };
+    list.sort((a, b) => getLastCall(b).localeCompare(getLastCall(a)));
   } else if (currentSort === 'rooms_asc') {
     list.sort((a, b) => { const ra = parseInt((a.rooms||'0').replace(/\D/g,''))||0, rb = parseInt((b.rooms||'0').replace(/\D/g,''))||0; return ra - rb || (a.company_name||'').localeCompare(b.company_name||''); });
   }
