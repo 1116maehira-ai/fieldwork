@@ -666,6 +666,7 @@ let currentPhoneFilter = 'all';
 let currentBatchFilter = 'all';
 let currentTagFilter = 'all';
 let reportCallFilter = 'all';
+let reportGenreFilter = [];
 let reportSort = 'date_desc';
 let currentSort = 'default';
 let currentSort2 = 'none';
@@ -2030,7 +2031,7 @@ function loadLibrary_(src, prop) {
   });
 }
 
-function openReport() { reportPeriod = 'today'; reportCallFilter = 'all'; reportSort = 'date_desc'; renderReport(); document.getElementById('report-modal').classList.add('show'); }
+function openReport() { reportPeriod = 'today'; reportCallFilter = 'all'; reportGenreFilter = []; reportSort = 'date_desc'; renderReport(); document.getElementById('report-modal').classList.add('show'); }
 function closeReport() { document.getElementById('report-modal').classList.remove('show'); }
 
 function getPeriodRange(period) {
@@ -2046,8 +2047,10 @@ function getPeriodRange(period) {
 
 function renderReport() {
   const range = getPeriodRange(reportPeriod);
+  const GENRE_LABELS = { all:'全カテゴリ', hotel:'🏨 ホテル', pension:'🏡 ペンション', condo:'🏢 コンドミニアム', minpaku:'🛖 民泊・ヴィラ', apt:'🏠 アパートなど', rental:'🚗 レンタカー', other:'🔹 その他' };
+  const filteredCompanies = reportGenreFilter.length === 0 ? companies : companies.filter(c => reportGenreFilter.includes(getGenre(c)));
   const calls = [];
-  companies.forEach(c => {
+  filteredCompanies.forEach(c => {
     (c.logs||[]).forEach(log => {
       if (log.date >= range.from && log.date <= range.to)
         calls.push({ ...log, company_name: c.company_name, phone: c.phone, address: c.address, checkin_time: c.checkin_time, checkout_time: c.checkout_time, company_id: c.id, area: extractArea(c.address) });
@@ -2088,7 +2091,7 @@ function renderReport() {
 
   // 訪問すべき施設リスト（bring_ok / bring_maybe の直近ログがある企業）
   const visitList = [];
-  companies.forEach(c => {
+  filteredCompanies.forEach(c => {
     const recentLog = [...(c.logs||[])].reverse().find(l => l.result === 'bring_ok' || l.result === 'bring_maybe');
     if (recentLog && recentLog.date >= range.from && recentLog.date <= range.to) {
       visitList.push({ ...c, _result: recentLog.result, _memo: recentLog.memo, _date: recentLog.date });
@@ -2122,6 +2125,16 @@ function renderReport() {
   const filteredCalls = reportCallFilter === 'all' ? calls : calls.filter(c => c.result === reportCallFilter);
 
   document.getElementById('report-body').innerHTML = `
+    <div style="margin-bottom:10px;">
+      <div style="font-size:11px;font-weight:700;color:#6B7280;margin-bottom:5px;">🏷 カテゴリ絞り込み（複数選択OK）<span style="margin-left:8px;font-weight:400;">${reportGenreFilter.length === 0 ? '全カテゴリ表示中' : reportGenreFilter.length + 'カテゴリ選択中'}</span></div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;">
+        ${Object.entries({hotel:'🏨 ホテル', pension:'🏡 ペンション', condo:'🏢 コンドミニアム', minpaku:'🛖 民泊・ヴィラ', apt:'🏠 アパートなど', rental:'🚗 レンタカー', other:'🔹 その他'}).map(([g, l]) => {
+          const active = reportGenreFilter.includes(g);
+          return `<button onclick="toggleReportGenre('${g}');" style="padding:5px 10px;border:1.5px solid ${active?'#F97316':'#E5E7EB'};background:${active?'#F97316':'#fff'};color:${active?'#fff':'#374151'};border-radius:8px;font-size:11px;font-weight:700;cursor:pointer">${active?'✓ ':''}${l}</button>`;
+        }).join('')}
+        ${reportGenreFilter.length > 0 ? `<button onclick="reportGenreFilter=[];renderReport();" style="padding:5px 10px;border:1.5px solid #E5E7EB;background:#F9FAFB;color:#6B7280;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer">✕ クリア</button>` : ''}
+      </div>
+    </div>
     <div class="report-period-row">
       ${['today','yesterday','week','month','all'].map(p => {
         const labels = { today:'今日', yesterday:'昨日', week:'今週', month:'今月', all:'全期間' };
@@ -2173,6 +2186,12 @@ function renderReport() {
 }
 
 function changeReportPeriod(period) { reportPeriod = period; renderReport(); }
+function toggleReportGenre(g) {
+  const idx = reportGenreFilter.indexOf(g);
+  if (idx >= 0) reportGenreFilter.splice(idx, 1);
+  else reportGenreFilter.push(g);
+  renderReport();
+}
 
 init().then(() => { updateBatchSelect(); updateTagSelect(); });
 </script>
