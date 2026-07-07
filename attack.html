@@ -667,6 +667,7 @@ let currentBatchFilter = 'all';
 let currentTagFilter = 'all';
 let reportCallFilter = 'all';
 let reportGenreFilter = [];
+let reportAreaFilter = [];
 let reportSort = 'date_desc';
 let currentSort = 'default';
 let currentSort2 = 'none';
@@ -2031,7 +2032,7 @@ function loadLibrary_(src, prop) {
   });
 }
 
-function openReport() { reportPeriod = 'today'; reportCallFilter = 'all'; reportGenreFilter = []; reportSort = 'date_desc'; renderReport(); document.getElementById('report-modal').classList.add('show'); }
+function openReport() { reportPeriod = 'today'; reportCallFilter = 'all'; reportGenreFilter = []; reportAreaFilter = []; reportSort = 'date_desc'; renderReport(); document.getElementById('report-modal').classList.add('show'); }
 function closeReport() { document.getElementById('report-modal').classList.remove('show'); }
 
 function getPeriodRange(period) {
@@ -2048,7 +2049,9 @@ function getPeriodRange(period) {
 function renderReport() {
   const range = getPeriodRange(reportPeriod);
   const GENRE_LABELS = { all:'全カテゴリ', hotel:'🏨 ホテル', pension:'🏡 ペンション', condo:'🏢 コンドミニアム', minpaku:'🛖 民泊・ヴィラ', apt:'🏠 アパートなど', rental:'🚗 レンタカー', other:'🔹 その他' };
-  const filteredCompanies = reportGenreFilter.length === 0 ? companies : companies.filter(c => reportGenreFilter.includes(getGenre(c)));
+  const filteredCompanies = companies
+    .filter(c => reportGenreFilter.length === 0 || reportGenreFilter.includes(getGenre(c)))
+    .filter(c => reportAreaFilter.length === 0 || reportAreaFilter.includes(extractArea(c.address)));
   const calls = [];
   filteredCompanies.forEach(c => {
     (c.logs||[]).forEach(log => {
@@ -2135,6 +2138,20 @@ function renderReport() {
         ${reportGenreFilter.length > 0 ? `<button onclick="reportGenreFilter=[];renderReport();" style="padding:5px 10px;border:1.5px solid #E5E7EB;background:#F9FAFB;color:#6B7280;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer">✕ クリア</button>` : ''}
       </div>
     </div>
+    <div style="margin-bottom:10px;">
+      <div style="font-size:11px;font-weight:700;color:#6B7280;margin-bottom:5px;">🗺️ エリア絞り込み（複数選択OK）<span style="margin-left:8px;font-weight:400;">${reportAreaFilter.length === 0 ? '全エリア表示中' : reportAreaFilter.length + 'エリア選択中'}</span></div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;">
+        ${(() => {
+          const areaCounts = {};
+          companies.forEach(c => { const a = extractArea(c.address); areaCounts[a] = (areaCounts[a]||0) + 1; });
+          return Object.entries(areaCounts).sort((a,b) => b[1]-a[1]).map(([a, n]) => {
+            const active = reportAreaFilter.includes(a);
+            return `<button onclick="toggleReportArea('${a.replace(/'/g,"\\'")}');" style="padding:5px 10px;border:1.5px solid ${active?'#06B6D4':'#E5E7EB'};background:${active?'#06B6D4':'#fff'};color:${active?'#fff':'#374151'};border-radius:8px;font-size:11px;font-weight:700;cursor:pointer">${active?'✓ ':''}${a}<span style="font-size:10px;opacity:0.7;margin-left:3px">${n}</span></button>`;
+          }).join('');
+        })()}
+        ${reportAreaFilter.length > 0 ? `<button onclick="reportAreaFilter=[];renderReport();" style="padding:5px 10px;border:1.5px solid #E5E7EB;background:#F9FAFB;color:#6B7280;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer">✕ クリア</button>` : ''}
+      </div>
+    </div>
     <div class="report-period-row">
       ${['today','yesterday','week','month','all'].map(p => {
         const labels = { today:'今日', yesterday:'昨日', week:'今週', month:'今月', all:'全期間' };
@@ -2190,6 +2207,12 @@ function toggleReportGenre(g) {
   const idx = reportGenreFilter.indexOf(g);
   if (idx >= 0) reportGenreFilter.splice(idx, 1);
   else reportGenreFilter.push(g);
+  renderReport();
+}
+function toggleReportArea(a) {
+  const idx = reportAreaFilter.indexOf(a);
+  if (idx >= 0) reportAreaFilter.splice(idx, 1);
+  else reportAreaFilter.push(a);
   renderReport();
 }
 
