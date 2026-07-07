@@ -542,6 +542,10 @@ body {
     <div class="genre-tabs" id="genre-tabs" style="margin-bottom:0;">
       <button class="genre-tab active" data-genre="all" onclick="setGenre('all')">📋 全部</button>
       <button class="genre-tab hotel" data-genre="hotel" onclick="setGenre('hotel')">🏨 ホテル</button>
+      <button class="genre-tab pension" data-genre="pension" onclick="setGenre('pension')">🏡 ペンション</button>
+      <button class="genre-tab condo" data-genre="condo" onclick="setGenre('condo')">🏢 コンドミニアム</button>
+      <button class="genre-tab minpaku" data-genre="minpaku" onclick="setGenre('minpaku')">🛖 民泊・ヴィラ</button>
+      <button class="genre-tab apt" data-genre="apt" onclick="setGenre('apt')">🏠 アパートなど</button>
       <button class="genre-tab rental" data-genre="rental" onclick="setGenre('rental')">🚗 レンタカー</button>
       <button class="genre-tab other" data-genre="other" onclick="setGenre('other')">🔹 その他</button>
     </div>
@@ -685,9 +689,17 @@ function getGenre(c) {
   if (sd.genre) return sd.genre;
   const name = (c.company_name || '').toLowerCase();
   const rentalKeywords = ['レンタカー', 'レンタ', 'rent', 'rental'];
-  const hotelKeywords = ['ホテル', 'hotel', '旅館', 'リゾート', 'resort', 'inn', 'ヴィラ', 'villa', 'ゲストハウス', 'ペンション'];
+  const hotelKeywords = ['ホテル', 'hotel', '旅館', 'リゾート', 'resort', 'inn'];
+  const pensionKeywords = ['ペンション', 'pension'];
+  const condoKeywords = ['コンドミニアム', 'コンドー', 'condo'];
+  const minpakuKeywords = ['民泊', 'ゲストハウス', 'guesthouse', 'guest house', 'ヴィラ', 'villa'];
+  const aptKeywords = ['コープ', 'アパート', 'マンション', 'apartment'];
   if (rentalKeywords.some(k => name.includes(k))) return 'rental';
   if (hotelKeywords.some(k => name.includes(k))) return 'hotel';
+  if (pensionKeywords.some(k => name.includes(k))) return 'pension';
+  if (condoKeywords.some(k => name.includes(k))) return 'condo';
+  if (minpakuKeywords.some(k => name.includes(k))) return 'minpaku';
+  if (aptKeywords.some(k => name.includes(k))) return 'apt';
   return 'other';
 }
 
