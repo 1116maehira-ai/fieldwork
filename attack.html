@@ -798,7 +798,9 @@ function extractArea(addr) {
   s = s.replace(/〒\d{3}-?\d{4}\s*/g, '');
   s = s.replace(/^沖縄県\s*/, '');
   s = s.replace(/^Okinawa[,，]?\s*/i, '');
-  const m = s.match(/^([^0-9０-９]+?(?:市|町|村|区|郡))/);
+  // 郡があればスキップして次の市町村名を取る（例：国頭郡恩納村→恩納村）
+  s = s.replace(/^[^\s]+郡\s*/, '');
+  const m = s.match(/^([^0-9０-９]+?(?:市|町|村|区))/);
   if (m) { let area = m[1]; return area.length > 8 ? area.substring(0, 8) + '…' : area; }
   return '(その他)';
 }
