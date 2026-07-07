@@ -583,18 +583,28 @@ body {
       <option value="no_rental">🚗 協会加盟を除外</option>
       <option value="exclude_flags">🚫 DMM＋協会加盟を除外</option>
     </select>
-    <select class="sort-select" id="sort-select">
-      <option value="default">並び順: 優先度順</option>
-      <option value="priority">⭐ 多い順</option>
-      <option value="area">エリア順</option>
-      <option value="next_date">次回予定日順</option>
-      <option value="updated">更新日(新しい順)</option>
-      <option value="name">会社名順</option>
-      <option value="phone">電話あり優先</option>
-      <option value="rooms_desc">🏨 客室数（多い順）</option>
-      <option value="rooms_asc">🏨 客室数（少ない順）</option>
-      <option value="last_call_asc">📅 最終電話日（古い順）</option>
-      <option value="last_call_desc">📅 最終電話日（新しい順）</option>
+    <select class="sort-select" id="sort-select" onchange="currentSort=this.value;renderList();">
+      <option value="default">1st: 優先度順</option>
+      <option value="priority">1st: ⭐ 優先度</option>
+      <option value="area">1st: 🗺️ エリア</option>
+      <option value="next_date">1st: 📅 次回日</option>
+      <option value="updated">1st: 🕐 更新順</option>
+      <option value="name">1st: 🔤 名前</option>
+      <option value="phone">1st: 📞 電話あり優先</option>
+      <option value="rooms_desc">1st: 🏨 客室数多い</option>
+      <option value="rooms_asc">1st: 🏨 客室数少ない</option>
+      <option value="last_call_asc">1st: 📅 最終電話古い</option>
+      <option value="last_call_desc">1st: 📅 最終電話新しい</option>
+    </select>
+    <select class="sort-select" id="sort-select-2nd" onchange="currentSort2=this.value;renderList();" style="min-width:160px;">
+      <option value="none">2nd: なし</option>
+      <option value="rooms_desc">2nd: 🏨 客室数多い</option>
+      <option value="rooms_asc">2nd: 🏨 客室数少ない</option>
+      <option value="last_call_asc">2nd: 📅 最終電話古い</option>
+      <option value="last_call_desc">2nd: 📅 最終電話新しい</option>
+      <option value="priority">2nd: ⭐ 優先度</option>
+      <option value="area">2nd: 🗺️ エリア</option>
+      <option value="name">2nd: 🔤 名前</option>
     </select>
     <label class="include-excluded-row">
       <input type="checkbox" id="include-excluded">
@@ -654,6 +664,7 @@ let currentTagFilter = 'all';
 let reportCallFilter = 'all';
 let reportSort = 'date_desc';
 let currentSort = 'default';
+let currentSort2 = 'none';
 let searchText = '';
 let currentGenre = 'all';
 let currentTodayFilter = false;
