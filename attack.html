@@ -798,10 +798,21 @@ function extractArea(addr) {
   s = s.replace(/〒\d{3}-?\d{4}\s*/g, '');
   s = s.replace(/^沖縄県\s*/, '');
   s = s.replace(/^Okinawa[,，]?\s*/i, '');
-  // 郡があればスキップして次の市町村名を取る（例：国頭郡恩納村→恩納村）
   s = s.replace(/^[^\s]+郡\s*/, '');
   const m = s.match(/^([^0-9０-９]+?(?:市|町|村|区))/);
-  if (m) { let area = m[1]; return area.length > 8 ? area.substring(0, 8) + '…' : area; }
+  if (m) {
+    let area = m[1];
+    if (/^那覇.+町$/.test(area)) area = '那覇市';
+    return area.length > 8 ? area.substring(0, 8) + '…' : area;
+  }
+  const CITY_MAP = [
+    [/豊見城/, '豊見城市'], [/那覇/, '那覇市'], [/糸満/, '糸満市'],
+    [/浦添/, '浦添市'], [/宜野湾/, '宜野湾市'], [/北谷/, '北谷町'],
+    [/読谷/, '読谷村'], [/嘉手納/, '嘉手納町'], [/恩納/, '恩納村'],
+    [/うるま/, 'うるま市'], [/南城/, '南城市'], [/名護/, '名護市'],
+    [/石垣/, '石垣市'], [/宮古/, '宮古島市'], [/沖縄/, '沖縄市'],
+  ];
+  for (const [pat, name] of CITY_MAP) { if (pat.test(s)) return name; }
   return '(その他)';
 }
 
