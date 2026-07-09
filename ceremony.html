@@ -803,6 +803,7 @@ body {
       <a href="attack.html">📋 リスト作成</a>
       <a href="fieldwork.html">🔍 FIELDWORK</a>
       <button onclick="openBulkResearch()" style="cursor:pointer;border:1px solid rgba(255,255,255,0.3);padding:6px 12px;border-radius:8px;font-size:12px;font-weight:700;color:white;background:rgba(255,255,255,0.3);font-family:inherit">🤖 一括リサーチ</button>
+      <button onclick="openFwImport()" style="cursor:pointer;border:1px solid rgba(255,255,255,0.3);padding:6px 12px;border-radius:8px;font-size:12px;font-weight:700;color:white;background:rgba(255,255,255,0.3);font-family:inherit">📥 FW取り込み</button>
     </div>
   </div>
 
@@ -917,6 +918,136 @@ const FINISH_TO_RESULT = {
 };
 
 // 初期化
+// FIELDWORKのCSVマッピング（日本語ヘッダー → ceremony_attacksカラム）
+const FW_COLUMN_MAP = {
+  '会社名': 'company_name',
+  '電話': 'phone',
+  '業種': 'industry',
+  'エリア': 'area',
+  '住所': 'address',
+  '公式HPURL': 'website',
+  '求人URL': 'own_recruit_url',
+  'InstagramURL': 'instagram_url',
+  'FacebookURL': 'facebook_url',
+  'TikTokURL': 'tiktok_url',
+  '創業年月日': 'founding_date',
+  '代表者名': 'ceo_name',
+  '従業員数': 'employees',
+  '備考': 'notes',
+  '推定月商': 'revenue',
+  '担当者': 'contact_name',
+};
+
+function openFwImport() {
+  const ex = document.getElementById('m-fw-import');
+  if (ex) ex.remove();
+  const m = document.createElement('div');
+  m.id = 'm-fw-import';
+  m.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.55);display:flex;align-items:center;justify-content:center;z-index:10000;padding:20px';
+  m.innerHTML = `
+    <div style="background:#fff;border-radius:18px;width:100%;max-width:660px;max-height:92vh;overflow-y:auto;font-family:'Hiragino Maru Gothic ProN','Yu Gothic UI',sans-serif;padding:24px">
+      <div style="font-size:18px;font-weight:900;color:#D97706;margin-bottom:4px">📥 FIELDWORKのCSV取り込み</div>
+      <div style="font-size:12px;color:#6B7280;margin-bottom:16px">FIELDWORKからエクスポートしたCSVを貼り付けて式典映像リストに追加します</div>
+
+      <div style="background:#FEF3C7;border:1.5px solid #F59E0B;border-radius:10px;padding:10px 14px;margin-bottom:14px;font-size:12px;color:#92400E">
+        ・既存企業（会社名または電話番号が一致）→ 情報を更新<br>
+        ・新規企業 → 自動で追加（フェーズ：未着手）
+      </div>
+
+      <div style="font-size:12px;font-weight:700;margin-bottom:6px">CSVを貼り付け</div>
+      <textarea id="fw-csv-paste" style="width:100%;height:200px;padding:12px;border:1.5px solid #E5E7EB;border-radius:10px;font-size:11px;font-family:monospace;resize:vertical;box-sizing:border-box" placeholder="会社名,担当者,電話,業種,エリア,住所,...&#10;株式会社〇〇,山田,098-XXX-XXXX,..."></textarea>
+
+      <button onclick="fwImportCsv()" style="margin-top:12px;width:100%;padding:13px;background:linear-gradient(135deg,#D97706,#F59E0B);color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:900;cursor:pointer">📥 取り込む！</button>
+      <div id="fw-import-result" style="margin-top:10px;font-size:13px;font-weight:700;color:#059669"></div>
+
+      <div style="text-align:center;margin-top:14px">
+        <button onclick="document.getElementById('m-fw-import').remove()" style="padding:8px 24px;background:#F3F4F6;color:#6B7280;border:none;border-radius:8px;font-weight:700;cursor:pointer">閉じる</button>
+      </div>
+    </div>`;
+  document.body.appendChild(m);
+}
+
+function parseFwCsvLine(line) {
+  const result = []; let cur = ''; let inQ = false;
+  for (let i = 0; i < line.length; i++) {
+    const c = line[i];
+    if (c === '"') { if (inQ && line[i+1] === '"') { cur += '"'; i++; } else inQ = !inQ; }
+    else if (c === ',' && !inQ) { result.push(cur.trim()); cur = ''; }
+    else cur += c;
+  }
+  result.push(cur.trim());
+  return result;
+}
+
+async function fwImportCsv() {
+  const raw = document.getElementById('fw-csv-paste')?.value.trim();
+  if (!raw) { showToast('CSVを貼り付けてください', ''); return; }
+
+  const lines = raw.split('\n').map(l => l.trim()).filter(Boolean);
+  if (lines.length < 2) { showToast('データが不足しています', ''); return; }
+
+  // ヘッダーを英語カラムに変換
+  const rawHeaders = parseFwCsvLine(lines[0]);
+  const headers = rawHeaders.map(h => FW_COLUMN_MAP[h] || h.toLowerCase());
+
+  const nameIdx  = headers.indexOf('company_name');
+  const phoneIdx = headers.indexOf('phone');
+  if (nameIdx === -1) { showToast('「会社名」列が見つかりません', ''); return; }
+
+  let updated = 0, added = 0, skipped = 0;
+  const errors = [];
+
+  for (let i = 1; i < lines.length; i++) {
+    const cols = parseFwCsvLine(lines[i]);
+    const name = cols[nameIdx]?.replace(/^"|"$/g, '').trim();
+    if (!name) { skipped++; continue; }
+
+    // 既存企業を照合（会社名 or 電話番号）
+    const phone = phoneIdx !== -1 ? cols[phoneIdx]?.replace(/^"|"$/g, '').trim() : '';
+    let existing = companies.find(c =>
+      c.company_name && c.company_name.replace(/\s+/g,'') === name.replace(/\s+/g,'')
+    );
+    if (!existing && phone) {
+      existing = companies.find(c => c.phone && c.phone.replace(/\D/g,'') === phone.replace(/\D/g,''));
+    }
+
+    // 更新データを構築（空・要確認は除外）
+    const upd = {};
+    headers.forEach((col, idx) => {
+      if (!col || col === 'company_name') return;
+      const val = cols[idx]?.replace(/^"|"$/g, '').trim();
+      if (val && val !== '要確認' && val !== 'N/A') upd[col] = val;
+    });
+
+    try {
+      if (existing) {
+        // 既存企業を更新
+        const { error } = await sb.from('ceremony_attacks').update(upd).eq('id', existing.id);
+        if (error) throw error;
+        Object.assign(existing, upd);
+        updated++;
+      } else {
+        // 新規追加（2段階：最小INSEREt→詳細UPDATE）
+        const newId = crypto.randomUUID();
+        const { error: e1 } = await sb.from('ceremony_attacks').insert({ id: newId, company_name: name, phase: 'pending' });
+        if (e1) throw e1;
+        if (Object.keys(upd).length > 0) {
+          await sb.from('ceremony_attacks').update(upd).eq('id', newId);
+        }
+        companies.push({ id: newId, company_name: name, phase: 'pending', ...upd });
+        added++;
+      }
+    } catch(e) { errors.push(name + ': ' + e.message); }
+  }
+
+  const el = document.getElementById('fw-import-result');
+  if (el) el.textContent = `✅ ${updated}件更新 / 新規${added}件追加 / スキップ${skipped}件${errors.length ? ' / エラー' + errors.length + '件' : ''}`;
+  showToast(`✅ ${updated}件更新・${added}件新規追加`, 'success');
+  buildAreaOptions();
+  renderStats();
+  renderList();
+}
+
 async function init() {
   await Promise.all([loadCompanies(), loadScripts()]);
 }
