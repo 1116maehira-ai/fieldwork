@@ -954,10 +954,17 @@ function openFwImport() {
         ・新規企業 → 自動で追加（フェーズ：未着手）
       </div>
 
-      <div style="font-size:12px;font-weight:700;margin-bottom:6px">CSVを貼り付け</div>
-      <textarea id="fw-csv-paste" style="width:100%;height:200px;padding:12px;border:1.5px solid #E5E7EB;border-radius:10px;font-size:11px;font-family:monospace;resize:vertical;box-sizing:border-box" placeholder="会社名,担当者,電話,業種,エリア,住所,...&#10;株式会社〇〇,山田,098-XXX-XXXX,..."></textarea>
+      <div style="font-size:12px;font-weight:700;margin-bottom:8px">CSVファイルを選択</div>
+      <label style="display:flex;align-items:center;gap:10px;padding:14px;border:2px dashed #D97706;border-radius:10px;cursor:pointer;background:#FFFBEB">
+        <span style="font-size:24px">📂</span>
+        <div>
+          <div style="font-weight:800;color:#B45309">クリックしてCSVを選択</div>
+          <div id="fw-file-name" style="font-size:11px;color:#9CA3AF;margin-top:2px">FIELDWORKからエクスポートしたCSVファイル</div>
+        </div>
+        <input type="file" id="fw-csv-file" accept=".csv" style="display:none" onchange="fwFileSelected(this)">
+      </label>
 
-      <button onclick="fwImportCsv()" style="margin-top:12px;width:100%;padding:13px;background:linear-gradient(135deg,#D97706,#F59E0B);color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:900;cursor:pointer">📥 取り込む！</button>
+      <button onclick="fwImportCsv()" id="fw-import-btn" disabled style="margin-top:12px;width:100%;padding:13px;background:#D1D5DB;color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:900;cursor:not-allowed">📥 ファイルを選択してください</button>
       <div id="fw-import-result" style="margin-top:10px;font-size:13px;font-weight:700;color:#059669"></div>
 
       <div style="text-align:center;margin-top:14px">
@@ -979,9 +986,30 @@ function parseFwCsvLine(line) {
   return result;
 }
 
+function fwFileSelected(input) {
+  const file = input.files[0];
+  if (!file) return;
+  document.getElementById('fw-file-name').textContent = file.name + '（' + Math.round(file.size/1024) + 'KB）';
+  const btn = document.getElementById('fw-import-btn');
+  btn.disabled = false;
+  btn.style.background = 'linear-gradient(135deg,#D97706,#F59E0B)';
+  btn.style.cursor = 'pointer';
+  btn.textContent = '📥 取り込む！（' + file.name + '）';
+}
+
 async function fwImportCsv() {
-  const raw = document.getElementById('fw-csv-paste')?.value.trim();
-  if (!raw) { showToast('CSVを貼り付けてください', ''); return; }
+  const fileInput = document.getElementById('fw-csv-file');
+  const file = fileInput?.files[0];
+  if (!file) { showToast('CSVファイルを選択してください', ''); return; }
+
+  const raw = await new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = e => resolve(e.target.result);
+    reader.onerror = () => reject(new Error('ファイル読み込みエラー'));
+    reader.readAsText(file, 'UTF-8');
+  });
+
+  if (!raw || !raw.trim()) { showToast('ファイルが空です', ''); return; }
 
   const lines = raw.split('\n').map(l => l.trim()).filter(Boolean);
   if (lines.length < 2) { showToast('データが不足しています', ''); return; }
@@ -994,6 +1022,8 @@ async function fwImportCsv() {
   const phoneIdx = headers.indexOf('phone');
   if (nameIdx === -1) { showToast('「会社名」列が見つかりません', ''); return; }
 
+  const btn = document.getElementById('fw-import-btn');
+  if (btn) { btn.textContent = '⏳ 取り込み中...'; btn.disabled = true; }
   let updated = 0, added = 0, skipped = 0;
   const errors = [];
 
@@ -1043,6 +1073,7 @@ async function fwImportCsv() {
   const el = document.getElementById('fw-import-result');
   if (el) el.textContent = `✅ ${updated}件更新 / 新規${added}件追加 / スキップ${skipped}件${errors.length ? ' / エラー' + errors.length + '件' : ''}`;
   showToast(`✅ ${updated}件更新・${added}件新規追加`, 'success');
+  if (btn) { btn.textContent = `✅ 完了（${updated}件更新・${added}件追加）`; btn.style.background='linear-gradient(135deg,#059669,#10B981)'; }
   buildAreaOptions();
   renderStats();
   renderList();
