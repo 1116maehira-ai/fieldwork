@@ -994,15 +994,30 @@ function openFwImport() {
 }
 
 function parseFwCsvLine(line) {
-  const result = []; let cur = ''; let inQ = false;
-  for (let i = 0; i < line.length; i++) {
-    const c = line[i];
-    if (c === '"') { if (inQ && line[i+1] === '"') { cur += '"'; i++; } else inQ = !inQ; }
-    else if (c === ',' && !inQ) { result.push(cur.trim()); cur = ''; }
-    else cur += c;
+  // 後方互換用（単体行パース）
+  return parseCSVFull(line + '\n')[0] || [];
+}
+
+function parseCSVFull(text) {
+  // Multi-line対応CSVパーサー
+  const rows = [];
+  let row = [], field = '', inQ = false;
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i], nx = text[i+1];
+    if (inQ) {
+      if (c === '"' && nx === '"') { field += '"'; i++; }
+      else if (c === '"') { inQ = false; }
+      else { field += c; }
+    } else {
+      if (c === '"') { inQ = true; }
+      else if (c === ',') { row.push(field.trim()); field = ''; }
+      else if (c === '\r' && nx === '\n') { row.push(field.trim()); field=''; rows.push(row); row=[]; i++; }
+      else if (c === '\n' || c === '\r') { row.push(field.trim()); field=''; rows.push(row); row=[]; }
+      else { field += c; }
+    }
   }
-  result.push(cur.trim());
-  return result;
+  if (field || row.length > 0) { row.push(field.trim()); rows.push(row); }
+  return rows.filter(r => r.some(v => v !== ''));
 }
 
 function fwFileSelected(input) {
@@ -1030,11 +1045,12 @@ async function fwImportCsv() {
 
   if (!raw || !raw.trim()) { showToast('ファイルが空です', ''); return; }
 
-  const lines = raw.split('\n').map(l => l.trim()).filter(Boolean);
-  if (lines.length < 2) { showToast('データが不足しています', ''); return; }
+  // Multi-line対応でCSV全体をパース
+  const allRows = parseCSVFull(raw);
+  if (allRows.length < 2) { showToast('データが不足しています', ''); return; }
 
   // ヘッダーを英語カラムに変換
-  const rawHeaders = parseFwCsvLine(lines[0]);
+  const rawHeaders = allRows[0];
   const headers = rawHeaders.map(h => FW_COLUMN_MAP[h] || h.toLowerCase());
 
   const nameIdx  = headers.indexOf('company_name');
@@ -1046,8 +1062,8 @@ async function fwImportCsv() {
   let updated = 0, added = 0, skipped = 0;
   const errors = [];
 
-  for (let i = 1; i < lines.length; i++) {
-    const cols = parseFwCsvLine(lines[i]);
+  for (let i = 1; i < allRows.length; i++) {
+    const cols = allRows[i];
     const name = cols[nameIdx]?.replace(/^"|"$/g, '').trim();
     if (!name) { skipped++; continue; }
 
