@@ -939,6 +939,15 @@ const FINISH_TO_RESULT = {
 
 // 初期化
 // FIELDWORKのCSVマッピング（日本語ヘッダー → ceremony_attacksカラム）
+// ceremony_attacksに存在するカラムのホワイトリスト
+const CEREMONY_COLUMNS = new Set([
+  'company_name','phone','fax','address','area','pref','city','district',
+  'website','industry','email','ceo_name','founding_date','established_date',
+  'revenue','employees','instagram_url','facebook_url','x_url','tiktok_url',
+  'indeed_url','job_antenna_url','agre_url','mynavi_url','own_recruit_url',
+  'memo','research_notes','next_date','priority','star_rating'
+]);
+
 const FW_COLUMN_MAP = {
   '会社名': 'company_name',
   '電話': 'phone',
@@ -1078,12 +1087,13 @@ async function fwImportCsv() {
       existing = companies.find(c => c.phone && normP(c.phone) === normP(phone));
     }
 
-    // 更新データを構築（空・要確認は除外）
+    // 更新データを構築（存在するカラムのみ・空と要確認は除外）
     const upd = {};
     headers.forEach((col, idx) => {
       if (!col || col === 'company_name') return;
-      const val = cols[idx]?.replace(/^"|"$/g, '').trim();
-      if (val && val !== '要確認' && val !== 'N/A') upd[col] = val;
+      if (!CEREMONY_COLUMNS.has(col)) return; // 存在しないカラムはスキップ
+      const val = (cols[idx] || '').replace(/^"|"$/g, '').trim();
+      if (val && val !== '要確認' && val !== 'N/A' && val !== '不明') upd[col] = val;
     });
 
     try {
