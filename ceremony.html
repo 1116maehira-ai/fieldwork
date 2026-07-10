@@ -804,6 +804,7 @@ body {
       <a href="fieldwork.html">🔍 FIELDWORK</a>
       <button onclick="openBulkResearch()" style="cursor:pointer;border:1px solid rgba(255,255,255,0.3);padding:6px 12px;border-radius:8px;font-size:12px;font-weight:700;color:white;background:rgba(255,255,255,0.3);font-family:inherit">🤖 一括リサーチ</button>
       <button onclick="openFwImport()" style="cursor:pointer;border:1px solid rgba(255,255,255,0.3);padding:6px 12px;border-radius:8px;font-size:12px;font-weight:700;color:white;background:rgba(255,255,255,0.3);font-family:inherit">📥 FW取り込み</button>
+      <button onclick="syncToFieldwork()" style="cursor:pointer;border:1px solid rgba(255,255,255,0.3);padding:6px 12px;border-radius:8px;font-size:12px;font-weight:700;color:white;background:rgba(255,255,255,0.3);font-family:inherit">🔄 FWに反映</button>
     </div>
   </div>
 
@@ -1077,6 +1078,79 @@ async function fwImportCsv() {
   buildAreaOptions();
   renderStats();
   renderList();
+}
+
+// FIELDWORKへの逆反映
+async function syncToFieldwork() {
+  if (!confirm('式典リストの情報をFIELDWORK（itemsテーブル）に反映しますか？\n会社名または電話番号で照合して更新します。')) return;
+
+  const btn = document.querySelector('[onclick="syncToFieldwork()"]');
+  if (btn) btn.textContent = '⏳ 反映中...';
+
+  // FIELDWORKのitemsをキーバリュー形式で取得
+  const { data: fwData, error: fwErr } = await sb
+    .from('items')
+    .select('user_id, data')
+    .eq('user_id', 'fw_items')
+    .single();
+
+  if (fwErr || !fwData) {
+    alert('FIELDWORKのデータ取得に失敗しました: ' + (fwErr?.message || '不明'));
+    if (btn) btn.textContent = '🔄 FWに反映';
+    return;
+  }
+
+  const items = Array.isArray(fwData.data) ? fwData.data : [];
+  let updated = 0;
+
+  for (const c of companies) {
+    // ceo_name・founding_dateなど有効な情報があるものだけ反映
+    const hasInfo = RESEARCHED_(c.ceo_name) || RESEARCHED_(c.founding_date) || RESEARCHED_(c.instagram_url);
+    if (!hasInfo) continue;
+
+    // FIELDWORKの企業を照合（会社名 or 電話番号）
+    const normName = (s) => (s||'').replace(/\s+/g,'').toLowerCase();
+    const normPhone = (s) => (s||'').replace(/\D/g,'');
+    const item = items.find(it =>
+      (it.company && normName(it.company) === normName(c.company_name)) ||
+      (c.phone && it.phone && normPhone(it.phone) === normPhone(c.phone))
+    );
+    if (!item) continue;
+
+    // 空欄のみ補完（上書きしない）
+    let changed = false;
+    if (RESEARCHED_(c.ceo_name)       && !item.person)       { item.person       = c.ceo_name;       changed = true; }
+    if (RESEARCHED_(c.founding_date)  && !item.foundingDate)  { item.foundingDate  = c.founding_date;  changed = true; }
+    if (RESEARCHED_(c.instagram_url)  && !item.instaUrl)      { item.instaUrl      = c.instagram_url;  changed = true; }
+    if (RESEARCHED_(c.facebook_url)   && !item.fbUrl)         { item.fbUrl         = c.facebook_url;   changed = true; }
+    if (RESEARCHED_(c.tiktok_url)     && !item.tiktokUrl)     { item.tiktokUrl     = c.tiktok_url;     changed = true; }
+    if (RESEARCHED_(c.website)        && !item.website)       { item.website       = c.website;        changed = true; }
+    if (RESEARCHED_(c.email)          && !item.email)         { item.email         = c.email;          changed = true; }
+    if (changed) updated++;
+  }
+
+  if (updated === 0) {
+    alert('反映できる新しい情報がありませんでした。');
+    if (btn) btn.textContent = '🔄 FWに反映';
+    return;
+  }
+
+  // FIELDWORKに書き戻し
+  const { error: writeErr } = await sb
+    .from('items')
+    .update({ data: items })
+    .eq('user_id', 'fw_items');
+
+  if (writeErr) {
+    alert('書き込みエラー: ' + writeErr.message);
+  } else {
+    showToast(`✅ FIELDWORKに${updated}社の情報を反映しました`, 'success');
+  }
+  if (btn) btn.textContent = '🔄 FWに反映';
+}
+
+function RESEARCHED_(val) {
+  return val && val.trim() !== '' && val.trim() !== 'N/A' && val.trim() !== 'n/a';
 }
 
 async function init() {
@@ -2176,7 +2250,11 @@ const BULK_BATCH_SIZE = 10;
 
 function openBulkResearch() {
   // 未調査企業（ceo_name が空 or null）を優先で取得
-  const targets = companies.filter(c => !c.ceo_name || !c.ceo_name.trim());
+  // 未調査企業 = ceo_nameが空（N/A・有効値がある場合は調査済みとして除外）
+  const RESEARCHED = (val) => val && val.trim() !== '' && val.trim() !== 'N/A' && val.trim() !== 'n/a';
+  const targets = companies.filter(c =>
+    !RESEARCHED(c.ceo_name) && !RESEARCHED(c.founding_date) && !RESEARCHED(c.instagram_url)
+  );
   const batch = targets.slice(0, BULK_BATCH_SIZE);
 
   // 既存モーダルを削除
