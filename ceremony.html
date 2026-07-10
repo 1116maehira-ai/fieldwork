@@ -1529,6 +1529,13 @@ function renderCard(c, today) {
             <span>🗺️ ${escapeHtml(areaTag)}</span>
             <span>📞 ${escapeHtml(c.phone || '電話なし')}</span>
             ${visitCount > 0 ? `<span>📝 ${visitCount}回</span>` : ''}
+            ${(() => {
+              const lastLog = (c.logs||[]).slice().sort((a,b) => ((b.date||'')+(b.time||'')).localeCompare((a.date||'')+(a.time||''))).find(l => l.date);
+              if (!lastLog) return '';
+              const diff = Math.floor((new Date(today) - new Date(lastLog.date)) / 86400000);
+              const label = diff === 0 ? '今日' : diff === 1 ? '昨日' : diff + '日前';
+              return `<span style="font-size:10px;color:#9CA3AF">📞最終: ${label}</span>`;
+            })()}
             ${nextDateHtml}
           </div>
           <div class="link-row">
