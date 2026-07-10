@@ -820,8 +820,23 @@ body {
 
   <div class="control-bar">
     <input type="text" class="search-input" id="search-input" placeholder="🔍 会社名・住所・電話で検索...">
-    <select class="area-select" id="area-select">
-      <option value="all">エリア: すべて</option>
+    <div style="position:relative;display:inline-block">
+      <button id="area-filter-btn" onclick="toggleAreaDropdown()" style="min-width:160px;padding:8px 12px;border:1px solid #ccc;border-radius:8px;background:#fff;cursor:pointer;font-size:13px;font-weight:600;text-align:left">🗺 エリア: すべて ▼</button>
+      <div id="area-dropdown" style="display:none;position:absolute;top:100%;left:0;background:#fff;border:1px solid #ccc;border-radius:8px;padding:8px;z-index:100;max-height:280px;overflow-y:auto;min-width:180px;box-shadow:0 4px 12px rgba(0,0,0,0.1)">
+        <label style="display:block;padding:4px 6px;cursor:pointer;font-size:12px"><input type="checkbox" id="area-all" checked onchange="areaAllChange(this)"> すべて</label>
+        <div id="area-checkboxes"></div>
+      </div>
+    </div>
+    <select class="area-select" id="category-select" style="min-width:130px;">
+      <option value="all">🏷 カテゴリ: すべて</option>
+      <option value="不動産">🏠 不動産</option>
+      <option value="建設・建築">🏗 建設・建築</option>
+      <option value="塗装">🎨 塗装</option>
+      <option value="内装">🪟 内装</option>
+      <option value="電気・設備">⚡ 電気・設備</option>
+      <option value="造園">🌿 造園</option>
+      <option value="清掃・メンテ">🧹 清掃・メンテ</option>
+      <option value="その他">📦 その他</option>
     </select>
     <select class="area-select" id="priority-select" style="min-width:120px;">
       <option value="all">⭐ すべて</option>
@@ -838,6 +853,7 @@ body {
       <option value="updated">更新日(新しい順)</option>
       <option value="name">会社名順</option>
       <option value="phone">電話あり優先</option>
+      <option value="info_rich">📊 情報が多い順</option>
     </select>
     <label class="include-excluded-row">
       <input type="checkbox" id="include-excluded">
@@ -889,9 +905,12 @@ let scripts = [];
 let currentScriptIndex = 0; // ★ 現在使ってるスクリプトのインデックス（0=A, 1=B, 2=C）
 let currentTab = 'script'; // ★ モーダル内タブ：'script' | 'info'
 let currentFilter = 'all';
-let currentArea = 'all';
+let currentAreas = []; // 空=すべて
 let currentPriority = 'all';
 let currentSort = 'default';
+let reportResultFilter = 'all';
+let reportAreaFilter = [];
+let reportSort = 'date_desc';
 let searchText = '';
 let includeExcluded = false;
 let currentCompany = null;
@@ -1149,6 +1168,24 @@ async function syncToFieldwork() {
   if (btn) btn.textContent = '🔄 FWに反映';
 }
 
+function getCategory(c) {
+  const ind = (c.industry || '').toLowerCase();
+  if (/(不動産|住宅|マンション|宅建|賃貸|売買|仲介)/.test(ind)) return '不動産';
+  if (/(建設|建築|土木|工務|ゼネコン|施工|リフォーム|解体|型枠|鉄筋|左官|大工|内装|外構)/.test(ind)) return '建設・建築';
+  if (/(塗装|塗工|外壁|防水)/.test(ind)) return '塗装';
+  if (/(内装|インテリア|クロス|床工事|壁紙)/.test(ind)) return '内装';
+  if (/(電気|電設|電工|設備|空調|管工事|水道|衛生)/.test(ind)) return '電気・設備';
+  if (/(造園|緑化|植栽|樹木|庭)/.test(ind)) return '造園';
+  if (/(清掃|ビルメン|ハウスクリーニング|管理)/.test(ind)) return '清掃・メンテ';
+  return 'その他';
+}
+
+function infoScore(c) {
+  const fields = ['phone','fax','address','website','ceo_name','founding_date',
+                  'instagram_url','facebook_url','tiktok_url','x_url','email','revenue','employees'];
+  return fields.filter(f => c[f] && String(c[f]).trim() !== '' && String(c[f]) !== 'N/A').length;
+}
+
 function RESEARCHED_(val) {
   return val && val.trim() !== '' && val.trim() !== 'N/A' && val.trim() !== 'n/a';
 }
@@ -1234,11 +1271,42 @@ function buildAreaOptions() {
     const a = extractArea(c.address);
     areas[a] = (areas[a] || 0) + 1;
   });
-  const sel = document.getElementById('area-select');
   const sortedAreas = Object.entries(areas).sort((a,b) => b[1] - a[1]);
-  sel.innerHTML = `<option value="all">エリア: すべて (${companies.length})</option>` +
-    sortedAreas.map(([a, n]) => `<option value="${escapeHtml(a)}">${escapeHtml(a)} (${n})</option>`).join('');
-  sel.value = currentArea;
+  const box = document.getElementById('area-checkboxes');
+  if (box) {
+    box.innerHTML = sortedAreas.map(([a, n]) =>
+      `<label style="display:block;padding:4px 6px;cursor:pointer;font-size:12px"><input type="checkbox" class="area-cb" value="${escapeHtml(a)}" onchange="areaChange()"> ${escapeHtml(a)} (${n})</label>`
+    ).join('');
+  }
+  updateAreaBtn();
+}
+
+function toggleAreaDropdown() {
+  const dd = document.getElementById('area-dropdown');
+  if (dd) dd.style.display = dd.style.display === 'none' ? 'block' : 'none';
+}
+
+function areaAllChange(cb) {
+  document.querySelectorAll('.area-cb').forEach(c => c.checked = false);
+  currentAreas = [];
+  updateAreaBtn();
+  renderList();
+}
+
+function areaChange() {
+  currentAreas = [...document.querySelectorAll('.area-cb:checked')].map(c => c.value);
+  const allCb = document.getElementById('area-all');
+  if (allCb) allCb.checked = currentAreas.length === 0;
+  updateAreaBtn();
+  renderList();
+}
+
+function updateAreaBtn() {
+  const btn = document.getElementById('area-filter-btn');
+  if (!btn) return;
+  btn.textContent = currentAreas.length === 0 ? '🗺 エリア: すべて ▼'
+    : currentAreas.length === 1 ? `🗺 ${currentAreas[0]} ▼`
+    : `🗺 ${currentAreas.length}エリア選択中 ▼`;
 }
 
 // 統計
@@ -1281,9 +1349,14 @@ function renderList() {
     list = list.filter(c => c.phase === currentFilter);
   }
   
-  // エリアフィルタ
-  if (currentArea !== 'all') {
-    list = list.filter(c => extractArea(c.address) === currentArea);
+  // エリアフィルタ（複数選択対応）
+  if (currentAreas.length > 0) {
+    list = list.filter(c => currentAreas.includes(extractArea(c.address)));
+  }
+  // カテゴリフィルタ
+  const catFilter = document.getElementById('category-select')?.value || 'all';
+  if (catFilter !== 'all') {
+    list = list.filter(c => getCategory(c) === catFilter);
   }
   
   // 優先度フィルタ
@@ -1351,6 +1424,8 @@ function renderList() {
       if (ta !== tb) return ta - tb;
       return (a.company_name || '').localeCompare(b.company_name || '');
     });
+  } else if (currentSort === 'info_rich') {
+    list.sort((a, b) => infoScore(b) - infoScore(a));
   }
   
   if (list.length === 0) {
@@ -1909,6 +1984,7 @@ function renderInfoTab(c) {
     { key: 'agre_url', label: '💼 アグレ URL', type: 'url' },
     { key: 'job_antenna_url', label: '💼 ジョブアンテナ URL', type: 'url' },
     { key: 'own_recruit_url', label: '💼 自社採用ページ URL', type: 'url' },
+    { key: 'fax', label: '📠 FAX番号', type: 'text', placeholder: '例：098-XXX-XXXX' },
   ];
 
   return `
@@ -2220,7 +2296,7 @@ async function saveInfoFields() {
     'company_name', 'phone', 'address', 'website', 'industry', 'ceo_name',
     'founding_date', 'established_date', 'email', 'revenue', 'employees',
     'instagram_url', 'facebook_url', 'x_url', 'tiktok_url',
-    'indeed_url', 'mynavi_url', 'agre_url', 'job_antenna_url', 'own_recruit_url',
+    'indeed_url', 'mynavi_url', 'agre_url', 'job_antenna_url', 'own_recruit_url', 'fax',
   ];
   const updates = {};
   for (const k of fieldKeys) {
@@ -2766,10 +2842,7 @@ document.getElementById('search-input').addEventListener('input', e => {
   searchText = e.target.value;
   renderList();
 });
-document.getElementById('area-select').addEventListener('change', e => {
-  currentArea = e.target.value;
-  renderList();
-});
+// エリアはドロップダウンチェックボックスで制御（area-selectは削除済み）
 document.getElementById('priority-select').addEventListener('change', e => {
   currentPriority = e.target.value;
   renderList();
@@ -2791,6 +2864,28 @@ document.getElementById('report-modal').addEventListener('click', e => {
 });
 
 // ========== レポート機能 ==========
+function toggleReportArea(area) {
+  if (reportAreaFilter.includes(area)) {
+    reportAreaFilter = reportAreaFilter.filter(a => a !== area);
+  } else {
+    reportAreaFilter.push(area);
+  }
+  renderReport();
+}
+function changeReportResultFilter(v) { reportResultFilter = v; renderReport(); }
+function changeReportSort(v) { reportSort = v; renderReport(); }
+function reportAreaChange() {
+  reportAreaFilter = [...document.querySelectorAll('.report-area-cb:checked')].map(c => c.value);
+  const allCb = document.getElementById('report-area-all');
+  if (allCb) allCb.checked = reportAreaFilter.length === 0;
+  renderReport();
+}
+function reportAreaAllChange(cb) {
+  document.querySelectorAll('.report-area-cb').forEach(c => c.checked = false);
+  reportAreaFilter = [];
+  renderReport();
+}
+
 function openReport() {
   reportPeriod = 'today';
   renderReport();
@@ -2863,12 +2958,24 @@ function renderReport() {
     });
   });
   
-  // 新しい順に並べる
-  calls.sort((a, b) => {
-    const aKey = (a.date || '') + (a.time || '');
-    const bKey = (b.date || '') + (b.time || '');
-    return bKey.localeCompare(aKey);
-  });
+  // エリアフィルター（レポート用）
+  if (reportAreaFilter.length > 0) {
+    calls.splice(0, calls.length, ...calls.filter(c => reportAreaFilter.includes(c.area)));
+  }
+  // 結果フィルター
+  const filteredCalls = reportResultFilter === 'all' ? calls : calls.filter(c => c.result === reportResultFilter);
+
+  // ソート
+  if (reportSort === 'date_asc') {
+    calls.sort((a,b) => ((a.date||'')+(a.time||'')).localeCompare((b.date||'')+(b.time||'')));
+  } else if (reportSort === 'result') {
+    const RO = {won:0,connected:1,mailed:2,callback:3,absent:4,declined:5};
+    calls.sort((a,b) => (RO[a.result]??9)-(RO[b.result]??9));
+  } else if (reportSort === 'area') {
+    calls.sort((a,b) => (a.area||'').localeCompare(b.area||''));
+  } else {
+    calls.sort((a, b) => ((b.date||'')+(b.time||'')).localeCompare((a.date||'')+(a.time||'')));
+  }
   
   // 集計
   const counts = { connected:0, absent:0, callback:0, declined:0, won:0, mailed:0 };
@@ -2962,7 +3069,11 @@ function renderReport() {
       ` : ''}
       
       ${sortedAreas.length > 1 ? `
-        <div class="report-section-title">🗺️ エリア別の内訳</div>
+        <div class="report-section-title">🗺️ エリア別の内訳（クリックで絞り込み）</div>
+        <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px">
+          <button onclick="reportAreaAllChange()" style="padding:4px 10px;border:1.5px solid ${reportAreaFilter.length===0?'var(--primary)':'#E5E7EB'};background:${reportAreaFilter.length===0?'var(--primary)':'#fff'};color:${reportAreaFilter.length===0?'#fff':'#374151'};border-radius:6px;font-size:11px;font-weight:700;cursor:pointer">すべて</button>
+          ${sortedAreas.map(([area, cnt]) => `<button onclick="toggleReportArea('${escapeHtml(area)}')" style="padding:4px 10px;border:1.5px solid ${reportAreaFilter.includes(area)?'var(--primary)':'#E5E7EB'};background:${reportAreaFilter.includes(area)?'var(--primary)':'#fff'};color:${reportAreaFilter.includes(area)?'#fff':'#374151'};border-radius:6px;font-size:11px;font-weight:700;cursor:pointer">${escapeHtml(area)} (${cnt})</button>`).join('')}
+        </div>
         <div class="report-breakdown">
           ${sortedAreas.slice(0, 8).map(([area, cnt]) => {
             const pct = total > 0 ? Math.round(cnt / total * 100) : 0;
@@ -2977,12 +3088,22 @@ function renderReport() {
         </div>
       ` : ''}
       
-      <div class="report-section-title">
-        📋 全コール詳細 (${total}件)
-        <span style="font-size:11px;font-weight:400;color:var(--text-mute);">新しい順</span>
+      <div class="report-section-title" style="flex-direction:column;align-items:flex-start;gap:8px">
+        <span>📋 全コール詳細 (${filteredCalls.length}件${reportResultFilter!=='all'?' / フィルター中':''})</span>
+        <div style="display:flex;gap:6px;flex-wrap:wrap">
+          ${['all','won','connected','callback','absent','declined'].map(v => {
+            const labels={all:'すべて',won:'🎯商談',connected:'😊接続',callback:'📅後日',absent:'🏠不在',declined:'❌断り'};
+            return `<button onclick="changeReportResultFilter('${v}')" style="padding:3px 10px;border:1.5px solid ${reportResultFilter===v?'var(--primary)':'#E5E7EB'};background:${reportResultFilter===v?'var(--primary)':'#fff'};color:${reportResultFilter===v?'#fff':'#374151'};border-radius:6px;font-size:10px;font-weight:700;cursor:pointer">${labels[v]}</button>`;
+          }).join('')}
+        </div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap">
+          ${[['date_desc','📅 新しい順'],['date_asc','📅 古い順'],['result','🎯 結果別'],['area','🗺 エリア別']].map(([v,l]) =>
+            `<button onclick="changeReportSort('${v}')" style="padding:3px 10px;border:1.5px solid ${reportSort===v?'#6366F1':'#E5E7EB'};background:${reportSort===v?'#6366F1':'#fff'};color:${reportSort===v?'#fff':'#374151'};border-radius:6px;font-size:10px;font-weight:700;cursor:pointer">${l}</button>`
+          ).join('')}
+        </div>
       </div>
       <div class="report-list">
-        ${calls.map(c => {
+        ${filteredCalls.map(c => {
           const def = (RESULT_DEFS[c.result] || { emoji:'📝', label:c.result });
           return `
             <div class="report-call-item ${c.result}" onclick="openModal('${c.company_id}'); closeReport();" style="cursor:pointer;">
