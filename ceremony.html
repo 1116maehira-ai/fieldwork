@@ -1051,13 +1051,15 @@ async function fwImportCsv() {
     const name = cols[nameIdx]?.replace(/^"|"$/g, '').trim();
     if (!name) { skipped++; continue; }
 
-    // 既存企業を照合（会社名 or 電話番号）
+    // 既存企業を照合（会社名 or 電話番号 — 全角スペース・記号を正規化）
     const phone = phoneIdx !== -1 ? cols[phoneIdx]?.replace(/^"|"$/g, '').trim() : '';
+    const normN = (s) => (s||'').replace(/[\s　「」（）＼／]/g,'').toLowerCase();
+    const normP = (s) => (s||'').replace(/\D/g,'');
     let existing = companies.find(c =>
-      c.company_name && c.company_name.replace(/\s+/g,'') === name.replace(/\s+/g,'')
+      c.company_name && normN(c.company_name) === normN(name)
     );
-    if (!existing && phone) {
-      existing = companies.find(c => c.phone && c.phone.replace(/\D/g,'') === phone.replace(/\D/g,''));
+    if (!existing && phone && normP(phone).length >= 8) {
+      existing = companies.find(c => c.phone && normP(c.phone) === normP(phone));
     }
 
     // 更新データを構築（空・要確認は除外）
@@ -1070,10 +1072,17 @@ async function fwImportCsv() {
 
     try {
       if (existing) {
-        // 既存企業を更新
-        const { error } = await sb.from('ceremony_attacks').update(upd).eq('id', existing.id);
-        if (error) throw error; // カラムが存在しない場合ここで落ちる
-        Object.assign(existing, upd);
+        // 空欄のみ補完（既存データは一切触らない）
+        const finalUpd = {};
+        Object.entries(upd).forEach(([k, v]) => {
+          const cur = existing[k];
+          if (!cur || String(cur).trim() === '' || cur === 'N/A') finalUpd[k] = v;
+        });
+        if (Object.keys(finalUpd).length > 0) {
+          const { error } = await sb.from('ceremony_attacks').update(finalUpd).eq('id', existing.id);
+          if (error) throw error;
+          Object.assign(existing, finalUpd);
+        }
         updated++;
       } else {
         // 新規追加（2段階：最小INSEREt→詳細UPDATE）
@@ -1166,6 +1175,12 @@ async function syncToFieldwork() {
     showToast(`✅ FIELDWORKに${updated}社の情報を反映しました`, 'success');
   }
   if (btn) btn.textContent = '🔄 FWに反映';
+}
+
+function infoScore_(c) {
+  const fields = ['phone','fax','address','website','ceo_name','founding_date',
+                  'instagram_url','facebook_url','tiktok_url','x_url','email','revenue','employees'];
+  return fields.filter(f => c[f] && String(c[f]).trim() !== '' && String(c[f]) !== 'N/A').length;
 }
 
 function getCategory(c) {
