@@ -171,6 +171,18 @@ body {
 .company-name { font-size: 15px; font-weight: 700; word-break: break-all; margin-bottom: 4px; }
 .company-meta { display: flex; gap: 10px; flex-wrap: wrap; font-size: 12px; color: var(--text-sub); margin-bottom: 6px; }
 .company-meta span { display:inline-flex; align-items:center; gap:3px; }
+.ann-badge{display:inline-flex;align-items:center;gap:4px;padding:2px 7px;border-radius:4px;
+  font-size:10px;font-weight:800;letter-spacing:.02em;white-space:nowrap;line-height:1.5}
+.ann-S{background:#FEE2E2;color:#B4441F;border:1px solid #F5B9A6}
+.ann-A{background:#FEF3C7;color:#92600B;border:1px solid #F0D08A}
+.ann-B{background:#DCFCE7;color:#2C6A4E;border:1px solid #A7DCC0}
+.ann-C{background:#F1F5F9;color:#64748B;border:1px solid #D8E0E8}
+.ann-Y{background:#E0F2F5;color:#12606E;border:1px solid #A8D6DE}
+.nosol-badge{display:inline-flex;align-items:center;gap:3px;padding:2px 7px;border-radius:4px;
+  font-size:10px;font-weight:800;background:#FEE2E2;color:#B91C1C;border:1px solid #F0A9A9;white-space:nowrap}
+.job-count{display:inline-flex;align-items:center;gap:3px;padding:2px 6px;border-radius:4px;
+  font-size:10px;font-weight:700;background:#EEF2FF;color:#3730A3;border:1px solid #C7D2FE;white-space:nowrap}
+.card-tags{display:flex;gap:5px;flex-wrap:wrap;margin:5px 0 2px}
 .phase-badge {
   display: inline-block;
   padding: 2px 8px;
@@ -854,6 +866,8 @@ body {
       <option value="name">会社名順</option>
       <option value="phone">電話あり優先</option>
       <option value="info_rich">📊 情報が多い順</option>
+      <option value="anniversary">🎂 周年が近い順</option>
+      <option value="jobs">💼 求人媒体が多い順</option>
     </select>
     <label class="include-excluded-row">
       <input type="checkbox" id="include-excluded">
@@ -1467,6 +1481,16 @@ function renderList() {
     });
   } else if (currentSort === 'info_rich') {
     list.sort((a, b) => infoScore(b) - infoScore(a));
+  } else if (currentSort === 'anniversary') {
+    const ord = { S: 0, A: 1, B: 2, C: 3 };
+    list.sort((a, b) => {
+      const oa = a.anniversary_rank in ord ? ord[a.anniversary_rank] : (a.age_floor ? 4 : 5);
+      const ob = b.anniversary_rank in ord ? ord[b.anniversary_rank] : (b.age_floor ? 4 : 5);
+      if (oa !== ob) return oa - ob;
+      return (a.anniversary_date || 'zzz').localeCompare(b.anniversary_date || 'zzz');
+    });
+  } else if (currentSort === 'jobs') {
+    list.sort((a, b) => jobCount(b) - jobCount(a));
   }
   
   if (list.length === 0) {
@@ -1480,6 +1504,27 @@ function renderList() {
       ${list.map(c => renderCard(c, today)).join('')}
     </div>
   `;
+}
+
+// 求人媒体の本数
+function jobCount(c) {
+  return ['indeed_url','job_antenna_url','agre_url','mynavi_url','hellowork_url','own_recruit_url']
+    .filter(k => c[k]).length;
+}
+
+// 周年バッジ（S/A/B/C、なければ有限会社なら「20年超」）
+function anniversaryBadge(c) {
+  const label = { S: '最優先', A: '直前', B: '仕込み', C: '直後' };
+  if (c.anniversary_rank && label[c.anniversary_rank]) {
+    const when = c.anniversary_date ? c.anniversary_date.replace('-', '/') : '';
+    return `<span class="ann-badge ann-${c.anniversary_rank}" title="${c.anniversary_basis || ''}から数えて${c.anniversary_years}周年（${when}）">`
+         + `🎂 ${c.anniversary_years}周年 ${when}</span>`;
+  }
+  if (c.age_floor) {
+    return `<span class="ann-badge ann-Y" title="有限会社は2006年以降に新設できないため、20年以上続いていることが確実です">`
+         + `🎂 20年超 確実</span>`;
+  }
+  return '';
 }
 
 function renderCard(c, today) {
@@ -1525,8 +1570,17 @@ function renderCard(c, today) {
             <span class="phase-badge phase-${c.phase}">${phaseLab}</span>
             ${escapeHtml(c.company_name)}
           </div>
+          ${(() => {
+            const tags = [];
+            const ab = anniversaryBadge(c);
+            if (ab) tags.push(ab);
+            if (c.no_solicitation) tags.push(`<span class="nosol-badge" title="${escapeHtml(c.no_solicitation_note || '')}">⛔ 営業お断り</span>`);
+            const jn = jobCount(c);
+            if (jn >= 2) tags.push(`<span class="job-count" title="求人媒体${jn}社に出稿中。採用に力を入れている可能性が高い">💼 求人${jn}媒体</span>`);
+            return tags.length ? `<div class="card-tags">${tags.join('')}</div>` : '';
+          })()}
           <div class="company-meta">
-            <span>🗺️ ${escapeHtml(areaTag)}</span>
+            <span>🗺️ ${escapeHtml(c.city || areaTag)}</span>
             <span>📞 ${escapeHtml(c.phone || '電話なし')}</span>
             ${visitCount > 0 ? `<span>📝 ${visitCount}回</span>` : ''}
             ${(() => {
