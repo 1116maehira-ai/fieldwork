@@ -1254,6 +1254,10 @@ tr:hover td { background: rgba(255,70,2,0.03); cursor: pointer; }
           <option value="info_desc">📊 情報量：多い→少ない</option>
           <option value="info_asc">📊 情報量：少ない→多い（追加調査向け）</option>
         </optgroup>
+        <optgroup label="── 周年 ──">
+          <option value="anniv">🎂 周年が近い順（S→A→B→有限会社）</option>
+          <option value="oldest">🏛 創業が古い順</option>
+        </optgroup>
         <optgroup label="── その他 ──">
           <option value="company">🔤 会社名順</option>
           <option value="phase">📌 フェーズ順</option>
@@ -4146,6 +4150,25 @@ function calcAnniversary(it) {
 }
 
 function anniversaryBadge(it) {
+  // 収集済みの周年ランクがあればそれを優先して出す
+  const RANK = {
+    S: { bg: '#FEE2E2', bd: '#F5B9A6', fg: '#B4441F', label: '最優先' },
+    A: { bg: '#FEF3C7', bd: '#F0D08A', fg: '#92600B', label: '直前' },
+    B: { bg: '#DCFCE7', bd: '#A7DCC0', fg: '#2C6A4E', label: '仕込み' },
+    C: { bg: '#F1F5F9', bd: '#D8E0E8', fg: '#64748B', label: '直後' },
+  };
+  const st = 'display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:8px;'
+           + 'font-size:11px;font-weight:800;margin-top:4px;margin-left:4px';
+  const r = RANK[it.anniversaryRank];
+  if (r) {
+    const basis = it.anniversaryBasis ? `（${it.anniversaryBasis}から）` : '';
+    return `<span style="${st};background:${r.bg};border:1.5px solid ${r.bd};color:${r.fg}" `
+         + `title="${r.label}${basis}">🎂 ${it.nextAnniversaryYears}周年</span>`;
+  }
+  if (it.ageFloor) {
+    return `<span style="${st};background:#E0F2F5;border:1.5px solid #A8D6DE;color:#12606E" `
+         + `title="有限会社は2006年以降に新設できないため、20年以上続いていることが確実です">🎂 20年超 確実</span>`;
+  }
   const a = calcAnniversary(it);
   if (!a) return '';
   
@@ -4369,6 +4392,20 @@ function renderList() {
       if (!bv) return 1;
       return av.localeCompare(bv);
     }
+    if (sortMode === 'anniv') {
+      const ord = { S: 0, A: 1, B: 2, C: 3 };
+      const key = it => (it.anniversaryRank in ord) ? ord[it.anniversaryRank] : (it.ageFloor ? 4 : 5);
+      const ka = key(a), kb = key(b);
+      if (ka !== kb) return ka - kb;
+      return (a.foundingDate || 'zzzz').localeCompare(b.foundingDate || 'zzzz');
+    }
+    if (sortMode === 'oldest') {
+      const yr = it => {
+        const m = String(it.foundingDate || it.establishedDate || '').match(/^(\d{4})/);
+        return m ? parseInt(m[1]) : 9999;
+      };
+      return yr(a) - yr(b);
+    }
     if (sortMode === 'company') return a.company.localeCompare(b.company);
     // 情報充実度：埋まってるフィールド数
     const infoScore = it => [it.person,it.phone,it.foundingDate,it.anniversaryMonth,it.website,it.instaUrl,it.fbUrl,it.xUrl,it.tiktokUrl,it.indeedUrl,it.jobAntennaUrl,it.agreUrl,it.email,it.researchNotes,it.employeeCount].filter(Boolean).length;
@@ -4502,7 +4539,7 @@ function renderList() {
     // ── 創業年月日・周年 ──
     const foundingHtml = it.foundingDate
       ? `<span style="font-size:11px;color:#888">🌱 ${escapeHtml(it.foundingDate)}</span>${annBadge}`
-      : '';
+      : annBadge;
 
     // ── 左ボーダー色（フェーズ連動）──
     const borderColor = (() => {
