@@ -538,6 +538,13 @@ input[type=file] { display:none; }
         </div>
       </div>
       
+      <div class="formGroup" style="margin-top:16px;padding:12px 14px;background:#eff6ff;border:1px solid #93c5fd;border-radius:10px;">
+        <div class="formLabel" style="font-weight:700;color:#1e40af;margin-bottom:8px;">🌐 英語パンフ需要</div>
+        <div id="englishPamphArea" style="display:flex;flex-direction:column;gap:8px;">
+          <!-- JSで動的描画 -->
+        </div>
+      </div>
+
       <div class="formGroup" style="margin-top:20px;padding-top:16px;border-top:1px solid var(--border);">
         <label class="formLabel">補充状況</label>
         <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;">
@@ -3098,6 +3105,36 @@ function buildFacilityCard(f, todayReports) {
     </div>`;
 }
 
+// ===== 英語パンフ需要エリアの描画（モーダル用） =====
+function renderEnglishPamphArea(facility) {
+  const area = document.getElementById('englishPamphArea');
+  if (!area || !facility) return;
+  const d = facility.english_pamph_demand;
+  const labelMap = {required:'🙋 要', not_required:'🙅 不要', if_available:'🤲 あれば預かる'};
+  const colorMap = {
+    required:'background:#dbeafe;color:#1e40af;border:2px solid #93c5fd;',
+    not_required:'background:#f1f5f9;color:#64748b;border:2px solid #cbd5e1;',
+    if_available:'background:#fef3c7;color:#92400e;border:2px solid #fde047;'
+  };
+  if (d) {
+    area.innerHTML = `<div style="display:flex;align-items:center;gap:8px;"><span style="font-size:13px;font-weight:700;padding:4px 12px;border-radius:10px;${colorMap[d]}">${labelMap[d]}</span><button onclick="setEnglishPamphDemandFromModal('${facility.id}')" style="font-size:11px;color:#6b7280;background:none;border:none;cursor:pointer;text-decoration:underline;">変更する</button></div>`;
+  } else {
+    area.innerHTML = `<div style="font-size:12px;color:#1e40af;margin-bottom:6px;">訪問のついでに確認してください👇</div><div style="display:flex;gap:8px;flex-wrap:wrap;">${['required','not_required','if_available'].map(v=>`<button onclick="setEnglishPamphDemandFromModal('${facility.id}','${v}')" style="padding:6px 12px;border-radius:10px;border:1.5px solid #93c5fd;background:white;font-size:12px;font-weight:700;color:#1e40af;cursor:pointer;font-family:inherit;">${labelMap[v]}</button>`).join('')}</div>`;
+  }
+}
+
+async function setEnglishPamphDemandFromModal(facId, value) {
+  if (!value) { // 変更ボタン押された場合
+    const fac = state.facilities.find(f=>f.id===facId);
+    if (fac) { fac.english_pamph_demand = null; renderEnglishPamphArea(fac); }
+    return;
+  }
+  const {error} = await sb.from('facilities').update({english_pamph_demand: value}).eq('id', facId);
+  if (error) { alert('保存に失敗しました: ' + error.message); return; }
+  const fac = state.facilities.find(f=>f.id===facId);
+  if (fac) { fac.english_pamph_demand = value; renderEnglishPamphArea(fac); }
+}
+
 // ===== 英語パンフ需要を施設マスターに保存 =====
 async function setEnglishPamphDemand(facId, value) {
   const {error} = await sb.from('facilities').update({english_pamph_demand: value}).eq('id', facId);
@@ -3430,6 +3467,8 @@ function openCheckIn(facId) {
   buildCheckInPamphUI({});
   // スタンドポップエリアを描画
   renderStandPopArea(f);
+  // 英語パンフ需要エリアを描画
+  renderEnglishPamphArea(f);
   openModal('checkInModal');
 }
 
